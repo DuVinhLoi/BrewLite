@@ -1,0 +1,9 @@
+# Draw.io temporary files
+~$*
+.$*
+*.bkp
+
+# Node & IDE
+node_modules/
+.DS_Store
+Thumbs.db
