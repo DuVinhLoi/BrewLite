@@ -12,3 +12,8 @@ Thumbs.db
 opencode.json
 .opencode/
 graphify-out/
+
+# Planning & agent artifacts in docs
+docs/superpowers/
+docs/**/plans/
+docs/plans/
