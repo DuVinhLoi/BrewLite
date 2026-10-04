@@ -3,9 +3,11 @@
 
 > **Dự án:** BrewLite – Ứng dụng đặt cà phê không tiền mặt  
 > **Môn học:** Công nghệ Phần mềm (Bài tập lớn 10 Task Agile Scrum)  
-> **Phạm vi tài liệu:** Phân hệ Khách hàng (User Subsystem - MVP Cốt lõi)  
+> **Phạm vi & Định vị tài liệu:**  
+> • **Tài liệu này là Phụ lục chi tiết (Architecture Appendix) cho Developers & AI Agents** dùng để hiểu sâu bối cảnh, đối chiếu mã nguồn và viết test case.  
+> • **Bản nộp chính cho giảng viên** tập trung vào 3 biểu đồ cốt lõi tinh gọn đã chốt (Use Case tổng 10 bubble, Activity luồng nghiệp vụ tổng, và Sequence thanh toán rút gọn).  
 > **Đối tượng độc giả:**  
-> 1. **Người dùng (Sinh viên, Giảng viên đánh giá):** Đọc hiểu luồng nghiệp vụ, nắm rõ ký hiệu kỹ thuật để thuyết trình bảo vệ đồ án.  
+> 1. **Sinh viên & Giảng viên:** Tra cứu chi tiết từng bước, đối chiếu ma trận truy vết (Traceability) với 7 API endpoint và 10 Task Backlog.  
 > 2. **AI Agents / Developers:** Đọc hiểu bối cảnh kiến trúc (Context Navigation), ánh xạ các bước của biểu đồ vào mã nguồn NestJS (Backend) và Next.js (Frontend) để lập trình và viết kiểm thử tự động.
 
 ---
@@ -211,10 +213,10 @@ alt Mật khẩu KHÔNG chính xác (Kịch bản thất bại)
 else Mật khẩu chính xác (Kịch bản thành công)
     BE -> BE : Tạo mã phiên đăng nhập an toàn (Token JWT)
     BE --> FE : Báo đăng nhập thành công kèm Mã Token
-    deactivate BE
     FE -> FE : Lưu mã Token vào bộ nhớ trình duyệt (Cookie / Storage)
     FE --> User : Chuyển sang giao diện tài khoản thành viên
 end
+deactivate BE
 deactivate FE
 @enduml
 ```
@@ -231,10 +233,11 @@ deactivate FE
 
 #### A. Bối cảnh nghiệp vụ
 Đây là **trọng tâm nghiệp vụ lớn nhất của dự án BrewLite** (Bao gồm Task 6, 8 và 10):
-1. **Bước 1 (UC04 - Tạo đơn):** Gửi giỏ hàng lên máy chủ để tạo bản ghi đơn hàng ở trạng thái chờ thanh toán (`PENDING`).
-2. **Bước 2 (UC05a - Khối `opt`):** Khách có mã giảm giá thì nhập mã để được trừ bớt tiền (hành động tùy chọn).
-3. **Bước 3 (UC05 - Thanh toán):** Khách chọn Ví/Thẻ để trả tiền. Hệ thống dùng **Khóa an toàn chống trừ tiền 2 lần (Idempotency-Key)** để đảm bảo bấm nhiều lần không bị trừ tiền lặp lại.
-4. **Khối `group Database Transaction`:** Đảm bảo khi cổng thanh toán báo thành công, 3 thao tác: Đổi trạng thái đơn sang `PAID`, trừ số lượng kho và cộng điểm thành viên bắt buộc phải diễn ra đồng thời.
+1. **Bước 1 (UC04 - Tạo đơn):** Gửi giỏ hàng lên máy chủ (kèm token JWT) để tạo bản ghi đơn hàng ở trạng thái chờ thanh toán (`PENDING`).
+2. **Bước 2 (UC05a - Khối `opt`):** Khách có mã giảm giá (`BREWLITE10`) thì nhập mã để được tính giảm trừ trực tiếp trên giao diện (hành động tùy chọn). Mã này sẽ được gửi kèm trong yêu cầu thanh toán để máy chủ xác thực nội bộ (không tạo thêm endpoint hay bảng ngoài đề bài).
+3. **Bước 3 (UC05 - Thanh toán):** Khách chọn Ví/Thẻ để trả tiền. Hệ thống dùng **Khóa an toàn chống trừ tiền 2 lần (Idempotency-Key)**:
+   - **Nhánh Trùng lặp (Cache Hit):** Nếu khóa đã tồn tại trong CSDL $\rightarrow$ trả về kết quả cũ đã lưu (HTTP 200), **tuyệt đối không gọi lại Cổng thanh toán để tránh trừ tiền 2 lần**.
+   - **Nhánh Mới (Cache Miss):** Gọi Cổng thanh toán trừ tiền $\rightarrow$ Thực thi `assertTransition('PENDING' -> 'PAID')` $\rightarrow$ Mở Database Transaction cập nhật trạng thái đơn, trừ kho (kèm Optimistic Locking kiểm soát mua đồng thời) và cộng điểm tích lũy.
 
 #### B. Sơ đồ tuần tự (PlantUML)
 ```plantuml
@@ -255,50 +258,60 @@ participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
 == BƯỚC 1: TẠO ĐƠN HÀNG (UC04) ==
 User -> FE : Bấm "Thanh toán" tại giỏ hàng
 activate FE
-FE -> BE : Gửi danh sách món để tạo đơn
+FE -> BE : Gửi giỏ hàng để tạo đơn\n(Header: Bearer JWT, Body: items[])
 activate BE
 BE -> DB : Lưu đơn hàng mới với trạng thái "Chờ thanh toán (PENDING)"
 activate DB
 DB --> BE : Đã lưu xong, cấp Mã đơn hàng: #1042
 deactivate DB
-BE --> FE : Báo tạo đơn thành công (Mã đơn: #1042)
+BE --> FE : Báo tạo đơn thành công (201 Created, Mã đơn: #1042)
 deactivate BE
 
 == BƯỚC 2: ÁP MÃ GIẢM GIÁ (UC05a - TÙY CHỌN EXTEND) ==
 opt Khách hàng có mã khuyến mãi
-    User -> FE : Nhập mã "COFFEE10" và bấm Áp dụng
-    FE -> BE : Kiểm tra mã giảm giá "COFFEE10"
-    activate BE
-    BE --> FE : Mã hợp lệ (Giảm 10%, số tiền mới: 110.000đ)
-    deactivate BE
-    FE --> User : Cập nhật lại số tiền cần thanh toán
+    User -> FE : Nhập mã "BREWLITE10" và bấm Áp dụng
+    FE -> FE : Kiểm tra định dạng mã & tính giảm 10% tạm tính
+    FE --> User : Cập nhật lại số tiền cần thanh toán (123.000đ -> 110.700đ)
 end
 
 == BƯỚC 3: THANH TOÁN KHÔNG TIỀN MẶT (UC05 - BẮT BUỘC INCLUDE) ==
 User -> FE : Chọn phương thức Ví điện tử -> Bấm "Xác nhận trả"
-FE -> BE : Yêu cầu thanh toán đơn #1042 kèm Khóa an toàn chống trừ tiền trùng
+FE -> BE : POST /payments\n(Header: Idempotency-Key, Body: orderId, method, voucherCode)
 activate BE
 
-BE -> DB : Kiểm tra xem giao dịch này đã từng được xử lý chưa
+BE -> DB : Tra cứu Idempotency-Key xem giao dịch đã xử lý chưa
 activate DB
-DB --> BE : Chưa xử lý (Giao dịch mới hợp lệ)
+DB --> BE : Trả về kết quả tra cứu
 deactivate DB
 
-BE -> Gateway : Yêu cầu trừ tiền khách hàng qua Ví điện tử
-activate Gateway
-Gateway --> BE : Phản hồi: Trừ tiền THÀNH CÔNG
-deactivate Gateway
+alt Khóa giao dịch ĐÃ tồn tại (Yêu cầu trùng lặp - Idempotent Cache Hit)
+    BE --> FE : Trả về kết quả thanh toán cũ đã lưu (200 OK - Không trừ tiền lần 2)
+    FE --> User : Hiển thị màn hình Xác nhận đơn (Tránh trừ tiền trùng)
+else Khóa giao dịch MỚI (Lần đầu thanh toán - Cache Miss)
+    opt Có mã voucher "BREWLITE10"
+        BE -> BE : Xác thực voucher nội bộ & tính số tiền khấu trừ (Task 10)
+    end
+    BE -> Gateway : Yêu cầu trừ tiền khách hàng qua Ví điện tử
+    activate Gateway
+    Gateway --> BE : Phản hồi: Trừ tiền THÀNH CÔNG
+    deactivate Gateway
 
-group Gói cập nhật dữ liệu đồng thời [Database Transaction an toàn]
-    BE -> DB : Đổi trạng thái đơn #1042 thành "Đã thanh toán (PAID)"
-    BE -> DB : Trừ số lượng tồn kho của các món đã mua (Optimistic Locking)
-    BE -> DB : Cộng điểm tích lũy thành viên cho khách
-    BE -> DB : Lưu biên lai giao dịch thanh toán
+    BE -> BE : assertTransition(from: PENDING, to: PAID)
+
+    group Gói cập nhật dữ liệu đồng thời [Database Transaction an toàn]
+        BE -> DB : Đổi trạng thái đơn #1042 thành "Đã thanh toán (PAID)"
+        BE -> DB : Trừ số lượng tồn kho (Optimistic Locking: version = version + 1)
+        opt Xung đột tồn kho đồng thời (Optimistic Lock Failure: version lệch)
+            BE -> BE : Tự động thử lại (retry 3 lần) hoặc báo hết hàng (409 Conflict)
+        end
+        BE -> DB : Cộng điểm tích lũy thành viên cho khách (Task 10)
+        BE -> DB : Lưu biên lai giao dịch thanh toán kèm Idempotency-Key
+    end
+
+    BE --> FE : Báo thanh toán thành công hoàn tất (201 Created)!
+    FE --> User : Chuyển hướng sang màn hình Xác nhận đơn hàng (#1042, PAID)
 end
-
-BE --> FE : Báo thanh toán thành công hoàn tất!
 deactivate BE
-FE --> User : Chuyển hướng sang màn hình Xác nhận đơn hàng
 deactivate FE
 @enduml
 ```
@@ -306,19 +319,22 @@ deactivate FE
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
 * **Backend Endpoints:**
   - Tạo đơn: `POST /orders` (Body: `items[]`, Header: `Bearer JWT`)
-  - Thanh toán: `POST /payments` (Body: `{ orderId, paymentMethod }`, Header: `Idempotency-Key: <UUID>`)
-* **Chống trừ tiền trùng (Idempotent):** Kiểm tra `Payment WHERE idempotencyKey = ?`. Nếu tồn tại $\rightarrow$ trả về kết quả cũ (HTTP 200), không gọi lại Gateway.
-* **Kiểm soát tồn kho đồng thời (Concurrency):** Sử dụng Transaction Prisma/TypeORM kèm Optimistic Locking (cột `version` trong bảng `Product`) để tránh bán vượt số lượng tồn kho.
+  - Thanh toán: `POST /payments` (Body: `{ orderId, paymentMethod, voucherCode? }`, Header: `Idempotency-Key: <UUID>`)
+* **Xác thực Voucher:** Validate nội bộ trong `PaymentService` theo cấu hình chiết khấu (Task 10), không tạo thêm endpoint riêng ngoài 7 endpoint chính.
+* **Chống trừ tiền trùng (Idempotent Test Criteria b):** Kiểm tra `Payment WHERE idempotencyKey = ?`. Nhánh Hit trả 200 OK kết quả cũ, nhánh Miss mới gọi Gateway.
+* **Kiểm soát tồn kho đồng thời (Concurrency Test Criteria c):** Sử dụng Transaction Prisma/TypeORM kèm Optimistic Locking (cột `version` trong bảng `Product`), retry 3 lần nếu version xung đột trước khi ném lỗi 409.
+* **State Machine (Test Criteria a):** Thực thi `assertTransition('PENDING' -> 'PAID')` trước khi lưu vào CSDL.
 
 ---
 
 ### 2.5 UC06: Hủy đơn / Thử lại thanh toán
 
 #### A. Bối cảnh nghiệp vụ
-Phục vụ máy trạng thái **Order State Machine** tại Mục 9.1 tài liệu môn học. 
-* Khối `alt` mô tả 2 ngã rẽ xử lý sự cố:
-  - **Kịch bản 1 (Thử lại):** Khi cổng thanh toán báo trừ tiền lỗi, đơn hàng ở trạng thái `PAYMENT_FAILED`. Khách bấm "Thử lại", hệ thống chuyển trạng thái đơn quay về `PENDING` để khách chọn phương thức khác trả lại tiền.
-  - **Kịch bản 2 (Hủy đơn):** Khi đơn hàng chưa trả tiền hoặc bị lỗi, khách có quyền bấm "Hủy đơn". Hệ thống kiểm tra hàm bảo vệ trạng thái `assertTransition` rồi đổi thành `CANCELLED`.
+Phục vụ máy trạng thái **Order State Machine** tại Mục 9.1 tài liệu môn học (`docs:301-322`). 
+* Khối `alt` mô tả 3 ngã rẽ xử lý trạng thái theo chuẩn REST (`PATCH /orders/:id`):
+  - **Kịch bản 1 (Thử lại):** Khi cổng thanh toán báo trừ tiền lỗi, đơn hàng ở trạng thái `PAYMENT_FAILED`. Khách bấm "Thử lại", hệ thống gọi lại thanh toán hoặc chuyển trạng thái đơn quay về `PENDING` (`PAYMENT_FAILED` $\rightarrow$ `PENDING`).
+  - **Kịch bản 2 (Khách hủy đơn chưa trả):** Khi đơn hàng chưa thanh toán, khách có quyền bấm "Hủy đơn" (`PENDING` $\rightarrow$ `CANCELLED`).
+  - **Kịch bản 3 (Hủy đơn đã thanh toán - Hoàn tiền):** Khi đơn đã trả tiền (`PAID`) nhưng quầy pha chế báo hết nguyên liệu đột xuất hoặc khách yêu cầu hủy kịp thời, hệ thống kích hoạt hủy đơn kèm hoàn tiền (`PAID` $\rightarrow$ `CANCELLED` theo đúng `docs:313`).
 
 #### B. Sơ đồ tuần tự (PlantUML)
 ```plantuml
@@ -334,29 +350,46 @@ actor "Khách hàng" as User
 participant "Giao diện Web\n(Frontend)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
+participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
 
 alt Kịch bản 1: Thử thanh toán lại (Khi bị lỗi trừ tiền)
     User -> FE : Bấm nút "Thử thanh toán lại"
     activate FE
-    FE -> BE : Yêu cầu thử lại thanh toán cho đơn hàng
+    FE -> BE : POST /payments (Thử lại thanh toán với phương thức mới)
     activate BE
-    BE -> BE : Kiểm tra hợp lệ: Chuyển từ "Lỗi thanh toán" về "Chờ thanh toán"
+    BE -> BE : assertTransition(from: PAYMENT_FAILED, to: PENDING)
     BE -> DB : Cập nhật trạng thái đơn về "Chờ thanh toán (PENDING)"
-    BE --> FE : Xác nhận đã mở lại trạng thái đơn
+    BE --> FE : Xác nhận mở lại trạng thái đơn (200 OK)
     deactivate BE
     FE --> User : Mở lại màn hình thanh toán để khách chọn lại Thẻ / Ví
     deactivate FE
 
-else Kịch bản 2: Khách chủ động hủy đơn
+else Kịch bản 2: Khách chủ động hủy đơn chưa thanh toán (PENDING -> CANCELLED)
     User -> FE : Bấm nút "Hủy đơn hàng này"
     activate FE
-    FE -> BE : Yêu cầu hủy đơn hàng
+    FE -> BE : PATCH /orders/1042 { status: 'CANCELLED' }
     activate BE
-    BE -> BE : Kiểm tra điều kiện: Đơn chưa pha chế mới được hủy
-    BE -> DB : Cập nhật trạng thái đơn thành "Đã hủy (CANCELLED)"
-    BE --> FE : Xác nhận hủy đơn thành công
+    BE -> BE : assertTransition(from: PENDING, to: CANCELLED)
+    BE -> DB : Cập nhật trạng thái đơn thành "CANCELLED"
+    BE --> FE : Xác nhận hủy đơn thành công (200 OK)
     deactivate BE
     FE --> User : Thông báo: "Đơn hàng của bạn đã được hủy thành công"
+    deactivate FE
+
+else Kịch bản 3: Hủy đơn sau khi đã thanh toán (PAID -> CANCELLED / Hoàn tiền)
+    User -> FE : Yêu cầu hủy đơn đã trả tiền (sự cố quầy / hết nguyên liệu)
+    activate FE
+    FE -> BE : PATCH /orders/1042 { status: 'CANCELLED' }
+    activate BE
+    BE -> BE : assertTransition(from: PAID, to: CANCELLED)
+    BE -> Gateway : Yêu cầu hoàn tiền giao dịch (Refund)
+    activate Gateway
+    Gateway --> BE : Phản hồi: Hoàn tiền THÀNH CÔNG
+    deactivate Gateway
+    BE -> DB : Đổi trạng thái đơn thành "CANCELLED" & hoàn lại tồn kho
+    BE --> FE : Xác nhận hủy và hoàn tiền thành công (200 OK)
+    deactivate BE
+    FE --> User : Thông báo: "Đơn hàng đã được hủy và hoàn tiền thành công"
     deactivate FE
 end
 @enduml
@@ -364,12 +397,13 @@ end
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
 * **Backend Endpoints:**
-  - `POST /orders/:id/retry`
-  - `POST /orders/:id/cancel`
-* **Quy tắc State Machine:**
+  - `POST /payments` (gửi lại yêu cầu thanh toán khi thử lại)
+  - `PATCH /orders/:id` (cập nhật trạng thái đơn thành `CANCELLED` theo chuẩn REST)
+* **Quy tắc State Machine (Task 10):**
   - `assertTransition('PAYMENT_FAILED' -> 'PENDING')`: Hợp lệ.
   - `assertTransition('PENDING' -> 'CANCELLED')`: Hợp lệ.
-  - `assertTransition('PREPARING' -> 'CANCELLED')`: **Không hợp lệ** (Chặn đứng bằng cách ném lỗi BadRequestException vì barista đang pha chế rồi).
+  - `assertTransition('PAID' -> 'CANCELLED')`: Hợp lệ (kèm nghiệp vụ hoàn tiền `refund()`).
+  - `assertTransition('PREPARING' -> 'CANCELLED')`: **Không hợp lệ** (Bị chặn ném lỗi 400 Bad Request vì barista đang pha chế).
 
 ---
 
@@ -377,8 +411,8 @@ end
 
 #### A. Bối cảnh nghiệp vụ
 Tương ứng Task 9 trong đề tài:
-1. **Phần 1 (Biên lai ngay sau khi đặt):** Hiển thị màn hình xác nhận với mã đơn số to `#1042`, trạng thái `PAID` và lời nhắn nhắc khách tới quầy nhận nước.
-2. **Phần 2 (Xem lại lịch sử):** Khi khách bấm vào trang cá nhân "Lịch sử đơn", hệ thống truy vấn CSDL để hiển thị danh sách toàn bộ các ly nước đã từng mua, ngày đặt và trạng thái hiện tại (Đang pha chế, Đã xong, Đã giao).
+1. **Phần 1 (Biên lai ngay sau khi đặt):** Được kích hoạt **ngay lập tức khi `POST /payments` ở UC05 trả về thành công (HTTP 201)**. Màn hình xác nhận hiển thị mã đơn số to `#1042`, trạng thái `PAID` và lời nhắn nhắc khách tới quầy nhận nước (khớp Wireframe 5).
+2. **Phần 2 (Xem lại lịch sử):** Khi khách bấm vào trang cá nhân "Lịch sử đơn", hệ thống gọi `GET /orders/me` để hiển thị danh sách toàn bộ các đơn đã từng mua, ngày đặt và trạng thái hiện tại (`PAID`, `PREPARING`, `READY`, `COMPLETED`).
 
 #### B. Sơ đồ tuần tự (PlantUML)
 ```plantuml
@@ -395,18 +429,19 @@ participant "Giao diện Web\n(Frontend)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
 
-== PHẦN 1: MÀN HÌNH XÁC NHẬN NGAY SAU KHI ĐẶT ==
-FE --> User : Hiển thị Biên lai nhận nước:\n- Mã nhận món: #1042\n- Trạng thái: ĐÃ THANH TOÁN (PAID)\n- Lời nhắn: "Mời bạn đến quầy nhận đồ uống"
+== PHẦN 1: MÀN HÌNH XÁC NHẬN (LIÊN KẾT TRỰC TIẾP SAU KHI THANH TOÁN UC05) ==
+BE --> FE : Báo thanh toán thành công (Mã đơn: #1042, Trạng thái: Đã thanh toán)
+FE --> User : Hiển thị màn hình biên lai xác nhận:\n- Mã lấy nước: #1042\n- Trạng thái: Đã thanh toán\n- Lời nhắn: "Mời bạn đến quầy nhận đồ uống"
 
-== PHẦN 2: XEM LỊCH SỬ ĐƠN HÀNG ĐÃ MUA ==
+== PHẦN 2: XEM LỊCH SỬ CÁC ĐƠN HÀNG ĐÃ MUA ==
 User -> FE : Bấm vào mục "Lịch sử đơn hàng"
 activate FE
-FE -> BE : Yêu cầu lấy toàn bộ lịch sử đơn hàng của tôi
+FE -> BE : Yêu cầu lấy lịch sử đơn hàng của tài khoản
 activate BE
 
-BE -> DB : Tra cứu các đơn hàng thuộc về tài khoản này (mới nhất lên đầu)
+BE -> DB : Tra cứu toàn bộ các đơn đã đặt của khách (mới nhất lên đầu)
 activate DB
-DB --> BE : Trả về danh sách đơn kèm trạng thái (Đang pha, Đã xong,...)
+DB --> BE : Trả về danh sách đơn kèm tiến độ (Đang pha, Đã xong, Đã hoàn tất)
 deactivate DB
 
 BE --> FE : Gửi danh sách lịch sử đơn về giao diện
@@ -427,20 +462,23 @@ deactivate FE
 
 # PHẦN III: MA TRẬN NGỮ CẢNH KỸ THUẬT DÀNH CHO AI AGENTS & DEVELOPERS
 
-Khi các AI Agent hoặc lập trình viên duyệt codebase của BrewLite để viết tính năng, sinh test hoặc sửa lỗi, bảng ma trận dưới đây là **bản đồ chỉ đường (Traceability Guide)** nối từ biểu đồ Sequence vào trực tiếp từng file mã nguồn:
+Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 100% (Full Traceability)** với đúng **7 API Endpoints chính** (Mục 12.1) và **5 Thực thể CSDL tối thiểu** (Mục 12.2) trong tài liệu gốc `BrewLite-CongNghePhanMem-fixed.md`:
 
-| Mã UC | Tên Ca Sử Dụng | Endpoint API | Controller / Service (NestJS) | Bảng CSDL (PostgreSQL) | Cơ Chế Bảo Vệ / Logic Cốt Lõi |
+| Mã UC | Tên Ca Sử Dụng | Endpoint REST Chuẩn | Controller / Service (NestJS) | Bảng CSDL (5 Thực thể tối thiểu) | Cơ Chế Bảo Vệ / Logic Cốt Lõi (Task 10) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **UC01** | Xem menu & Tùy chọn món | `GET /products`<br>`GET /products/:id` | `ProductController`<br>`ProductService` | `Product` | Lọc `stock > 0`, trả về DTO kèm danh sách Topping |
+| **UC01** | Xem menu & Tùy chọn món | `GET /products`<br>`GET /products/:id` | `ProductController`<br>`ProductService` | `Product` | Lọc `stock > 0`, trả về DTO kèm danh sách Size/Topping |
 | **UC02** | Quản lý giỏ hàng | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal` |
 | **UC03** | Đăng ký & Đăng nhập | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService` | `User` | `bcrypt.compare`, cấp JWT Access Token |
 | **UC04** | Tạo đơn hàng mới | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator` |
-| **UC05** | Thanh toán không tiền mặt | `POST /payments` | `PaymentController`<br>`PaymentService` | `Payment`, `Order`, `Product`, `User` | Header `Idempotency-Key`, gọi `MockGateway`, Database Transaction, Optimistic Locking trừ kho |
-| **UC05a** | Áp mã giảm giá | `POST /promotions/validate` | `PromotionController`<br>`PromotionService` | `Promotion` *(hoặc config)* | Kiểm tra hạn dùng, điều kiện đơn tối thiểu, tính % chiết khấu |
-| **UC06** | Hủy đơn / Thử lại | `POST /orders/:id/retry`<br>`POST /orders/:id/cancel` | `OrderController`<br>`OrderService` | `Order` | Hàm `assertTransition()` cưỡng chế đúng luồng State Machine |
+| **UC05 / UC05a** | Thanh toán & Voucher | `POST /payments` | `PaymentController`<br>`PaymentService` | `Payment`, `Order`, `Product`, `User` | Header `Idempotency-Key` (alt hit/miss), validate voucher `BREWLITE10` nội bộ (Task 10), DB Transaction, Optimistic Locking trừ kho |
+| **UC06** | Hủy đơn / Thử lại | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `OrderController`<br>`OrderService` | `Order`, `Payment` | Hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` |
 | **UC07** | Xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
 
 ### Hướng Dẫn Điều Hướng Cho AI Agent (Agent Rules):
-1. **Khi sinh Unit/Integration Test:** Tham chiếu Mục 9 của đề bài, kiểm thử các kịch bản của `alt` trong UC03, UC05 và UC06 (ví dụ: test chặn chuyển sai trạng thái, test gửi trùng Idempotency-Key).
-2. **Khi thay đổi giao diện Next.js:** Giữ nguyên các thông điệp phản hồi đã được chuẩn hóa tại Phần II (mã đơn `#1042`, các trạng thái `PENDING`, `PAID`, `PREPARING`, `READY`, `COMPLETED`, `PAYMENT_FAILED`, `CANCELLED`).
-3. **Tính toàn vẹn giao dịch (Atomic):** Mọi logic tại UC05 bắt buộc phải nằm trong khối `prisma.$transaction()` hoặc TypeORM QueryRunner.
+1. **Tuyệt đối không tạo thêm bảng CSDL ngoài:** Hệ thống chỉ có 5 thực thể tối thiểu (`Product`, `User`, `Order`, `OrderItem`, `Payment`). Khuyến mãi và mã giảm giá `BREWLITE10` được cấu hình và validate nội bộ trong `PaymentService`.
+2. **Tiêu chí chấm điểm Task 10:**
+   - **(a) State Machine:** Mọi cập nhật trạng thái đơn phải đi qua `assertTransition()`.
+   - **(b) Idempotency:** Gửi 2 lần cùng `Idempotency-Key` chỉ trừ tiền 1 lần (nhánh Cache Hit trả kết quả cũ đã lưu).
+   - **(c) Concurrency:** Đặt hàng đồng thời sử dụng Optimistic Locking (`version` trên bảng `Product`), retry 3 lần trước khi trả lỗi xung đột 409.
+3. **Phạm vi nộp bài:** Tài liệu này đóng vai trò **Phụ lục kiến trúc chuyên sâu (Appendix)** cho đội ngũ phát triển và AI Agent. Khi nộp bài chính, nhóm sử dụng bộ 3 biểu đồ tổng quan tinh gọn đã chốt.
+
