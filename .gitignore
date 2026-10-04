@@ -1,0 +1,19 @@
+# Draw.io temporary files
+~$*
+.$*
+*.bkp
+
+# Node & IDE
+node_modules/
+.DS_Store
+Thumbs.db
+
+# OpenCode local config (personal plugin setup)
+opencode.json
+.opencode/
+graphify-out/
+
+# Planning & agent artifacts in docs
+docs/superpowers/
+docs/**/plans/
+docs/plans/
