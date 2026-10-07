@@ -8,6 +8,7 @@ export interface UserDto {
 
 export interface IUserRepository {
   findById(id: string): Promise<UserDto | null>;
+  findByEmail(email: string): Promise<UserDto | null>;
   addLoyaltyPoints(id: string, points: number): Promise<UserDto>;
   save(user: UserDto): Promise<UserDto>;
 }

@@ -17,6 +17,9 @@ export default function Header() {
         <Link href="/" style={styles.link}>
           Menu
         </Link>
+        <Link href="/login" style={styles.link}>
+          Đăng nhập
+        </Link>
         <Link href="/cart" style={styles.cartLink}>
           Xem giỏ hàng
           <span style={styles.badge} aria-label={`${count} món trong giỏ`}>

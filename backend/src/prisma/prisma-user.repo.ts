@@ -9,7 +9,13 @@ export class PrismaUserRepo implements IUserRepository {
   async findById(id: string): Promise<UserDto | null> {
     const u = await this.db.user.findUnique({ where: { id } });
     if (!u) return null;
-    return { id: u.id, email: u.email, loyaltyPoints: u.loyaltyPoints };
+    return { id: u.id, email: u.email, loyaltyPoints: u.loyaltyPoints, passwordHash: u.passwordHash };
+  }
+
+  async findByEmail(email: string): Promise<UserDto | null> {
+    const u = await this.db.user.findUnique({ where: { email } });
+    if (!u) return null;
+    return { id: u.id, email: u.email, loyaltyPoints: u.loyaltyPoints, passwordHash: u.passwordHash };
   }
 
   async addLoyaltyPoints(id: string, points: number): Promise<UserDto> {
