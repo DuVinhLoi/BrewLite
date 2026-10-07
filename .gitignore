@@ -6,6 +6,7 @@
 # Node & IDE
 node_modules/
 backend/dist/
+*.tsbuildinfo
 .next/
 out/
 .env.local
