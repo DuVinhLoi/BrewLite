@@ -294,6 +294,8 @@ Mỗi task là một hạng mục backlog, sắp xếp **từ dễ đến khó**
 >
 > **Tiêu chí chấm:** có *unit/integration test* chứng minh: (a) chặn được chuyển trạng thái sai; (b) gửi 2 lần cùng Idempotency-Key chỉ tạo 1 đơn; (c) đặt đồng thời không vượt tồn kho.
 
+Chốt MVP: mã `BREWLITE10` giảm 10% (`floor(total * 0.1)`), điểm thưởng `floor(finalAmount * 0.1 / 1000)`, cộng sau khi đơn `PAID`. Validate nội bộ trong `PaymentService`, không thêm bảng/endpoint.
+
 ### 9.1 Sơ đồ máy trạng thái đơn hàng (Order State Machine)
 
 Sơ đồ dưới đây mô tả các trạng thái hợp lệ của một đơn hàng và các chuyển tiếp được phép. *Mọi chuyển tiếp không có mũi tên* sẽ bị hàm `assertTransition` chặn lại (ném lỗi). `COMPLETED` và `CANCELLED` là trạng thái *kết thúc*.
