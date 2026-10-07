@@ -130,3 +130,53 @@ deactivate QU
 @enduml
 ```
 * **Endpoint:** `PATCH /orders/:id` (JWT quầy). `COMPLETED` là trạng thái kết thúc, mọi chuyển tiếp sau đó đều 400.
+
+## UC12: Hủy đơn do sự cố / hết nguyên liệu (PAID -> CANCELLED & Refund)
+```plantuml
+@startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+
+autonumber
+actor "Nhân viên pha chế" as Barista
+participant "Giao diện quầy\n(Barista UI)" as QU
+participant "Máy chủ xử lý\n(Backend)" as BE
+database "Cơ sở dữ liệu" as DB
+participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
+
+Barista -> QU : Bấm "Hủy đơn" (Lý do: hết nguyên liệu)
+activate QU
+QU -> BE : PATCH /orders/1042 { status: 'CANCELLED' }
+activate BE
+BE -> BE : assertTransition(from: PAID, to: CANCELLED)
+BE -> Gateway : Yêu cầu hoàn tiền giao dịch (Refund)
+activate Gateway
+Gateway --> BE : Phản hồi: Hoàn tiền THÀNH CÔNG
+deactivate Gateway
+BE -> DB : Hoàn lại số lượng tồn kho nguyên liệu (restoreStock)
+activate DB
+DB --> BE : Đã cập nhật tồn kho
+deactivate DB
+BE -> DB : Cập nhật trạng thái đơn thành "CANCELLED"
+activate DB
+DB --> BE : Đã hủy đơn thành công
+deactivate DB
+BE --> QU : Báo hủy đơn và hoàn tiền hoàn tất (200 OK)
+deactivate BE
+QU --> Barista : Thông báo: Đã hủy đơn và hoàn tiền cho khách
+deactivate QU
+@enduml
+```
+* **Endpoint:** `PATCH /orders/:id` (JWT quầy). Thứ tự bám code `cancelOrder`: kiểm tra trạng thái → hoàn tiền → hoàn kho → đổi trạng thái. Hủy đơn `PREPARING` trở đi trả 400 (quầy đang pha).
+
+## Ma trận truy vết UC08–UC12
+| Mã UC | Endpoint | Trạng thái | Ghi chú |
+| :--- | :--- | :--- | :--- |
+| UC08 | `GET /orders?status=PAID` | đọc | JWT quầy, mới nhất lên đầu |
+| UC09 | `PATCH /orders/:id` | `PAID -> PREPARING` | sai trạng thái 400 |
+| UC10 | `PATCH /orders/:id` | `PREPARING -> READY` | sai trạng thái 400 |
+| UC11 | `PATCH /orders/:id` | `READY -> COMPLETED` | kết thúc, sau đó mọi chuyển đều 400 |
+| UC12 | `PATCH /orders/:id` | `PAID -> CANCELLED` | kèm hoàn tiền + hoàn kho, bám `cancelOrder` |
