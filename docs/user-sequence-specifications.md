@@ -42,7 +42,7 @@ Biểu đồ Tuần tự (**Sequence Diagram**) là biểu đồ thể hiện **
 2. **Đối tượng tham gia (Participants / Lifelines):** Đại diện cho các tầng kiến trúc của BrewLite:
    - `Giao diện Web (Frontend Next.js)`: Nơi người dùng bấm nút, xem dữ liệu.
    - `Máy chủ xử lý (Backend NestJS)`: Nơi tiếp nhận yêu cầu, kiểm tra nghiệp vụ và xử lý logic.
-   - `Cơ sở dữ liệu (PostgreSQL)`: Nơi lưu trữ vĩnh viễn đơn hàng, sản phẩm, tài khoản.
+   - `Cơ sở dữ liệu (PostgreSQL qua Prisma)`: Nơi lưu trữ vĩnh viễn đơn hàng, sản phẩm, tài khoản (5 bảng mục 12.2). Task 8-10 cắm qua 4 adapter `PrismaOrder/Product/Payment/UserRepo`; khi thiếu `DATABASE_URL` thì dùng bản In-Memory trên RAM để chạy/test độc lập.
    - `Cổng thanh toán (Mock Gateway)`: Đơn vị trung gian xử lý trừ tiền Ví/Thẻ.
 3. **Đường gióng thời gian (Lifeline):** Đường thẳng đứng nét đứt chạy dọc từ trên xuống dưới, thể hiện sự tồn tại của đối tượng theo thời gian. **Càng ở phía dưới thì sự kiện diễn ra càng muộn**.
 4. **Vạch kích hoạt (Activation Bar):** Hình chữ nhật mỏng nằm đè lên đường nét đứt, thể hiện khoảng thời gian mà đối tượng đó **đang tích cực xử lý công việc** (chưa xong).
@@ -261,7 +261,7 @@ autonumber
 actor "Khách hàng" as User
 participant "Giao diện Web\n(Frontend)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
-database "Cơ sở dữ liệu" as DB
+database "PostgreSQL\n(qua Prisma)" as DB
 participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
 
 == BƯỚC 1: TẠO ĐƠN HÀNG (UC04) ==
@@ -295,6 +295,7 @@ note right of FE #fef3c7 : Gửi kèm mã chống thu tiền trùng\nvà mã gi�
 activate BE
 
 BE -> DB : Kiểm tra giúp xem mã giao dịch này đã dùng chưa
+note right of DB #fef3c7 : Tìm đúng 1 biên lai theo mã,\nkhóa này là duy nhất trong bảng
 activate DB
 DB --> BE : Đây là kết quả kiểm tra mã giao dịch
 deactivate DB
@@ -327,8 +328,10 @@ else Đây là lần thanh toán đầu tiên (Cache Miss)
             BE -> DB : Đổi giúp đơn #1042 sang đã thanh toán nhé
             BE -> DB : Trừ giúp tồn kho các món trong đơn nhé
             note over BE, DB #fef3c7
-                Kẹt tồn kho thì thử lại 3 lần,
-                vẫn kẹt thì báo hết hàng (409)
+                Mỗi món trừ theo kiểu "đúng phiên bản mới trừ":
+                sai phiên bản hoặc hết hàng thì không trừ.
+                Kẹt thì thử lại 3 lần, vẫn kẹt thì:
+                hoàn lại món đã trừ + hoàn tiền + ghi đơn lỗi (409)
             end note
             BE -> DB : Cộng giúp điểm tích lũy cho khách nhé
             BE -> DB : Lưu giúp biên lai thanh toán kèm mã chống thu trùng nhé
@@ -351,9 +354,10 @@ deactivate FE
   - Thanh toán: `POST /payments` (Body: `{ orderId, paymentMethod, voucherCode? }`, Header: `Idempotency-Key: <UUID>`)
 * Tạo đơn yêu cầu Bearer JWT, thiếu token trả 401 (khớp Task 7).
 * **Xác thực Voucher:** Validate nội bộ trong `PaymentService` theo cấu hình chiết khấu (Task 10), không tạo thêm endpoint riêng ngoài 10 endpoint chính.
-* **Chống trừ tiền trùng (Idempotent Test Criteria b):** Kiểm tra `Payment WHERE idempotencyKey = ?`. Nhánh Hit trả 200 OK kết quả cũ, nhánh Miss mới gọi Gateway.
-* **Kiểm soát tồn kho đồng thời (Concurrency Test Criteria c):** Sử dụng Transaction Prisma/TypeORM kèm Optimistic Locking (cột `version` trong bảng `Product`), retry 3 lần nếu version xung đột trước khi ném lỗi 409.
+* **Chống trừ tiền trùng (Idempotent Test Criteria b):** Tra đúng 1 biên lai theo mã (`Payment` tìm theo `idempotencyKey` duy nhất). Nhánh Hit trả 200 OK kết quả cũ (kèm đúng discount/points đã lưu), nhánh Miss mới gọi Gateway.
+* **Kiểm soát tồn kho đồng thời (Concurrency Test Criteria c):** Trừ kho nguyên tử bằng lệnh `updateMany` kèm điều kiện `version` khớp và `stock >= số lượng` (sai là không trừ), thử lại 3 lần rồi vẫn kẹt thì hoàn lại món đã trừ + hoàn tiền + ném lỗi 409.
 * **State Machine (Test Criteria a):** Thực thi `assertTransition('PENDING' -> 'PAID')` trước khi lưu vào CSDL.
+* **Chọn kho dữ liệu:** Có `DATABASE_URL` thì cắm 4 adapter Prisma (Postgres thật), không thì dùng bản In-Memory để test độc lập — logic `PaymentService` giữ nguyên.
 
 ---
 
@@ -432,7 +436,7 @@ end
 * **Quy tắc State Machine (Task 10):**
   - `assertTransition('PAYMENT_FAILED' -> 'PENDING')`: Hợp lệ.
   - `assertTransition('PENDING' -> 'CANCELLED')`: Hợp lệ.
-  - `assertTransition('PAID' -> 'CANCELLED')`: Hợp lệ (kèm nghiệp vụ hoàn tiền `refund()`).
+  - `assertTransition('PAID' -> 'CANCELLED')`: Hợp lệ (kèm nghiệp vụ hoàn đúng số tiền thực thu — tra biên lai theo đơn — và hoàn lại tồn kho).
   - `assertTransition('PREPARING' -> 'CANCELLED')`: **Không hợp lệ** (Bị chặn ném lỗi 400 Bad Request vì barista đang pha chế).
 
 ---
@@ -500,8 +504,8 @@ Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 10
 | **UC02** | Quản lý giỏ hàng | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal` |
 | **UC03** | Đăng ký & Đăng nhập | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService` | `User` | `bcrypt.compare`, cấp JWT Access Token |
 | **UC04** | Tạo đơn hàng mới | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu) |
-| **UC05 / UC05a** | Thanh toán & Voucher | `POST /payments` | `PaymentController`<br>`PaymentService` | `Payment`, `Order`, `Product`, `User` | Header `Idempotency-Key` (alt hit/miss), validate voucher `BREWLITE10` nội bộ (Task 10), DB Transaction, Optimistic Locking trừ kho |
-| **UC06** | Hủy đơn / Thử lại | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `OrderController`<br>`OrderService` | `Order`, `Payment` | Hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` |
+| **UC05 / UC05a** | Thanh toán & Voucher | `POST /payments` | `PaymentController`<br>`PaymentService` (+ `PrismaPaymentRepo` / `PrismaProductRepo` khi có `DATABASE_URL`) | `Payment`, `Order`, `Product`, `User` | Header `Idempotency-Key` (alt hit/miss), validate voucher `BREWLITE10` nội bộ (Task 10), trừ kho nguyên tử `updateMany` kèm `version`, retry 3 + bù hoàn tiền/kho khi lỗi |
+| **UC06** | Hủy đơn / Thử lại | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `OrderController`<br>`OrderService` | `Order`, `Payment` | Hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho) |
 | **UC07** | Xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
 
 UC08–UC12 (phân hệ quầy, extension ngoài MVP): tuân Mục 12.1 + State Machine §9.1 của tài liệu gốc, không có đặc tả riêng.
@@ -511,6 +515,6 @@ UC08–UC12 (phân hệ quầy, extension ngoài MVP): tuân Mục 12.1 + State 
 2. **Tiêu chí chấm điểm Task 10:**
    - **(a) State Machine:** Mọi cập nhật trạng thái đơn phải đi qua `assertTransition()`.
    - **(b) Idempotency:** Gửi 2 lần cùng `Idempotency-Key` chỉ trừ tiền 1 lần (nhánh Cache Hit trả kết quả cũ đã lưu).
-   - **(c) Concurrency:** Đặt hàng đồng thời sử dụng Optimistic Locking (`version` trên bảng `Product`), retry 3 lần trước khi trả lỗi xung đột 409.
+   - **(c) Concurrency:** Đặt hàng đồng thời sử dụng Optimistic Locking (`version` trên bảng `Product` + điều kiện `stock >= số lượng` trong cùng 1 lệnh `updateMany` nguyên tử), retry 3 lần; hết kho thì hoàn món đã trừ + hoàn tiền rồi trả lỗi xung đột 409.
 3. **Phạm vi nộp bài:** Tài liệu này đóng vai trò **Phụ lục kiến trúc chuyên sâu (Appendix)** cho đội ngũ phát triển và AI Agent. Khi nộp bài chính, nhóm sử dụng bộ 3 biểu đồ tổng quan tinh gọn đã chốt.
 
