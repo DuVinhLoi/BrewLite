@@ -14,7 +14,14 @@ export class PrismaOrderRepo implements IOrderRepository {
       userId: o.userId,
       status: o.status as OrderStatus,
       total: o.total,
-      items: o.items.map((i) => ({ productId: i.productId, quantity: i.qty, unitPrice: i.lineTotal })),
+      // §12.2 OrderItem không có cột unitPrice → suy ra từ lineTotal/qty (lineTotal = unitPrice*qty, số nguyên)
+      items: o.items.map((i) => ({
+        productId: i.productId,
+        quantity: i.qty,
+        unitPrice: i.qty > 0 ? Math.floor(i.lineTotal / i.qty) : i.lineTotal,
+        size: i.size,
+        toppings: parseToppings(i.toppings),
+      })),
       createdAt: o.createdAt,
     };
   }
@@ -32,10 +39,26 @@ export class PrismaOrderRepo implements IOrderRepository {
         status: order.status,
         total: order.total,
         items: {
-          create: order.items.map((i) => ({ productId: i.productId, size: 'M', qty: i.quantity, lineTotal: i.unitPrice })),
+          create: order.items.map((i) => ({
+            productId: i.productId,
+            size: i.size ?? 'M',
+            toppings: JSON.stringify(i.toppings ?? []),
+            qty: i.quantity,
+            lineTotal: i.unitPrice * i.quantity,
+          })),
         },
       },
     });
     return (await this.findById(order.id))!;
+  }
+}
+
+// UC02: toppings lưu chuỗi JSON, đọc lỗi thì coi như rỗng thay vì nổ
+function parseToppings(raw: string): string[] {
+  try {
+    const v: unknown = JSON.parse(raw);
+    return Array.isArray(v) ? v.map(String) : [];
+  } catch {
+    return [];
   }
 }
