@@ -354,6 +354,7 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 | `POST /orders` | Tạo đơn (PENDING) |
 | `POST /payments` | Thanh toán (idempotent) |
 | `GET /orders/me` | Lịch sử đơn của user |
+| `PATCH /orders/:id` | Hủy đơn / cập nhật trạng thái (Task 10, `PENDING`/`PAID` → `CANCELLED`) |
 
 ### 12.2 Thực thể tối thiểu
 
