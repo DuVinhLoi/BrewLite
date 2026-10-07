@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 import { OrderStatus } from '../src/contracts/order.contract';
 
 // Seed tối thiểu cho demo Task 8: user + Latte 35k + đơn order-1042 PENDING
@@ -7,8 +8,8 @@ async function main() {
   try {
     await db.user.upsert({
     where: { id: 'u1' },
-    create: { id: 'u1', email: 'demo@brewlite.vn', passwordHash: '', loyaltyPoints: 0 },
-    update: {},
+    create: { id: 'u1', email: 'demo@brewlite.vn', passwordHash: await bcrypt.hash('demo1234', 10), loyaltyPoints: 0 },
+    update: { email: 'demo@brewlite.vn', passwordHash: await bcrypt.hash('demo1234', 10) },
   });
   await db.product.upsert({
     where: { id: 'p1' },

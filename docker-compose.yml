@@ -15,18 +15,23 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://brewlite:brewlite@db:5432/brewlite
-      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://brewlite:brewlite@db:5432/brewlite}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret}
+      PORT: ${PORT:-3000}
     depends_on:
       - db
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+        NEXT_PUBLIC_PAYMENT_MODE: ${NEXT_PUBLIC_PAYMENT_MODE:-api}
     ports:
       - "3001:3001"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3000
-      NEXT_PUBLIC_PAYMENT_MODE: mock
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+      NEXT_PUBLIC_PAYMENT_MODE: ${NEXT_PUBLIC_PAYMENT_MODE:-api}
     depends_on:
       - backend
 

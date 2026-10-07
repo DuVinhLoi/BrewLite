@@ -39,3 +39,19 @@ cd frontend && npm install && npm run dev   # http://localhost:3001
 `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`, `PATCH /orders/:id`, `GET /orders`, `GET /orders/:id` — xem mục 12 trong docs.
 `Product(stock,version)`, `User(loyaltyPoints)`, `Order`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
 Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
+
+## Demo end-to-end
+
+```bash
+cp .env.example .env   # hoặc bỏ qua: compose đã có default dev sẵn
+docker compose up --build
+# Frontend http://localhost:3001, Backend http://localhost:3000
+```
+
+1. Mở `:3001`, đăng nhập `demo@brewlite.vn` / `demo1234` (seed sẵn trong `backend/prisma/seed.ts`).
+2. Menu → bấm món mở modal chọn size/topping → thêm vào giỏ.
+3. Vào giỏ → nhập voucher `BREWLITE10` → thanh toán → xem biên lai.
+4. Mở `/history` xem đơn vừa đặt (mới nhất trước).
+
+Lưu ý: test pg (`backend/npm test` suite có DB thật) cần `DATABASE_URL` trỏ Postgres chạy được;
+không có `DATABASE_URL` thì các test pg tự skip, suite còn lại vẫn xanh.
