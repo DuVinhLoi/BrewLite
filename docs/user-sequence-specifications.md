@@ -247,6 +247,9 @@ skinparam ArrowColor #5b6b8c
 skinparam SequenceParticipantBackgroundColor #eef2fb
 skinparam SequenceParticipantBorderColor #5b6b8c
 skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
 
 autonumber
 actor "Khách hàng" as User
@@ -256,60 +259,73 @@ database "Cơ sở dữ liệu" as DB
 participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
 
 == BƯỚC 1: TẠO ĐƠN HÀNG (UC04) ==
-User -> FE : Bấm "Thanh toán" tại giỏ hàng
+User -> FE : Tôi muốn thanh toán giỏ hàng này
 activate FE
-FE -> BE : Gửi giỏ hàng để tạo đơn\n(Header: Bearer JWT, Body: items[])
+FE -> BE : Nhờ tạo giúp đơn hàng mới từ giỏ hàng nhé
+note right of FE #fef3c7 : Gửi kèm token đăng nhập\nvà danh sách món đã chọn
 activate BE
-BE -> DB : Lưu đơn hàng mới với trạng thái "Chờ thanh toán (PENDING)"
+BE -> DB : Lưu giúp đơn hàng mới nhé, đơn đang chờ thanh toán
 activate DB
-DB --> BE : Đã lưu xong, cấp Mã đơn hàng: #1042
+DB --> BE : Xong rồi, đơn số #1042 đây nhé
 deactivate DB
-BE --> FE : Báo tạo đơn thành công (201 Created, Mã đơn: #1042)
+BE --> FE : Tạo đơn thành công rồi nhé, mã đơn là #1042
 deactivate BE
+deactivate FE
 
 == BƯỚC 2: ÁP MÃ GIẢM GIÁ (UC05a - TÙY CHỌN EXTEND) ==
 opt Khách hàng có mã khuyến mãi
-    User -> FE : Nhập mã "BREWLITE10" và bấm Áp dụng
-    FE -> FE : Kiểm tra định dạng mã & tính giảm 10% tạm tính
-    FE --> User : Cập nhật lại số tiền cần thanh toán (123.000đ -> 110.700đ)
+    User -> FE : Tôi có mã "BREWLITE10", áp giúp tôi nhé
+    activate FE
+    FE -> FE : Tự kiểm tra mã và tính lại tiền còn phải trả
+    FE --> User : Trừ 10% rồi nhé, còn phải trả 110.700đ
+    deactivate FE
 end
 
 == BƯỚC 3: THANH TOÁN KHÔNG TIỀN MẶT (UC05 - BẮT BUỘC INCLUDE) ==
-User -> FE : Chọn phương thức Ví điện tử -> Bấm "Xác nhận trả"
-FE -> BE : POST /payments\n(Header: Idempotency-Key, Body: orderId, method, voucherCode)
+User -> FE : Tôi chọn trả bằng ví, xác nhận trả tiền nhé
+activate FE
+FE -> BE : Cho tôi thanh toán đơn #1042 bằng ví nhé
+note right of FE #fef3c7 : Gửi kèm mã chống thu tiền trùng\nvà mã giảm giá (nếu có)
 activate BE
 
-BE -> DB : Tra cứu Idempotency-Key xem giao dịch đã xử lý chưa
+BE -> DB : Kiểm tra giúp xem mã giao dịch này đã dùng chưa
 activate DB
-DB --> BE : Trả về kết quả tra cứu
+DB --> BE : Đây là kết quả kiểm tra mã giao dịch
 deactivate DB
 
-alt Khóa giao dịch ĐÃ tồn tại (Yêu cầu trùng lặp - Idempotent Cache Hit)
-    BE --> FE : Trả về kết quả thanh toán cũ đã lưu (200 OK - Không trừ tiền lần 2)
-    FE --> User : Hiển thị màn hình Xác nhận đơn (Tránh trừ tiền trùng)
-else Khóa giao dịch MỚI (Lần đầu thanh toán - Cache Miss)
-    opt Có mã voucher "BREWLITE10"
-        BE -> BE : Xác thực voucher nội bộ & tính số tiền khấu trừ (Task 10)
-    end
-    BE -> Gateway : Yêu cầu trừ tiền khách hàng qua Ví điện tử
+alt Đơn này đã thu tiền rồi (Yêu cầu trùng lặp - Idempotent Cache Hit)
+    BE --> FE : Đơn này trả rồi nhé, gửi lại kết quả cũ, không thu thêm
+    note right of BE #fef3c7 : Trả HTTP 200, tuyệt đối\nkhông gọi lại cổng thanh toán
+    FE --> User : Đơn của bạn đã thanh toán rồi, đây là biên lai nhé
+else Đây là lần thanh toán đầu tiên (Cache Miss)
+    note over BE #fef3c7
+        Tự kiểm tra mã "BREWLITE10" trong máy:
+        đúng mã thì trừ 10%, sai thì thôi
+    end note
+    BE -> BE : Tự kiểm tra mã giảm giá và tính tiền còn lại
+
+    BE -> Gateway : Nhờ trừ giúp tiền của khách qua ví nhé
     activate Gateway
-    Gateway --> BE : Phản hồi: Trừ tiền THÀNH CÔNG
+    Gateway --> BE : Trừ tiền thành công rồi nhé
     deactivate Gateway
 
-    BE -> BE : assertTransition(from: PENDING, to: PAID)
+    BE -> BE : Tự kiểm tra xem đơn có được chuyển\ntừ chờ thanh toán sang đã thanh toán không
 
-    group Gói cập nhật dữ liệu đồng thời [Database Transaction an toàn]
-        BE -> DB : Đổi trạng thái đơn #1042 thành "Đã thanh toán (PAID)"
-        BE -> DB : Trừ số lượng tồn kho (Optimistic Locking: version = version + 1)
-        opt Xung đột tồn kho đồng thời (Optimistic Lock Failure: version lệch)
-            BE -> BE : Tự động thử lại (retry 3 lần) hoặc báo hết hàng (409 Conflict)
-        end
-        BE -> DB : Cộng điểm tích lũy thành viên cho khách (Task 10)
-        BE -> DB : Lưu biên lai giao dịch thanh toán kèm Idempotency-Key
+    group Gói cập nhật cùng nhau, thiếu một là bỏ hết
+        BE -> DB : Đổi giúp đơn #1042 sang đã thanh toán nhé
+        BE -> DB : Trừ giúp tồn kho các món trong đơn nhé
+        note over BE, DB #fef3c7
+            Nếu hai người mua cùng lúc làm lệch
+            phiên bản tồn kho thì thử lại tối đa 3 lần,
+            vẫn kẹt thì báo hết hàng (409)
+        end note
+        BE -> DB : Cộng giúp điểm tích lũy cho khách nhé
+        BE -> DB : Lưu giúp biên lai thanh toán kèm mã chống thu trùng nhé
     end
 
-    BE --> FE : Báo thanh toán thành công hoàn tất (201 Created)!
-    FE --> User : Chuyển hướng sang màn hình Xác nhận đơn hàng (#1042, PAID)
+    BE --> FE : Thanh toán xong rồi nhé, đơn #1042 đã được trả tiền
+    note right of BE #fef3c7 : Trả HTTP 201 cho lần thanh toán đầu tiên
+    FE --> User : Xong rồi, mời bạn xem biên lai đơn #1042 nhé
 end
 deactivate BE
 deactivate FE
