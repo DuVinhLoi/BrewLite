@@ -104,6 +104,7 @@ DB --> BE : Trả về thông tin các món (Tên, giá, hình ảnh)
 deactivate DB
 
 BE --> FE : Gửi danh sách đồ uống về giao diện
+note right of FE : Trường hợp lỗi/rỗng hiển thị loading/empty (khớp Task 3)
 deactivate BE
 
 FE --> User : Hiển thị danh sách đồ uống lên màn hình
@@ -115,7 +116,7 @@ deactivate FE
 ```
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
-* **Backend Endpoint:** `GET /products`
+* **Backend Endpoint:** `GET /products` (`GET /products/:id` cho màn chi tiết)
 * **Controller / Service:** `ProductController.findAll()` $\rightarrow$ `ProductService.findAll()`
 * **Thực thể CSDL:** Bảng `Product` (lọc điều kiện `stock > 0`)
 * **Xử lý Frontend:** Quản lý state hiển thị bằng React State / React Query.
@@ -162,6 +163,9 @@ Cart --> UI : Trả về tổng tiền mới
 deactivate Cart
 UI --> User : Cập nhật lại số tiền hiển thị trên màn hình
 deactivate UI
+
+User -> UI : Tôi muốn xóa món này khỏi giỏ
+UI --> User : Xóa xong, tổng tiền cập nhật rồi nhé
 @enduml
 ```
 
@@ -206,6 +210,11 @@ DB --> BE : Trả về thông tin tài khoản và mật khẩu đã mã hóa
 deactivate DB
 
 BE -> BE : Kiểm tra đối chiếu mật khẩu người dùng nhập
+
+opt Đăng ký tài khoản mới (bỏ qua nếu đã có)
+    User -> FE : Tôi muốn tạo tài khoản mới
+    FE --> User : Tạo xong, mời bạn đăng nhập
+end
 
 alt Mật khẩu KHÔNG chính xác (Kịch bản thất bại)
     BE --> FE : Báo lỗi: "Email hoặc mật khẩu không đúng"
