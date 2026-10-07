@@ -5,7 +5,7 @@ function generateOrderCode(): string {
   return `#${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
-/** Adapter demo: giả lập cổng thanh toán, chờ ngắn rồi luôn thành công. Giữ nguyên amount từ giỏ. */
+// FEATURE: Mock payment gateway — delay ngắn rồi luôn PAID, giữ nguyên amount từ giỏ.
 export class MockPaymentGateway implements PaymentGateway {
   readonly name = 'mock';
 

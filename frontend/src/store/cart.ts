@@ -1,7 +1,7 @@
-// Task 5: Giỏ hàng — Zustand + persist localStorage.
-// Yêu cầu PDF: thêm / sửa số lượng / xóa; tự tính tổng tiền; badge số lượng.
-// Khớp docs UC02: CartItem { productId, name, size, toppings, quantity, unitPrice, lineTotal }.
-// Mọi tiền tính lại từ pricing.ts — không cộng dồn tay để tránh sai số.
+// ============================================================
+// FEATURE: Cart store — Zustand + localStorage; thêm/sửa/xóa,
+// tổng tiền luôn tính lại từ pricing.ts, badge đọc từ count.
+// ============================================================
 
 'use client';
 
@@ -18,9 +18,9 @@ import {
 
 interface CartState {
   items: CartItem[];
-  /** Tổng số ly (cho badge header). */
+  /** Tổng số ly (đọc cho badge header). */
   count: number;
-  /** Tổng tiền giỏ (VND). Luôn = sum(lineTotal). */
+  /** Tổng tiền giỏ (VND) = sum(lineTotal). */
   total: number;
   addItem: (product: Product, opts?: { size?: Size; toppings?: string[]; quantity?: number }) => void;
   updateQty: (key: string, quantity: number) => void;
@@ -47,7 +47,7 @@ export const useCart = create<CartState>()(
           const size = opts?.size ?? DEFAULT_SIZE;
           const toppings = opts?.toppings ?? DEFAULT_TOPPINGS;
           const qty = Math.max(1, Math.floor(opts?.quantity ?? 1));
-          // Chặn vượt tồn kho (Task 10 kiểm soát tồn kho phía backend; frontend chặn sớm để UX đúng).
+          // Không cho vượt tồn kho (backend Task 10 kiểm tra lại).
           const cappedQty = Math.min(qty, Math.max(0, product.stock));
           if (cappedQty <= 0) return state;
 
@@ -84,7 +84,7 @@ export const useCart = create<CartState>()(
 
       updateQty: (key, quantity) =>
         set((state) => {
-          // Giới hạn số lượng tối thiểu >= 1: nút trừ dừng ở 1, muốn bỏ món dùng nút Xóa.
+          // Số lượng tối thiểu >= 1 (xóa món dùng nút Xóa riêng).
           const qty = Math.max(1, Math.floor(quantity));
           const items = state.items.map((i) =>
             i.key === key ? { ...i, quantity: qty, lineTotal: calcLineTotal(i.unitPrice, qty) } : i,

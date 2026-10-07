@@ -1,7 +1,7 @@
-// Kiểu dùng chung cho thanh toán — khớp contract backend
-// (nhánh feature/task-8-10-payment-order):
-//   CreatePaymentDto { orderId, paymentMethod: 'WALLET' | 'CARD', voucherCode?, shouldSimulateFailure? }
-//   => { status: 'PAID', orderId, amount, discount, loyaltyPointsEarned, ... }
+// ============================================================
+// FEATURE: Payment contracts — dùng chung cho mock + gateway thật,
+// khớp CreatePaymentDto backend (orderId, WALLET|CARD).
+// ============================================================
 
 export type PaymentMethod = 'WALLET' | 'CARD';
 
@@ -13,21 +13,21 @@ export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
 export interface PaymentRequest {
   amount: number;
   method: PaymentMethod;
-  /** Chống trừ tiền 2 lần khi retry — gửi kèm header Idempotency-Key (Task 8/10). */
+  /** Chống trừ tiền 2 lần khi retry (header Idempotency-Key, Task 8/10). */
   idempotencyKey: string;
-  /** Có khi Task 6 (POST /orders) xong; mock hiện tại tự sinh mã đơn demo. */
+  /** Có khi Task 6 xong; mock tự sinh mã đơn demo. */
   orderId?: string;
 }
 
 export interface PaymentResult {
-  orderCode: string; // dạng #1042 như wireframe PDF Mục 7 (màn 5)
+  orderCode: string; // dạng #1042 (wireframe màn 5)
   status: 'PAID';
   amount: number;
   method: PaymentMethod;
   idempotencyKey: string;
 }
 
-/** Mỗi lần bấm "Xác nhận trả" sinh 1 key; bấm "Thử lại" cho cùng 1 đơn dùng lại key cũ. */
+/** Mỗi lần "Xác nhận trả" sinh 1 key để chống trừ tiền 2 lần. */
 export function newIdempotencyKey(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()

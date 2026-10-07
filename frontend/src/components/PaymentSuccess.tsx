@@ -4,10 +4,7 @@ import type { CSSProperties } from 'react';
 import { formatVND } from '@/lib/pricing';
 import { PAYMENT_METHODS, type PaymentResult } from '@/lib/payment';
 
-/**
- * Màn hình xác nhận sau thanh toán thành công (bám wireframe PDF Mục 7 - màn 5):
- * mã đơn, trạng thái PAID, mời tới quầy lấy nước, nút về trang chủ.
- */
+// FEATURE: Payment success (wireframe màn 5) — mã đơn PAID + nút về trang chủ.
 export default function PaymentSuccess({
   result,
   onHome,
