@@ -66,3 +66,67 @@ deactivate QU
 @enduml
 ```
 * **Endpoint:** `PATCH /orders/:id` (JWT quầy). Sai trạng thái (vd đơn chưa trả tiền) trả 400.
+
+## UC10: Báo hoàn tất pha chế (PREPARING -> READY)
+```plantuml
+@startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+
+autonumber
+actor "Nhân viên pha chế" as Barista
+participant "Giao diện quầy\n(Barista UI)" as QU
+participant "Máy chủ xử lý\n(Backend)" as BE
+database "Cơ sở dữ liệu" as DB
+
+Barista -> QU : Bấm "Đã pha xong" cho đơn #1042
+activate QU
+QU -> BE : PATCH /orders/1042 { status: 'READY' }
+activate BE
+BE -> BE : assertTransition(from: PREPARING, to: READY)
+BE -> DB : Cập nhật trạng thái đơn thành "READY"
+activate DB
+DB --> BE : Đã cập nhật thành công
+deactivate DB
+BE --> QU : Xác nhận pha xong (200 OK)
+deactivate BE
+QU --> Barista : Đổi trạng thái: "Chờ khách nhận nước"
+deactivate QU
+@enduml
+```
+* **Endpoint:** `PATCH /orders/:id` (JWT quầy).
+
+## UC11: Xác nhận giao nước cho khách (READY -> COMPLETED)
+```plantuml
+@startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+
+autonumber
+actor "Nhân viên pha chế" as Barista
+participant "Giao diện quầy\n(Barista UI)" as QU
+participant "Máy chủ xử lý\n(Backend)" as BE
+database "Cơ sở dữ liệu" as DB
+
+Barista -> QU : Bấm "Đã giao nước" cho khách
+activate QU
+QU -> BE : PATCH /orders/1042 { status: 'COMPLETED' }
+activate BE
+BE -> BE : assertTransition(from: READY, to: COMPLETED)
+BE -> DB : Cập nhật trạng thái đơn thành "COMPLETED"
+activate DB
+DB --> BE : Đã đóng đơn thành công
+deactivate DB
+BE --> QU : Báo hoàn tất đơn hàng (200 OK)
+deactivate BE
+QU --> Barista : Hoàn thành ca đơn #1042
+deactivate QU
+@enduml
+```
+* **Endpoint:** `PATCH /orders/:id` (JWT quầy). `COMPLETED` là trạng thái kết thúc, mọi chuyển tiếp sau đó đều 400.
