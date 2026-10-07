@@ -262,7 +262,7 @@ participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
 User -> FE : Tôi muốn thanh toán giỏ hàng này
 activate FE
 FE -> BE : Nhờ tạo giúp đơn hàng mới từ giỏ hàng nhé
-note right of FE #fef3c7 : Gửi kèm token đăng nhập\nvà danh sách món đã chọn
+note right of FE #fef3c7 : Gửi kèm token đăng nhập\nvà danh sách món đã chọn\nThiếu/kém token thì trả 401, dừng tại đây
 activate BE
 BE -> DB : Lưu giúp đơn hàng mới nhé, đơn đang chờ thanh toán
 activate DB
@@ -344,6 +344,7 @@ deactivate FE
 * **Backend Endpoints:**
   - Tạo đơn: `POST /orders` (Body: `items[]`, Header: `Bearer JWT`)
   - Thanh toán: `POST /payments` (Body: `{ orderId, paymentMethod, voucherCode? }`, Header: `Idempotency-Key: <UUID>`)
+* Tạo đơn yêu cầu Bearer JWT, thiếu token trả 401 (khớp Task 7).
 * **Xác thực Voucher:** Validate nội bộ trong `PaymentService` theo cấu hình chiết khấu (Task 10), không tạo thêm endpoint riêng ngoài 7 endpoint chính.
 * **Chống trừ tiền trùng (Idempotent Test Criteria b):** Kiểm tra `Payment WHERE idempotencyKey = ?`. Nhánh Hit trả 200 OK kết quả cũ, nhánh Miss mới gọi Gateway.
 * **Kiểm soát tồn kho đồng thời (Concurrency Test Criteria c):** Sử dụng Transaction Prisma/TypeORM kèm Optimistic Locking (cột `version` trong bảng `Product`), retry 3 lần nếu version xung đột trước khi ném lỗi 409.
