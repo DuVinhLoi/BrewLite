@@ -19,7 +19,10 @@ export class InMemoryProductRepo implements IProductRepository {
 
   async restoreStock(id: string, quantity: number): Promise<void> {
     const p = this.store.get(id);
-    if (p) p.stock += quantity;
+    if (p) {
+      p.stock += quantity;
+      p.version += 1;
+    }
   }
 
   async save(product: ProductDto): Promise<ProductDto> {

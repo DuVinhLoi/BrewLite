@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Payment as PaymentRow } from '@prisma/client';
 import { IPaymentRepository, PaymentDto } from '../contracts/payment.contract';
 import { PrismaService } from './prisma.service';
 
@@ -16,6 +17,12 @@ export class PrismaPaymentRepo implements IPaymentRepository {
     return p && this.toDto(p);
   }
 
+  // UC06 KB3: hoàn đúng số tiền thực thu = cộng mọi biên lai SUCCESS của đơn
+  async findAllByOrderId(orderId: string): Promise<PaymentDto[]> {
+    const rows = await this.db.payment.findMany({ where: { orderId }, orderBy: { createdAt: 'asc' } });
+    return rows.map((p) => this.toDto(p));
+  }
+
   async save(payment: PaymentDto): Promise<PaymentDto> {
     const p = await this.db.payment.create({
       data: {
@@ -29,14 +36,10 @@ export class PrismaPaymentRepo implements IPaymentRepository {
         loyaltyPointsEarned: payment.loyaltyPointsEarned,
       },
     });
-    return this.toDto(p)!;
+    return this.toDto(p);
   }
 
-  private toDto(p: {
-    id: string; orderId: string; idempotencyKey: string; amount: number;
-    method: string; status: string; discount: number; loyaltyPointsEarned: number; createdAt: Date;
-  }): PaymentDto | null {
-    if (!p) return null;
+  private toDto(p: PaymentRow): PaymentDto {
     return {
       id: p.id, orderId: p.orderId, idempotencyKey: p.idempotencyKey, amount: p.amount,
       method: p.method as PaymentDto['method'], status: p.status as PaymentDto['status'],

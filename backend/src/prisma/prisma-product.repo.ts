@@ -21,7 +21,8 @@ export class PrismaProductRepo implements IProductRepository {
   }
 
   async restoreStock(id: string, quantity: number): Promise<void> {
-    await this.db.product.update({ where: { id }, data: { stock: { increment: quantity } } });
+    // Hoàn kho cũng tăng version: mọi đột biến stock đều đổi phiên bản, khóa cũ đang giữ sẽ rớt (UC 2.4)
+    await this.db.product.update({ where: { id }, data: { stock: { increment: quantity }, version: { increment: 1 } } });
   }
 
   async save(product: ProductDto): Promise<ProductDto> {

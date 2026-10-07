@@ -16,5 +16,6 @@ export interface PaymentDto {
 export interface IPaymentRepository {
   findByIdempotencyKey(key: string): Promise<PaymentDto | null>;
   findByOrderId(orderId: string): Promise<PaymentDto | null>;
+  findAllByOrderId(orderId: string): Promise<PaymentDto[]>;
   save(payment: PaymentDto): Promise<PaymentDto>;
 }

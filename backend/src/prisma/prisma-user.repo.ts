@@ -18,10 +18,10 @@ export class PrismaUserRepo implements IUserRepository {
   }
 
   async save(user: UserDto): Promise<UserDto> {
-    // passwordHash thuộc Task 7 (auth); stub-phase để rỗng, teammate điền khi merge
+    // Nhánh update không đụng passwordHash (của Task 7); nhánh create truyền đúng hash nhận được
     const u = await this.db.user.upsert({
       where: { id: user.id },
-      create: { id: user.id, email: user.email, passwordHash: '', loyaltyPoints: user.loyaltyPoints },
+      create: { id: user.id, email: user.email, passwordHash: user.passwordHash ?? '', loyaltyPoints: user.loyaltyPoints },
       update: { email: user.email, loyaltyPoints: user.loyaltyPoints },
     });
     return { id: u.id, email: u.email, loyaltyPoints: u.loyaltyPoints };
