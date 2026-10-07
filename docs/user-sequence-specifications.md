@@ -309,23 +309,31 @@ else Đây là lần thanh toán đầu tiên (Cache Miss)
     Gateway --> BE : Trừ tiền thành công rồi nhé
     deactivate Gateway
 
-    BE -> BE : Tự kiểm tra xem đơn có được chuyển\ntừ chờ thanh toán sang đã thanh toán không
+    alt Trừ tiền thất bại
+        Gateway --> BE : Trừ tiền thất bại rồi nhé
+        BE -> BE : Tự chuyển đơn sang thanh toán lỗi
+        BE -> DB : Lưu giúp đơn sang trạng thái thanh toán lỗi nhé
+        BE --> FE : Thanh toán lỗi rồi, giỏ hàng giữ nguyên nhé
+        FE --> User : Thẻ/ví lỗi rồi, bạn thử lại nhé (giỏ vẫn còn)
+    else Trừ tiền thành công
+        BE -> BE : Tự kiểm tra xem đơn có được chuyển\ntừ chờ thanh toán sang đã thanh toán không
 
-    group Gói cập nhật cùng nhau, thiếu một là bỏ hết
-        BE -> DB : Đổi giúp đơn #1042 sang đã thanh toán nhé
-        BE -> DB : Trừ giúp tồn kho các món trong đơn nhé
-        note over BE, DB #fef3c7
-            Nếu hai người mua cùng lúc làm lệch
-            phiên bản tồn kho thì thử lại tối đa 3 lần,
-            vẫn kẹt thì báo hết hàng (409)
-        end note
-        BE -> DB : Cộng giúp điểm tích lũy cho khách nhé
-        BE -> DB : Lưu giúp biên lai thanh toán kèm mã chống thu trùng nhé
+        group Gói cập nhật cùng nhau, thiếu một là bỏ hết
+            BE -> DB : Đổi giúp đơn #1042 sang đã thanh toán nhé
+            BE -> DB : Trừ giúp tồn kho các món trong đơn nhé
+            note over BE, DB #fef3c7
+                Nếu hai người mua cùng lúc làm lệch
+                phiên bản tồn kho thì thử lại tối đa 3 lần,
+                vẫn kẹt thì báo hết hàng (409)
+            end note
+            BE -> DB : Cộng giúp điểm tích lũy cho khách nhé
+            BE -> DB : Lưu giúp biên lai thanh toán kèm mã chống thu trùng nhé
+        end
+
+        BE --> FE : Thanh toán xong rồi nhé, đơn #1042 đã được trả tiền
+        note right of BE #fef3c7 : Trả HTTP 201 cho lần thanh toán đầu tiên
+        FE --> User : Xong rồi, mời bạn xem biên lai đơn #1042 nhé
     end
-
-    BE --> FE : Thanh toán xong rồi nhé, đơn #1042 đã được trả tiền
-    note right of BE #fef3c7 : Trả HTTP 201 cho lần thanh toán đầu tiên
-    FE --> User : Xong rồi, mời bạn xem biên lai đơn #1042 nhé
 end
 deactivate BE
 deactivate FE
