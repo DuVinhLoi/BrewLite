@@ -170,7 +170,7 @@ xychart-beta
 > **Tiêu chí chấp nhận (Acceptance Criteria):**
 >
 > - Khi giỏ hàng có ít nhất 1 sản phẩm, nút “Thanh toán” hiển thị tổng tiền.
-> - Chọn phương thức (Ví / Thẻ) rồi xác nhận ⇒ tạo đơn ở trạng thái `PAID`.
+> - Chọn phương thức (Ví / Thẻ) rồi xác nhận ⇒ `POST /orders` tạo đơn `PENDING` trước, `POST /payments` thành công mới chuyển `PAID` (2 bước, khớp Task 6 + 8).
 > - Nếu thanh toán lỗi, đơn ở trạng thái `PAYMENT_FAILED` và giỏ hàng được giữ nguyên.
 > - Sau khi thành công, hiển thị mã đơn và màn hình xác nhận.
 
