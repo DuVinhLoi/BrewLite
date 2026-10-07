@@ -7,7 +7,7 @@ import { formatVND } from '@/lib/pricing';
 import { useCart } from '@/store/cart';
 import ProductDetailModal from './ProductDetailModal';
 
-// FEATURE: Product card — nút "Thêm" dùng size M mặc định (chọn size/topping là Task 4).
+// FEATURE: Product card — nút "Thêm" dùng size M mặc định (tùy chọn size/topping ở ProductDetailModal).
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
   const [added, setAdded] = useState(false);
