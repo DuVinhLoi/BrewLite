@@ -52,6 +52,14 @@ database "Cơ sở dữ liệu" as DB
 
 Barista -> QU : Bấm "Tiếp nhận pha chế" cho đơn #1042
 activate QU
+QU -> BE : GET /orders/1042\n(Header: Bearer JWT quầy)
+activate BE
+BE -> DB : Tra cứu chi tiết đơn #1042 và các món
+activate DB
+DB --> BE : Trả về chi tiết đơn (PAID, món, topping)
+deactivate DB
+BE --> QU : Gửi chi tiết đơn (200 OK)
+deactivate BE
 QU -> BE : PATCH /orders/1042 { status: 'PREPARING' }
 activate BE
 BE -> BE : assertTransition(from: PAID, to: PREPARING)
@@ -65,7 +73,7 @@ QU --> Barista : Cập nhật trạng thái đơn: "Đang pha chế"
 deactivate QU
 @enduml
 ```
-* **Endpoint:** `PATCH /orders/:id` (JWT quầy). Sai trạng thái (vd đơn chưa trả tiền) trả 400.
+* **Endpoint:** `GET /orders/:id` xem chi tiết trước, rồi `PATCH /orders/:id` (JWT quầy). Sai trạng thái (vd đơn chưa trả tiền) trả 400.
 
 ## UC10: Báo hoàn tất pha chế (PREPARING -> READY)
 ```plantuml
