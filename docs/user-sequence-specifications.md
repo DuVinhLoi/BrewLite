@@ -306,8 +306,6 @@ else Đây là lần thanh toán đầu tiên (Cache Miss)
 
     BE -> Gateway : Nhờ trừ giúp tiền của khách qua ví nhé
     activate Gateway
-    Gateway --> BE : Trừ tiền thành công rồi nhé
-    deactivate Gateway
 
     alt Trừ tiền thất bại
         Gateway --> BE : Trừ tiền thất bại rồi nhé
@@ -316,6 +314,7 @@ else Đây là lần thanh toán đầu tiên (Cache Miss)
         BE --> FE : Thanh toán lỗi rồi, giỏ hàng giữ nguyên nhé
         FE --> User : Thẻ/ví lỗi rồi, bạn thử lại nhé (giỏ vẫn còn)
     else Trừ tiền thành công
+        Gateway --> BE : Trừ tiền thành công rồi nhé
         BE -> BE : Tự kiểm tra xem đơn có được chuyển\ntừ chờ thanh toán sang đã thanh toán không
 
         group Gói cập nhật cùng nhau, thiếu một là bỏ hết
@@ -334,6 +333,7 @@ else Đây là lần thanh toán đầu tiên (Cache Miss)
         note right of BE #fef3c7 : Trả HTTP 201 cho lần thanh toán đầu tiên
         FE --> User : Xong rồi, mời bạn xem biên lai đơn #1042 nhé
     end
+    deactivate Gateway
 end
 deactivate BE
 deactivate FE
