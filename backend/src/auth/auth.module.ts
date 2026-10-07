@@ -28,7 +28,7 @@ const UserRepo = useDb ? PrismaUserRepo : InMemoryUserRepo;
     JwtAuthGuard,
     ...(useDb ? [PrismaService, PrismaUserRepo] : [InMemoryUserRepo]),
   ],
-  exports: [JwtAuthGuard],
+  exports: [JwtModule, JwtAuthGuard],
 })
 export class AuthModule {}
 
