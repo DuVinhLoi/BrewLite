@@ -358,7 +358,7 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 | `GET /orders/me` | Lịch sử đơn của user |
 | `PATCH /orders/:id` | Hủy đơn / cập nhật trạng thái (Task 10, `PENDING`/`PAID` → `CANCELLED`) |
 | `GET /orders` | Hàng đợi đơn theo trạng thái, quầy lọc `?status=PAID` (UC08) |
-| `GET /orders/:id` | Chi tiết một đơn cho quầy (UC09–UC12) |
+| `GET /orders/:id` | Chi tiết một đơn cho quầy, tùy chọn xem trước PATCH (UC09–UC12) |
 
 ### 12.2 Thực thể tối thiểu
 

@@ -504,6 +504,8 @@ Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 10
 | **UC06** | Hủy đơn / Thử lại | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `OrderController`<br>`OrderService` | `Order`, `Payment` | Hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` |
 | **UC07** | Xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
 
+UC08–UC12 (phân hệ quầy) xem ma trận tại docs/barista-sequence-specifications.md.
+
 ### Hướng Dẫn Điều Hướng Cho AI Agent (Agent Rules):
 1. **Tuyệt đối không tạo thêm bảng CSDL ngoài:** Hệ thống chỉ có 5 thực thể tối thiểu (`Product`, `User`, `Order`, `OrderItem`, `Payment`). Khuyến mãi và mã giảm giá `BREWLITE10` được cấu hình và validate nội bộ trong `PaymentService`.
 2. **Tiêu chí chấm điểm Task 10:**
