@@ -180,3 +180,5 @@ deactivate QU
 | UC10 | `PATCH /orders/:id` | `PREPARING -> READY` | sai trạng thái 400 |
 | UC11 | `PATCH /orders/:id` | `READY -> COMPLETED` | kết thúc, sau đó mọi chuyển đều 400 |
 | UC12 | `PATCH /orders/:id` | `PAID -> CANCELLED` | kèm hoàn tiền + hoàn kho, bám `cancelOrder` |
+
+*Tổng: 10 endpoint (Mục 12.1: 8 gốc + 2 quầy `GET /orders`, `GET /orders/:id` cho UC08–UC12).*
