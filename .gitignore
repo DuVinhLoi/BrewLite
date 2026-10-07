@@ -5,6 +5,7 @@
 
 # Node & IDE
 node_modules/
+backend/dist/
 .DS_Store
 Thumbs.db
 
