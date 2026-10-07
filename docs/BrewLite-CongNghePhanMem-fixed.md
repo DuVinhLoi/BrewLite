@@ -247,7 +247,7 @@ flowchart LR
     end
     subgraph W4["(4) Thanh toán"]
         direction TB
-        d0["<b>Thanh toán</b>"] ~~~ d1["Tổng: 123.000đ"] ~~~ d2["Phương thức<br>(o) Ví điện tử<br>( ) Thẻ ngân hàng"] ~~~ d3["Không dùng tiền mặt"] ~~~ d4(["Xác nhận trả"])
+        d0["<b>Thanh toán</b>"] ~~~ d1["Tổng: 123.000đ"] ~~~ d2["Phương thức<br>(o) Ví điện tử<br>( ) Thẻ ngân hàng<br>Mã giảm giá (BREWLITE10)"] ~~~ d3["Không dùng tiền mặt"] ~~~ d4(["Xác nhận trả"])
     end
     subgraph W5["(5) Xác nhận"]
         direction TB
