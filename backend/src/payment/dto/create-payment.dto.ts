@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class CreatePaymentDto {
   @IsString()
@@ -10,9 +10,4 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   voucherCode?: string;
-
-  // stub-only test hook, remove when real gateway lands
-  @IsOptional()
-  @IsBoolean()
-  shouldSimulateFailure?: boolean;
 }

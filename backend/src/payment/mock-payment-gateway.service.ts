@@ -4,9 +4,19 @@ import { Injectable } from '@nestjs/common';
 export class MockPaymentGatewayService {
   private callCount = 0;
 
-  async charge(opts: { amount: number; method: string; shouldSimulateFailure?: boolean }): Promise<void> {
+  private failNext = false;
+
+  /** Test-only hook: next charge() throws. */
+  failNextCharge(): void {
+    this.failNext = true;
+  }
+
+  async charge(opts: { amount: number; method: string }): Promise<void> {
     this.callCount++;
-    if (opts.shouldSimulateFailure) throw new Error('Mock charge failed');
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error('Mock charge failed');
+    }
   }
 
   async refund(_orderId: string, _amount: number): Promise<void> {

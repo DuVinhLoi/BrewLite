@@ -44,7 +44,7 @@ export class PaymentService {
     }
 
     try {
-      await this.gateway.charge({ amount: finalAmount, method: dto.paymentMethod, shouldSimulateFailure: dto.shouldSimulateFailure });
+      await this.gateway.charge({ amount: finalAmount, method: dto.paymentMethod });
     } catch {
       assertTransition(order.status, OrderStatus.PAYMENT_FAILED);
       await this.orders.updateStatus(order.id, OrderStatus.PAYMENT_FAILED);
