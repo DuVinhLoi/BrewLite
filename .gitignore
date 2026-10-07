@@ -6,6 +6,8 @@
 # Node & IDE
 node_modules/
 backend/dist/
+.next/
+*.tsbuildinfo
 .DS_Store
 Thumbs.db
 
