@@ -10,6 +10,14 @@ export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'CARD', label: 'Thẻ ngân hàng' },
 ];
 
+export interface CartLine {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  size?: string;
+  toppings?: string[];
+}
+
 export interface PaymentRequest {
   amount: number;
   method: PaymentMethod;
@@ -17,6 +25,10 @@ export interface PaymentRequest {
   idempotencyKey: string;
   /** Có khi Task 6 xong; mock tự sinh mã đơn demo. */
   orderId?: string;
+  /** Dòng giỏ để tạo đơn Task 6 khi chưa có orderId. */
+  items?: CartLine[];
+  /** Mã giảm giá UC05a, backend validate nội bộ. */
+  voucherCode?: string;
 }
 
 export interface PaymentResult {

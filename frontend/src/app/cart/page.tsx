@@ -39,7 +39,7 @@ export default function CartPage() {
   }
 
   if (step === 'payment') {
-    return <PaymentForm total={total} onSuccess={handlePaymentSuccess} onBack={() => setStep('cart')} />;
+    return <PaymentForm total={total} items={items} onSuccess={handlePaymentSuccess} onBack={() => setStep('cart')} />;
   }
 
   if (items.length === 0) {
