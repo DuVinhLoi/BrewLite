@@ -21,7 +21,11 @@ export class MockPaymentGatewayService {
 
   async refund(_orderId: string, _amount: number): Promise<void> {
     this.callCount++;
+    this.refunds.push({ orderId: _orderId, amount: _amount });
   }
+
+  /** Sổ hoàn tiền để test UC06 KB3 pin đúng số thực thu. */
+  readonly refunds: Array<{ orderId: string; amount: number }> = [];
 
   getCallCount(): number {
     return this.callCount;

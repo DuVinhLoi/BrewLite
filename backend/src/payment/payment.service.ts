@@ -94,8 +94,10 @@ export class PaymentService {
     if (!order) throw new NotFoundException('Order not found');
     assertTransition(order.status, OrderStatus.CANCELLED);
     if (order.status === OrderStatus.PAID) {
-      const payment = await this.payments.findByOrderId(order.id);
-      await this.gateway.refund(order.id, payment?.amount ?? order.total);
+      // UC06 KB3: hoàn đúng số tiền thực thu = cộng mọi biên lai SUCCESS của đơn
+      const receipts = await this.payments.findAllByOrderId(order.id);
+      const collected = receipts.filter((p) => p.status === 'SUCCESS').reduce((s, p) => s + p.amount, 0);
+      await this.gateway.refund(order.id, collected > 0 ? collected : order.total);
       for (const item of order.items) await this.products.restoreStock(item.productId, item.quantity);
     }
     return this.orders.updateStatus(order.id, OrderStatus.CANCELLED);

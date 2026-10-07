@@ -14,6 +14,10 @@ export class InMemoryPaymentRepo implements IPaymentRepository {
     return null;
   }
 
+  async findAllByOrderId(orderId: string): Promise<PaymentDto[]> {
+    return [...this.byKey.values()].filter((p) => p.orderId === orderId);
+  }
+
   async save(payment: PaymentDto): Promise<PaymentDto> {
     this.byKey.set(payment.idempotencyKey, payment);
     return payment;
