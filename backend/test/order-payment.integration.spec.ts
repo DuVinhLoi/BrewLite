@@ -61,3 +61,52 @@ describe('Task 8+10 integration (b/c)', () => {
     await expect(svc.cancelOrder('o1')).rejects.toThrow();
   });
 });
+
+test('voucher BREWLITE10: discount floor(total*0.1), loyalty floor(final*0.1/1000)', async () => {
+  const { orders, products, users, svc } = setup();
+  await products.save({ id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 });
+  await users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+  await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 35000, items: [{ productId: 'p1', quantity: 1, unitPrice: 35000 }], createdAt: new Date() });
+
+  const r = await svc.processPayment({ orderId: 'o1', paymentMethod: 'WALLET', voucherCode: 'BREWLITE10' }, 'K-V1');
+  expect(r.discount).toBe(3500);
+  expect(r.amount).toBe(31500);
+  expect(r.loyaltyPointsEarned).toBe(3);
+  expect((await users.findById('u1'))!.loyaltyPoints).toBe(3);
+});
+
+test('wrong voucher code: discount 0, full charge', async () => {
+  const { orders, products, users, svc } = setup();
+  await products.save({ id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 });
+  await users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+  await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 35000, items: [{ productId: 'p1', quantity: 1, unitPrice: 35000 }], createdAt: new Date() });
+
+  const r = await svc.processPayment({ orderId: 'o1', paymentMethod: 'CARD', voucherCode: 'FAKE' }, 'K-V2');
+  expect(r.discount).toBe(0);
+  expect(r.amount).toBe(35000);
+});
+
+test('PAYMENT_FAILED -> retry with new key succeeds (PAYMENT_FAILED -> PENDING -> PAID)', async () => {
+  const { orders, products, users, gateway, svc } = setup();
+  await products.save({ id: 'p1', name: 'Latte', price: 20000, stock: 5, version: 1 });
+  await users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+  await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 20000, items: [{ productId: 'p1', quantity: 1, unitPrice: 20000 }], createdAt: new Date() });
+
+  gateway.failNextCharge();
+  await expect(svc.processPayment({ orderId: 'o1', paymentMethod: 'WALLET' }, 'K-R1')).rejects.toThrow();
+  const r = await svc.processPayment({ orderId: 'o1', paymentMethod: 'WALLET' }, 'K-R2');
+  expect(r.isCached).toBe(false);
+  expect(r.status).toBe('PAID');
+  expect((await orders.findById('o1'))!.status).toBe(OrderStatus.PAID);
+});
+
+test('PENDING -> CANCELLED without payment touches no stock', async () => {
+  const { orders, products, users, svc } = setup();
+  await products.save({ id: 'p1', name: 'Latte', price: 20000, stock: 5, version: 1 });
+  await users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+  await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 20000, items: [{ productId: 'p1', quantity: 1, unitPrice: 20000 }], createdAt: new Date() });
+
+  await svc.cancelOrder('o1');
+  expect((await orders.findById('o1'))!.status).toBe(OrderStatus.CANCELLED);
+  expect((await products.findById('p1'))!.stock).toBe(5);
+});
