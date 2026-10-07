@@ -6,6 +6,10 @@
 # Node & IDE
 node_modules/
 backend/dist/
+.next/
+out/
+.env.local
+*.log
 .DS_Store
 Thumbs.db
 
