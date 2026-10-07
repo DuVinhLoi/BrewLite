@@ -163,9 +163,6 @@ Cart --> UI : Trả về tổng tiền mới
 deactivate Cart
 UI --> User : Cập nhật lại số tiền hiển thị trên màn hình
 deactivate UI
-
-User -> UI : Tôi muốn xóa món này khỏi giỏ
-UI --> User : Xóa xong, tổng tiền cập nhật rồi nhé
 @enduml
 ```
 
@@ -330,8 +327,7 @@ else Đây là lần thanh toán đầu tiên (Cache Miss)
             BE -> DB : Đổi giúp đơn #1042 sang đã thanh toán nhé
             BE -> DB : Trừ giúp tồn kho các món trong đơn nhé
             note over BE, DB #fef3c7
-                Nếu hai người mua cùng lúc làm lệch
-                phiên bản tồn kho thì thử lại tối đa 3 lần,
+                Kẹt tồn kho thì thử lại 3 lần,
                 vẫn kẹt thì báo hết hàng (409)
             end note
             BE -> DB : Cộng giúp điểm tích lũy cho khách nhé
