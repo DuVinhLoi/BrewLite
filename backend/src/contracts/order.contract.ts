@@ -12,6 +12,8 @@ export interface OrderItemDto {
   productId: string;
   quantity: number;
   unitPrice: number;
+  size?: string;
+  toppings?: string[];
 }
 
 export interface OrderDto {
