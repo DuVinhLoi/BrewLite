@@ -43,6 +43,7 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
   size      String  @default("M")
+  toppings  String  @default("[]")
   qty       Int
   lineTotal Int
 }

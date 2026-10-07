@@ -360,8 +360,8 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 
 ### 12.2 Thực thể tối thiểu
 
-- **Product**(id, name, price, imageUrl, stock).
+- **Product**(id, name, price, imageUrl, stock, version).
 - **User**(id, email, passwordHash, loyaltyPoints).
 - **Order**(id, userId, status, total, createdAt).
-- **OrderItem**(id, orderId, productId, size, qty, lineTotal).
-- **Payment**(id, orderId, idempotencyKey, amount, method).
+- **OrderItem**(id, orderId, productId, size, toppings, qty, lineTotal).
+- **Payment**(id, orderId, idempotencyKey @unique, amount, method, status, discount, loyaltyPointsEarned).
