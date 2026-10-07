@@ -170,7 +170,7 @@ xychart-beta
 > **Tiêu chí chấp nhận (Acceptance Criteria):**
 >
 > - Khi giỏ hàng có ít nhất 1 sản phẩm, nút “Thanh toán” hiển thị tổng tiền.
-> - Chọn phương thức (Ví / Thẻ) rồi xác nhận ⇒ tạo đơn ở trạng thái `PAID`.
+> - Chọn phương thức (Ví / Thẻ) rồi xác nhận ⇒ `POST /orders` tạo đơn `PENDING` trước, `POST /payments` thành công mới chuyển `PAID` (2 bước, khớp Task 6 + 8).
 > - Nếu thanh toán lỗi, đơn ở trạng thái `PAYMENT_FAILED` và giỏ hàng được giữ nguyên.
 > - Sau khi thành công, hiển thị mã đơn và màn hình xác nhận.
 
@@ -247,7 +247,7 @@ flowchart LR
     end
     subgraph W4["(4) Thanh toán"]
         direction TB
-        d0["<b>Thanh toán</b>"] ~~~ d1["Tổng: 123.000đ"] ~~~ d2["Phương thức<br>(o) Ví điện tử<br>( ) Thẻ ngân hàng"] ~~~ d3["Không dùng tiền mặt"] ~~~ d4(["Xác nhận trả"])
+        d0["<b>Thanh toán</b>"] ~~~ d1["Tổng: 123.000đ"] ~~~ d2["Phương thức<br>(o) Ví điện tử<br>( ) Thẻ ngân hàng<br>Mã giảm giá (BREWLITE10)"] ~~~ d3["Không dùng tiền mặt"] ~~~ d4(["Xác nhận trả"])
     end
     subgraph W5["(5) Xác nhận"]
         direction TB
@@ -293,6 +293,8 @@ Mỗi task là một hạng mục backlog, sắp xếp **từ dễ đến khó**
 > 4. **Khuyến mãi và điểm thưởng (loyalty):** áp mã giảm giá hợp lệ và cộng điểm tích lũy cho khách sau khi đơn `PAID`.
 >
 > **Tiêu chí chấm:** có *unit/integration test* chứng minh: (a) chặn được chuyển trạng thái sai; (b) gửi 2 lần cùng Idempotency-Key chỉ tạo 1 đơn; (c) đặt đồng thời không vượt tồn kho.
+
+Chốt MVP: mã `BREWLITE10` giảm 10% (`floor(total * 0.1)`), điểm thưởng `floor(finalAmount * 0.1 / 1000)`, cộng sau khi đơn `PAID`. Validate nội bộ trong `PaymentService`, không thêm bảng/endpoint.
 
 ### 9.1 Sơ đồ máy trạng thái đơn hàng (Order State Machine)
 
@@ -354,11 +356,14 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 | `POST /orders` | Tạo đơn (PENDING) |
 | `POST /payments` | Thanh toán (idempotent) |
 | `GET /orders/me` | Lịch sử đơn của user |
+| `PATCH /orders/:id` | Hủy đơn / cập nhật trạng thái (Task 10, `PENDING`/`PAID` → `CANCELLED`) |
+| `GET /orders` | Hàng đợi đơn theo trạng thái, quầy lọc `?status=PAID` (UC08) |
+| `GET /orders/:id` | Chi tiết một đơn cho quầy, tùy chọn xem trước PATCH (UC09–UC12) |
 
 ### 12.2 Thực thể tối thiểu
 
-- **Product**(id, name, price, imageUrl, stock).
+- **Product**(id, name, price, imageUrl, stock, version).
 - **User**(id, email, passwordHash, loyaltyPoints).
 - **Order**(id, userId, status, total, createdAt).
-- **OrderItem**(id, orderId, productId, size, qty, lineTotal).
-- **Payment**(id, orderId, idempotencyKey, amount, method).
+- **OrderItem**(id, orderId, productId, size, toppings, qty, lineTotal).
+- **Payment**(id, orderId, idempotencyKey @unique, amount, method, status, discount, loyaltyPointsEarned).

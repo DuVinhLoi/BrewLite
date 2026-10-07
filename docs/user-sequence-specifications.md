@@ -7,7 +7,7 @@
 > • **Tài liệu này là Phụ lục chi tiết (Architecture Appendix) cho Developers & AI Agents** dùng để hiểu sâu bối cảnh, đối chiếu mã nguồn và viết test case.  
 > • **Bản nộp chính cho giảng viên** tập trung vào 3 biểu đồ cốt lõi tinh gọn đã chốt (Use Case tổng 10 bubble, Activity luồng nghiệp vụ tổng, và Sequence thanh toán rút gọn).  
 > **Đối tượng độc giả:**  
-> 1. **Sinh viên & Giảng viên:** Tra cứu chi tiết từng bước, đối chiếu ma trận truy vết (Traceability) với 7 API endpoint và 10 Task Backlog.  
+> 1. **Sinh viên & Giảng viên:** Tra cứu chi tiết từng bước, đối chiếu ma trận truy vết (Traceability) với 10 API endpoint và 10 Task Backlog.  
 > 2. **AI Agents / Developers:** Đọc hiểu bối cảnh kiến trúc (Context Navigation), ánh xạ các bước của biểu đồ vào mã nguồn NestJS (Backend) và Next.js (Frontend) để lập trình và viết kiểm thử tự động.
 
 ---
@@ -104,6 +104,7 @@ DB --> BE : Trả về thông tin các món (Tên, giá, hình ảnh)
 deactivate DB
 
 BE --> FE : Gửi danh sách đồ uống về giao diện
+note right of FE : Trường hợp lỗi/rỗng hiển thị loading/empty (khớp Task 3)
 deactivate BE
 
 FE --> User : Hiển thị danh sách đồ uống lên màn hình
@@ -115,7 +116,7 @@ deactivate FE
 ```
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
-* **Backend Endpoint:** `GET /products`
+* **Backend Endpoint:** `GET /products` (`GET /products/:id` cho màn chi tiết)
 * **Controller / Service:** `ProductController.findAll()` $\rightarrow$ `ProductService.findAll()`
 * **Thực thể CSDL:** Bảng `Product` (lọc điều kiện `stock > 0`)
 * **Xử lý Frontend:** Quản lý state hiển thị bằng React State / React Query.
@@ -207,6 +208,11 @@ deactivate DB
 
 BE -> BE : Kiểm tra đối chiếu mật khẩu người dùng nhập
 
+opt Đăng ký tài khoản mới (bỏ qua nếu đã có)
+    User -> FE : Tôi muốn tạo tài khoản mới
+    FE --> User : Tạo xong, mời bạn đăng nhập
+end
+
 alt Mật khẩu KHÔNG chính xác (Kịch bản thất bại)
     BE --> FE : Báo lỗi: "Email hoặc mật khẩu không đúng"
     FE --> User : Hiển thị thông báo đăng nhập thất bại
@@ -247,6 +253,9 @@ skinparam ArrowColor #5b6b8c
 skinparam SequenceParticipantBackgroundColor #eef2fb
 skinparam SequenceParticipantBorderColor #5b6b8c
 skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
 
 autonumber
 actor "Khách hàng" as User
@@ -256,60 +265,80 @@ database "Cơ sở dữ liệu" as DB
 participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
 
 == BƯỚC 1: TẠO ĐƠN HÀNG (UC04) ==
-User -> FE : Bấm "Thanh toán" tại giỏ hàng
+User -> FE : Tôi muốn thanh toán giỏ hàng này
 activate FE
-FE -> BE : Gửi giỏ hàng để tạo đơn\n(Header: Bearer JWT, Body: items[])
+FE -> BE : Nhờ tạo giúp đơn hàng mới từ giỏ hàng nhé
+note right of FE #fef3c7 : Gửi kèm token đăng nhập\nvà danh sách món đã chọn\nThiếu/kém token thì trả 401, dừng tại đây
 activate BE
-BE -> DB : Lưu đơn hàng mới với trạng thái "Chờ thanh toán (PENDING)"
+BE -> DB : Lưu giúp đơn hàng mới nhé, đơn đang chờ thanh toán
 activate DB
-DB --> BE : Đã lưu xong, cấp Mã đơn hàng: #1042
+DB --> BE : Xong rồi, đơn số #1042 đây nhé
 deactivate DB
-BE --> FE : Báo tạo đơn thành công (201 Created, Mã đơn: #1042)
+BE --> FE : Tạo đơn thành công rồi nhé, mã đơn là #1042
 deactivate BE
+deactivate FE
 
 == BƯỚC 2: ÁP MÃ GIẢM GIÁ (UC05a - TÙY CHỌN EXTEND) ==
 opt Khách hàng có mã khuyến mãi
-    User -> FE : Nhập mã "BREWLITE10" và bấm Áp dụng
-    FE -> FE : Kiểm tra định dạng mã & tính giảm 10% tạm tính
-    FE --> User : Cập nhật lại số tiền cần thanh toán (123.000đ -> 110.700đ)
+    User -> FE : Tôi có mã "BREWLITE10", áp giúp tôi nhé
+    activate FE
+    FE -> FE : Tự kiểm tra mã và tính lại tiền còn phải trả
+    FE --> User : Trừ 10% rồi nhé, còn phải trả 110.700đ
+    deactivate FE
 end
 
 == BƯỚC 3: THANH TOÁN KHÔNG TIỀN MẶT (UC05 - BẮT BUỘC INCLUDE) ==
-User -> FE : Chọn phương thức Ví điện tử -> Bấm "Xác nhận trả"
-FE -> BE : POST /payments\n(Header: Idempotency-Key, Body: orderId, method, voucherCode)
+User -> FE : Tôi chọn trả bằng ví, xác nhận trả tiền nhé
+activate FE
+FE -> BE : Cho tôi thanh toán đơn #1042 bằng ví nhé
+note right of FE #fef3c7 : Gửi kèm mã chống thu tiền trùng\nvà mã giảm giá (nếu có)
 activate BE
 
-BE -> DB : Tra cứu Idempotency-Key xem giao dịch đã xử lý chưa
+BE -> DB : Kiểm tra giúp xem mã giao dịch này đã dùng chưa
 activate DB
-DB --> BE : Trả về kết quả tra cứu
+DB --> BE : Đây là kết quả kiểm tra mã giao dịch
 deactivate DB
 
-alt Khóa giao dịch ĐÃ tồn tại (Yêu cầu trùng lặp - Idempotent Cache Hit)
-    BE --> FE : Trả về kết quả thanh toán cũ đã lưu (200 OK - Không trừ tiền lần 2)
-    FE --> User : Hiển thị màn hình Xác nhận đơn (Tránh trừ tiền trùng)
-else Khóa giao dịch MỚI (Lần đầu thanh toán - Cache Miss)
-    opt Có mã voucher "BREWLITE10"
-        BE -> BE : Xác thực voucher nội bộ & tính số tiền khấu trừ (Task 10)
-    end
-    BE -> Gateway : Yêu cầu trừ tiền khách hàng qua Ví điện tử
+alt Đơn này đã thu tiền rồi (Yêu cầu trùng lặp - Idempotent Cache Hit)
+    BE --> FE : Đơn này trả rồi nhé, gửi lại kết quả cũ, không thu thêm
+    note right of BE #fef3c7 : Trả HTTP 200, tuyệt đối\nkhông gọi lại cổng thanh toán
+    FE --> User : Đơn của bạn đã thanh toán rồi, đây là biên lai nhé
+else Đây là lần thanh toán đầu tiên (Cache Miss)
+    note over BE #fef3c7
+        Tự kiểm tra mã "BREWLITE10" trong máy:
+        đúng mã thì trừ 10%, sai thì thôi
+    end note
+    BE -> BE : Tự kiểm tra mã giảm giá và tính tiền còn lại
+
+    BE -> Gateway : Nhờ trừ giúp tiền của khách qua ví nhé
     activate Gateway
-    Gateway --> BE : Phản hồi: Trừ tiền THÀNH CÔNG
-    deactivate Gateway
 
-    BE -> BE : assertTransition(from: PENDING, to: PAID)
+    alt Trừ tiền thất bại
+        Gateway --> BE : Trừ tiền thất bại rồi nhé
+        BE -> BE : Tự chuyển đơn sang thanh toán lỗi
+        BE -> DB : Lưu giúp đơn sang trạng thái thanh toán lỗi nhé
+        BE --> FE : Thanh toán lỗi rồi, giỏ hàng giữ nguyên nhé
+        FE --> User : Thẻ/ví lỗi rồi, bạn thử lại nhé (giỏ vẫn còn)
+    else Trừ tiền thành công
+        Gateway --> BE : Trừ tiền thành công rồi nhé
+        BE -> BE : Tự kiểm tra xem đơn có được chuyển\ntừ chờ thanh toán sang đã thanh toán không
 
-    group Gói cập nhật dữ liệu đồng thời [Database Transaction an toàn]
-        BE -> DB : Đổi trạng thái đơn #1042 thành "Đã thanh toán (PAID)"
-        BE -> DB : Trừ số lượng tồn kho (Optimistic Locking: version = version + 1)
-        opt Xung đột tồn kho đồng thời (Optimistic Lock Failure: version lệch)
-            BE -> BE : Tự động thử lại (retry 3 lần) hoặc báo hết hàng (409 Conflict)
+        group Gói cập nhật cùng nhau, thiếu một là bỏ hết
+            BE -> DB : Đổi giúp đơn #1042 sang đã thanh toán nhé
+            BE -> DB : Trừ giúp tồn kho các món trong đơn nhé
+            note over BE, DB #fef3c7
+                Kẹt tồn kho thì thử lại 3 lần,
+                vẫn kẹt thì báo hết hàng (409)
+            end note
+            BE -> DB : Cộng giúp điểm tích lũy cho khách nhé
+            BE -> DB : Lưu giúp biên lai thanh toán kèm mã chống thu trùng nhé
         end
-        BE -> DB : Cộng điểm tích lũy thành viên cho khách (Task 10)
-        BE -> DB : Lưu biên lai giao dịch thanh toán kèm Idempotency-Key
-    end
 
-    BE --> FE : Báo thanh toán thành công hoàn tất (201 Created)!
-    FE --> User : Chuyển hướng sang màn hình Xác nhận đơn hàng (#1042, PAID)
+        BE --> FE : Thanh toán xong rồi nhé, đơn #1042 đã được trả tiền
+        note right of BE #fef3c7 : Trả HTTP 201 cho lần thanh toán đầu tiên
+        FE --> User : Xong rồi, mời bạn xem biên lai đơn #1042 nhé
+    end
+    deactivate Gateway
 end
 deactivate BE
 deactivate FE
@@ -320,7 +349,8 @@ deactivate FE
 * **Backend Endpoints:**
   - Tạo đơn: `POST /orders` (Body: `items[]`, Header: `Bearer JWT`)
   - Thanh toán: `POST /payments` (Body: `{ orderId, paymentMethod, voucherCode? }`, Header: `Idempotency-Key: <UUID>`)
-* **Xác thực Voucher:** Validate nội bộ trong `PaymentService` theo cấu hình chiết khấu (Task 10), không tạo thêm endpoint riêng ngoài 7 endpoint chính.
+* Tạo đơn yêu cầu Bearer JWT, thiếu token trả 401 (khớp Task 7).
+* **Xác thực Voucher:** Validate nội bộ trong `PaymentService` theo cấu hình chiết khấu (Task 10), không tạo thêm endpoint riêng ngoài 10 endpoint chính.
 * **Chống trừ tiền trùng (Idempotent Test Criteria b):** Kiểm tra `Payment WHERE idempotencyKey = ?`. Nhánh Hit trả 200 OK kết quả cũ, nhánh Miss mới gọi Gateway.
 * **Kiểm soát tồn kho đồng thời (Concurrency Test Criteria c):** Sử dụng Transaction Prisma/TypeORM kèm Optimistic Locking (cột `version` trong bảng `Product`), retry 3 lần nếu version xung đột trước khi ném lỗi 409.
 * **State Machine (Test Criteria a):** Thực thi `assertTransition('PENDING' -> 'PAID')` trước khi lưu vào CSDL.
@@ -462,17 +492,19 @@ deactivate FE
 
 # PHẦN III: MA TRẬN NGỮ CẢNH KỸ THUẬT DÀNH CHO AI AGENTS & DEVELOPERS
 
-Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 100% (Full Traceability)** với đúng **7 API Endpoints chính** (Mục 12.1) và **5 Thực thể CSDL tối thiểu** (Mục 12.2) trong tài liệu gốc `BrewLite-CongNghePhanMem-fixed.md`:
+Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 100% (Full Traceability)** với đúng **10 API Endpoints chính** (Mục 12.1) và **5 Thực thể CSDL tối thiểu** (Mục 12.2) trong tài liệu gốc `BrewLite-CongNghePhanMem-fixed.md`:
 
 | Mã UC | Tên Ca Sử Dụng | Endpoint REST Chuẩn | Controller / Service (NestJS) | Bảng CSDL (5 Thực thể tối thiểu) | Cơ Chế Bảo Vệ / Logic Cốt Lõi (Task 10) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **UC01** | Xem menu & Tùy chọn món | `GET /products`<br>`GET /products/:id` | `ProductController`<br>`ProductService` | `Product` | Lọc `stock > 0`, trả về DTO kèm danh sách Size/Topping |
 | **UC02** | Quản lý giỏ hàng | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal` |
 | **UC03** | Đăng ký & Đăng nhập | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService` | `User` | `bcrypt.compare`, cấp JWT Access Token |
-| **UC04** | Tạo đơn hàng mới | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator` |
+| **UC04** | Tạo đơn hàng mới | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu) |
 | **UC05 / UC05a** | Thanh toán & Voucher | `POST /payments` | `PaymentController`<br>`PaymentService` | `Payment`, `Order`, `Product`, `User` | Header `Idempotency-Key` (alt hit/miss), validate voucher `BREWLITE10` nội bộ (Task 10), DB Transaction, Optimistic Locking trừ kho |
 | **UC06** | Hủy đơn / Thử lại | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `OrderController`<br>`OrderService` | `Order`, `Payment` | Hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` |
 | **UC07** | Xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
+
+UC08–UC12 (phân hệ quầy, extension ngoài MVP): tuân Mục 12.1 + State Machine §9.1 của tài liệu gốc, không có đặc tả riêng.
 
 ### Hướng Dẫn Điều Hướng Cho AI Agent (Agent Rules):
 1. **Tuyệt đối không tạo thêm bảng CSDL ngoài:** Hệ thống chỉ có 5 thực thể tối thiểu (`Product`, `User`, `Order`, `OrderItem`, `Payment`). Khuyến mãi và mã giảm giá `BREWLITE10` được cấu hình và validate nội bộ trong `PaymentService`.
