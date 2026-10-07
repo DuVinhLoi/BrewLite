@@ -27,6 +27,7 @@ export interface OrderDto {
 
 export interface IOrderRepository {
   findById(id: string): Promise<OrderDto | null>;
+  findByUserId(userId: string): Promise<OrderDto[]>;
   updateStatus(id: string, status: OrderStatus): Promise<OrderDto>;
   save(order: OrderDto): Promise<OrderDto>;
 }

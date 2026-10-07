@@ -9,6 +9,12 @@ export class InMemoryOrderRepo implements IOrderRepository {
     return this.store.get(id) ?? null;
   }
 
+  async findByUserId(userId: string): Promise<OrderDto[]> {
+    return [...this.store.values()]
+      .filter((o) => o.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
   async updateStatus(id: string, status: OrderStatus): Promise<OrderDto> {
     const o = this.store.get(id);
     if (!o) throw new Error('Order not found');

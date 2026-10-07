@@ -15,6 +15,17 @@ async function main() {
     create: { id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 },
     update: { price: 35000, stock: 10, version: 1 },
   });
+  for (const p of [
+    { id: 'p2', name: 'Americano', price: 40000 },
+    { id: 'p3', name: 'Cappuccino', price: 45000 },
+    { id: 'p4', name: 'Trà đào', price: 39000 },
+  ]) {
+    await db.product.upsert({
+      where: { id: p.id },
+      create: { ...p, stock: 10, version: 1 },
+      update: { price: p.price, stock: 10, version: 1 },
+    });
+  }
   await db.orderItem.deleteMany({ where: { orderId: 'order-1042' } });
   await db.payment.deleteMany({ where: { orderId: 'order-1042' } });
   await db.order.deleteMany({ where: { id: 'order-1042' } });

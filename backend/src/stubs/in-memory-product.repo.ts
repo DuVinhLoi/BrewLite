@@ -9,6 +9,10 @@ export class InMemoryProductRepo implements IProductRepository {
     return this.store.get(id) ?? null;
   }
 
+  async findAvailable(): Promise<ProductDto[]> {
+    return [...this.store.values()].filter((p) => p.stock > 0);
+  }
+
   async deductStockWithOptimisticLock(id: string, quantity: number, currentVersion: number): Promise<boolean> {
     const p = this.store.get(id);
     if (!p || p.version !== currentVersion || p.stock < quantity) return false;

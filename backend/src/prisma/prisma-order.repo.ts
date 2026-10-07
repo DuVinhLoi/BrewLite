@@ -31,6 +31,24 @@ export class PrismaOrderRepo implements IOrderRepository {
     return (await this.findById(id))!;
   }
 
+  async findByUserId(userId: string): Promise<OrderDto[]> {
+    const list = await this.db.order.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, include: { items: true } });
+    return list.map((o) => ({
+      id: o.id,
+      userId: o.userId,
+      status: o.status as OrderStatus,
+      total: o.total,
+      items: o.items.map((i) => ({
+        productId: i.productId,
+        quantity: i.qty,
+        unitPrice: i.qty > 0 ? Math.floor(i.lineTotal / i.qty) : i.lineTotal,
+        size: i.size,
+        toppings: parseToppings(i.toppings),
+      })),
+      createdAt: o.createdAt,
+    }));
+  }
+
   async save(order: OrderDto): Promise<OrderDto> {
     await this.db.order.create({
       data: {
