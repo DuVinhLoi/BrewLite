@@ -5,11 +5,13 @@ import type { CSSProperties } from 'react';
 import type { Product } from '@/lib/types';
 import { formatVND } from '@/lib/pricing';
 import { useCart } from '@/store/cart';
+import ProductDetailModal from './ProductDetailModal';
 
 // FEATURE: Product card — nút "Thêm" dùng size M mặc định (chọn size/topping là Task 4).
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
   const [added, setAdded] = useState(false);
+  const [customizing, setCustomizing] = useState(false);
   const outOfStock = product.stock <= 0;
 
   const handleAdd = () => {
@@ -35,6 +37,10 @@ export default function ProductCard({ product }: { product: Product }) {
       <button onClick={handleAdd} disabled={outOfStock} style={outOfStock ? styles.btnDisabled : styles.btn}>
         {outOfStock ? 'Hết hàng' : added ? 'Đã thêm ✓' : 'Thêm vào giỏ'}
       </button>
+      <button onClick={() => setCustomizing(true)} disabled={outOfStock} style={outOfStock ? styles.btnDisabled : styles.btn}>
+        Tùy chọn size / topping
+      </button>
+      {customizing && <ProductDetailModal product={product} onClose={() => setCustomizing(false)} />}
     </div>
   );
 }
