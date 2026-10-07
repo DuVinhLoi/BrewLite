@@ -3,11 +3,11 @@ import type { PaymentRequest, PaymentResult } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-/**
- * Adapter thanh toán THẬT (dùng khi backend Task 8 xong):
- * gọi POST /payments của NestJS, chuẩn hóa kết quả về PaymentResult chung nên UI giữ nguyên.
- * Bật bằng NEXT_PUBLIC_PAYMENT_MODE=api (xem .env.example).
- */
+// ============================================================
+// FEATURE: Real payment gateway (Task 8) — POST /payments, kết quả
+// chuẩn hóa về PaymentResult nên UI giữ nguyên. Bật bằng
+// NEXT_PUBLIC_PAYMENT_MODE=api.
+// ============================================================
 export class ApiPaymentGateway implements PaymentGateway {
   readonly name = 'api';
 
@@ -24,7 +24,7 @@ export class ApiPaymentGateway implements PaymentGateway {
       body: JSON.stringify({ orderId: req.orderId, paymentMethod: req.method }),
     });
     if (!res.ok) {
-      // Thanh toán lỗi -> ném lỗi để UI ở lại màn thanh toán, giỏ giữ nguyên (khớp US-05).
+      // Lỗi -> UI giữ giỏ (US-05).
       const text = await res.text().catch(() => '');
       throw new Error(text || `Thanh toán thất bại (mã ${res.status}). Giỏ hàng được giữ nguyên.`);
     }

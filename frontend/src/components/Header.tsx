@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { useCart } from '@/store/cart';
 
+// FEATURE: App header — logo + badge tổng số ly trong giỏ.
 export default function Header() {
   const count = useCart((s) => s.count);
 

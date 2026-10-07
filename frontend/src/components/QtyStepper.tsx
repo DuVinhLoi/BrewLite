@@ -8,7 +8,7 @@ interface Props {
   onRemove: () => void;
 }
 
-/** Task 5: nút tăng/giảm số lượng + xóa dòng giỏ. Số lượng tối thiểu là 1 (nút trừ mờ khi đang ở 1). */
+// FEATURE: Qty stepper — trừ dừng ở 1, xóa món bằng nút Xóa riêng.
 export default function QtyStepper({ quantity, onChange, onRemove }: Props) {
   const atMin = quantity <= 1;
   return (

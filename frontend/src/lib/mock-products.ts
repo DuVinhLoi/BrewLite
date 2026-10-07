@@ -1,6 +1,4 @@
-// Dữ liệu mẫu fallback khi backend GET /products chưa chạy (Task 2).
-// Bám đúng wireframe PDF Mục 7 + giá trong docs (Cappuccino 45.000đ).
-// Khi backend có dữ liệu thật, api.ts sẽ ưu tiên API và chỉ dùng mock khi fetch lỗi.
+// Menu mẫu theo wireframe PDF — chỉ dùng khi GET /products lỗi.
 
 import type { Product } from './types';
 

@@ -5,11 +5,9 @@ import { getProducts } from '@/lib/api';
 import type { Product } from '@/lib/types';
 import ProductGrid from '@/components/ProductGrid';
 
-/**
- * Task 3 — Trang Menu (Frontend):
- * - Gọi GET /products, render lưới sản phẩm
- * - Có loading / empty / error state (tiêu chí chấp nhận)
- */
+// ============================================================
+// FEATURE: Menu page (Task 3) — GET /products, render lưới + loading/empty/error.
+// ============================================================
 export default function MenuPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);

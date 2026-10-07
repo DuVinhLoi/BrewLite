@@ -6,12 +6,7 @@ import type { Product } from '@/lib/types';
 import { formatVND } from '@/lib/pricing';
 import { useCart } from '@/store/cart';
 
-/**
- * Task 3: thẻ sản phẩm trong lưới Menu.
- * LƯU Ý PHẠM VI: chỉ làm Task 3 + Task 5, KHÔNG làm Task 4.
- * Nên nút "Thêm" dùng option mặc định (size M, không topping).
- * Màn hình chọn size/topping chi tiết thuộc Task 4 — để nhóm Task 4 làm tiếp.
- */
+// FEATURE: Product card — nút "Thêm" dùng size M mặc định (chọn size/topping là Task 4).
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
   const [added, setAdded] = useState(false);

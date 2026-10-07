@@ -1,7 +1,6 @@
-// Task 3: gọi GET /products của backend NestJS.
-// - Ưu tiên API thật (NEXT_PUBLIC_API_URL, mặc định http://localhost:3000)
-// - Lỗi / không có backend -> fallback MOCK_PRODUCTS để UI vẫn demo được
-// - Chuẩn hóa shape để khớp backend contract (price int VND, imageUrl optional, stock).
+// ============================================================
+// FEATURE: Menu API — GET /products, lỗi thì fallback menu mẫu để vẫn demo được.
+// ============================================================
 
 import type { Product } from './types';
 import { MOCK_PRODUCTS } from './mock-products';

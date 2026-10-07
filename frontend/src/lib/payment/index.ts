@@ -1,4 +1,3 @@
-// Điểm import duy nhất cho thanh toán: UI chỉ dùng file này,
-// không import trực tiếp mock-gateway hay api-gateway.
+// Re-export duy nhất cho thanh toán: UI import từ '@/lib/payment'.
 export * from './types';
 export * from './gateway';

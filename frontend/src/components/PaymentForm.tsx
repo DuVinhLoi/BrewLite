@@ -11,12 +11,10 @@ import {
   type PaymentResult,
 } from '@/lib/payment';
 
-/**
- * Màn hình thanh toán (bám wireframe PDF Mục 7 - màn 4):
- * hiện tổng tiền, chọn Ví/Thẻ, nút "Xác nhận trả".
- * Chỉ phụ thuộc interface PaymentGateway (xem src/lib/payment/gateway.ts)
- * nên đổi mock <-> backend thật không cần sửa file này.
- */
+// ============================================================
+// FEATURE: Payment form (wireframe màn 4) — chỉ gọi PaymentGateway,
+// đổi mock <-> backend thật không sửa file này. Lỗi -> ở lại màn này, giữ giỏ (US-05).
+// ============================================================
 export default function PaymentForm({
   total,
   onSuccess,
@@ -42,7 +40,6 @@ export default function PaymentForm({
       });
       onSuccess(result);
     } catch (e) {
-      // Thanh toán lỗi -> ở lại màn này, giỏ hàng giữ nguyên (khớp US-05: PAYMENT_FAILED + giữ giỏ).
       setError(e instanceof Error ? e.message : 'Thanh toán thất bại, vui lòng thử lại.');
     } finally {
       setProcessing(false);

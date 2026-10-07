@@ -1,12 +1,9 @@
-// NGUỒN DUY NHẤT cho tính giá frontend (Task 3 + Task 5).
-// Backend Task 6/8/10 khi validate POST /orders phải dùng ĐÚNG bảng này,
-// nếu không sẽ lệch tổng tiền (sai số) giữa giỏ hàng và đơn hàng.
-//
-// Công thức:
-//   unitPrice = basePrice + SIZE_UPCHARGE[size] + sum(TOPPING_PRICES[t])
-//   lineTotal = unitPrice * quantity
-//   cartTotal = sum(lineTotal)
-// Tất cả là số nguyên VND, không dùng float.
+// ============================================================
+// FEATURE: Pricing — nguồn duy nhất cho mọi tính tiền (VND nguyên).
+// unitPrice = base + SIZE_UPCHARGE[size] + sum(TOPPING_PRICES)
+// lineTotal = unitPrice * qty; cartTotal = sum(lineTotal)
+// Backend Task 6/8/10 phải dùng đúng bảng này để khỏi lệch tổng.
+// ============================================================
 
 import type { Size } from './types';
 
@@ -16,7 +13,7 @@ export const SIZE_UPCHARGE: Record<Size, number> = {
   L: 10000,
 };
 
-/** Giá topping (VND). Key phải khớp tên hiển thị trên UI. */
+/** Giá topping (VND) — key khớp tên hiển thị trên UI. */
 export const TOPPING_PRICES: Record<string, number> = {
   'Trân châu': 5000,
   'Kem cheese': 8000,
@@ -36,13 +33,13 @@ export function calcLineTotal(unitPrice: number, quantity: number): number {
   return unitPrice * Math.max(0, Math.floor(quantity));
 }
 
-/** Key dòng giỏ: productId|size|topping1,topping2 (sort) — tránh gộp nhầm option khác nhau. */
+/** Key dòng giỏ: productId|size|toppings(sort). */
 export function buildCartKey(productId: string, size: Size, toppings: string[]): string {
   const sorted = [...toppings].sort().join(',');
   return `${productId}|${size}|${sorted}`;
 }
 
-/** 35000 -> "35.000đ". Dùng cho mọi chỗ hiển thị tiền để thống nhất. */
+/** 35000 -> "35.000đ" — dùng chung mọi chỗ hiện tiền. */
 export function formatVND(amount: number): string {
   return `${new Intl.NumberFormat('vi-VN').format(Math.round(amount))}đ`;
 }

@@ -12,12 +12,10 @@ import PaymentSuccess from '@/components/PaymentSuccess';
 
 type Step = 'cart' | 'payment' | 'success';
 
-/**
- * Task 5 — Giỏ hàng (Cart) + thanh toán đơn giản:
- * - Thêm/sửa số lượng (tối thiểu 1)/xóa; Zustand + persist localStorage; tự tính tổng; badge ở Header
- * - Bấm "Thanh toán" -> chọn Ví/Thẻ -> "Xác nhận trả" -> hiện mã đơn PAID, giỏ được xóa rỗng
- * - Payload POST /orders cho Task 6: [{ productId, size, qty, unitPrice }]
- */
+// ============================================================
+// FEATURE: Cart page (Task 5) — giỏ (số lượng >= 1) + thanh toán 3 bước:
+// cart -> payment (Ví/Thẻ) -> success (mã đơn PAID, giỏ xóa rỗng).
+// ============================================================
 export default function CartPage() {
   const items = useCart((s) => s.items);
   const total = useCart((s) => s.total);

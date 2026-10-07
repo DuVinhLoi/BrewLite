@@ -12,7 +12,7 @@ interface Props {
   onRetry: () => void;
 }
 
-/** Task 3: lưới Menu + đầy đủ loading / empty / error state (tiêu chí chấp nhận). */
+// FEATURE: Menu grid — loading skeleton / empty / error + retry.
 export default function ProductGrid({ products, loading, error, fromMock, onRetry }: Props) {
   if (loading) {
     return (
