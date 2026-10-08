@@ -146,3 +146,19 @@ test('PENDING -> CANCELLED without payment touches no stock', async () => {
   expect((await orders.findById('o1'))!.status).toBe(OrderStatus.CANCELLED);
   expect((await products.findById('p1'))!.stock).toBe(5);
 });
+
+// UC06 KB1/KB2: đơn lỗi thanh toán hủy được, không hoàn tiền (chưa thu), kho nguyên
+test('PAYMENT_FAILED -> CANCELLED issues no refund, stock intact', async () => {
+  const { orders, products, users, gateway, svc } = setup();
+  await products.save({ id: 'p1', name: 'Latte', price: 20000, stock: 5, version: 1 });
+  await users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+  await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 20000, items: [{ productId: 'p1', quantity: 1, unitPrice: 20000 }], createdAt: new Date() });
+
+  gateway.failNextCharge();
+  await expect(svc.processPayment({ orderId: 'o1', paymentMethod: 'WALLET' }, 'K-FC1')).rejects.toThrow('Payment failed');
+  expect((await orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
+  await svc.cancelOrder('o1');
+  expect((await orders.findById('o1'))!.status).toBe(OrderStatus.CANCELLED);
+  expect(gateway.refunds).toEqual([]);
+  expect((await products.findById('p1'))!.stock).toBe(5);
+});

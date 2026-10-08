@@ -57,6 +57,15 @@ describe('auth', () => {
     expect(payload.email).toBe('a@b.co');
   });
 
+  it('guard: valid Bearer → true and req.user set', async () => {
+    const guard = new JwtAuthGuard(jwt);
+    const token = jwt.sign({ sub: 'u1', email: 'a@b.co' });
+    const req: any = { headers: { authorization: `Bearer ${token}` } };
+    const ctx: any = { switchToHttp: () => ({ getRequest: () => req }) };
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(req.user).toEqual({ id: 'u1', email: 'a@b.co' });
+  });
+
   it('guard: no header → 401, Bearer bad → 401', async () => {
     const guard = new JwtAuthGuard(jwt);
     const ctxNo = { switchToHttp: () => ({ getRequest: () => ({ headers: {} }) }) } as any;
