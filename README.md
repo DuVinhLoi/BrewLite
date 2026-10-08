@@ -69,3 +69,20 @@ docker compose up --build
 
 Lưu ý: test pg (`backend/npm test` suite có DB thật) cần `DATABASE_URL` trỏ Postgres chạy được;
 không có `DATABASE_URL` thì các test pg tự skip, suite còn lại vẫn xanh.
+
+## Demo State Machine (đề §9 + §9.1, tiêu chí a)
+
+Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua tô xanh, bước hiện tại đậm; `Thanh toán lỗi` đỏ, `Đã hủy` xám). Nút **"Quầy (demo)"** ở `/history` mô phỏng Barista (ngoài MVP theo đề §3.2; chỉ gọi `PATCH /orders/:id` có sẵn, không thêm vai trò hay endpoint): bấm 3 lần đưa đơn đã trả tới `COMPLETED`; ẩn nút bằng `NEXT_PUBLIC_DEMO_COUNTER=false`. Nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy (`PREPARING` trở đi backend chặn 400).
+
+Dự phòng nếu giao diện trục trặc (cần compose đang chạy, đã seed tài khoản demo):
+
+```bash
+bash scripts/demo-state-machine.sh   # đăng nhập → tạo đơn → trả → PREPARING → READY → COMPLETED → thử COMPLETED → CANCELLED (phải 400)
+```
+
+Test chứng minh chặn chuyển trạng thái sai (tiêu chí a của đề):
+
+```bash
+cd backend && npx jest order-state order-advance              # State Machine + tiến đơn + chặn người lạ
+cd frontend && npx vitest run src/lib/order-status.test.ts    # bảng chuyển trạng thái FE = 9 mũi tên §9.1 = ALLOWED của backend
+```
