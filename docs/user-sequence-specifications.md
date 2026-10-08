@@ -110,16 +110,16 @@ deactivate BE
 FE --> User : Hiển thị danh sách đồ uống lên màn hình
 User -> FE : Bấm chọn món (Cappuccino) và chọn Size L, thêm Trân châu
 FE -> FE : Tự động tính toán lại số tiền tạm tính trên máy khách
-FE --> User : Cập nhật giá mới tức thời (45.000đ -> 55.000đ)
+FE --> User : Cập nhật giá mới tức thời (45.000đ -> 60.000đ: +10.000 Size L, +5.000 Trân châu)
 deactivate FE
 @enduml
 ```
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
 * **Backend Endpoint:** `GET /products` (`GET /products/:id` cho màn chi tiết)
-* **Controller / Service:** `ProductController.findAll()` $\rightarrow$ `ProductService.findAll()`
+* **Controller / Service:** `ProductController.list()` / `detail()` $\rightarrow$ `ProductService.listAvailable()` / `getById()`
 * **Thực thể CSDL:** Bảng `Product` (lọc điều kiện `stock > 0`)
-* **Xử lý Frontend:** Quản lý state hiển thị bằng React State / React Query.
+* **Xử lý Frontend:** Quản lý state hiển thị bằng React State (`useState` + `fetch`), không dùng React Query.
 
 ---
 
@@ -214,7 +214,7 @@ opt Đăng ký tài khoản mới (bỏ qua nếu đã có)
 end
 
 alt Mật khẩu KHÔNG chính xác (Kịch bản thất bại)
-    BE --> FE : Báo lỗi: "Email hoặc mật khẩu không đúng"
+    BE --> FE : Báo lỗi 401 "Invalid credentials" (giống nhau cho sai mật khẩu và sai email để chống đoán tài khoản)
     FE --> User : Hiển thị thông báo đăng nhập thất bại
 else Mật khẩu chính xác (Kịch bản thành công)
     BE -> BE : Tạo mã phiên đăng nhập an toàn (Token JWT)
@@ -229,7 +229,7 @@ deactivate FE
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
 * **Backend Endpoint:** `POST /auth/login` (và `POST /auth/register`)
-* **Controller / Service:** `AuthController.login()` $\rightarrow$ `AuthService.validateUser()`
+* **Controller / Service:** `AuthController.login()` / `register()` $\rightarrow$ `AuthService.login()` / `register()`
 * **Bảo mật:** `bcrypt.compare(plainPassword, user.passwordHash)`
 * **Mã phiên JWT:** Cấp chuỗi Bearer Token chứa `{ sub: user.id, email: user.email }` có thời hạn hết hạn (`expiresIn`).
 
@@ -243,7 +243,7 @@ deactivate FE
 2. **Bước 2 (UC05a - Khối `opt`):** Khách có mã giảm giá (`BREWLITE10`) thì nhập mã để được tính giảm trừ trực tiếp trên giao diện (hành động tùy chọn). Mã này sẽ được gửi kèm trong yêu cầu thanh toán để máy chủ xác thực nội bộ (không tạo thêm endpoint hay bảng ngoài đề bài).
 3. **Bước 3 (UC05 - Thanh toán):** Khách chọn Ví/Thẻ để trả tiền. Hệ thống dùng **Khóa an toàn chống trừ tiền 2 lần (Idempotency-Key)**:
    - **Nhánh Trùng lặp (Cache Hit):** Nếu khóa đã tồn tại trong CSDL $\rightarrow$ trả về kết quả cũ đã lưu (HTTP 200), **tuyệt đối không gọi lại Cổng thanh toán để tránh trừ tiền 2 lần**.
-   - **Nhánh Mới (Cache Miss):** Gọi Cổng thanh toán trừ tiền $\rightarrow$ Thực thi `assertTransition('PENDING' -> 'PAID')` $\rightarrow$ Mở Database Transaction cập nhật trạng thái đơn, trừ kho (kèm Optimistic Locking kiểm soát mua đồng thời) và cộng điểm tích lũy.
+   - **Nhánh Mới (Cache Miss):** Gọi Cổng thanh toán trừ tiền $\rightarrow$ Thực thi `assertTransition('PENDING' -> 'PAID')` $\rightarrow$ Ghi tuần tự có bù đắp (compensate, không dùng DB transaction chung): cập nhật trạng thái đơn, trừ kho (kèm Optimistic Locking kiểm soát mua đồng thời) và cộng điểm tích lũy. Kẹt kho thì hoàn món đã trừ + hoàn tiền + ghi đơn lỗi (409).
 
 #### B. Sơ đồ tuần tự (PlantUML)
 ```plantuml
@@ -386,16 +386,18 @@ participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
 participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
 
-alt Kịch bản 1: Thử thanh toán lại (Khi bị lỗi trừ tiền)
+alt Kịch bản 1: Thử thanh toán lại (Khi bị lỗi trừ tiền, 1 bước duy nhất)
     User -> FE : Bấm nút "Thử thanh toán lại"
     activate FE
-    FE -> BE : POST /payments (Thử lại thanh toán với phương thức mới)
+    FE -> BE : POST /payments (khóa Idempotency-Key MỚI, phương thức mới)
     activate BE
     BE -> BE : assertTransition(from: PAYMENT_FAILED, to: PENDING)
     BE -> DB : Cập nhật trạng thái đơn về "Chờ thanh toán (PENDING)"
-    BE --> FE : Xác nhận mở lại trạng thái đơn (200 OK)
+    BE -> Gateway : Trừ tiền lại từ đầu (đi tiếp như nhánh Cache Miss của UC05)
+    BE -> DB : Đổi đơn sang PAID, trừ kho, cộng điểm, lưu biên lai mới
+    BE --> FE : Thanh toán lại thành công (201 Created, biên lai mới)
     deactivate BE
-    FE --> User : Mở lại màn hình thanh toán để khách chọn lại Thẻ / Ví
+    FE --> User : Hiển thị biên lai mới (giỏ được xóa sau khi trả thành công)
     deactivate FE
 
 else Kịch bản 2: Khách chủ động hủy đơn chưa thanh toán (PENDING -> CANCELLED)
@@ -488,7 +490,7 @@ deactivate FE
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
 * **Backend Endpoint:** `GET /orders/me` (Được bảo vệ bởi `@UseGuards(JwtAuthGuard)`)
-* **Controller / Service:** `OrderController.getMyOrders()` $\rightarrow$ `OrderService.findByUser(userId)`
+* **Controller / Service:** `OrderController.mine()` $\rightarrow$ `OrderService.listMine()` $\rightarrow$ `findByUserId()` (mới-nhất-trước)
 * **Truy vấn CSDL:** `SELECT * FROM "Order" WHERE "userId" = :userId ORDER BY "createdAt" DESC`
 * **Giao diện Wireframe:** Khớp với Wireframe (5) Xác nhận tại Mục 7 tài liệu môn học.
 
@@ -500,13 +502,13 @@ Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 10
 
 | Mã UC | Tên Ca Sử Dụng | Endpoint REST Chuẩn | Controller / Service (NestJS) | Bảng CSDL (5 Thực thể tối thiểu) | Cơ Chế Bảo Vệ / Logic Cốt Lõi (Task 10) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **UC01** | Xem menu & Tùy chọn món | `GET /products`<br>`GET /products/:id` | `ProductController`<br>`ProductService` | `Product` | Lọc `stock > 0`, trả về DTO kèm danh sách Size/Topping |
+| **UC01** | Xem menu & Tùy chọn món | `GET /products`<br>`GET /products/:id` | `ProductController.list()` / `detail()`<br>`ProductService.listAvailable()` / `getById()` | `Product` | Lọc `stock > 0`, trả về DTO kèm danh sách Size/Topping |
 | **UC02** | Quản lý giỏ hàng | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal` |
-| **UC03** | Đăng ký & Đăng nhập | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService` | `User` | `bcrypt.compare`, cấp JWT Access Token |
+| **UC03** | Đăng ký & Đăng nhập | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService.login()` / `register()` | `User` | `bcrypt.compare`, cấp JWT Access Token |
 | **UC04** | Tạo đơn hàng mới | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu) |
 | **UC05 / UC05a** | Thanh toán & Voucher | `POST /payments` | `PaymentController`<br>`PaymentService` (+ `PrismaPaymentRepo` / `PrismaProductRepo` khi có `DATABASE_URL`) | `Payment`, `Order`, `Product`, `User` | Header `Idempotency-Key` (alt hit/miss), validate voucher `BREWLITE10` nội bộ (Task 10), trừ kho nguyên tử `updateMany` kèm `version`, retry 3 + bù hoàn tiền/kho khi lỗi |
-| **UC06** | Hủy đơn / Thử lại | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `OrderController`<br>`OrderService` | `Order`, `Payment` | Hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho) |
-| **UC07** | Xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
+| **UC06** | Hủy đơn / Thử lại | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `PaymentController.cancel()`<br>`PaymentService.cancelOrder()` (route `PATCH` hiện nằm ở PaymentController) | `Order`, `Payment` | Hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho) |
+| **UC07** | Xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController.mine()`<br>`OrderService.listMine()` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
 
 UC08–UC12 (phân hệ quầy, extension ngoài MVP): tuân Mục 12.1 + State Machine §9.1 của tài liệu gốc, không có đặc tả riêng.
 
