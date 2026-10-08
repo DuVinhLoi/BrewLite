@@ -62,6 +62,10 @@ const COUNTER_NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
 
 export const nextStatus = (s: string): OrderStatus | null => (isOrderStatus(s) ? COUNTER_NEXT[s] ?? null : null);
 
+// Nút "Quầy (demo)" ở /history: mô phỏng Barista (ngoài MVP theo đề §3.2). Mặc định bật (compose đặt true);
+// NEXT_PUBLIC_DEMO_COUNTER=false để ẩn khi không demo. Đọc lúc gọi để test đổi biến được (Next thay chữ này lúc build).
+export const demoCounterEnabled = (): boolean => process.env.NEXT_PUBLIC_DEMO_COUNTER !== 'false';
+
 export interface TrackStep {
   status: OrderStatus;
   label: string;

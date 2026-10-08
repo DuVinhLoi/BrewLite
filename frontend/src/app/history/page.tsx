@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatVND } from '@/lib/pricing';
-import { cancelOrder } from '@/lib/api';
-import { canCancel } from '@/lib/order-status';
+import { advanceOrder, cancelOrder } from '@/lib/api';
+import { STATUS_LABEL, canCancel, demoCounterEnabled, nextStatus } from '@/lib/order-status';
 import OrderStatusTrack from '@/components/OrderStatusTrack';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -31,7 +31,7 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [cancelError, setCancelError] = useState<{ id: string; message: string } | null>(null);
+  const [actionError, setActionError] = useState<{ id: string; message: string } | null>(null);
 
   useEffect(() => {
     setToken(localStorage.getItem('brewlite-token'));
@@ -49,20 +49,30 @@ export default function HistoryPage() {
       .catch((e) => setError(e instanceof Error ? e.message : 'Lỗi không xác định'));
   }, [token, reload]);
 
-  // UC06 KB2/KB3: PATCH /orders/:id CANCELLED; đơn PAID có hoàn tiền nên hỏi xác nhận trước
-  async function onCancel(o: HistoryOrder) {
+  // 1 thao tác PATCH /orders/:id trên đơn: khóa nút của đơn đó, lỗi hiện dưới thẻ đơn, thành công thì tải lại danh sách
+  async function act(o: HistoryOrder, run: (token: string) => Promise<void>) {
     if (!token) return;
-    if (o.status === 'PAID' && !window.confirm('Đơn đã thanh toán. Hủy đơn sẽ hoàn tiền và hoàn lại kho. Bạn chắc chắn muốn hủy?')) return;
     setBusyId(o.id);
-    setCancelError(null);
+    setActionError(null);
     try {
-      await cancelOrder(o.id, token);
+      await run(token);
       setReload((n) => n + 1);
     } catch (e) {
-      setCancelError({ id: o.id, message: e instanceof Error ? e.message : 'Lỗi không xác định' });
+      setActionError({ id: o.id, message: e instanceof Error ? e.message : 'Lỗi không xác định' });
     } finally {
       setBusyId(null);
     }
+  }
+
+  // UC06 KB2/KB3: PATCH /orders/:id CANCELLED; đơn PAID có hoàn tiền nên hỏi xác nhận trước
+  function onCancel(o: HistoryOrder) {
+    if (o.status === 'PAID' && !window.confirm('Đơn đã thanh toán. Hủy đơn sẽ hoàn tiền và hoàn lại kho. Bạn chắc chắn muốn hủy?')) return;
+    return act(o, (t) => cancelOrder(o.id, t));
+  }
+
+  // UC06 KB4 (mở rộng, demo quầy): PATCH /orders/:id { PREPARING | READY | COMPLETED }
+  function onAdvance(o: HistoryOrder, next: string) {
+    return act(o, (t) => advanceOrder(o.id, next, t));
   }
 
   if (token === null) return null;
@@ -82,39 +92,54 @@ export default function HistoryPage() {
   return (
     <section style={{ maxWidth: 640, margin: '24px auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <h1>Lịch sử đơn hàng</h1>
-      {orders.map((o) => (
-        <article key={o.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
-          <p style={{ margin: 0, fontWeight: 700 }}>
-            #{o.id.slice(0, 8)} • {o.status} • {formatVND(o.total)}
-          </p>
-          <p style={{ margin: '4px 0', fontSize: 13, color: '#6b7280' }}>
-            {new Date(o.createdAt).toLocaleString('vi-VN')}
-          </p>
-          <OrderStatusTrack status={o.status} />
-          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
-            {o.items.map((i, idx) => (
-              <li key={idx}>
-                {i.quantity}× {i.productId.slice(0, 8)} ({i.size ?? 'M'}
-                {i.toppings?.length ? ` + ${i.toppings.join(', ')}` : ''}) — {formatVND(i.unitPrice)}
-              </li>
-            ))}
-          </ul>
-          {canCancel(o.status) && (
-            <button
-              onClick={() => onCancel(o)}
-              disabled={busyId === o.id}
-              style={{ marginTop: 8, padding: '6px 12px', border: '1px solid #b91c1c', color: '#b91c1c', background: '#fff', borderRadius: 6, cursor: 'pointer' }}
-            >
-              {busyId === o.id ? 'Đang hủy…' : 'Hủy đơn'}
-            </button>
-          )}
-          {cancelError?.id === o.id && (
-            <p role="alert" style={{ margin: '6px 0 0', fontSize: 13, color: 'red' }}>
-              {cancelError.message}
+      {orders.map((o) => {
+        const next = demoCounterEnabled() ? nextStatus(o.status) : null;
+        return (
+          <article key={o.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
+            <p style={{ margin: 0, fontWeight: 700 }}>
+              #{o.id.slice(0, 8)} • {o.status} • {formatVND(o.total)}
             </p>
-          )}
-        </article>
-      ))}
+            <p style={{ margin: '4px 0', fontSize: 13, color: '#6b7280' }}>
+              {new Date(o.createdAt).toLocaleString('vi-VN')}
+            </p>
+            <OrderStatusTrack status={o.status} />
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
+              {o.items.map((i, idx) => (
+                <li key={idx}>
+                  {i.quantity}× {i.productId.slice(0, 8)} ({i.size ?? 'M'}
+                  {i.toppings?.length ? ` + ${i.toppings.join(', ')}` : ''}) — {formatVND(i.unitPrice)}
+                </li>
+              ))}
+            </ul>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+              {next && (
+                <button
+                  onClick={() => onAdvance(o, next)}
+                  disabled={busyId === o.id}
+                  title="Mô phỏng thao tác của Barista (ngoài MVP theo đề §3.2)"
+                  style={{ padding: '6px 12px', border: '1px dashed #92400e', color: '#92400e', background: '#fffbeb', borderRadius: 6, cursor: 'pointer' }}
+                >
+                  {busyId === o.id ? 'Đang chuyển…' : `Quầy (demo): → ${STATUS_LABEL[next]}`}
+                </button>
+              )}
+              {canCancel(o.status) && (
+                <button
+                  onClick={() => onCancel(o)}
+                  disabled={busyId === o.id}
+                  style={{ padding: '6px 12px', border: '1px solid #b91c1c', color: '#b91c1c', background: '#fff', borderRadius: 6, cursor: 'pointer' }}
+                >
+                  {busyId === o.id ? 'Đang xử lý…' : 'Hủy đơn'}
+                </button>
+              )}
+            </div>
+            {actionError?.id === o.id && (
+              <p role="alert" style={{ margin: '6px 0 0', fontSize: 13, color: 'red' }}>
+                {actionError.message}
+              </p>
+            )}
+          </article>
+        );
+      })}
     </section>
   );
 }

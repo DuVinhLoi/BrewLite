@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  // tsconfig đặt jsx: preserve cho Next; vitest cần tự biên dịch JSX khi render component ra HTML trong test
+  esbuild: { jsx: 'automatic' },
   resolve: {
     alias: { '@': path.resolve(dirname, 'src') },
   },
