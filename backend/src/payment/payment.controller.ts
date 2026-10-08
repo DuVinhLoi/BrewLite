@@ -1,8 +1,9 @@
-import { BadRequestException, Body, Controller, Headers, Param, Patch, Post, Res } from '@nestjs/common';
+import { Body, Controller, Headers, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStatus } from '../contracts/order.contract';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller()
 export class PaymentController {
@@ -16,8 +17,9 @@ export class PaymentController {
   }
 
   @Patch('orders/:id')
-  async cancel(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto) {
-    if (dto.status !== OrderStatus.CANCELLED) throw new BadRequestException('Only CANCELLED supported');
-    return this.payments.cancelOrder(id);
+  @UseGuards(JwtAuthGuard)
+  async update(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto, @Req() req: any) {
+    if (dto.status === OrderStatus.CANCELLED) return this.payments.cancelOrderAs(req.user.id, id);
+    return this.payments.advanceOrder(req.user.id, id, dto.status);
   }
 }
