@@ -53,40 +53,52 @@ export class PaymentService {
 
     assertTransition(order.status, OrderStatus.PAID);
 
-    // ponytail: sequential stock loop, parallel TX if throughput matters
-    const deducted: { productId: string; quantity: number }[] = [];
-    for (const item of order.items) {
-      let done = false;
-      for (let attempt = 0; attempt < 3 && !done; attempt++) {
-        const p = await this.products.findById(item.productId);
-        if (!p) throw new NotFoundException('Product not found');
-        done = await this.products.deductStockWithOptimisticLock(item.productId, item.quantity, p.version);
-      }
-      if (!done) {
-        for (const d of deducted) await this.products.restoreStock(d.productId, d.quantity);
+    const points = Math.floor((finalAmount * LOYALTY_RATE) / VND_PER_POINT);
+    let paymentId = '';
+    try {
+      // 3 ghi sau charge (trừ kho + lên PAID + điểm/loyalty + biên lai) trong 1 transaction
+      // nguyên tử qua seam I*Repository: rollback tự ném bỏ phần đã trừ, bù hoàn tiền +
+      // PAYMENT_FAILED thực hiện ngoài transaction.
+      await this.orders.runInTransaction(async (tx) => {
+        // ponytail: sequential stock loop, parallel TX if throughput matters
+        for (const item of order.items) {
+          let done = false;
+          for (let attempt = 0; attempt < 3 && !done; attempt++) {
+            const p = await this.products.findById(item.productId, tx);
+            if (!p) throw new NotFoundException('Product not found');
+            done = await this.products.deductStockWithOptimisticLock(item.productId, item.quantity, p.version, tx);
+          }
+          if (!done) throw new ConflictException('Out of stock');
+        }
+
+        await this.orders.updateStatus(order.id, OrderStatus.PAID, tx);
+        if (points > 0) await this.users.addLoyaltyPoints(order.userId, points, tx);
+
+        const payment = await this.payments.save(
+          {
+            id: crypto.randomUUID(),
+            orderId: order.id,
+            idempotencyKey,
+            amount: finalAmount,
+            method: dto.paymentMethod,
+            status: 'SUCCESS',
+            discount,
+            loyaltyPointsEarned: points,
+            createdAt: new Date(),
+          },
+          tx,
+        );
+        paymentId = payment.id;
+      });
+    } catch (e) {
+      if (e instanceof ConflictException) {
         await this.gateway.refund(order.id, finalAmount).catch(() => undefined);
         await this.orders.updateStatus(order.id, OrderStatus.PAYMENT_FAILED);
-        throw new ConflictException('Out of stock');
+        throw e;
       }
-      deducted.push({ productId: item.productId, quantity: item.quantity });
+      throw e;
     }
-
-    await this.orders.updateStatus(order.id, OrderStatus.PAID);
-    const points = Math.floor((finalAmount * LOYALTY_RATE) / VND_PER_POINT);
-    if (points > 0) await this.users.addLoyaltyPoints(order.userId, points);
-
-    const payment = await this.payments.save({
-      id: crypto.randomUUID(),
-      orderId: order.id,
-      idempotencyKey,
-      amount: finalAmount,
-      method: dto.paymentMethod,
-      status: 'SUCCESS',
-      discount,
-      loyaltyPointsEarned: points,
-      createdAt: new Date(),
-    });
-    return { isCached: false, status: 'PAID', orderId: order.id, amount: finalAmount, discount, loyaltyPointsEarned: points, paymentId: payment.id };
+    return { isCached: false, status: 'PAID', orderId: order.id, amount: finalAmount, discount, loyaltyPointsEarned: points, paymentId };
   }
 
   async cancelOrder(orderId: string) {

@@ -1,3 +1,5 @@
+import { TxContext } from './transaction.contract';
+
 export type PaymentMethod = 'WALLET' | 'CARD';
 export type PaymentStatus = 'SUCCESS' | 'FAILED';
 
@@ -14,8 +16,9 @@ export interface PaymentDto {
 }
 
 export interface IPaymentRepository {
-  findByIdempotencyKey(key: string): Promise<PaymentDto | null>;
-  findByOrderId(orderId: string): Promise<PaymentDto | null>;
-  findAllByOrderId(orderId: string): Promise<PaymentDto[]>;
-  save(payment: PaymentDto): Promise<PaymentDto>;
+  findByIdempotencyKey(key: string, tx?: TxContext): Promise<PaymentDto | null>;
+  findByOrderId(orderId: string, tx?: TxContext): Promise<PaymentDto | null>;
+  findAllByOrderId(orderId: string, tx?: TxContext): Promise<PaymentDto[]>;
+  save(payment: PaymentDto, tx?: TxContext): Promise<PaymentDto>;
+  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T>;
 }

@@ -1,3 +1,5 @@
+import { TxContext } from './transaction.contract';
+
 export enum OrderStatus {
   PENDING = 'PENDING',
   PAID = 'PAID',
@@ -26,8 +28,9 @@ export interface OrderDto {
 }
 
 export interface IOrderRepository {
-  findById(id: string): Promise<OrderDto | null>;
-  findByUserId(userId: string): Promise<OrderDto[]>;
-  updateStatus(id: string, status: OrderStatus): Promise<OrderDto>;
-  save(order: OrderDto): Promise<OrderDto>;
+  findById(id: string, tx?: TxContext): Promise<OrderDto | null>;
+  findByUserId(userId: string, tx?: TxContext): Promise<OrderDto[]>;
+  updateStatus(id: string, status: OrderStatus, tx?: TxContext): Promise<OrderDto>;
+  save(order: OrderDto, tx?: TxContext): Promise<OrderDto>;
+  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T>;
 }

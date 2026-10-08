@@ -1,13 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { IOrderRepository, OrderDto, OrderStatus } from '../contracts/order.contract';
+import { TxContext } from '../contracts/transaction.contract';
 import { PrismaService } from './prisma.service';
 
 @Injectable()
 export class PrismaOrderRepo implements IOrderRepository {
   constructor(private db: PrismaService) {}
 
-  async findById(id: string): Promise<OrderDto | null> {
-    const o = await this.db.order.findUnique({ where: { id }, include: { items: true } });
+  private cx(tx?: TxContext): PrismaService {
+    return (tx as PrismaService) ?? this.db;
+  }
+
+  async findById(id: string, tx?: TxContext): Promise<OrderDto | null> {
+    const o = await this.cx(tx).order.findUnique({ where: { id }, include: { items: true } });
     if (!o) return null;
     return {
       id: o.id,
@@ -26,13 +31,13 @@ export class PrismaOrderRepo implements IOrderRepository {
     };
   }
 
-  async updateStatus(id: string, status: OrderStatus): Promise<OrderDto> {
-    await this.db.order.update({ where: { id }, data: { status } });
-    return (await this.findById(id))!;
+  async updateStatus(id: string, status: OrderStatus, tx?: TxContext): Promise<OrderDto> {
+    await this.cx(tx).order.update({ where: { id }, data: { status } });
+    return (await this.findById(id, tx))!;
   }
 
-  async findByUserId(userId: string): Promise<OrderDto[]> {
-    const list = await this.db.order.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, include: { items: true } });
+  async findByUserId(userId: string, tx?: TxContext): Promise<OrderDto[]> {
+    const list = await this.cx(tx).order.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, include: { items: true } });
     return list.map((o) => ({
       id: o.id,
       userId: o.userId,
@@ -49,8 +54,8 @@ export class PrismaOrderRepo implements IOrderRepository {
     }));
   }
 
-  async save(order: OrderDto): Promise<OrderDto> {
-    await this.db.order.create({
+  async save(order: OrderDto, tx?: TxContext): Promise<OrderDto> {
+    await this.cx(tx).order.create({
       data: {
         id: order.id,
         userId: order.userId,
@@ -67,7 +72,11 @@ export class PrismaOrderRepo implements IOrderRepository {
         },
       },
     });
-    return (await this.findById(order.id))!;
+    return (await this.findById(order.id, tx))!;
+  }
+
+  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T> {
+    return this.db.$transaction((tx) => fn(tx));
   }
 }
 

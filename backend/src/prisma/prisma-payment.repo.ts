@@ -1,30 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import type { Payment as PaymentRow } from '@prisma/client';
 import { IPaymentRepository, PaymentDto } from '../contracts/payment.contract';
+import { TxContext } from '../contracts/transaction.contract';
 import { PrismaService } from './prisma.service';
 
 @Injectable()
 export class PrismaPaymentRepo implements IPaymentRepository {
   constructor(private db: PrismaService) {}
 
-  async findByIdempotencyKey(key: string): Promise<PaymentDto | null> {
-    const p = await this.db.payment.findUnique({ where: { idempotencyKey: key } });
+  private cx(tx?: TxContext): PrismaService {
+    return (tx as PrismaService) ?? this.db;
+  }
+
+  async findByIdempotencyKey(key: string, tx?: TxContext): Promise<PaymentDto | null> {
+    const p = await this.cx(tx).payment.findUnique({ where: { idempotencyKey: key } });
     return p && this.toDto(p);
   }
 
-  async findByOrderId(orderId: string): Promise<PaymentDto | null> {
-    const p = await this.db.payment.findFirst({ where: { orderId }, orderBy: { createdAt: 'desc' } });
+  async findByOrderId(orderId: string, tx?: TxContext): Promise<PaymentDto | null> {
+    const p = await this.cx(tx).payment.findFirst({ where: { orderId }, orderBy: { createdAt: 'desc' } });
     return p && this.toDto(p);
   }
 
   // UC06 KB3: hoàn đúng số tiền thực thu = cộng mọi biên lai SUCCESS của đơn
-  async findAllByOrderId(orderId: string): Promise<PaymentDto[]> {
-    const rows = await this.db.payment.findMany({ where: { orderId }, orderBy: { createdAt: 'asc' } });
+  async findAllByOrderId(orderId: string, tx?: TxContext): Promise<PaymentDto[]> {
+    const rows = await this.cx(tx).payment.findMany({ where: { orderId }, orderBy: { createdAt: 'asc' } });
     return rows.map((p) => this.toDto(p));
   }
 
-  async save(payment: PaymentDto): Promise<PaymentDto> {
-    const p = await this.db.payment.create({
+  async save(payment: PaymentDto, tx?: TxContext): Promise<PaymentDto> {
+    const p = await this.cx(tx).payment.create({
       data: {
         id: payment.id,
         orderId: payment.orderId,
@@ -37,6 +42,10 @@ export class PrismaPaymentRepo implements IPaymentRepository {
       },
     });
     return this.toDto(p);
+  }
+
+  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T> {
+    return this.db.$transaction((tx) => fn(tx));
   }
 
   private toDto(p: PaymentRow): PaymentDto {
