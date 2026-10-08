@@ -32,7 +32,7 @@ Backend không tự đọc file `.env`. Muốn chạy rời với Postgres: bậ
 
 ## Tiến độ 10 task (đã merge vào develop)
 
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 62 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 46 pass. Bằng chứng từng task: `docs/develop-status-report.md`.
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 68 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 51 pass. Bằng chứng từng task: `docs/develop-status-report.md`.
 
 | Task | Hiện thực chính |
 |---|---|

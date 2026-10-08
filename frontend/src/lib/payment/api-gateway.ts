@@ -6,6 +6,23 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 const getToken = () => (typeof localStorage !== 'undefined' ? localStorage.getItem('brewlite-token') : null);
 
+// Body lỗi của NestJS: { statusCode, message: string | string[], error }; body không phải JSON (proxy trả HTML…) thì bỏ qua.
+async function readMessage(res: Response): Promise<string> {
+  const message = (await res.json().catch(() => null))?.message;
+  return Array.isArray(message) ? message.join(', ') : typeof message === 'string' ? message : '';
+}
+
+// 400 = cổng trừ tiền lỗi; 409 = kẹt kho sau khi đã trừ (backend hoàn tiền); mã khác kèm mã + thông điệp backend.
+function paymentErrorMessage(status: number, detail: string): string {
+  const kept = 'Giỏ hàng được giữ nguyên.';
+  if (status === 409) return `Món đã hết hàng, tiền đã được hoàn lại. ${kept}`;
+  if (status === 400) {
+    const extra = detail && detail !== 'Payment failed' ? ` (${detail})` : '';
+    return `Thanh toán thất bại${extra}. ${kept} Bạn có thể thử lại.`;
+  }
+  return `Thanh toán thất bại (mã ${status}${detail ? `: ${detail}` : ''}). ${kept}`;
+}
+
 // FEATURE: Real payment gateway (Task 8) — POST /orders (Task 6) rồi POST /payments,
 // kết quả chuẩn hóa về PaymentResult nên UI giữ nguyên. Bật bằng NEXT_PUBLIC_PAYMENT_MODE=api.
 export class ApiPaymentGateway implements PaymentGateway {
@@ -60,9 +77,8 @@ export class ApiPaymentGateway implements PaymentGateway {
     if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập trước khi thanh toán (thiếu hoặc hết hạn JWT). Giỏ hàng được giữ nguyên.', orderId);
     if (res.status === 403) throw new PaymentError('Bạn không có quyền thanh toán đơn này (đơn thuộc tài khoản khác). Giỏ hàng được giữ nguyên.', orderId);
     if (!res.ok) {
-      // Lỗi -> UI giữ giỏ (US-05).
-      const text = await res.text().catch(() => '');
-      throw new PaymentError(text || `Thanh toán thất bại (mã ${res.status}). Giỏ hàng được giữ nguyên.`, orderId);
+      // Lỗi -> UI giữ giỏ (US-05). Backend trả JSON { message, ... }: chỉ lấy message, không đẩy JSON thô lên UI.
+      throw new PaymentError(paymentErrorMessage(res.status, await readMessage(res)), orderId);
     }
     const json = await res.json();
     return {
