@@ -20,7 +20,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://brewlite:brewlite@db:5432/brewlite}
+      # Luôn nối service `db` trong mạng compose. KHÔNG đọc DATABASE_URL từ .env: biến đó trong .env.example là
+      # localhost (cho chạy rời npm run start:dev), compose thay ${VAR} từ .env nên dùng nó ở đây thì backend không tới được DB.
+      DATABASE_URL: postgresql://brewlite:brewlite@db:5432/brewlite
       JWT_SECRET: ${JWT_SECRET:-dev-secret}
       PORT: ${PORT:-3000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
