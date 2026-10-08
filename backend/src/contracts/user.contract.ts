@@ -1,3 +1,5 @@
+import { TxContext } from './transaction.contract';
+
 export interface UserDto {
   id: string;
   email: string;
@@ -7,8 +9,9 @@ export interface UserDto {
 }
 
 export interface IUserRepository {
-  findById(id: string): Promise<UserDto | null>;
-  findByEmail(email: string): Promise<UserDto | null>;
-  addLoyaltyPoints(id: string, points: number): Promise<UserDto>;
-  save(user: UserDto): Promise<UserDto>;
+  findById(id: string, tx?: TxContext): Promise<UserDto | null>;
+  findByEmail(email: string, tx?: TxContext): Promise<UserDto | null>;
+  addLoyaltyPoints(id: string, points: number, tx?: TxContext): Promise<UserDto>;
+  save(user: UserDto, tx?: TxContext): Promise<UserDto>;
+  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T>;
 }
