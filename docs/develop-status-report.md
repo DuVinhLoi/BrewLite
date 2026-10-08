@@ -32,3 +32,20 @@ Thực thể (Mục 12.2): đủ 5 bảng đúng field trong `backend/prisma/sch
 ## 3. Ghi chú ngoài phạm vi 3-5-8-10
 
 Các task của teammate do nhánh này tự code để demo (chi tiết xem `EXTRA_TASKS.md` ở root): Task 2, Task 4-UI (modal), Task 6, Task 7, Task 9 (history + compose + seed).
+
+## 4. Chia việc qua worktree (mỗi agent 1 worktree, 1 nhánh)
+
+Nhánh `develop` là nhánh tích hợp, không code trực tiếp. Agent nhận worktree + làm xong thì review rồi merge về `develop`.
+
+| Worktree (thư mục) | Nhánh | Việc | Phạm vi file (cấm lấn) | Xong khi |
+|---|---|---|---|---|
+| `../BrewLite-wt-barista` | `feat/barista-queue` | Gap 1: `GET /orders?status=`, `GET /orders/:id` (UC08–UC12) + dời `PATCH /orders/:id` sang `OrderController` | `backend/src/order/*`, `backend/test/order-*.spec.ts`; **không đụng** `payment.service.ts` logic | 2 endpoint live + test guard/401/sort |
+| `../BrewLite-wt-fe-tests` | `feat/frontend-tests` | Gap 2: dựng vitest + test `pricing.ts` (size/topping/voucher math), `cart.ts` (add/qty/total/persist key) | `frontend/**` only; **không đổi** UI/logic | `npm test` xanh trong worktree |
+| `../BrewLite-wt-pay-tx` | `feat/payment-tx` | Gap 4: bọc 3 lệnh ghi sau charge trong transaction nguyên tử (giữ seam `I*Repository` cho cả InMemory + Prisma) | `payment.service.ts`, contracts, cả 2 bộ repo impl; **không đổi** hành vi API | full suite xanh + pg suite trên DB của checkout chính |
+| (checkout chính `E:/CNPM/BrewLite`) | `develop` | Tích hợp: merge từng nhánh sau review; chạy demo compose; push | — | smoke E2E xanh |
+
+Quy tắc chung:
+- Tạo worktree: `git worktree add ../BrewLite-<tên> -b <nhánh> develop` (từ checkout chính, khi `develop` sạch).
+- Test mặc định chạy InMemory (không cần DB) nên các agent không giẫm port; pg suite chỉ chạy ở checkout chính (DB compose `:5432`).
+- Xóa worktree sau merge: `git worktree remove ../BrewLite-<tên>` + `git branch -d <nhánh>`.
+- Gap 3 (pg skip mặc định) và Gap 5 (Tailwind/Passport/React Query — quyết định không làm) không cần worktree.
