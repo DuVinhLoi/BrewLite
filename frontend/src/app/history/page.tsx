@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatVND } from '@/lib/pricing';
-import { canCancelOrder, cancelOrder } from '@/lib/api';
+import { cancelOrder } from '@/lib/api';
+import { canCancel } from '@/lib/order-status';
+import OrderStatusTrack from '@/components/OrderStatusTrack';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -88,6 +90,7 @@ export default function HistoryPage() {
           <p style={{ margin: '4px 0', fontSize: 13, color: '#6b7280' }}>
             {new Date(o.createdAt).toLocaleString('vi-VN')}
           </p>
+          <OrderStatusTrack status={o.status} />
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14 }}>
             {o.items.map((i, idx) => (
               <li key={idx}>
@@ -96,7 +99,7 @@ export default function HistoryPage() {
               </li>
             ))}
           </ul>
-          {canCancelOrder(o.status) && (
+          {canCancel(o.status) && (
             <button
               onClick={() => onCancel(o)}
               disabled={busyId === o.id}

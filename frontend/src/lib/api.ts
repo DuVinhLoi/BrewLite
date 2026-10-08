@@ -28,11 +28,7 @@ function normalize(raw: RawProduct): Product {
   };
 }
 
-// UC06 KB2/KB3: khách chỉ hủy được đơn chưa vào quầy (khớp assertTransition ở backend; PREPARING trở đi bị 400).
-const CANCELLABLE_STATUSES = ['PENDING', 'PAYMENT_FAILED', 'PAID'];
-
-export const canCancelOrder = (status: string) => CANCELLABLE_STATUSES.includes(status);
-
+// Hiện nút Hủy khi canCancel(status) (lib/order-status.ts, khớp bảng chuyển trạng thái của backend).
 // PATCH /orders/:id { status: 'CANCELLED' } kèm Bearer JWT; ném Error với thông điệp tiếng Việt cho UI hiển thị.
 export async function cancelOrder(orderId: string, token: string): Promise<void> {
   let res: Response;

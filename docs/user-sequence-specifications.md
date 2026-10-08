@@ -525,7 +525,7 @@ end
   - `POST /payments` (gửi lại yêu cầu thanh toán khi thử lại)
   - `PATCH /orders/:id` (Bearer JWT, chỉ chủ đơn; `{ status: 'CANCELLED' }` để hủy; mở rộng: `PREPARING`/`READY`/`COMPLETED` để tiến đơn qua API, minh họa State Machine §9.1 thay vai trò Barista ngoài MVP, giao diện không có nút này)
 * **Controller / Service:** `PaymentController.update()` (route `PATCH /orders/:id` đang nằm ở `PaymentController`) $\rightarrow$ `PaymentService.cancelOrderAs()` khi `status = CANCELLED`, ngược lại `PaymentService.advanceOrder()`. Cả hai kiểm tra chủ đơn (403/404) và chạy dưới khóa `order:<orderId>`.
-* **Frontend:** nút "Hủy đơn" ở `frontend/src/app/history/page.tsx` (hiện khi `canCancelOrder(status)`: `PENDING` / `PAYMENT_FAILED` / `PAID`) → `cancelOrder(orderId, token)` trong `frontend/src/lib/api.ts` (test `api.test.ts`). 401/403/404 ánh xạ thành thông báo tiếng Việt, 400 hiện thông điệp backend.
+* **Frontend:** nút "Hủy đơn" ở `frontend/src/app/history/page.tsx` (hiện khi `canCancel(status)` trong `lib/order-status.ts`: `PENDING` / `PAYMENT_FAILED` / `PAID`) → `cancelOrder(orderId, token)` trong `frontend/src/lib/api.ts` (test `api.test.ts`). 401/403/404 ánh xạ thành thông báo tiếng Việt, 400 hiện thông điệp backend.
 * **Quy tắc State Machine (Task 10):**
   - `assertTransition('PAYMENT_FAILED' -> 'PENDING')`: Hợp lệ.
   - `assertTransition('PENDING' -> 'CANCELLED')`, `assertTransition('PAYMENT_FAILED' -> 'CANCELLED')`: Hợp lệ.

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { canCancelOrder, cancelOrder, getProducts } from './api';
+import { cancelOrder, getProducts } from './api';
 import { MOCK_PRODUCTS } from './mock-products';
 
 // UC06 KB2/KB3: nút "Hủy đơn" gọi PATCH /orders/:id { status: 'CANCELLED' } kèm Bearer JWT.
@@ -11,20 +11,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe('canCancelOrder', () => {
-  test.each([
-    ['PENDING', true],
-    ['PAYMENT_FAILED', true],
-    ['PAID', true],
-    ['PREPARING', false],
-    ['READY', false],
-    ['COMPLETED', false],
-    ['CANCELLED', false],
-  ])('%s → %s', (status, expected) => {
-    expect(canCancelOrder(status)).toBe(expected);
-  });
-});
-
+// canCancel (khi nào hiện nút Hủy) đã chuyển sang lib/order-status.ts, test ở order-status.test.ts.
 describe('cancelOrder', () => {
   test('gửi PATCH /orders/:id với body CANCELLED và header Authorization', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(json(200, { id: 'o1', status: 'CANCELLED' }));
