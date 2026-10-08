@@ -22,7 +22,7 @@ Thực thể (Mục 12.2): đủ 5 bảng đúng field trong `backend/prisma/sch
 
 ## 2. Chưa đạt / còn nợ
 
-1. **`GET /orders` và `GET /orders/:id` chưa có** — backend live 8/10 endpoint Mục 12.1; 2 endpoint quầy (UC08–UC12, tài liệu ghi "extension ngoài MVP") chưa ai code.
+1. **`GET /orders` (queue quầy) KHÔNG LÀM; `GET /orders/:id` làm.** Quyết định: không dựng barista/admin (kể cả UI) vì đề bài không yêu cầu; endpoint queue không có consumer. Thay thế: mở rộng `PATCH /orders/:id` hiện có cho tiến đơn `PAID → PREPARING → READY → COMPLETED` (cùng endpoint, cùng `assertTransition`, chỉ chủ đơn được gọi; demo bằng curl, `/history` đã hiển thị mọi trạng thái) + thêm `GET /orders/:id` để receipt poll trạng thái. Tồn kho không cần gì thêm: trừ khi pay, hoàn khi cancel/kẹt kho, khóa `version` — đã xong trong luồng thanh toán.
 2. **Frontend không có test runner** — Task 3/4/5/9-UI chỉ được bảo vệ bằng `npm run build` + smoke tay, không test tự động.
 3. **pg suite mặc định skip** — chỉ chạy khi có `DATABASE_URL` (đã chạy tay 1 lần: pass toàn bộ).
 4. **3 lệnh ghi sau charge chưa bọc `$transaction`** — cơ chế compensate hiện tại (hoàn tiền + `PAYMENT_FAILED`) khớp đúng note UC 2.4 trong `docs/user-sequence-specifications.md`; cửa sổ crash giữa các lệnh là rủi ro đã biết, để riêng 1 task.
@@ -39,9 +39,9 @@ Nhánh `develop` là nhánh tích hợp, không code trực tiếp. Agent nhận
 
 | Worktree (thư mục) | Nhánh | Việc | Phạm vi file (cấm lấn) | Xong khi |
 |---|---|---|---|---|
-| `../BrewLite-wt-barista` | `feat/barista-queue` | Gap 1: `GET /orders?status=`, `GET /orders/:id` (UC08–UC12) + dời `PATCH /orders/:id` sang `OrderController` | `backend/src/order/*`, `backend/test/order-*.spec.ts`; **không đụng** `payment.service.ts` logic | 2 endpoint live + test guard/401/sort |
 | `../BrewLite-wt-fe-tests` | `feat/frontend-tests` | Gap 2: dựng vitest + test `pricing.ts` (size/topping/voucher math), `cart.ts` (add/qty/total/persist key) | `frontend/**` only; **không đổi** UI/logic | `npm test` xanh trong worktree |
 | `../BrewLite-wt-pay-tx` | `feat/payment-tx` | Gap 4: bọc 3 lệnh ghi sau charge trong transaction nguyên tử (giữ seam `I*Repository` cho cả InMemory + Prisma) | `payment.service.ts`, contracts, cả 2 bộ repo impl; **không đổi** hành vi API | full suite xanh + pg suite trên DB của checkout chính |
+| `../BrewLite-wt-order-advance` | `feat/order-advance` | Gap 1 (thay thế quầy): mở rộng `PATCH /orders/:id` cho tiến đơn + thêm `GET /orders/:id`; test guard-owner/401/thứ tự sai | `backend/src/order/*`, `UpdateOrderStatusDto`, `backend/test/order-*.spec.ts`; **không đụng** logic charge/refund | curl demo `PAID→PREPARING→READY→COMPLETED` + test xanh |
 | (checkout chính `E:/CNPM/BrewLite`) | `develop` | Tích hợp: merge từng nhánh sau review; chạy demo compose; push | — | smoke E2E xanh |
 
 Quy tắc chung:
