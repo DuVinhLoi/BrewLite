@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { PaymentController } from './payment.controller';
 import { MockPaymentGatewayService } from './mock-payment-gateway.service';
+import { AuthModule } from '../auth/auth.module';
 import { IOrderRepository } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
 import { IPaymentRepository } from '../contracts/payment.contract';
@@ -24,6 +25,7 @@ const PaymentRepo = useDb ? PrismaPaymentRepo : InMemoryPaymentRepo;
 const UserRepo = useDb ? PrismaUserRepo : InMemoryUserRepo;
 
 @Module({
+  imports: [AuthModule],
   controllers: [PaymentController],
   providers: [
     {

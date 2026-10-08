@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { IOrderRepository, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
 import { IPaymentRepository } from '../contracts/payment.contract';
@@ -101,5 +101,23 @@ export class PaymentService {
       for (const item of order.items) await this.products.restoreStock(item.productId, item.quantity);
     }
     return this.orders.updateStatus(order.id, OrderStatus.CANCELLED);
+  }
+
+  // Gap 1: tiến đơn PAID→PREPARING→READY→COMPLETED, chỉ chủ đơn; CANCELLED đi đường cancelOrder (hoàn tiền)
+  async advanceOrder(userId: string, orderId: string, status: OrderStatus) {
+    if (status === OrderStatus.CANCELLED) throw new BadRequestException('Use cancel for CANCELLED');
+    const order = await this.orders.findById(orderId);
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.userId !== userId) throw new ForbiddenException('Not your order');
+    assertTransition(order.status, status);
+    return this.orders.updateStatus(order.id, status);
+  }
+
+  // Gap 1: chặn chủ đơn lạ hủy hộ; refund/stock giữ nguyên trong cancelOrder
+  async cancelOrderAs(userId: string, orderId: string) {
+    const order = await this.orders.findById(orderId);
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.userId !== userId) throw new ForbiddenException('Not your order');
+    return this.cancelOrder(orderId);
   }
 }
