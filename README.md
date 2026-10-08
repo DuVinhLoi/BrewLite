@@ -12,23 +12,27 @@
 ## Chạy nhanh
 
 ```bash
-cp .env.example .env
+cp .env.example .env   # tùy chọn: compose đã có mặc định dev
 docker compose up --build
 # Frontend http://localhost:3001, Backend http://localhost:3000/products
 ```
 
+`DATABASE_URL` trong `.env` (host `localhost`) chỉ dành cho **chạy rời** ở dưới. Compose bỏ qua biến đó: backend trong container luôn nối `db:5432`, nên `cp .env.example .env` rồi `docker compose up` vẫn chạy đúng. `.env` đã nằm trong `.gitignore`, đừng commit.
+
 Chạy rời từng phần:
 
 ```bash
-cd backend && npm install && npm test && npm run start:dev
+cd backend && npm install && npm test && npm run start:dev   # không đặt DATABASE_URL: dùng kho in-memory, không cần DB
 cd frontend && npm install && npm run dev   # http://localhost:3001
 ```
+
+Backend không tự đọc file `.env`. Muốn chạy rời với Postgres: bật DB (`docker compose up -d db`), đặt `DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite` trong shell (bash: `export`; PowerShell: `$env:DATABASE_URL=...`), chạy `npx prisma migrate deploy` một lần rồi `npm run start:dev`.
 
 `NEXT_PUBLIC_PAYMENT_MODE=mock` demo UI không cần backend; `=api` cắm `POST /payments` thật.
 
 ## Tiến độ 10 task (đã merge vào develop)
 
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 62 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 46 pass. Bằng chứng từng task: `docs/develop-status-report.md`.
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 68 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 51 pass. Bằng chứng từng task: `docs/develop-status-report.md`.
 
 | Task | Hiện thực chính |
 |---|---|

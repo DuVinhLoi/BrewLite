@@ -85,6 +85,60 @@ describe('ApiPaymentGateway retry', () => {
     });
   });
 
+  // Backend trả JSON { message, error, statusCode }: UI chỉ được thấy câu tiếng Việt, không phải JSON thô
+  const payErr = async (res: Response) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(res));
+    return new ApiPaymentGateway()
+      .pay({ amount: 1, method: 'WALLET', idempotencyKey: 'k', orderId: 'order-1' })
+      .catch((e) => e);
+  };
+
+  test('/payments 400 (cổng trừ tiền lỗi) → câu tiếng Việt, không có JSON thô, giữ orderId', async () => {
+    const err = await payErr(json(400, { statusCode: 400, message: 'Payment failed', error: 'Bad Request' }));
+    expect(err).toBeInstanceOf(PaymentError);
+    expect(err.message).toMatch(/Thanh toán thất bại/);
+    expect(err.message).toMatch(/Giỏ hàng được giữ nguyên/);
+    expect(err.message).not.toMatch(/[{}"]|statusCode|Bad Request/);
+    expect(err.orderId).toBe('order-1');
+  });
+
+  test('/payments 409 (kẹt kho) → báo món hết hàng và tiền đã hoàn, không có JSON thô, giữ orderId', async () => {
+    const err = await payErr(json(409, { statusCode: 409, message: 'Out of stock', error: 'Conflict' }));
+    expect(err).toBeInstanceOf(PaymentError);
+    expect(err.message).toMatch(/hết hàng/);
+    expect(err.message).toMatch(/hoàn/);
+    expect(err.message).not.toMatch(/[{}"]|statusCode|Conflict/);
+    expect(err.orderId).toBe('order-1');
+  });
+
+  test('/payments 400 do validate (message dạng mảng) → nối lại, kèm câu tiếng Việt', async () => {
+    const err = await payErr(json(400, { statusCode: 400, message: ['orderId must be a string', 'paymentMethod must be one of WALLET, CARD'], error: 'Bad Request' }));
+    expect(err.message).toMatch(/Thanh toán thất bại/);
+    expect(err.message).toContain('orderId must be a string, paymentMethod must be one of WALLET, CARD');
+    expect(err.message).not.toMatch(/[{}[\]"]/);
+    expect(err.orderId).toBe('order-1');
+  });
+
+  test('/payments mã khác (404/500) → kèm mã và thông điệp backend, không có JSON thô, giữ orderId', async () => {
+    const e404 = await payErr(json(404, { statusCode: 404, message: 'Product not found', error: 'Not Found' }));
+    expect(e404.message).toMatch(/404/);
+    expect(e404.message).toContain('Product not found');
+    expect(e404.message).not.toMatch(/[{}"]|statusCode/);
+    expect(e404.orderId).toBe('order-1');
+
+    const e500 = await payErr(json(500, { statusCode: 500, message: 'Internal server error' }));
+    expect(e500.message).toMatch(/500/);
+    expect(e500.message).not.toMatch(/[{}"]/);
+    expect(e500.orderId).toBe('order-1');
+  });
+
+  test('/payments lỗi mà body không phải JSON (proxy trả HTML) → chỉ báo mã, không lộ HTML', async () => {
+    const err = await payErr(new Response('<html><body>Bad Gateway</body></html>', { status: 502 }));
+    expect(err.message).toMatch(/502/);
+    expect(err.message).not.toMatch(/[<>]/);
+    expect(err.orderId).toBe('order-1');
+  });
+
   test('tạo đơn lỗi → PaymentError không có orderId (lần sau tạo đơn lại)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(500, {})));
     const err = await new ApiPaymentGateway()
