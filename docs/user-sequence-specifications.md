@@ -38,7 +38,7 @@
 Biểu đồ Tuần tự (**Sequence Diagram**) là biểu đồ thể hiện **sự tương tác qua lại giữa các đối tượng theo trục thời gian**. Nếu Use Case Diagram trả lời câu hỏi *"Ai làm chức năng gì?"*, thì Sequence Diagram trả lời câu hỏi: *"Để hoàn thành chức năng đó, các bộ phận trong hệ thống phải trao đổi thông điệp với nhau theo thứ tự nào?"*.
 
 ### 1.2 Bốn thành phần cốt lõi trên biểu đồ
-1. **Tác nhân (Actor):** Con người tương tác trực tiếp với giao diện, **trùng với tác nhân trên biểu đồ Use Case gốc** (`docs/use-case-specifications.md` mục 2): `Khách vãng lai (Guest)` ở UC01–UC03, `Khách hàng thành viên (Customer)` ở UC04–UC07 (Customer kế thừa Guest nên cũng làm được UC01–UC03). Cổng thanh toán là tác nhân dịch vụ `Mock Gateway` của UC05.
+1. **Tác nhân (Actor):** Con người tương tác trực tiếp với giao diện, **trùng với tác nhân trên biểu đồ Use Case gốc** (`docs/use-case-specifications.md` mục 2): `Khách vãng lai (Guest)` ở UC01–UC03, `Khách hàng thành viên (Customer)` ở UC04–UC07 (Customer kế thừa Guest nên cũng làm được UC01–UC03). Cổng thanh toán là tác nhân dịch vụ `Mock Gateway` của UC05 (trừ tiền) và UC06 (hoàn tiền khi hủy đơn `PAID`).
 2. **Đối tượng tham gia (Participants / Lifelines):** Đại diện cho các tầng kiến trúc của BrewLite:
    - `Giao diện Web (Frontend Next.js)`: Nơi người dùng bấm nút, xem dữ liệu.
    - `Máy chủ xử lý (Backend NestJS)`: Nơi tiếp nhận yêu cầu, kiểm tra nghiệp vụ và xử lý logic.
@@ -70,7 +70,7 @@ Biểu đồ Tuần tự (**Sequence Diagram**) là biểu đồ thể hiện **
 
 # PHẦN II: ĐẶC TẢ CHI TIẾT 6 KỊCH BẢN TUẦN TỰ
 
-**Đồng bộ với biểu đồ Use Case gốc** (`docs/use-case-specifications.md` mục 2, 8 UC): mỗi UC có đúng một sơ đồ dưới đây, cùng mã, cùng tên, cùng tác nhân. Không có sơ đồ nào cho chức năng ngoài 8 UC này.
+**Đồng bộ với biểu đồ Use Case gốc** (`docs/use-case-specifications.md` mục 2, 8 UC): mỗi UC thuộc đúng một sơ đồ dưới đây, cùng mã, cùng tên, cùng tác nhân. UC04, UC05, UC05a chạy trong cùng một lần bấm "Xác nhận trả" nên chung sơ đồ §2.4 (6 sơ đồ cho 8 UC). Không có sơ đồ nào cho chức năng ngoài 8 UC này.
 
 | UC (biểu đồ gốc) | Tác nhân | Quan hệ trên biểu đồ gốc | Sơ đồ tuần tự |
 | :--- | :--- | :--- | :--- |
@@ -80,7 +80,7 @@ Biểu đồ Tuần tự (**Sequence Diagram**) là biểu đồ thể hiện **
 | UC04: Tạo đơn hàng (PENDING) | Customer | `Customer --- UC04` (độc lập, không `<<include>>`) | §2.4 bước 2a |
 | UC05: Thanh toán không tiền mặt (Ví / Thẻ) | Customer, Mock Gateway | `Customer --- UC05`, `UC05 --- Gateway` | §2.4 bước 2b |
 | UC05a: Áp mã giảm giá | Customer (qua UC05) | `UC05a ..> UC05 : <<extend>>` | §2.4 bước 1 (khối `opt`) |
-| UC06: Hủy đơn / Thử lại thanh toán | Customer | `Customer --- UC06` | §2.5 |
+| UC06: Hủy đơn / Thử lại thanh toán | Customer, Mock Gateway | `Customer --- UC06`, `UC06 --- Gateway` (hoàn tiền) | §2.5 |
 | UC07: Xem xác nhận & Lịch sử đơn | Customer | `Customer --- UC07` | §2.6 |
 
 ---
@@ -129,7 +129,7 @@ deactivate FE
 ```
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
-* **Backend Endpoint:** `GET /products` (`GET /products/:id` cho màn chi tiết)
+* **Backend Endpoint:** `GET /products`. `GET /products/:id` có ở backend (404 khi không có) nhưng giao diện chưa gọi: modal chi tiết dùng dữ liệu món đã có trong danh sách.
 * **Controller / Service:** `ProductController.list()` / `detail()` $\rightarrow$ `ProductService.listAvailable()` / `getById()`
 * **Thực thể CSDL:** Bảng `Product` (lọc điều kiện `stock > 0`)
 * **Xử lý Frontend:** Quản lý state hiển thị bằng React State (`useState` + `fetch`), không dùng React Query.
@@ -444,7 +444,7 @@ deactivate FE
 #### A. Bối cảnh nghiệp vụ
 Phục vụ máy trạng thái **Order State Machine** tại Mục 9.1 tài liệu môn học (`docs:301-322`). 
 * Khối `alt` mô tả 3 ngã rẽ xử lý trạng thái theo chuẩn REST (`PATCH /orders/:id`):
-  - **Kịch bản 1 (Thử lại):** Khi cổng thanh toán báo trừ tiền lỗi, đơn hàng ở trạng thái `PAYMENT_FAILED`. Khách bấm "Thử lại", hệ thống gọi lại thanh toán hoặc chuyển trạng thái đơn quay về `PENDING` (`PAYMENT_FAILED` $\rightarrow$ `PENDING`).
+  - **Kịch bản 1 (Thử lại):** Khi cổng thanh toán báo trừ tiền lỗi, đơn hàng ở trạng thái `PAYMENT_FAILED`. Màn Thanh toán vẫn mở và giữ `orderId` của đơn lỗi; khách bấm lại "Xác nhận trả" (giao diện không có nút "Thử lại" riêng, trang `/history` cũng không thanh toán lại được), hệ thống gọi lại thanh toán hoặc chuyển trạng thái đơn quay về `PENDING` (`PAYMENT_FAILED` $\rightarrow$ `PENDING`).
   - **Kịch bản 2 (Khách hủy đơn chưa trả):** Khi đơn hàng chưa thanh toán, khách có quyền hủy đơn (`PENDING` $\rightarrow$ `CANCELLED`; `PAYMENT_FAILED` $\rightarrow$ `CANCELLED` cũng hợp lệ).
   - **Kịch bản 3 (Hủy đơn đã thanh toán - Hoàn tiền):** Khi đơn đã trả tiền (`PAID`) và khách yêu cầu hủy kịp thời, hệ thống hủy đơn kèm hoàn tiền + hoàn kho (`PAID` $\rightarrow$ `CANCELLED` theo đúng `docs:313`).
 * **Hiện trạng code cho KB2/KB3:**
@@ -469,7 +469,7 @@ database "Cơ sở dữ liệu" as DB
 participant "Cổng thanh toán\n(Mock Gateway)" as Gateway
 
 alt Kịch bản 1: Thử thanh toán lại (Khi bị lỗi trừ tiền, 1 bước duy nhất)
-    User -> FE : Bấm nút "Thử thanh toán lại"
+    User -> FE : Bấm lại "Xác nhận trả" ngay trên màn Thanh toán\n(form vẫn mở, đang giữ orderId của đơn lỗi)
     activate FE
     FE -> BE : POST /payments (orderId cũ đã giữ, Idempotency-Key MỚI, phương thức mới)
     note right of FE : Không gọi lại POST /orders

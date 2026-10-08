@@ -91,6 +91,7 @@ UC05a ..> UC05 : <<extend>>
 
 ' --- KẾT NỐI CỔNG THANH TOÁN (GATEWAY) ---
 UC05 --- Gateway
+UC06 --- Gateway
 
 @enduml
 ```
@@ -99,7 +100,7 @@ UC05 --- Gateway
 
 ## 3. DANH MỤC CHI TIẾT CÁC USE CASE & TRACEABILITY (KHỚP 10 TASK SCRUM)
 
-Biểu đồ ở mục 2 là **gốc (root)**: mỗi UC có đúng một sơ đồ tuần tự trong [user-sequence-specifications.md](user-sequence-specifications.md) Phần II, dùng **cùng mã, cùng tên, cùng tác nhân** (UC01–UC03: `Guest`; UC04–UC07: `Customer`; UC05: thêm `Mock Gateway`). Đổi tên hay tác nhân ở đây thì phải đổi cả sơ đồ tuần tự tương ứng.
+Biểu đồ ở mục 2 là **gốc (root)**: mỗi UC thuộc đúng một sơ đồ tuần tự trong [user-sequence-specifications.md](user-sequence-specifications.md) Phần II, dùng **cùng mã, cùng tên, cùng tác nhân** (UC01–UC03: `Guest`; UC04–UC07: `Customer`; UC05 và UC06: thêm `Mock Gateway`). UC04, UC05, UC05a cùng một luồng bấm "Xác nhận trả" nên chung sơ đồ §2.4 (6 sơ đồ cho 8 UC). Đổi tên hay tác nhân ở đây thì phải đổi cả sơ đồ tuần tự tương ứng.
 
 | Mã UC | Tên Ca Sử Dụng | Tác Nhân Thực Hiện | Quan Hệ Phụ Thuộc | Căn Cứ Đề Bài & Hiện Thực Code | Sơ đồ tuần tự |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -109,7 +110,7 @@ Biểu đồ ở mục 2 là **gốc (root)**: mỗi UC có đúng một sơ đ�
 | **UC04** | Tạo đơn hàng (PENDING) | `Customer` | Độc lập (gọi trước khi thanh toán) | Task 6 (`POST /orders`, server tính giá dựa trên menu gốc) | §2.4 (bước 2a) |
 | **UC05** | Thanh toán không tiền mặt (Ví / Thẻ) | `Customer`, `Mock Gateway` | Customer nối trực tiếp; liên kết cổng thanh toán; được UC05a mở rộng | Task 8, 10 (`POST /payments`) | §2.4 (bước 2b) |
 | **UC05a** | Áp mã giảm giá | `Customer` *(thao tác tại bước thanh toán)* | `<<extend>> UC05` | Task 10 (Áp mã `BREWLITE10`, chiết khấu hợp lệ trước khi trừ tiền) | §2.4 (bước 1) |
-| **UC06** | Hủy đơn / Thử lại thanh toán | `Customer` *(chỉ chủ đơn)* | Độc lập | Task 10 (`PATCH /orders/:id`, `POST /payments`). Hủy đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (nút "Hủy đơn" ở `/history`, `PAID` có hoàn tiền + hoàn kho) hoặc thanh toán lại đơn `PAYMENT_FAILED`. *(Mở rộng: `PATCH` còn cho chủ đơn tiến `PAID → PREPARING → READY → COMPLETED` qua API để minh họa State Machine §9.1, thay cho vai trò Barista ngoài MVP)* | §2.5 |
+| **UC06** | Hủy đơn / Thử lại thanh toán | `Customer` *(chỉ chủ đơn)*, `Mock Gateway` *(hoàn tiền khi hủy đơn `PAID`)* | Độc lập | Task 10 (`PATCH /orders/:id`, `POST /payments`). Hủy đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (nút "Hủy đơn" ở `/history`, `PAID` có hoàn tiền + hoàn kho) hoặc thanh toán lại đơn `PAYMENT_FAILED`. *(Mở rộng: `PATCH` còn cho chủ đơn tiến `PAID → PREPARING → READY → COMPLETED` qua API để minh họa State Machine §9.1, thay cho vai trò Barista ngoài MVP)* | §2.5 |
 | **UC07** | Xem xác nhận & Lịch sử đơn | `Customer` | Độc lập | Task 9 (`GET /orders/me`) | §2.6 |
 
 ---
