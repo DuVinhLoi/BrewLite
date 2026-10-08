@@ -5,9 +5,9 @@
 > **Môn học:** Công nghệ Phần mềm (Bài tập lớn 10 Task Agile Scrum)  
 > **Phạm vi & Định vị tài liệu:**  
 > • **Tài liệu này là Phụ lục chi tiết (Architecture Appendix) cho Developers & AI Agents** dùng để hiểu sâu bối cảnh, đối chiếu mã nguồn và viết test case.  
-> • **Bản nộp chính cho giảng viên** tập trung vào 3 biểu đồ cốt lõi tinh gọn đã chốt (Use Case tổng 16 UC — UC01–UC15 + UC05a, trong đó phân hệ Khách hàng 8 UC: UC01–UC07 + UC05a; Activity luồng nghiệp vụ tổng, và Sequence thanh toán rút gọn).  
+> • **Bản nộp chính cho giảng viên** tập trung vào 3 biểu đồ cốt lõi tinh gọn đã chốt (Use Case phân hệ Khách hàng gồm 8 UC: UC01–UC07 + UC05a; Activity luồng nghiệp vụ tổng, và Sequence thanh toán rút gọn).  
 > **Đối tượng độc giả:**  
-> 1. **Sinh viên & Giảng viên:** Tra cứu chi tiết từng bước, đối chiếu ma trận truy vết (Traceability) với 10 API endpoint và 10 Task Backlog.  
+> 1. **Sinh viên & Giảng viên:** Tra cứu chi tiết từng bước, đối chiếu ma trận truy vết (Traceability) với 7 API endpoint tối thiểu (+2 mở rộng) và 10 Task Backlog.  
 > 2. **AI Agents / Developers:** Đọc hiểu bối cảnh kiến trúc (Context Navigation), ánh xạ các bước của biểu đồ vào mã nguồn NestJS (Backend) và Next.js (Frontend) để lập trình và viết kiểm thử tự động.
 
 ---
@@ -21,11 +21,11 @@
    - 1.4 Giải mã các khối điều khiển đặc biệt (`alt`, `opt`, `group`)
 2. [PHẦN II: ĐẶC TẢ CHI TIẾT 6 KỊCH BẢN TUẦN TỰ (PLANTUML TỰ NHIÊN)](#phần-ii-đặc-tả-chi-tiết-6-kịch-bản-tuần-tự)
    - 2.1 UC01: Xem menu & Tùy chọn món (Size, Topping)
-   - 2.2 UC02: Quản lý giỏ hàng trên trình duyệt
-   - 2.3 UC03: Đăng ký & Đăng nhập tài khoản (JWT)
-   - 2.4 UC04 + UC05 + UC05a: Đặt hàng & Thanh toán không tiền mặt (Trọng tâm MVP)
+   - 2.2 UC02: Quản lý giỏ hàng (Thêm/Sửa/Xóa)
+   - 2.3 UC03: Đăng ký / Đăng nhập (JWT)
+   - 2.4 UC04 + UC05 + UC05a: Tạo đơn hàng (PENDING), Thanh toán không tiền mặt (Ví / Thẻ) & Áp mã giảm giá (Trọng tâm MVP)
    - 2.5 UC06: Hủy đơn / Thử lại thanh toán (Order State Machine)
-   - 2.6 UC07: Xem xác nhận & Lịch sử đơn hàng
+   - 2.6 UC07: Xem xác nhận & Lịch sử đơn
 3. [PHẦN III: MA TRẬN NGỮ CẢNH KỸ THUẬT DÀNH CHO AI AGENTS & DEVELOPERS](#phần-iii-ma-trận-ngữ-cảnh-kỹ-thuật)
    - 3.1 Bảng ánh xạ Use Case sang Mã nguồn & CSDL
    - 3.2 Quy tắc điều hướng cho AI Agent khi sinh mã / kiểm thử
@@ -38,7 +38,7 @@
 Biểu đồ Tuần tự (**Sequence Diagram**) là biểu đồ thể hiện **sự tương tác qua lại giữa các đối tượng theo trục thời gian**. Nếu Use Case Diagram trả lời câu hỏi *"Ai làm chức năng gì?"*, thì Sequence Diagram trả lời câu hỏi: *"Để hoàn thành chức năng đó, các bộ phận trong hệ thống phải trao đổi thông điệp với nhau theo thứ tự nào?"*.
 
 ### 1.2 Bốn thành phần cốt lõi trên biểu đồ
-1. **Tác nhân (Actor):** Con người tương tác trực tiếp với giao diện (Khách hàng).
+1. **Tác nhân (Actor):** Con người tương tác trực tiếp với giao diện, **trùng với tác nhân trên biểu đồ Use Case gốc** (`docs/use-case-specifications.md` mục 2): `Khách vãng lai (Guest)` ở UC01–UC03, `Khách hàng thành viên (Customer)` ở UC04–UC07 (Customer kế thừa Guest nên cũng làm được UC01–UC03). Cổng thanh toán là tác nhân dịch vụ `Mock Gateway` của UC05.
 2. **Đối tượng tham gia (Participants / Lifelines):** Đại diện cho các tầng kiến trúc của BrewLite:
    - `Giao diện Web (Frontend Next.js)`: Nơi người dùng bấm nút, xem dữ liệu.
    - `Máy chủ xử lý (Backend NestJS)`: Nơi tiếp nhận yêu cầu, kiểm tra nghiệp vụ và xử lý logic.
@@ -70,6 +70,19 @@ Biểu đồ Tuần tự (**Sequence Diagram**) là biểu đồ thể hiện **
 
 # PHẦN II: ĐẶC TẢ CHI TIẾT 6 KỊCH BẢN TUẦN TỰ
 
+**Đồng bộ với biểu đồ Use Case gốc** (`docs/use-case-specifications.md` mục 2, 8 UC): mỗi UC có đúng một sơ đồ dưới đây, cùng mã, cùng tên, cùng tác nhân. Không có sơ đồ nào cho chức năng ngoài 8 UC này.
+
+| UC (biểu đồ gốc) | Tác nhân | Quan hệ trên biểu đồ gốc | Sơ đồ tuần tự |
+| :--- | :--- | :--- | :--- |
+| UC01: Xem menu & Tùy chọn món (Size, Topping) | Guest | `Guest --- UC01` | §2.1 |
+| UC02: Quản lý giỏ hàng (Thêm/Sửa/Xóa) | Guest | `Guest --- UC02` | §2.2 |
+| UC03: Đăng ký / Đăng nhập (JWT) | Guest | `Guest --- UC03` | §2.3 |
+| UC04: Tạo đơn hàng (PENDING) | Customer | `Customer --- UC04` (độc lập, không `<<include>>`) | §2.4 bước 2a |
+| UC05: Thanh toán không tiền mặt (Ví / Thẻ) | Customer, Mock Gateway | `Customer --- UC05`, `UC05 --- Gateway` | §2.4 bước 2b |
+| UC05a: Áp mã giảm giá | Customer (qua UC05) | `UC05a ..> UC05 : <<extend>>` | §2.4 bước 1 (khối `opt`) |
+| UC06: Hủy đơn / Thử lại thanh toán | Customer | `Customer --- UC06` | §2.5 |
+| UC07: Xem xác nhận & Lịch sử đơn | Customer | `Customer --- UC07` | §2.6 |
+
 ---
 
 ### 2.1 UC01: Xem menu & Tùy chọn món (Size, Topping)
@@ -87,7 +100,7 @@ skinparam SequenceParticipantBorderColor #5b6b8c
 skinparam SequenceLifeLineBorderColor #5b6b8c
 
 autonumber
-actor "Khách hàng" as User
+actor "Khách vãng lai\n(Guest)" as User
 participant "Giao diện Web\n(Frontend)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
@@ -125,7 +138,7 @@ deactivate FE
 
 ---
 
-### 2.2 UC02: Quản lý giỏ hàng trên trình duyệt
+### 2.2 UC02: Quản lý giỏ hàng (Thêm/Sửa/Xóa)
 
 #### A. Bối cảnh nghiệp vụ
 Theo yêu cầu Task 5 trong tài liệu đồ án, giỏ hàng được quản lý hoàn toàn ở phía máy khách (Client-side State) để mang lại trải nghiệm mượt mà tức thì cho khách hàng. Các thao tác thêm món, tăng/giảm số lượng hoặc xóa món được tính toán tự động và lưu tạm vào bộ nhớ trình duyệt (LocalStorage).
@@ -140,7 +153,7 @@ skinparam SequenceParticipantBorderColor #5b6b8c
 skinparam SequenceLifeLineBorderColor #5b6b8c
 
 autonumber
-actor "Khách hàng" as User
+actor "Khách vãng lai\n(Guest)" as User
 participant "Màn hình đặt món\n(Giao diện)" as UI
 participant "Bộ nhớ giỏ hàng\n(Lưu tạm trên máy)" as Cart
 
@@ -175,7 +188,7 @@ deactivate UI
 
 ---
 
-### 2.3 UC03: Đăng ký & Đăng nhập tài khoản (JWT)
+### 2.3 UC03: Đăng ký / Đăng nhập (JWT)
 
 #### A. Bối cảnh nghiệp vụ
 UC03 gồm 2 luồng tách biệt trên cùng trang `/login` (nút chuyển chế độ Đăng nhập / Đăng ký):
@@ -195,7 +208,7 @@ skinparam SequenceParticipantBorderColor #5b6b8c
 skinparam SequenceLifeLineBorderColor #5b6b8c
 
 autonumber
-actor "Khách hàng" as User
+actor "Khách vãng lai\n(Guest)" as User
 participant "Giao diện Web\n(Frontend)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
@@ -259,7 +272,7 @@ deactivate FE
 
 ---
 
-### 2.4 UC04 + UC05 + UC05a: Đặt hàng & Thanh toán không tiền mặt
+### 2.4 UC04 + UC05 + UC05a: Tạo đơn hàng (PENDING), Thanh toán không tiền mặt (Ví / Thẻ) & Áp mã giảm giá
 
 #### A. Bối cảnh nghiệp vụ
 Đây là **trọng tâm nghiệp vụ lớn nhất của dự án BrewLite** (Bao gồm Task 6, 8 và 10):
@@ -287,11 +300,11 @@ skinparam NoteBorderColor #d97706
 skinparam NoteFontColor #1f2937
 
 autonumber
-actor "Khách hàng" as User
+actor "Khách hàng thành viên\n(Customer)" as User
 participant "Giao diện Web\n(Frontend)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "PostgreSQL\n(qua Prisma)" as DB
-participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
+participant "Cổng thanh toán\n(Mock Gateway)" as Gateway
 
 User -> FE : Tôi muốn thanh toán giỏ hàng này
 activate FE
@@ -417,7 +430,7 @@ deactivate FE
 * **Chỉ chủ đơn mới thanh toán được:** trong khóa `order:<orderId>`, `processPayment()` đọc đơn trước: không có → 404, `order.userId !== userId` → 403 (`ForbiddenException`, giống `cancelOrderAs()` / `advanceOrder()`). Bước này chạy **trước** nhánh cache `Idempotency-Key` nên người lạ không đọc được biên lai của người khác bằng key; nếu key trỏ tới biên lai của đơn khác `dto.orderId` thì đơn đó cũng phải là của người gọi, nếu không trả 403.
 * **Giá do server tính (`OrderService.create()`):** `unitPrice = product.price + SIZE_UPCHARGE[size] + Σ TOPPING_PRICES` (`backend/src/order/pricing.ts`), `total = Σ quantity × unitPrice`. DTO không có trường `unitPrice`; FE (`ApiPaymentGateway.createOrderId()`) chỉ gửi `{ productId, quantity, size, toppings }` cho mỗi dòng, không gửi `unitPrice` / `name` / `key` / `lineTotal` (có test); `ValidationPipe({ whitelist: true })` vẫn là lớp chặn thứ hai. Thiếu `size` → `M`; topping ngoài bảng → 400; `productId` lạ → 404.
 * **Tuần tự hóa song song:** `PaymentService.processPayment()` bọc xử lý trong `withLock('key:<Idempotency-Key>')` rồi `withLock('order:<orderId>')`; `cancelOrder()` / `advanceOrder()` dùng chung khóa `order:<orderId>`. Đây là khóa trong tiến trình, chỉ đúng khi chạy 1 instance backend (như compose hiện tại).
-* **Xác thực Voucher:** Validate nội bộ trong `PaymentService` theo cấu hình chiết khấu (Task 10), không tạo thêm endpoint riêng ngoài 10 endpoint chính.
+* **Xác thực Voucher:** Validate nội bộ trong `PaymentService` theo cấu hình chiết khấu (Task 10), không tạo thêm endpoint riêng cho voucher.
 * **Chống trừ tiền trùng (Idempotent Test Criteria b):** Tra đúng 1 biên lai theo mã (`Payment` tìm theo `idempotencyKey` duy nhất). Nhánh Hit trả 200 OK kết quả cũ (kèm đúng discount/points đã lưu), nhánh Miss mới gọi Gateway. Chỉ lần trả **thành công** mới lưu biên lai theo key; key của lần trả lỗi không được cache, vì vậy FE luôn sinh key mới cho mỗi lần thử lại.
 * **Kiểm soát tồn kho đồng thời (Concurrency Test Criteria c):** Trừ kho nguyên tử bằng lệnh `updateMany` kèm điều kiện `version` khớp và `stock >= số lượng` (sai là không trừ), thử lại 3 lần rồi vẫn kẹt thì ném 409.
 * **Transaction sau charge:** Trừ kho + `PAID` + cộng điểm + lưu biên lai chạy trong `orders.runInTransaction(tx => ...)` (Prisma: `$transaction`; In-Memory: snapshot/rollback tuần tự trong `in-memory-tx.ts`). Kẹt kho → rollback, rồi **ngoài transaction**: `gateway.refund()` + đơn sang `PAYMENT_FAILED` + ném lại 409.
@@ -437,7 +450,7 @@ Phục vụ máy trạng thái **Order State Machine** tại Mục 9.1 tài li�
 * **Hiện trạng code cho KB2/KB3:**
   - **Frontend có nút "Hủy đơn" ở `/history`** cho đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (helper `cancelOrder()` trong `frontend/src/lib/api.ts`): gọi `PATCH /orders/:id { status: 'CANCELLED' }` kèm Bearer JWT, đơn `PAID` hỏi xác nhận (có hoàn tiền) trước khi gọi, lỗi 400/403 hiện ngay dưới thẻ đơn, thành công thì tải lại danh sách. Màn biên lai không có nút này.
   - **Chỉ CHỦ ĐƠN được hủy:** `PaymentService.cancelOrderAs()` so `order.userId` với user trong token; khác chủ → 403, đơn không tồn tại → 404.
-  - Barista hủy đơn khi hết nguyên liệu (UC12) **ngoài phạm vi – chưa hiện thực**: không có vai trò Barista, không có phân quyền theo vai trò.
+  - Barista hủy đơn khi hết nguyên liệu: **ngoài phạm vi MVP** (đề §3.2), không có trên biểu đồ Use Case gốc; hệ thống không có vai trò Barista.
 
 #### B. Sơ đồ tuần tự (PlantUML)
 ```plantuml
@@ -449,11 +462,11 @@ skinparam SequenceParticipantBorderColor #5b6b8c
 skinparam SequenceLifeLineBorderColor #5b6b8c
 
 autonumber
-actor "Khách hàng" as User
+actor "Khách hàng thành viên\n(Customer)" as User
 participant "Giao diện Web\n(Frontend)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
-participant "Cổng thanh toán\n(Ví Momo / Thẻ)" as Gateway
+participant "Cổng thanh toán\n(Mock Gateway)" as Gateway
 
 alt Kịch bản 1: Thử thanh toán lại (Khi bị lỗi trừ tiền, 1 bước duy nhất)
     User -> FE : Bấm nút "Thử thanh toán lại"
@@ -485,7 +498,7 @@ else Kịch bản 2: Chủ đơn hủy đơn chưa thanh toán (PENDING -> CANCE
     deactivate FE
 
 else Kịch bản 3: Chủ đơn hủy đơn đã thanh toán (PAID -> CANCELLED / Hoàn tiền)
-    note over User, FE : Barista hủy (UC12)\nngoài phạm vi - chưa hiện thực
+    note over User, FE : Barista hủy đơn: ngoài MVP (đề §3.2),\nkhông có trên biểu đồ Use Case gốc
     User -> FE : Bấm nút "Hủy đơn" ở trang Lịch sử
     activate FE
     FE --> User : Hộp thoại xác nhận: hủy sẽ hoàn tiền + hoàn kho
@@ -510,7 +523,7 @@ end
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
 * **Backend Endpoints:**
   - `POST /payments` (gửi lại yêu cầu thanh toán khi thử lại)
-  - `PATCH /orders/:id` (Bearer JWT, chỉ chủ đơn; `{ status: 'CANCELLED' }` để hủy, `PREPARING`/`READY`/`COMPLETED` để tiến đơn)
+  - `PATCH /orders/:id` (Bearer JWT, chỉ chủ đơn; `{ status: 'CANCELLED' }` để hủy; mở rộng: `PREPARING`/`READY`/`COMPLETED` để tiến đơn qua API, minh họa State Machine §9.1 thay vai trò Barista ngoài MVP, giao diện không có nút này)
 * **Controller / Service:** `PaymentController.update()` (route `PATCH /orders/:id` đang nằm ở `PaymentController`) $\rightarrow$ `PaymentService.cancelOrderAs()` khi `status = CANCELLED`, ngược lại `PaymentService.advanceOrder()`. Cả hai kiểm tra chủ đơn (403/404) và chạy dưới khóa `order:<orderId>`.
 * **Frontend:** nút "Hủy đơn" ở `frontend/src/app/history/page.tsx` (hiện khi `canCancelOrder(status)`: `PENDING` / `PAYMENT_FAILED` / `PAID`) → `cancelOrder(orderId, token)` trong `frontend/src/lib/api.ts` (test `api.test.ts`). 401/403/404 ánh xạ thành thông báo tiếng Việt, 400 hiện thông điệp backend.
 * **Quy tắc State Machine (Task 10):**
@@ -521,7 +534,7 @@ end
 
 ---
 
-### 2.6 UC07: Xem xác nhận & Lịch sử đơn hàng
+### 2.6 UC07: Xem xác nhận & Lịch sử đơn
 
 #### A. Bối cảnh nghiệp vụ
 Tương ứng Task 9 trong đề tài:
@@ -538,7 +551,7 @@ skinparam SequenceParticipantBorderColor #5b6b8c
 skinparam SequenceLifeLineBorderColor #5b6b8c
 
 autonumber
-actor "Khách hàng" as User
+actor "Khách hàng thành viên\n(Customer)" as User
 participant "Giao diện Web\n(Frontend)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
@@ -576,19 +589,19 @@ deactivate FE
 
 # PHẦN III: MA TRẬN NGỮ CẢNH KỸ THUẬT DÀNH CHO AI AGENTS & DEVELOPERS
 
-Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 100% (Full Traceability)** với đúng **10 API Endpoints chính** (Mục 12.1) và **5 Thực thể CSDL tối thiểu** (Mục 12.2) trong tài liệu gốc `BrewLite-CongNghePhanMem-fixed.md`:
+Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 100% (Full Traceability)** với **7 API Endpoint tối thiểu** (Mục 12.1 đề gốc) + 2 endpoint mở rộng của nhóm (`PATCH /orders/:id`, `GET /orders/:id`) và **5 Thực thể CSDL tối thiểu** (Mục 12.2) trong tài liệu gốc `BrewLite-CongNghePhanMem-fixed.md`:
 
 | Mã UC | Tên Ca Sử Dụng | Endpoint REST Chuẩn | Controller / Service (NestJS) | Bảng CSDL (5 Thực thể tối thiểu) | Cơ Chế Bảo Vệ / Logic Cốt Lõi (Task 10) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **UC01** | Xem menu & Tùy chọn món | `GET /products`<br>`GET /products/:id` | `ProductController.list()` / `detail()`<br>`ProductService.listAvailable()` / `getById()` | `Product` | Lọc `stock > 0`; `ProductDto` (`id, name, price, imageUrl, stock, version`) **không** có size/topping — bảng giá size/topping nằm ở `frontend/src/lib/pricing.ts` + `backend/src/order/pricing.ts` |
-| **UC02** | Quản lý giỏ hàng | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal` |
-| **UC03** | Đăng ký & Đăng nhập | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService.login()` / `register()` | `User` | `bcrypt.compare`, cấp JWT Access Token |
-| **UC04** | Tạo đơn hàng mới | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu); **server tự tính giá** từ `product.price` + `order/pricing.ts` (bỏ qua giá client, thiếu size → M, topping lạ → 400) |
-| **UC05 / UC05a** | Thanh toán & Voucher | `POST /payments` | `PaymentController`<br>`PaymentService` (+ `PrismaPaymentRepo` / `PrismaProductRepo` khi có `DATABASE_URL`) | `Payment`, `Order`, `Product`, `User` | `@UseGuards(JwtAuthGuard)` (thiếu JWT → 401), kiểm tra chủ đơn trước cache (đơn không có → 404, khác chủ → 403, kể cả khi trúng cache Idempotency-Key), header `Idempotency-Key` (alt hit/miss), khóa trong tiến trình theo key + `orderId` (request song song chỉ charge 1 lần), validate voucher `BREWLITE10` nội bộ (Task 10), ghi sau charge trong 1 `runInTransaction` (trừ kho `updateMany` kèm `version` retry 3, `PAID`, điểm, biên lai); kẹt kho → rollback + hoàn tiền + `PAYMENT_FAILED` + 409 |
-| **UC06** | Hủy đơn / Thử lại | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `PaymentController.update()`<br>`PaymentService.cancelOrderAs()` / `advanceOrder()` (route `PATCH` hiện nằm ở PaymentController) | `Order`, `Payment` | Chỉ chủ đơn (403/404); hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho, hoàn kho + `CANCELLED` trong 1 transaction); FE có nút Hủy ở `/history` (`cancelOrder()` trong `lib/api.ts`) |
-| **UC07** | Xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController.mine()`<br>`OrderService.listMine()` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
+| **UC01** | Xem menu & Tùy chọn món (Size, Topping) | `GET /products`<br>`GET /products/:id` | `ProductController.list()` / `detail()`<br>`ProductService.listAvailable()` / `getById()` | `Product` | Lọc `stock > 0`; `ProductDto` (`id, name, price, imageUrl, stock, version`) **không** có size/topping — bảng giá size/topping nằm ở `frontend/src/lib/pricing.ts` + `backend/src/order/pricing.ts` |
+| **UC02** | Quản lý giỏ hàng (Thêm/Sửa/Xóa) | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal` |
+| **UC03** | Đăng ký / Đăng nhập (JWT) | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService.login()` / `register()` | `User` | `bcrypt.compare`, cấp JWT Access Token |
+| **UC04** | Tạo đơn hàng (PENDING) | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu); **server tự tính giá** từ `product.price` + `order/pricing.ts` (bỏ qua giá client, thiếu size → M, topping lạ → 400) |
+| **UC05 / UC05a** | Thanh toán không tiền mặt (Ví / Thẻ) / Áp mã giảm giá | `POST /payments` | `PaymentController`<br>`PaymentService` (+ `PrismaPaymentRepo` / `PrismaProductRepo` khi có `DATABASE_URL`) | `Payment`, `Order`, `Product`, `User` | `@UseGuards(JwtAuthGuard)` (thiếu JWT → 401), kiểm tra chủ đơn trước cache (đơn không có → 404, khác chủ → 403, kể cả khi trúng cache Idempotency-Key), header `Idempotency-Key` (alt hit/miss), khóa trong tiến trình theo key + `orderId` (request song song chỉ charge 1 lần), validate voucher `BREWLITE10` nội bộ (Task 10), ghi sau charge trong 1 `runInTransaction` (trừ kho `updateMany` kèm `version` retry 3, `PAID`, điểm, biên lai); kẹt kho → rollback + hoàn tiền + `PAYMENT_FAILED` + 409 |
+| **UC06** | Hủy đơn / Thử lại thanh toán | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `PaymentController.update()`<br>`PaymentService.cancelOrderAs()` / `advanceOrder()` (route `PATCH` hiện nằm ở PaymentController) | `Order`, `Payment` | Chỉ chủ đơn (403/404); hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho, hoàn kho + `CANCELLED` trong 1 transaction); FE có nút Hủy ở `/history` (`cancelOrder()` trong `lib/api.ts`) |
+| **UC07** | Xem xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController.mine()`<br>`OrderService.listMine()` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
 
-UC08–UC15 (phân hệ Barista + Admin): **ngoài phạm vi – chưa hiện thực**, không có đặc tả riêng (xem `docs/use-case-specifications.md` mục 4).
+Barista / Admin: **ngoài phạm vi MVP** (đề §3.2), không có trên biểu đồ Use Case gốc nên không có sơ đồ tuần tự (xem `docs/use-case-specifications.md` mục 1).
 
 ### Hướng Dẫn Điều Hướng Cho AI Agent (Agent Rules):
 1. **Tuyệt đối không tạo thêm bảng CSDL ngoài:** Hệ thống chỉ có 5 thực thể tối thiểu (`Product`, `User`, `Order`, `OrderItem`, `Payment`). Khuyến mãi và mã giảm giá `BREWLITE10` được cấu hình và validate nội bộ trong `PaymentService`.

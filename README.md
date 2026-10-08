@@ -7,14 +7,14 @@
 | Frontend | Next.js 14 + Zustand | `:3001` |
 | Backend | NestJS 10 + class-validator | `:3000` |
 | CSDL | PostgreSQL 16 + Prisma (schema 5 entity) | `:5432` |
-| Thanh toán | Mock gateway (stub In-Memory, chưa cần DB thật) | — |
+| Thanh toán | Mock gateway (`MockPaymentGatewayService`), dữ liệu lưu Postgres qua Prisma | — |
 
 ## Chạy nhanh
 
 ```bash
 cp .env.example .env
 docker compose up --build
-# Frontend http://localhost:3001, Backend http://localhost:3000/payments
+# Frontend http://localhost:3001, Backend http://localhost:3000/products
 ```
 
 Chạy rời từng phần:
@@ -26,17 +26,27 @@ cd frontend && npm install && npm run dev   # http://localhost:3001
 
 `NEXT_PUBLIC_PAYMENT_MODE=mock` demo UI không cần backend; `=api` cắm `POST /payments` thật.
 
-## Tiến độ 10 task (theo PR đã merge vào develop)
+## Tiến độ 10 task (đã merge vào develop)
 
-| Task | Trạng thái |
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 62 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 46 pass. Bằng chứng từng task: `docs/develop-status-report.md`.
+
+| Task | Hiện thực chính |
 |---|---|
-| 1 Khởi tạo, 2 `GET /products`, 4 detail, 6 `POST /orders`, 7 JWT, 9 compose/bàn giao | còn teammate |
-| 3 Menu, 5 Giỏ (frontend, mock data) | đã có trên develop |
-| 8 `POST /payments` + 10 state-machine/idempotent/tồn kho/loyalty (stub In-Memory, `jest` 17/17) | đã có trên develop |
+| 1 Khởi tạo | `frontend/` + `backend/`, README, `.env.example`, `docker-compose.yml` |
+| 2 `GET /products` | `ProductModule`, lọc `stock > 0`, `GET /products/:id` trả 404 khi không có |
+| 3 Menu | `ProductGrid`: loading / lỗi + thử lại / rỗng |
+| 4 Size/Topping | `ProductDetailModal` + `lib/pricing.ts` |
+| 5 Giỏ hàng | Zustand + localStorage, badge số lượng |
+| 6 `POST /orders` | JWT, `class-validator`, server tự tính giá (`backend/src/order/pricing.ts`), đơn `PENDING` |
+| 7 JWT | `POST /auth/register` (bcrypt, 409 trùng email), `POST /auth/login`, `JwtAuthGuard` |
+| 8 Thanh toán | `POST /payments` Ví/Thẻ, `PAID` / `PAYMENT_FAILED`, thử lại giữ đơn cũ |
+| 9 Bàn giao | màn xác nhận, `/history` (`GET /orders/me`), compose 3 service, seed tài khoản demo |
+| 10 Nghiệp vụ | State Machine `assertTransition`, Idempotency-Key, optimistic lock + transaction, voucher `BREWLITE10` + điểm thưởng |
 
-## API (10 endpoint) và Entity (5)
+## API (7 endpoint tối thiểu + 2 mở rộng) và Entity (5)
 
-`GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`, `PATCH /orders/:id`, `GET /orders`, `GET /orders/:id` — xem mục 12 trong docs.
+Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`.
+Mở rộng của nhóm: `PATCH /orders/:id` (hủy / tiến trạng thái đơn, Task 10), `GET /orders/:id` (chi tiết đơn) — chỉ chủ đơn. Không có `GET /orders` (hàng đợi quầy, Barista ngoài MVP). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
 `Product(stock,version)`, `User(loyaltyPoints)`, `Order`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
 Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
 

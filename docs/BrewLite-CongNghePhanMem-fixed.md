@@ -294,6 +294,8 @@ Mỗi task là một hạng mục backlog, sắp xếp **từ dễ đến khó**
 >
 > **Tiêu chí chấm:** có *unit/integration test* chứng minh: (a) chặn được chuyển trạng thái sai; (b) gửi 2 lần cùng Idempotency-Key chỉ tạo 1 đơn; (c) đặt đồng thời không vượt tồn kho.
 
+> **Chốt của nhóm (không có trong đề gốc `BrewLite-CongNghePhanMem.pdf`):** đề gốc chỉ yêu cầu "áp mã giảm giá hợp lệ và cộng điểm tích lũy", không quy định mã, tỉ lệ hay cách lưu. Nhóm chốt:
+
 Chốt MVP: mã `BREWLITE10` giảm 10% (`floor(total * 0.1)`), điểm thưởng `floor(finalAmount * 0.1 / 1000)`, cộng sau khi đơn `PAID`. Validate nội bộ trong `PaymentService`, không thêm bảng/endpoint.
 
 ### 9.1 Sơ đồ máy trạng thái đơn hàng (Order State Machine)
@@ -356,11 +358,19 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 | `POST /orders` | Tạo đơn (PENDING) |
 | `POST /payments` | Thanh toán (idempotent) |
 | `GET /orders/me` | Lịch sử đơn của user |
-| `PATCH /orders/:id` | Hủy đơn / cập nhật trạng thái (Task 10, `PENDING`/`PAID` → `CANCELLED`) |
-| `GET /orders` | Hàng đợi đơn theo trạng thái, quầy lọc `?status=PAID` (UC08) |
-| `GET /orders/:id` | Chi tiết một đơn cho quầy, tùy chọn xem trước PATCH (UC09–UC12) |
+
+> **Ghi chú của nhóm (không thuộc đề gốc `BrewLite-CongNghePhanMem.pdf`):** bảng trên giữ nguyên 7 endpoint tối thiểu của đề. Nhóm hiện thực thêm 2 endpoint mở rộng:
+>
+> | Endpoint | Chức năng | Lý do |
+> |---|---|---|
+> | `PATCH /orders/:id` | Hủy đơn / tiến trạng thái (`CANCELLED`, `PREPARING`, `READY`, `COMPLETED`), chỉ chủ đơn | Phục vụ Order State Machine §9.1 (Task 10): hủy đơn và các chuyển tiếp sau `PAID` |
+> | `GET /orders/:id` | Chi tiết một đơn, chỉ chủ đơn (404 đơn lạ, 403 đơn người khác) | Xem trạng thái một đơn qua API; giao diện hiện chưa gọi, lịch sử dùng `GET /orders/me` |
+>
+> Không có `GET /orders?status=PAID` (hàng đợi quầy): đề gốc không liệt kê, và Barista nằm ngoài phạm vi MVP theo §3.2.
 
 ### 12.2 Thực thể tối thiểu
+
+> **Ghi chú của nhóm:** đề gốc chỉ liệt kê *Product(id, name, price, imageUrl, stock)*, *OrderItem(id, orderId, productId, size, qty, lineTotal)*, *Payment(id, orderId, idempotencyKey, amount, method)*. Các trường thêm dưới đây là mở rộng của nhóm: `Product.version` (optimistic locking, §9 ý 3), `OrderItem.toppings` (§4.1 chọn topping), `Payment.status / discount / loyaltyPointsEarned` và `idempotencyKey @unique` (§9 ý 2, 4). Vẫn đúng 5 thực thể, không thêm bảng.
 
 - **Product**(id, name, price, imageUrl, stock, version).
 - **User**(id, email, passwordHash, loyaltyPoints).
