@@ -140,7 +140,7 @@ export default function CartPage() {
         Thanh toán • {formatVND(total)}
       </button>
       <p style={{ fontSize: 13, color: '#6b7280' }}>
-        Payload cho Task 6 (POST /orders) sẽ dùng unitPrice từ giỏ này để backend validate — tránh sai số tổng tiền.
+        Giá cuối cùng do máy chủ tính lại khi tạo đơn (POST /orders), nên tổng tiền luôn khớp với giá hiện hành.
       </p>
     </section>
   );

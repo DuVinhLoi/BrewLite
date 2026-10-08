@@ -22,13 +22,45 @@ export class PaymentService {
     private gateway: MockPaymentGatewayService,
   ) {}
 
-  async processPayment(dto: CreatePaymentDto, idempotencyKey: string) {
-    if (!idempotencyKey) throw new BadRequestException('Missing Idempotency-Key');
-    const hit = await this.payments.findByIdempotencyKey(idempotencyKey);
-    if (hit) return { isCached: true, status: 'PAID', orderId: hit.orderId, amount: hit.amount, paymentId: hit.id, discount: hit.discount, loyaltyPointsEarned: hit.loyaltyPointsEarned };
+  // ponytail: khóa trong tiến trình — đủ cho 1 instance backend (compose); chạy nhiều instance thì đổi sang khóa DB (pg advisory lock / SELECT ... FOR UPDATE)
+  private locks = new Map<string, Promise<unknown>>();
 
+  private async withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    const run = (this.locks.get(key) ?? Promise.resolve()).then(fn);
+    const tail = run.catch(() => undefined);
+    this.locks.set(key, tail);
+    try {
+      return await run;
+    } finally {
+      if (this.locks.get(key) === tail) this.locks.delete(key);
+    }
+  }
+
+  // 10b: tuần tự hóa theo key VÀ theo đơn → request song song (cùng key hoặc khác key cùng đơn)
+  // chờ nhau, request sau đọc lại cache/trạng thái mới nên không gọi charge() lần 2
+  async processPayment(userId: string, dto: CreatePaymentDto, idempotencyKey: string) {
+    if (!idempotencyKey) throw new BadRequestException('Missing Idempotency-Key');
+    return this.withLock(`key:${idempotencyKey}`, () =>
+      this.withLock(`order:${dto.orderId}`, () => this.pay(userId, dto, idempotencyKey)),
+    );
+  }
+
+  private async pay(userId: string, dto: CreatePaymentDto, idempotencyKey: string) {
+    // chủ đơn kiểm tra TRƯỚC cache: người lạ không thanh toán hộ và không đọc được biên lai bằng key
     const order = await this.orders.findById(dto.orderId);
     if (!order) throw new NotFoundException('Order not found');
+    if (order.userId !== userId) throw new ForbiddenException('Not your order');
+
+    const hit = await this.payments.findByIdempotencyKey(idempotencyKey);
+    if (hit) {
+      // key có thể thuộc biên lai của đơn khác (không phải dto.orderId): đơn đó cũng phải là của người gọi
+      if (hit.orderId !== order.id) {
+        const hitOrder = await this.orders.findById(hit.orderId);
+        if (!hitOrder) throw new NotFoundException('Order not found');
+        if (hitOrder.userId !== userId) throw new ForbiddenException('Not your order');
+      }
+      return { isCached: true, status: 'PAID', orderId: hit.orderId, amount: hit.amount, paymentId: hit.id, discount: hit.discount, loyaltyPointsEarned: hit.loyaltyPointsEarned };
+    }
 
     const discount = dto.voucherCode === VOUCHER_CODE ? Math.floor(order.total * VOUCHER_RATE) : 0;
     const finalAmount = Math.max(0, order.total - discount);
@@ -102,6 +134,10 @@ export class PaymentService {
   }
 
   async cancelOrder(orderId: string) {
+    return this.withLock(`order:${orderId}`, () => this.cancel(orderId));
+  }
+
+  private async cancel(orderId: string) {
     const order = await this.orders.findById(orderId);
     if (!order) throw new NotFoundException('Order not found');
     assertTransition(order.status, OrderStatus.CANCELLED);
@@ -110,7 +146,12 @@ export class PaymentService {
       const receipts = await this.payments.findAllByOrderId(order.id);
       const collected = receipts.filter((p) => p.status === 'SUCCESS').reduce((s, p) => s + p.amount, 0);
       await this.gateway.refund(order.id, collected > 0 ? collected : order.total);
-      for (const item of order.items) await this.products.restoreStock(item.productId, item.quantity);
+      // hoàn kho (mọi món) + CANCELLED trong 1 transaction: lỗi giữa chừng thì rollback, đơn vẫn PAID, kho không đổi dở.
+      // ponytail: refund nằm ngoài transaction (gọi cổng ngoài) — transaction lỗi sau refund thì tiền đã hoàn mà đơn vẫn PAID, hủy lại sẽ hoàn lần 2
+      return this.orders.runInTransaction(async (tx) => {
+        for (const item of order.items) await this.products.restoreStock(item.productId, item.quantity, tx);
+        return this.orders.updateStatus(order.id, OrderStatus.CANCELLED, tx);
+      });
     }
     return this.orders.updateStatus(order.id, OrderStatus.CANCELLED);
   }
@@ -118,11 +159,13 @@ export class PaymentService {
   // Gap 1: tiến đơn PAID→PREPARING→READY→COMPLETED, chỉ chủ đơn; CANCELLED đi đường cancelOrder (hoàn tiền)
   async advanceOrder(userId: string, orderId: string, status: OrderStatus) {
     if (status === OrderStatus.CANCELLED) throw new BadRequestException('Use cancel for CANCELLED');
-    const order = await this.orders.findById(orderId);
-    if (!order) throw new NotFoundException('Order not found');
-    if (order.userId !== userId) throw new ForbiddenException('Not your order');
-    assertTransition(order.status, status);
-    return this.orders.updateStatus(order.id, status);
+    return this.withLock(`order:${orderId}`, async () => {
+      const order = await this.orders.findById(orderId);
+      if (!order) throw new NotFoundException('Order not found');
+      if (order.userId !== userId) throw new ForbiddenException('Not your order');
+      assertTransition(order.status, status);
+      return this.orders.updateStatus(order.id, status);
+    });
   }
 
   // Gap 1: chặn chủ đơn lạ hủy hộ; refund/stock giữ nguyên trong cancelOrder

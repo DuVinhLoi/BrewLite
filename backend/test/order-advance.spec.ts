@@ -87,7 +87,7 @@ describe('order advance PAID->PREPARING->READY->COMPLETED (gap 1)', () => {
       id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 20000,
       items: [{ productId: 'p1', quantity: 1, unitPrice: 20000 }], createdAt: new Date(),
     });
-    await s.svc.processPayment({ orderId: 'o1', paymentMethod: 'WALLET' }, 'K-ADV-C1');
+    await s.svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'K-ADV-C1');
     await s.svc.cancelOrderAs('u1', 'o1');
     expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.CANCELLED);
     expect(s.gateway.refunds).toEqual([{ orderId: 'o1', amount: 20000 }]);

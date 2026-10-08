@@ -10,8 +10,9 @@ export class PaymentController {
   constructor(private payments: PaymentService) {}
 
   @Post('payments')
-  async pay(@Body() dto: CreatePaymentDto, @Headers('idempotency-key') key: string, @Res({ passthrough: true }) res: any) {
-    const r = await this.payments.processPayment(dto, key);
+  @UseGuards(JwtAuthGuard)
+  async pay(@Body() dto: CreatePaymentDto, @Headers('idempotency-key') key: string, @Req() req: any, @Res({ passthrough: true }) res: any) {
+    const r = await this.payments.processPayment(req.user.id, dto, key);
     res.status(r.isCached ? 200 : 201);
     return r;
   }

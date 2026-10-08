@@ -1,5 +1,6 @@
-import { IsArray, IsInt, IsOptional, IsString, ArrayMinSize, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsOptional, IsString, ArrayMinSize, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { SIZES, Size } from '../pricing';
 
 export class OrderItemInput {
   @IsString()
@@ -9,13 +10,10 @@ export class OrderItemInput {
   @Min(1)
   quantity!: number;
 
-  @IsInt()
-  @Min(0)
-  unitPrice!: number;
-
+  // Không nhận unitPrice từ client: server tự tính từ product.price + size/topping (order/pricing.ts)
   @IsOptional()
-  @IsString()
-  size?: string;
+  @IsIn(SIZES)
+  size?: Size;
 
   @IsOptional()
   @IsArray()

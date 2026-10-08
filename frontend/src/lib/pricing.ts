@@ -2,7 +2,7 @@
 // FEATURE: Pricing — nguồn duy nhất cho mọi tính tiền (VND nguyên).
 // unitPrice = base + SIZE_UPCHARGE[size] + sum(TOPPING_PRICES)
 // lineTotal = unitPrice * qty; cartTotal = sum(lineTotal)
-// Backend Task 6/8/10 phải dùng đúng bảng này để khỏi lệch tổng.
+// Backend tự tính lại giá đơn bằng bản sao ở backend/src/order/pricing.ts — sửa bảng thì sửa cả 2.
 // ============================================================
 
 import type { Size } from './types';

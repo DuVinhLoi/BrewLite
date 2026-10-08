@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatVND } from '@/lib/pricing';
+import { canCancelOrder, cancelOrder } from '@/lib/api';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -26,6 +27,9 @@ export default function HistoryPage() {
   const [token, setToken] = useState<string | null>(null);
   const [orders, setOrders] = useState<HistoryOrder[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<{ id: string; message: string } | null>(null);
 
   useEffect(() => {
     setToken(localStorage.getItem('brewlite-token'));
@@ -41,7 +45,23 @@ export default function HistoryPage() {
       })
       .then((list) => setOrders([...list].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))))
       .catch((e) => setError(e instanceof Error ? e.message : 'Lỗi không xác định'));
-  }, [token]);
+  }, [token, reload]);
+
+  // UC06 KB2/KB3: PATCH /orders/:id CANCELLED; đơn PAID có hoàn tiền nên hỏi xác nhận trước
+  async function onCancel(o: HistoryOrder) {
+    if (!token) return;
+    if (o.status === 'PAID' && !window.confirm('Đơn đã thanh toán. Hủy đơn sẽ hoàn tiền và hoàn lại kho. Bạn chắc chắn muốn hủy?')) return;
+    setBusyId(o.id);
+    setCancelError(null);
+    try {
+      await cancelOrder(o.id, token);
+      setReload((n) => n + 1);
+    } catch (e) {
+      setCancelError({ id: o.id, message: e instanceof Error ? e.message : 'Lỗi không xác định' });
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   if (token === null) return null;
   if (!token)
@@ -76,6 +96,20 @@ export default function HistoryPage() {
               </li>
             ))}
           </ul>
+          {canCancelOrder(o.status) && (
+            <button
+              onClick={() => onCancel(o)}
+              disabled={busyId === o.id}
+              style={{ marginTop: 8, padding: '6px 12px', border: '1px solid #b91c1c', color: '#b91c1c', background: '#fff', borderRadius: 6, cursor: 'pointer' }}
+            >
+              {busyId === o.id ? 'Đang hủy…' : 'Hủy đơn'}
+            </button>
+          )}
+          {cancelError?.id === o.id && (
+            <p role="alert" style={{ margin: '6px 0 0', fontSize: 13, color: 'red' }}>
+              {cancelError.message}
+            </p>
+          )}
         </article>
       ))}
     </section>

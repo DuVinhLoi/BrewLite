@@ -10,10 +10,10 @@ export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'CARD', label: 'Thẻ ngân hàng' },
 ];
 
+/** Dòng gửi POST /orders (khớp CreateOrderItemDto): không có giá, server tự tính từ product.price + size/topping. */
 export interface CartLine {
   productId: string;
   quantity: number;
-  unitPrice: number;
   size?: string;
   toppings?: string[];
 }
@@ -37,6 +37,14 @@ export interface PaymentResult {
   amount: number;
   method: PaymentMethod;
   idempotencyKey: string;
+}
+
+/** Lỗi thanh toán; có orderId khi đơn đã tạo → lần thử lại trả tiếp đơn này (UC06 KB1), không tạo đơn mới. */
+export class PaymentError extends Error {
+  constructor(message: string, readonly orderId?: string) {
+    super(message);
+    this.name = 'PaymentError';
+  }
 }
 
 /** Mỗi lần "Xác nhận trả" sinh 1 key để chống trừ tiền 2 lần. */
