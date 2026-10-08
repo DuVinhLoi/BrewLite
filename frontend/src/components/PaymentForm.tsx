@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import { formatVND } from '@/lib/pricing';
-import { PAYMENT_METHODS, getPaymentGateway, newIdempotencyKey } from '@/lib/payment';
+import { PAYMENT_METHODS, PaymentError, getPaymentGateway, newIdempotencyKey } from '@/lib/payment';
 import type { PaymentMethod, PaymentResult } from '@/lib/payment';
 import type { CartLine } from '@/lib/payment/types';
 
@@ -27,6 +27,8 @@ export default function PaymentForm({
   const [error, setError] = useState<string | null>(null);
   const [voucher, setVoucher] = useState('');
   const [applied, setApplied] = useState<string | null>(null);
+  // Đơn đã tạo ở lần trả lỗi trước → thử lại trả tiếp đơn này với key MỚI (UC06 KB1), không tạo đơn mới
+  const [orderId, setOrderId] = useState<string | undefined>();
 
   const discount = applied === 'BREWLITE10' ? Math.floor(total * 0.1) : 0;
   const final = total - discount;
@@ -40,11 +42,12 @@ export default function PaymentForm({
         amount: final,
         method,
         idempotencyKey: newIdempotencyKey(),
-        items,
+        ...(orderId ? { orderId } : { items }),
         ...(applied ? { voucherCode: applied } : {}),
       });
       onSuccess(result);
     } catch (e) {
+      if (e instanceof PaymentError && e.orderId) setOrderId(e.orderId);
       setError(e instanceof Error ? e.message : 'Thanh toán thất bại, vui lòng thử lại.');
     } finally {
       setProcessing(false);

@@ -41,12 +41,12 @@ pg('Task 8+10 on Postgres', () => {
       await db.order.deleteMany({ where: { id: `opg${i}` } });
       await orders.save({ id: `opg${i}`, userId: 'u-pg', status: OrderStatus.PENDING, total: 10000, items: [{ productId: 'p-pg', quantity: 1, unitPrice: 10000 }], createdAt: new Date() });
     }
-    const r1 = await svc.processPayment({ orderId: 'opg0', paymentMethod: 'WALLET' }, 'PG-KEY-1');
-    const r2 = await svc.processPayment({ orderId: 'opg0', paymentMethod: 'WALLET' }, 'PG-KEY-1');
+    const r1 = await svc.processPayment('u-pg', { orderId: 'opg0', paymentMethod: 'WALLET' }, 'PG-KEY-1');
+    const r2 = await svc.processPayment('u-pg', { orderId: 'opg0', paymentMethod: 'WALLET' }, 'PG-KEY-1');
     expect(r2.isCached).toBe(true);
     expect(r2.discount).toBe(r1.discount);
     const results = await Promise.allSettled(
-      Array.from({ length: 9 }, (_, i) => svc.processPayment({ orderId: `opg${i + 1}`, paymentMethod: 'WALLET' }, `PG-K-${i}`)),
+      Array.from({ length: 9 }, (_, i) => svc.processPayment('u-pg', { orderId: `opg${i + 1}`, paymentMethod: 'WALLET' }, `PG-K-${i}`)),
     );
     const ok = results.filter((r) => r.status === 'fulfilled').length;
     expect(ok).toBe(2); // opg0 đã lấy 1 suất trong tổng kho 3

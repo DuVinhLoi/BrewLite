@@ -18,7 +18,7 @@ test('gateway failure -> PAYMENT_FAILED, cart kept (order retryable)', async () 
   await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 35000, items: [{ productId: 'p1', quantity: 1, unitPrice: 35000 }], createdAt: new Date() });
 
   gateway.failNextCharge();
-  await expect(svc.processPayment({ orderId: 'o1', paymentMethod: 'WALLET' }, 'K-F1')).rejects.toThrow('Payment failed');
+  await expect(svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'K-F1')).rejects.toThrow('Payment failed');
   expect((await orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
   expect((await products.findById('p1'))!.stock).toBe(10);
 });

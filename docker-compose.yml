@@ -23,6 +23,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://brewlite:brewlite@db:5432/brewlite}
       JWT_SECRET: ${JWT_SECRET:-dev-secret}
       PORT: ${PORT:-3000}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
     depends_on:
       db:
         condition: service_healthy

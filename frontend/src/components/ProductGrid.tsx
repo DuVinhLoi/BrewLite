@@ -53,7 +53,7 @@ export default function ProductGrid({ products, loading, error, fromMock, onRetr
     <div>
       {fromMock && (
         <p style={{ fontSize: 13, color: '#92400e', background: '#fef3c7', padding: '8px 12px', borderRadius: 8 }}>
-          Đang hiển thị menu mẫu (backend GET /products chưa chạy). Set NEXT_PUBLIC_API_URL để dùng API thật.
+          Đang hiển thị menu mẫu vì chưa cấu hình NEXT_PUBLIC_API_URL. Đặt biến này (xem .env.example) để dùng API thật.
         </p>
       )}
       <div style={gridStyle}>
