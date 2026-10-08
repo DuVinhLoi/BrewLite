@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { PaymentController } from '../src/payment/payment.controller';
@@ -299,5 +299,55 @@ describe('cancel PAID is atomic (restoreStock + CANCELLED)', () => {
     expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.CANCELLED);
     expect((await s.products.findById('p1'))!.stock).toBe(5);
     expect((await s.products.findById('p2'))!.stock).toBe(5);
+  });
+});
+
+// Lỗi BẤT KỲ sau khi charge thành công (không riêng kẹt kho) phải hoàn đúng số đã thu + đơn sang PAYMENT_FAILED
+// rồi ném lại lỗi gốc; nếu không, đơn kẹt PENDING không biên lai và thử lại sẽ trừ tiền lần 2 (đề §9)
+describe('lỗi sau charge thành công → hoàn tiền + PAYMENT_FAILED', () => {
+  async function seed(opts: { stock?: number; withProduct?: boolean } = {}) {
+    const s = setup();
+    if (opts.withProduct !== false) await s.products.save({ id: 'p1', name: 'Latte', price: 35000, stock: opts.stock ?? 5, version: 1 });
+    await s.users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+    await s.orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 35000, items: [{ productId: 'p1', quantity: 1, unitPrice: 35000 }], createdAt: new Date() });
+    return s;
+  }
+  const dto = { orderId: 'o1', paymentMethod: 'WALLET' as const };
+
+  test('sản phẩm mất giữa chừng (NotFound) → hoàn tiền, PAYMENT_FAILED, ném lại 404; thử lại key mới thanh toán được', async () => {
+    const s = await seed({ withProduct: false });
+    await expect(s.svc.processPayment('u1', dto, 'K-E1')).rejects.toBeInstanceOf(NotFoundException);
+    expect(s.gateway.refunds).toEqual([{ orderId: 'o1', amount: 35000 }]);
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
+    expect(await s.payments.findByIdempotencyKey('K-E1')).toBeNull();
+
+    await s.products.save({ id: 'p1', name: 'Latte', price: 35000, stock: 5, version: 1 });
+    const r = await s.svc.processPayment('u1', dto, 'K-E2');
+    expect(r).toMatchObject({ isCached: false, status: 'PAID', amount: 35000 });
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAID);
+    expect(s.gateway.refunds).toHaveLength(1); // lần thử lại không hoàn thêm
+  });
+
+  test('lỗi chung của DB/repo → hoàn đúng số thực thu (có voucher), PAYMENT_FAILED, ném lại đúng lỗi gốc, không để lại gì', async () => {
+    const s = await seed();
+    jest.spyOn(s.users, 'addLoyaltyPoints').mockRejectedValueOnce(new Error('db down'));
+    const withVoucher = { ...dto, voucherCode: 'BREWLITE10' };
+
+    await expect(s.svc.processPayment('u1', withVoucher, 'K-E3')).rejects.toThrow('db down');
+    expect(s.gateway.refunds).toEqual([{ orderId: 'o1', amount: 31500 }]); // finalAmount sau voucher, không phải 35000
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
+    expect((await s.products.findById('p1'))!.stock).toBe(5); // transaction rollback: kho không bị trừ
+    expect(await s.payments.findByIdempotencyKey('K-E3')).toBeNull();
+
+    const r = await s.svc.processPayment('u1', withVoucher, 'K-E4');
+    expect(r).toMatchObject({ isCached: false, status: 'PAID', amount: 31500 });
+    expect(s.gateway.refunds).toHaveLength(1);
+  });
+
+  test('kẹt kho (409) giữ nguyên: ConflictException + hoàn tiền + PAYMENT_FAILED', async () => {
+    const s = await seed({ stock: 0 });
+    await expect(s.svc.processPayment('u1', dto, 'K-E5')).rejects.toBeInstanceOf(ConflictException);
+    expect(s.gateway.refunds).toEqual([{ orderId: 'o1', amount: 35000 }]);
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
   });
 });

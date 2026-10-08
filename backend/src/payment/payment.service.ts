@@ -123,11 +123,13 @@ export class PaymentService {
         paymentId = payment.id;
       });
     } catch (e) {
-      if (e instanceof ConflictException) {
-        await this.gateway.refund(order.id, finalAmount).catch(() => undefined);
-        await this.orders.updateStatus(order.id, OrderStatus.PAYMENT_FAILED);
-        throw e;
-      }
+      // charge đã thành công mà ghi DB lỗi (kẹt kho 409, sản phẩm mất, lỗi DB…): hoàn đúng số đã thu + PAYMENT_FAILED
+      // để thử lại bằng key mới không trừ tiền lần 2; luôn ném lại lỗi gốc (lỗi của bước bù không được che nó).
+      // ponytail: hoàn tiền/ghi PAYMENT_FAILED lỗi thì bỏ qua (chưa có sổ đối soát) — cần job đối soát nếu chạy thật
+      await this.gateway.refund(order.id, finalAmount).catch(() => undefined);
+      // transaction đã rollback nên đơn đang PENDING (không đọc order.status: repo in-memory trả cùng object, đã bị đổi sang PAID)
+      assertTransition(OrderStatus.PENDING, OrderStatus.PAYMENT_FAILED);
+      await this.orders.updateStatus(order.id, OrderStatus.PAYMENT_FAILED).catch(() => undefined);
       throw e;
     }
     return { isCached: false, status: 'PAID', orderId: order.id, amount: finalAmount, discount, loyaltyPointsEarned: points, paymentId };
