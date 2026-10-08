@@ -3,6 +3,7 @@
 import type { CSSProperties } from 'react';
 import { formatVND } from '@/lib/pricing';
 import { PAYMENT_METHODS, type PaymentResult } from '@/lib/payment';
+import OrderStatusTrack from './OrderStatusTrack';
 
 // FEATURE: Payment success (wireframe màn 5) — mã đơn PAID + nút về trang chủ.
 export default function PaymentSuccess({
@@ -22,9 +23,8 @@ export default function PaymentSuccess({
         <p>
           Mã đơn: <strong>{result.orderCode}</strong>
         </p>
-        <p>
-          Trạng thái: <strong>{result.status}</strong>
-        </p>
+        <p style={{ marginBottom: 0 }}>Trạng thái:</p>
+        <OrderStatusTrack status={result.status} />
         <p>
           Đã trả: <strong>{formatVND(result.amount)}</strong> ({methodLabel})
         </p>

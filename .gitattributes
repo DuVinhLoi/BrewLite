@@ -1,0 +1,2 @@
+# Script shell luôn LF: bash không chạy được file có CRLF (core.autocrlf=true trên Windows sẽ đổi khi checkout)
+*.sh text eol=lf
