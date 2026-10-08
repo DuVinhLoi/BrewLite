@@ -443,13 +443,15 @@ deactivate FE
 
 #### A. Bối cảnh nghiệp vụ
 Phục vụ máy trạng thái **Order State Machine** tại Mục 9.1 tài liệu môn học (`docs:301-322`). 
-* Khối `alt` mô tả 3 ngã rẽ xử lý trạng thái theo chuẩn REST (`PATCH /orders/:id`):
+* Khối `alt` mô tả 4 ngã rẽ xử lý trạng thái theo chuẩn REST (`PATCH /orders/:id`): 3 kịch bản cốt lõi của UC06 và 1 kịch bản mở rộng minh họa State Machine. Sơ đồ trạng thái B2 bên dưới vẽ đủ 9 chuyển tiếp của đề §9.1 và ghi từng chuyển do thao tác nào kích hoạt:
   - **Kịch bản 1 (Thử lại):** Khi cổng thanh toán báo trừ tiền lỗi, đơn hàng ở trạng thái `PAYMENT_FAILED`. Màn Thanh toán vẫn mở và giữ `orderId` của đơn lỗi; khách bấm lại "Xác nhận trả" (giao diện không có nút "Thử lại" riêng, trang `/history` cũng không thanh toán lại được), hệ thống gọi lại thanh toán hoặc chuyển trạng thái đơn quay về `PENDING` (`PAYMENT_FAILED` $\rightarrow$ `PENDING`).
   - **Kịch bản 2 (Khách hủy đơn chưa trả):** Khi đơn hàng chưa thanh toán, khách có quyền hủy đơn (`PENDING` $\rightarrow$ `CANCELLED`; `PAYMENT_FAILED` $\rightarrow$ `CANCELLED` cũng hợp lệ).
   - **Kịch bản 3 (Hủy đơn đã thanh toán - Hoàn tiền):** Khi đơn đã trả tiền (`PAID`) và khách yêu cầu hủy kịp thời, hệ thống hủy đơn kèm hoàn tiền + hoàn kho (`PAID` $\rightarrow$ `CANCELLED` theo đúng `docs:313`).
+  - **Kịch bản 4 (mở rộng, demo quầy):** chủ đơn bấm nút **"Quầy (demo)"** để tiến đơn `PAID` $\rightarrow$ `PREPARING` $\rightarrow$ `READY` $\rightarrow$ `COMPLETED` (bấm 3 lần), minh họa trọn luồng State Machine §9.1 trên giao diện. Đây **không** phải use case mới và **không** có tác nhân Barista: biểu đồ Use Case gốc giữ nguyên (UC06 vẫn là "Hủy đơn / Thử lại thanh toán"), nút chỉ là phần mở rộng minh họa, thay cho vai trò Barista nằm ngoài MVP (đề §3.2).
 * **Hiện trạng code cho KB2/KB3:**
   - **Frontend có nút "Hủy đơn" ở `/history`** cho đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (helper `cancelOrder()` trong `frontend/src/lib/api.ts`): gọi `PATCH /orders/:id { status: 'CANCELLED' }` kèm Bearer JWT, đơn `PAID` hỏi xác nhận (có hoàn tiền) trước khi gọi, lỗi 400/403 hiện ngay dưới thẻ đơn, thành công thì tải lại danh sách. Màn biên lai không có nút này.
   - **Chỉ CHỦ ĐƠN được hủy:** `PaymentService.cancelOrderAs()` so `order.userId` với user trong token; khác chủ → 403, đơn không tồn tại → 404.
+  - **Hiện trạng code cho KB4 và thanh tiến trình:** `/history` và màn biên lai hiện **thanh 5 bước** `Chờ thanh toán → Đã thanh toán → Đang pha → Sẵn sàng → Hoàn tất` (component `OrderStatusTrack`; `Thanh toán lỗi` đỏ, `Đã hủy` xám). Nút "Quầy (demo): → <bước kế>" chỉ hiện ở đơn `PAID` / `PREPARING` / `READY`, có tooltip "Mô phỏng thao tác của Barista (ngoài MVP theo đề §3.2)", ẩn được bằng `NEXT_PUBLIC_DEMO_COUNTER=false`; không hiện ở `PENDING`, `PAYMENT_FAILED` (bước kế là thanh toán), `COMPLETED`, `CANCELLED`.
   - Barista hủy đơn khi hết nguyên liệu: **ngoài phạm vi MVP** (đề §3.2), không có trên biểu đồ Use Case gốc; hệ thống không có vai trò Barista.
 
 #### B. Sơ đồ tuần tự (PlantUML)
@@ -516,21 +518,97 @@ else Kịch bản 3: Chủ đơn hủy đơn đã thanh toán (PAID -> CANCELLED
     deactivate BE
     FE --> User : Tải lại danh sách, đơn hiện trạng thái CANCELLED
     deactivate FE
+
+else Kịch bản 4 (mở rộng, demo quầy): Chủ đơn tiến đơn PAID -> PREPARING bằng nút "Quầy (demo)"
+    note over User, FE : Mô phỏng Barista (ngoài MVP, đề §3.2): không có tác nhân Barista,\nchỉ gọi PATCH /orders/:id có sẵn; nút ghi rõ chữ "demo"
+    User -> FE : Bấm nút "Quầy (demo): → Đang pha" ở trang Lịch sử
+    activate FE
+    FE -> BE : PATCH /orders/1042 { status: 'PREPARING' } + Bearer JWT
+    activate BE
+    BE -> BE : Kiểm tra chủ đơn (khác chủ -> 403, không có đơn -> 404)
+    alt Đúng thứ tự (PAID -> PREPARING)
+        BE -> BE : assertTransition(from: PAID, to: PREPARING)
+        BE -> DB : Cập nhật trạng thái đơn thành "PREPARING"
+        BE --> FE : Xác nhận chuyển trạng thái (200 OK)
+        FE --> User : Tải lại danh sách, thanh tiến trình sang bước "Đang pha"\n(bấm tiếp: READY, rồi COMPLETED)
+    else Sai thứ tự (ví dụ gọi tay PAID -> READY, hoặc hủy khi đã PREPARING)
+        BE --> FE : 400 Bad Request (Invalid transition), trạng thái đơn không đổi
+        FE --> User : Hiện lỗi tiếng Việt ngay dưới thẻ đơn
+    end
+    deactivate BE
+    deactivate FE
 end
+@enduml
+```
+
+#### B2. Sơ đồ trạng thái đơn hàng (PlantUML, đề §9.1)
+Đúng **9 chuyển tiếp** của sơ đồ §9.1; `COMPLETED` và `CANCELLED` là trạng thái cuối. Mỗi mũi tên ghi chuyển trạng thái do thao tác nào kích hoạt. Bảng này khớp `ALLOWED` trong `backend/src/state-machine/order-state.machine.ts` và `TRANSITIONS` trong `frontend/src/lib/order-status.ts` (test `order-status.test.ts` đọc thẳng file backend để so).
+
+```plantuml
+@startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam StateBackgroundColor #eef2fb
+skinparam StateBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+
+title Order State Machine (đề §9.1): 9 chuyển tiếp
+
+state PENDING
+state PAID
+state PREPARING
+state READY
+state COMPLETED #d8ebe0
+state PAYMENT_FAILED #fbe4e4
+state CANCELLED #e0e0e0
+
+PENDING : Chờ thanh toán
+PAID : Đã thanh toán
+PREPARING : Đang pha
+READY : Sẵn sàng
+COMPLETED : Hoàn tất
+PAYMENT_FAILED : Thanh toán lỗi
+CANCELLED : Đã hủy
+
+[*] --> PENDING : POST /orders
+PENDING --> PAID : POST /payments thành công
+PENDING --> PAYMENT_FAILED : POST /payments lỗi\n(trừ tiền lỗi, hoặc ghi DB lỗi\nsau khi trừ: đã hoàn tiền)
+PAYMENT_FAILED --> PENDING : POST /payments thử lại\n(Idempotency-Key mới)
+PENDING --> CANCELLED : nút "Hủy đơn"
+PAYMENT_FAILED --> CANCELLED : nút "Hủy đơn"
+PAID --> CANCELLED : nút "Hủy đơn"\n(hoàn tiền + hoàn kho)
+PAID --> PREPARING : nút "Quầy (demo)"
+PREPARING --> READY : nút "Quầy (demo)"
+READY --> COMPLETED : nút "Quầy (demo)"
+COMPLETED --> [*]
+CANCELLED --> [*]
+
+note right of PREPARING
+  Từ PREPARING trở đi không còn hủy được:
+  assertTransition ném 400 (nút Hủy ẩn,
+  backend vẫn chặn nếu gọi tay).
+end note
+note bottom of READY
+  "Quầy (demo)" mô phỏng Barista: ngoài MVP
+  (đề §3.2), chỉ dùng PATCH /orders/:id có sẵn.
+end note
 @enduml
 ```
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
 * **Backend Endpoints:**
   - `POST /payments` (gửi lại yêu cầu thanh toán khi thử lại)
-  - `PATCH /orders/:id` (Bearer JWT, chỉ chủ đơn; `{ status: 'CANCELLED' }` để hủy; mở rộng: `PREPARING`/`READY`/`COMPLETED` để tiến đơn qua API, minh họa State Machine §9.1 thay vai trò Barista ngoài MVP, giao diện không có nút này)
+  - `PATCH /orders/:id` (Bearer JWT, chỉ chủ đơn; `{ status: 'CANCELLED' }` để hủy; mở rộng: `PREPARING`/`READY`/`COMPLETED` để tiến đơn, minh họa State Machine §9.1 thay vai trò Barista ngoài MVP; gọi qua nút "Quầy (demo)" ở `/history` hoặc `scripts/demo-state-machine.sh`)
 * **Controller / Service:** `PaymentController.update()` (route `PATCH /orders/:id` đang nằm ở `PaymentController`) $\rightarrow$ `PaymentService.cancelOrderAs()` khi `status = CANCELLED`, ngược lại `PaymentService.advanceOrder()`. Cả hai kiểm tra chủ đơn (403/404) và chạy dưới khóa `order:<orderId>`.
-* **Frontend:** nút "Hủy đơn" ở `frontend/src/app/history/page.tsx` (hiện khi `canCancel(status)` trong `lib/order-status.ts`: `PENDING` / `PAYMENT_FAILED` / `PAID`) → `cancelOrder(orderId, token)` trong `frontend/src/lib/api.ts` (test `api.test.ts`). 401/403/404 ánh xạ thành thông báo tiếng Việt, 400 hiện thông điệp backend.
+* **Frontend:** nút "Hủy đơn" ở `frontend/src/app/history/page.tsx` (hiện khi `canCancel(status)` trong `lib/order-status.ts`: `PENDING` / `PAYMENT_FAILED` / `PAID`) → `cancelOrder(orderId, token)` trong `frontend/src/lib/api.ts` (test `api.test.ts`). 401/403/404 ánh xạ thành thông báo tiếng Việt; 400 "Invalid transition A -> B" dịch thành câu tiếng Việt theo nhãn trạng thái, thông điệp 400 khác giữ nguyên. Nút "Quầy (demo)" → `advanceOrder(orderId, status, token)` (cùng `patchOrderStatus`, cùng `PATCH /orders/:id`), hiện khi `nextStatus(status)` khác null và `demoCounterEnabled()`. Bảng chuyển trạng thái FE (`TRANSITIONS`), nhãn, `nextStatus`, `statusTrack` nằm ở `frontend/src/lib/order-status.ts`; test `order-status.test.ts` ghim đúng 9 mũi tên §9.1 và đọc thẳng `ALLOWED` của backend để 2 bên không lệch.
 * **Quy tắc State Machine (Task 10):**
   - `assertTransition('PAYMENT_FAILED' -> 'PENDING')`: Hợp lệ.
   - `assertTransition('PENDING' -> 'CANCELLED')`, `assertTransition('PAYMENT_FAILED' -> 'CANCELLED')`: Hợp lệ.
   - `assertTransition('PAID' -> 'CANCELLED')`: Hợp lệ (kèm nghiệp vụ hoàn đúng số tiền thực thu — cộng mọi biên lai `SUCCESS` của đơn — và hoàn lại tồn kho; refund gọi cổng ngoài trước, rồi hoàn kho mọi món + `CANCELLED` nằm trong 1 `runInTransaction` — lỗi giữa chừng thì rollback, đơn vẫn `PAID` và kho không bị hoàn dở. Giới hạn: refund nằm ngoài transaction nên nếu transaction lỗi sau refund thì tiền đã hoàn mà đơn vẫn `PAID`).
+  - `assertTransition('PAID' -> 'PREPARING')`, `assertTransition('PREPARING' -> 'READY')`, `assertTransition('READY' -> 'COMPLETED')`: Hợp lệ (KB4, `PaymentService.advanceOrder()`, chỉ chủ đơn); nhảy cóc (`PAID -> READY`) hay đi lùi bị 400.
   - `assertTransition('PREPARING' -> 'CANCELLED')`: **Không hợp lệ** (Bị chặn ném lỗi 400 Bad Request vì barista đang pha chế).
+  - `COMPLETED` và `CANCELLED` là trạng thái cuối: mọi chuyển đi từ chúng đều bị 400 (tiêu chí (a) của đề: có test chứng minh chặn chuyển sai; `backend/src/state-machine/order-state.machine.spec.ts`, `backend/test/order-advance.spec.ts`).
 
 ---
 
@@ -598,7 +676,7 @@ Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 10
 | **UC03** | Đăng ký / Đăng nhập (JWT) | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService.login()` / `register()` | `User` | `bcrypt.compare`, cấp JWT Access Token |
 | **UC04** | Tạo đơn hàng (PENDING) | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu); **server tự tính giá** từ `product.price` + `order/pricing.ts` (bỏ qua giá client, thiếu size → M, topping lạ → 400) |
 | **UC05 / UC05a** | Thanh toán không tiền mặt (Ví / Thẻ) / Áp mã giảm giá | `POST /payments` | `PaymentController`<br>`PaymentService` (+ `PrismaPaymentRepo` / `PrismaProductRepo` khi có `DATABASE_URL`) | `Payment`, `Order`, `Product`, `User` | `@UseGuards(JwtAuthGuard)` (thiếu JWT → 401), kiểm tra chủ đơn trước cache (đơn không có → 404, khác chủ → 403, kể cả khi trúng cache Idempotency-Key), header `Idempotency-Key` (alt hit/miss), khóa trong tiến trình theo key + `orderId` (request song song chỉ charge 1 lần), validate voucher `BREWLITE10` nội bộ (Task 10), ghi sau charge trong 1 `runInTransaction` (trừ kho `updateMany` kèm `version` retry 3, `PAID`, điểm, biên lai); kẹt kho → rollback + hoàn tiền + `PAYMENT_FAILED` + 409 |
-| **UC06** | Hủy đơn / Thử lại thanh toán | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `PaymentController.update()`<br>`PaymentService.cancelOrderAs()` / `advanceOrder()` (route `PATCH` hiện nằm ở PaymentController) | `Order`, `Payment` | Chỉ chủ đơn (403/404); hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho, hoàn kho + `CANCELLED` trong 1 transaction); FE có nút Hủy ở `/history` (`cancelOrder()` trong `lib/api.ts`) |
+| **UC06** | Hủy đơn / Thử lại thanh toán | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `PaymentController.update()`<br>`PaymentService.cancelOrderAs()` / `advanceOrder()` (route `PATCH` hiện nằm ở PaymentController) | `Order`, `Payment` | Chỉ chủ đơn (403/404); hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho, hoàn kho + `CANCELLED` trong 1 transaction); FE có nút Hủy ở `/history` (`cancelOrder()` trong `lib/api.ts`); mở rộng minh họa §9.1: thanh tiến trình 5 bước + nút "Quầy (demo)" (`advanceOrder()`) tiến `PAID → PREPARING → READY → COMPLETED`, không thêm UC/tác nhân Barista |
 | **UC07** | Xem xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController.mine()`<br>`OrderService.listMine()` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
 
 Barista / Admin: **ngoài phạm vi MVP** (đề §3.2), không có trên biểu đồ Use Case gốc nên không có sơ đồ tuần tự (xem `docs/use-case-specifications.md` mục 1).
