@@ -55,10 +55,10 @@ Lỗi đã tái hiện: topping `"constructor"` / `"toString"` lọt DTO và ser
 
 Hiện tại cùng chủ gửi key K đã dùng cho đơn A kèm `orderId` B thì nhận 200 `status: 'PAID'` với biên lai của A, trong khi B vẫn `PENDING`. Theo bản nháp IETF `Idempotency-Key`, dùng lại key cho payload khác thì trả 422. Không dùng 409 vì frontend đã gán 409 cho "hết hàng, đã hoàn tiền".
 
-- [ ] Test đỏ: key của đơn `o1` gửi kèm `o2` (cùng chủ) → `UnprocessableEntityException`, cổng không bị gọi, `o2` vẫn `PENDING`. Giữ nguyên test cũ "khác chủ → 403".
-- [ ] `payment.service.ts` (nhánh cache hit): sau 2 kiểm 404/403 của `hitOrder`, ném `UnprocessableEntityException('Idempotency-Key already used for another order')`.
-- [ ] Tài liệu: `user-sequence` §2.4 (A.3 "Xác thực & phân quyền", note ở `alt Không phải chủ đơn`, mục C dòng "Chỉ chủ đơn mới thanh toán được"), Phần III UC05.
-- [ ] Commit `fix(backend): Idempotency-Key dung cho don khac tra 422`.
+- [x] Test đỏ: key của đơn `o1` gửi kèm `o2` (cùng chủ) → `UnprocessableEntityException`, cổng không bị gọi, `o2` vẫn `PENDING`. Giữ nguyên test cũ "khác chủ → 403".
+- [x] `payment.service.ts` (nhánh cache hit): sau 2 kiểm 404/403 của `hitOrder`, ném `UnprocessableEntityException('Idempotency-Key already used for another order')`.
+- [x] Tài liệu: `user-sequence` §2.4 (A.3 "Xác thực & phân quyền", note ở `alt Không phải chủ đơn`, mục C dòng "Chỉ chủ đơn mới thanh toán được"), Phần III UC05.
+- [x] Commit `fix(backend): Idempotency-Key dung cho don khac tra 422`.
 
 ## Task 4: `Idempotency-Key` cho `POST /orders` (Spec 2, quyết định Q1)
 

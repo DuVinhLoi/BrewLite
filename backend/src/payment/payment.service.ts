@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { IOrderRepository, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
 import { IPaymentRepository } from '../contracts/payment.contract';
@@ -58,6 +58,8 @@ export class PaymentService {
         const hitOrder = await this.orders.findById(hit.orderId);
         if (!hitOrder) throw new NotFoundException('Order not found');
         if (hitOrder.userId !== userId) throw new ForbiddenException('Not your order');
+        // cùng chủ nhưng key đã dùng cho đơn khác: không trả biên lai đơn cũ như thể đơn này đã trả (422, không dùng 409 vì FE gán 409 cho "hết hàng")
+        throw new UnprocessableEntityException('Idempotency-Key already used for another order');
       }
       return { isCached: true, status: 'PAID', orderId: hit.orderId, amount: hit.amount, paymentId: hit.id, discount: hit.discount, loyaltyPointsEarned: hit.loyaltyPointsEarned };
     }

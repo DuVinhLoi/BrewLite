@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { PaymentController } from '../src/payment/payment.controller';
@@ -255,6 +255,19 @@ describe('payment ownership (POST /payments)', () => {
     await expect(s.svc.processPayment('u2', { orderId: 'o2', paymentMethod: 'WALLET' }, 'K-X4')).rejects.toBeInstanceOf(ForbiddenException);
     expect(s.gateway.getCallCount()).toBe(1);
     expect((await s.orders.findById('o2'))!.status).toBe(OrderStatus.PENDING);
+  });
+
+  // Cùng chủ nhưng key đã dùng cho đơn khác: trước đây trả 200 PAID của đơn cũ trong khi đơn mới vẫn PENDING
+  test('cache hit chéo đơn cùng chủ: key của o1 gửi kèm o3 (cũng của u1) → 422, không charge, o3 vẫn PENDING', async () => {
+    const s = setup();
+    await seed(s);
+    await s.orders.save({ id: 'o3', userId: 'u1', status: OrderStatus.PENDING, total: 20000, items: [{ productId: 'p1', quantity: 1, unitPrice: 20000 }], createdAt: new Date() });
+    await s.svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'K-X6');
+    await expect(s.svc.processPayment('u1', { orderId: 'o3', paymentMethod: 'WALLET' }, 'K-X6')).rejects.toBeInstanceOf(UnprocessableEntityException);
+    expect(s.gateway.getCallCount()).toBe(1);
+    expect((await s.orders.findById('o3'))!.status).toBe(OrderStatus.PENDING);
+    // gửi lại đúng cặp (key, o1) vẫn trả bản cache
+    await expect(s.svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'K-X6')).resolves.toMatchObject({ isCached: true, orderId: 'o1' });
   });
 
   test('PaymentController: gắn JwtAuthGuard và truyền req.user.id vào service', async () => {
