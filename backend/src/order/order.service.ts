@@ -1,9 +1,12 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { IOrderRepository, OrderStatus } from '../contracts/order.contract';
+import { IOrderRepository, OrderDto, OrderItemDto, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { DEFAULT_SIZE, SIZE_UPCHARGE, TOPPING_PRICES } from './pricing';
+
+export const QUEUE_STATUSES = [OrderStatus.PAID, OrderStatus.PREPARING, OrderStatus.READY];
+export type QueueOrderDto = OrderDto & { items: Array<OrderItemDto & { productName: string }> };
 
 @Injectable()
 export class OrderService {
@@ -46,5 +49,17 @@ export class OrderService {
     if (!o) throw new NotFoundException('Order not found');
     if (o.userId !== userId) throw new ForbiddenException('Not your order');
     return o;
+  }
+
+  // UC08 (mở rộng ngoài MVP §3.2): hàng đợi quầy, kèm tên món để barista đọc được
+  async listQueue(statuses: OrderStatus[] = QUEUE_STATUSES): Promise<QueueOrderDto[]> {
+    const bad = statuses.find((s) => !QUEUE_STATUSES.includes(s));
+    if (bad) throw new BadRequestException(`Status ${bad} is not in the counter queue`);
+    const orders = await this.orders.findByStatuses(statuses);
+    const names = new Map<string, string>();
+    for (const o of orders) for (const i of o.items) {
+      if (!names.has(i.productId)) names.set(i.productId, (await this.products.findById(i.productId))?.name ?? i.productId);
+    }
+    return orders.map((o) => ({ ...o, items: o.items.map((i) => ({ ...i, productName: names.get(i.productId)! })) }));
   }
 }
