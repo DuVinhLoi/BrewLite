@@ -22,17 +22,17 @@ docker compose up --build
 Chạy rời từng phần:
 
 ```bash
-cd backend && npm install && npm test && npm run start:dev   # không đặt DATABASE_URL: dùng kho in-memory, không cần DB
+cd backend && npm install && npm test   # jest dùng kho in-memory, không cần DB
 cd frontend && npm install && npm run dev   # http://localhost:3001
 ```
 
-Backend không tự đọc file `.env`. Muốn chạy rời với Postgres: bật DB (`docker compose up -d db`), đặt `DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite` trong shell (bash: `export`; PowerShell: `$env:DATABASE_URL=...`), chạy `npx prisma migrate deploy` một lần rồi `npm run start:dev`.
+Backend không tự đọc file `.env` và **bắt buộc có `DATABASE_URL`**: thiếu thì dừng ngay với lỗi `DATABASE_URL is required` (kho in-memory chỉ dành cho jest). Muốn chạy rời: bật DB (`docker compose up -d db`), đặt `DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite` trong shell (bash: `export`; PowerShell: `$env:DATABASE_URL=...`), chạy `npx prisma migrate deploy` và `npx ts-node prisma/seed.ts` một lần (như `CMD` của `backend/Dockerfile`; không seed thì menu rỗng và chưa có tài khoản demo) rồi `npm run start:dev`.
 
 `NEXT_PUBLIC_PAYMENT_MODE=mock` demo UI không cần backend; `=api` cắm `POST /payments` thật.
 
 ## Tiến độ 10 task (đã merge vào develop)
 
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 103 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 89 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine). Bằng chứng từng task: `docs/develop-status-report.md`.
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 104 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 89 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine). Bằng chứng từng task: `docs/develop-status-report.md`.
 
 | Task | Hiện thực chính |
 |---|---|
@@ -77,6 +77,7 @@ Tài khoản demo (seed sẵn trong `backend/prisma/seed.ts`):
 
 Lưu ý: test pg (`backend/npm test` suite có DB thật) cần `DATABASE_URL` trỏ Postgres chạy được;
 không có `DATABASE_URL` thì các test pg tự skip, suite còn lại vẫn xanh.
+Chạy suite pg: `docker compose up -d db`, rồi trong `backend/`: `npx prisma generate` (chạy lại mỗi khi schema đổi), `npx prisma migrate deploy`, đặt `DATABASE_URL` như trên và `npx jest pg-payment`.
 
 ### Lưu ý bảo mật (chỉ dành cho demo)
 
