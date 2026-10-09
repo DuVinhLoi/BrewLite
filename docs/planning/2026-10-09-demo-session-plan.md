@@ -80,7 +80,7 @@ git commit -m "docs: plan demo mượt (phien theo tab, giu don dang tra, du lie
 **Interfaces:**
 - Produces: `saveToken(token: string): void`, `clearToken(): void`, `getToken(): string | null` (đọc `sessionStorage`), `interface SessionInfo { email: string; role: Role }`, `sessionFromToken(token: string | null): SessionInfo | null`, `ROLE_LABEL: Record<Role, string>`; giữ nguyên `TOKEN_KEY`, `roleFromToken`, `homeFor`, `Role`.
 
-- [ ] **Step 1: Thêm `sessionStorage` giả cho vitest.** Trong `frontend/vitest.setup.ts`, thay khối `if (typeof globalThis.localStorage === 'undefined') { … }` cuối file bằng:
+- [x] **Step 1: Thêm `sessionStorage` giả cho vitest.** Trong `frontend/vitest.setup.ts`, thay khối `if (typeof globalThis.localStorage === 'undefined') { … }` cuối file bằng:
 
 ```ts
 // localStorage (giỏ hàng) và sessionStorage (token + phiên thanh toán của tab) đều cần cho test
@@ -95,7 +95,7 @@ for (const name of ['localStorage', 'sessionStorage'] as const) {
 }
 ```
 
-- [ ] **Step 2: Viết test đỏ.** Trong `frontend/src/lib/auth.test.ts`, đổi 2 dòng import đầu thành:
+- [x] **Step 2: Viết test đỏ.** Trong `frontend/src/lib/auth.test.ts`, đổi 2 dòng import đầu thành:
 
 ```ts
 import { afterEach, describe, expect, test } from 'vitest';
@@ -187,12 +187,12 @@ describe('sessionFromToken', () => {
 });
 ```
 
-- [ ] **Step 3: Chạy cho thấy đỏ.**
+- [x] **Step 3: Chạy cho thấy đỏ.**
 
 Run: `cd frontend && npx vitest run src/lib/auth.test.ts`
 Expected: FAIL, `saveToken is not a function` (chưa export).
 
-- [ ] **Step 4: Viết lại `frontend/src/lib/auth.ts`:**
+- [x] **Step 4: Viết lại `frontend/src/lib/auth.ts`:**
 
 ```ts
 // ============================================================
@@ -246,7 +246,7 @@ const HOME: Record<Role, string> = { CUSTOMER: '/', BARISTA: '/barista', ADMIN: 
 export const homeFor = (role: Role): string => HOME[role];
 ```
 
-- [ ] **Step 5: Trang login ghi token qua `saveToken()`.** Trong `frontend/src/app/login/page.tsx` đổi dòng import:
+- [x] **Step 5: Trang login ghi token qua `saveToken()`.** Trong `frontend/src/app/login/page.tsx` đổi dòng import:
 
 ```ts
 import { homeFor, roleFromToken, saveToken } from '@/lib/auth';
@@ -258,20 +258,20 @@ và dòng 33 `localStorage.setItem(TOKEN_KEY, data.accessToken);` thành:
         saveToken(data.accessToken);
 ```
 
-- [ ] **Step 6: Test gateway dùng `saveToken()` / `clearToken()`.** Trong `frontend/src/lib/payment/api-gateway.test.ts`, thêm import `import { clearToken, saveToken } from '../auth';`, đổi `localStorage.removeItem('brewlite-token');` trong `afterEach` thành `clearToken();`, đổi `localStorage.setItem('brewlite-token', 'tok-1');` thành `saveToken('tok-1');`.
+- [x] **Step 6: Test gateway dùng `saveToken()` / `clearToken()`.** Trong `frontend/src/lib/payment/api-gateway.test.ts`, thêm import `import { clearToken, saveToken } from '../auth';`, đổi `localStorage.removeItem('brewlite-token');` trong `afterEach` thành `clearToken();`, đổi `localStorage.setItem('brewlite-token', 'tok-1');` thành `saveToken('tok-1');`.
 
-- [ ] **Step 7: Chạy cho thấy xanh.**
+- [x] **Step 7: Chạy cho thấy xanh.**
 
 Run: `cd frontend && npx vitest run && npx tsc --noEmit`
 Expected: PASS, 100 test (94 + 6), tsc không lỗi.
 
-- [ ] **Step 8: Tài liệu.** Trong `docs/user-sequence-specifications.md`:
+- [x] **Step 8: Tài liệu.** Trong `docs/user-sequence-specifications.md`:
   - §2.3 sơ đồ, thay `    FE -> FE : Lưu mã Token vào localStorage (key "brewlite-token")` bằng `    FE -> FE : Lưu mã Token vào sessionStorage của tab (key "brewlite-token"):\nmỗi tab một phiên, tab khác không bị ghi đè`.
   - §2.3 mục C, thêm sau gạch "Vai trò (`User.role`)": `* **Phiên đăng nhập theo tab:** token lưu ở `sessionStorage` (`saveToken()` / `getToken()` / `clearToken()` trong `frontend/src/lib/auth.ts`): đăng nhập barista ở tab này không đổi phiên khách ở tab khác, reload vẫn giữ, tab mở mới bằng URL phải đăng nhập lại. Test: `frontend/src/lib/auth.test.ts`.`
   - §2.6 sơ đồ, thay `alt Chưa đăng nhập (không có token "brewlite-token")` bằng `alt Chưa đăng nhập trong tab này (sessionStorage không có "brewlite-token")`.
   - `README.md`, sau bước 4 của mục "Demo end-to-end", thêm đoạn: `Demo khách và quầy cùng lúc: mỗi tab trình duyệt giữ phiên đăng nhập riêng (token nằm trong sessionStorage của tab). Tab 1 đăng nhập khách, tab 2 đăng nhập barista; reload tab nào cũng giữ đúng tài khoản của tab đó. Tab mở mới bằng cách gõ URL phải đăng nhập lại; "Nhân bản tab" của trình duyệt mang theo phiên của tab gốc.`
-- [ ] **Step 9:** Render lại khối PlantUML §2.3 và §2.6, mở PNG kiểm.
-- [ ] **Step 10: Commit.**
+- [x] **Step 9:** Render lại khối PlantUML §2.3 và §2.6, mở PNG kiểm.
+- [x] **Step 10: Commit.**
 
 ```bash
 git add frontend/src/lib/auth.ts frontend/src/lib/auth.test.ts frontend/vitest.setup.ts frontend/src/app/login/page.tsx frontend/src/lib/payment/api-gateway.test.ts docs/user-sequence-specifications.md README.md

@@ -280,7 +280,7 @@ alt Không có tài khoản, hoặc mật khẩu KHÔNG chính xác (Kịch bả
 else Mật khẩu chính xác (Kịch bản thành công)
     BE -> BE : Tạo mã phiên đăng nhập an toàn (Token JWT { sub, email, role }, hạn 7 ngày)
     BE --> FE : 200 { accessToken, user: { id, email, role } }
-    FE -> FE : Lưu mã Token vào localStorage (key "brewlite-token")
+    FE -> FE : Lưu mã Token vào sessionStorage của tab (key "brewlite-token"):\nmỗi tab một phiên, tab khác không bị ghi đè
     FE --> User : Điều hướng theo role trong JWT: CUSTOMER -> / (Thực đơn),\nBARISTA -> /barista, ADMIN -> /admin
 end
 deactivate BE
@@ -295,6 +295,7 @@ deactivate FE
 * **Bảo mật:** đăng ký `bcrypt.hash(password, 10)`; đăng nhập `bcrypt.compare(plainPassword, user.passwordHash)`
 * **Mã phiên JWT:** Cấp chuỗi Bearer Token chứa `{ sub: user.id, email: user.email, role }` có thời hạn hết hạn (`expiresIn`); đăng nhập trả `{ accessToken, user: { id, email, role } }`.
 * **Vai trò (`User.role`):** `CUSTOMER` (mặc định) / `BARISTA` / `ADMIN`. Đăng ký công khai luôn tạo `CUSTOMER`; tài khoản quầy và quản trị chỉ có từ seed (`barista@brewlite.vn`, `admin@brewlite.vn`). `JwtAuthGuard` đưa `role` vào `req.user` (token cũ thiếu `role` coi là `CUSTOMER`), `RolesGuard` + `@Roles(...)` chặn theo vai trò (403). Giao diện chỉ đọc `role` từ JWT để điều hướng (`/` khách, `/barista`, `/admin`), quyền thật do backend chặn.
+* **Phiên đăng nhập theo tab:** token lưu ở `sessionStorage` (`saveToken()` / `getToken()` / `clearToken()` trong `frontend/src/lib/auth.ts`): đăng nhập barista ở tab này không đổi phiên khách ở tab khác, reload vẫn giữ, tab mở mới bằng URL phải đăng nhập lại. Test: `frontend/src/lib/auth.test.ts`.
 
 ---
 
@@ -672,7 +673,7 @@ FE --> User : Hiển thị màn hình biên lai xác nhận:\n- Mã đơn: #1042
 == PHẦN 2: XEM LỊCH SỬ CÁC ĐƠN HÀNG ĐÃ MUA ==
 User -> FE : Bấm vào mục "Lịch sử"
 activate FE
-alt Chưa đăng nhập (không có token "brewlite-token")
+alt Chưa đăng nhập trong tab này (sessionStorage không có "brewlite-token")
     FE --> User : "Bạn chưa đăng nhập" + link Đăng nhập (không gọi API)
 else Có token
     FE -> BE : GET /orders/me + Bearer JWT

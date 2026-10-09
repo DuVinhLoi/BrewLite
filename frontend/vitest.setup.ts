@@ -21,10 +21,13 @@ class MemoryStorage implements Storage {
   }
 }
 
-if (typeof globalThis.localStorage === 'undefined') {
-  Object.defineProperty(globalThis, 'localStorage', {
-    value: new MemoryStorage(),
-    configurable: true,
-    writable: true,
-  });
+// localStorage (giỏ hàng) và sessionStorage (token + phiên thanh toán của tab) đều cần cho test
+for (const name of ['localStorage', 'sessionStorage'] as const) {
+  if (typeof globalThis[name] === 'undefined') {
+    Object.defineProperty(globalThis, name, {
+      value: new MemoryStorage(),
+      configurable: true,
+      writable: true,
+    });
+  }
 }

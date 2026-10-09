@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { ApiPaymentGateway } from './api-gateway';
 import { PaymentError } from './types';
+import { clearToken, saveToken } from '../auth';
 
 // UC06 KB1: thử lại sau lỗi trừ tiền phải trả tiếp ĐƠN CŨ (PAYMENT_FAILED -> PENDING),
 // không tạo đơn mới — gateway trả orderId trong lỗi để UI giữ lại.
@@ -9,7 +10,7 @@ const json = (status: number, body: unknown) =>
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  localStorage.removeItem('brewlite-token');
+  clearToken();
 });
 
 describe('ApiPaymentGateway retry', () => {
@@ -20,7 +21,7 @@ describe('ApiPaymentGateway retry', () => {
       .mockResolvedValueOnce(json(400, { message: 'Payment failed' }))
       .mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 40000 }));
     vi.stubGlobal('fetch', fetchMock);
-    localStorage.setItem('brewlite-token', 'tok-1');
+    saveToken('tok-1');
     const gw = new ApiPaymentGateway();
     const items = [{ productId: 'p1', quantity: 1, size: 'M' }];
 
