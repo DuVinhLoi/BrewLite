@@ -101,7 +101,7 @@ describe('getProducts', () => {
   });
 });
 
-// Nút "Quầy (demo)": mô phỏng Barista (ngoài MVP theo đề §3.2) tiến đơn bằng chính PATCH /orders/:id có sẵn.
+// Màn quầy (/barista): Barista/Admin tiến đơn bằng PATCH /orders/:id.
 describe('advanceOrder', () => {
   test('gửi PATCH /orders/:id với body { status } và header Authorization', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(json(200, { id: 'o1', status: 'PREPARING' }));

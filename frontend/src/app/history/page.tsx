@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatVND } from '@/lib/pricing';
-import { advanceOrder, cancelOrder } from '@/lib/api';
-import { STATUS_LABEL, canCancel, demoCounterEnabled, nextStatus } from '@/lib/order-status';
+import { cancelOrder } from '@/lib/api';
+import { canCancel } from '@/lib/order-status';
 import OrderStatusTrack from '@/components/OrderStatusTrack';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -70,11 +70,6 @@ export default function HistoryPage() {
     return act(o, (t) => cancelOrder(o.id, t));
   }
 
-  // UC06 KB4 (mở rộng, demo quầy): PATCH /orders/:id { PREPARING | READY | COMPLETED }
-  function onAdvance(o: HistoryOrder, next: string) {
-    return act(o, (t) => advanceOrder(o.id, next, t));
-  }
-
   if (token === null) return null;
   if (!token)
     return (
@@ -93,7 +88,6 @@ export default function HistoryPage() {
     <section style={{ maxWidth: 640, margin: '24px auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <h1>Lịch sử đơn hàng</h1>
       {orders.map((o) => {
-        const next = demoCounterEnabled() ? nextStatus(o.status) : null;
         return (
           <article key={o.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12 }}>
             <p style={{ margin: 0, fontWeight: 700 }}>
@@ -112,16 +106,6 @@ export default function HistoryPage() {
               ))}
             </ul>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-              {next && (
-                <button
-                  onClick={() => onAdvance(o, next)}
-                  disabled={busyId === o.id}
-                  title="Mô phỏng thao tác của Barista (ngoài MVP theo đề §3.2)"
-                  style={{ padding: '6px 12px', border: '1px dashed #92400e', color: '#92400e', background: '#fffbeb', borderRadius: 6, cursor: 'pointer' }}
-                >
-                  {busyId === o.id ? 'Đang chuyển…' : `Quầy (demo): → ${STATUS_LABEL[next]}`}
-                </button>
-              )}
               {canCancel(o.status) && (
                 <button
                   onClick={() => onCancel(o)}
