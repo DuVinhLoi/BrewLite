@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { IOrderRepository, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
 import { IPaymentRepository } from '../contracts/payment.contract';
-import { IUserRepository } from '../contracts/user.contract';
+import { Actor, IUserRepository, Role } from '../contracts/user.contract';
 import { MockPaymentGatewayService } from './mock-payment-gateway.service';
 import { assertTransition } from '../state-machine/order-state.machine';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -158,23 +158,26 @@ export class PaymentService {
     return this.orders.updateStatus(order.id, OrderStatus.CANCELLED);
   }
 
-  // Gap 1: tiến đơn PAID→PREPARING→READY→COMPLETED, chỉ chủ đơn; CANCELLED đi đường cancelOrder (hoàn tiền)
-  async advanceOrder(userId: string, orderId: string, status: OrderStatus) {
+  // UC09–UC11 (mở rộng §3.2): chỉ quầy/quản trị tiến đơn PAID→PREPARING→READY→COMPLETED; khách nhận 403
+  async advanceOrder(actor: Actor, orderId: string, status: OrderStatus) {
     if (status === OrderStatus.CANCELLED) throw new BadRequestException('Use cancel for CANCELLED');
+    if (actor.role === Role.CUSTOMER) throw new ForbiddenException('Only staff can advance orders');
     return this.withLock(`order:${orderId}`, async () => {
       const order = await this.orders.findById(orderId);
       if (!order) throw new NotFoundException('Order not found');
-      if (order.userId !== userId) throw new ForbiddenException('Not your order');
       assertTransition(order.status, status);
       return this.orders.updateStatus(order.id, status);
     });
   }
 
-  // Gap 1: chặn chủ đơn lạ hủy hộ; refund/stock giữ nguyên trong cancelOrder
-  async cancelOrderAs(userId: string, orderId: string) {
+  // UC06 (khách hủy đơn của mình) + UC12 (quầy hủy đơn hết nguyên liệu); hoàn tiền/hoàn kho trong cancelOrder
+  async cancelOrderAs(actor: Actor, orderId: string) {
     const order = await this.orders.findById(orderId);
     if (!order) throw new NotFoundException('Order not found');
-    if (order.userId !== userId) throw new ForbiddenException('Not your order');
+    if (actor.role === Role.CUSTOMER && order.userId !== actor.id) throw new ForbiddenException('Not your order');
+    // UC12: quầy chỉ hủy đơn đã trả (hết nguyên liệu); PREPARING trở đi để assertTransition trả 400 như cũ
+    if (actor.role !== Role.CUSTOMER && (order.status === OrderStatus.PENDING || order.status === OrderStatus.PAYMENT_FAILED))
+      throw new ForbiddenException('Staff can only cancel paid orders');
     return this.cancelOrder(orderId);
   }
 }

@@ -20,7 +20,8 @@ export class PaymentController {
   @Patch('orders/:id')
   @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto, @Req() req: any) {
-    if (dto.status === OrderStatus.CANCELLED) return this.payments.cancelOrderAs(req.user.id, id);
-    return this.payments.advanceOrder(req.user.id, id, dto.status);
+    const actor = { id: req.user.id, role: req.user.role };
+    if (dto.status === OrderStatus.CANCELLED) return this.payments.cancelOrderAs(actor, id);
+    return this.payments.advanceOrder(actor, id, dto.status);
   }
 }
