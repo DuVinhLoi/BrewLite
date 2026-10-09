@@ -49,7 +49,7 @@ export class PaymentError extends Error {
   }
 }
 
-/** Mỗi lần "Xác nhận trả" sinh 1 key để chống trừ tiền 2 lần. */
+/** Sinh 1 Idempotency-Key. PaymentForm giữ 1 key tạo đơn và 1 key trả tiền cho cả phiên màn Thanh toán để thử lại không trừ tiền / tạo đơn 2 lần. */
 export function newIdempotencyKey(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()

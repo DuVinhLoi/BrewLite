@@ -39,24 +39,24 @@ S1 và S4 đã có test (`(b) same Idempotency-Key charges once`, `(b) concurren
 
 ## Task 2: Phương án A ở frontend, kèm tài liệu
 
-- [ ] `frontend/src/components/PaymentForm.tsx`:
+- [x] `frontend/src/components/PaymentForm.tsx`:
   - thêm `const [payKey] = useState(newIdempotencyKey);` cạnh `orderKey`;
   - dòng 46 dùng `idempotencyKey: payKey`;
   - sửa comment dòng 30 ("với key MỚI") và dòng 32 ("mỗi lần một key mới") cho đúng: cả hai key cố định trong một phiên màn Thanh toán, khác nhau giữa tạo đơn và trả tiền.
-- [ ] `frontend/src/lib/payment/types.ts:52`: sửa doc comment của `newIdempotencyKey()` (hiện ghi "Mỗi lần 'Xác nhận trả' sinh 1 key").
-- [ ] Test frontend: môi trường vitest là `node`, không có jsdom hay testing-library, nên **không thêm thư viện** để bấm nút trong component. Thêm 1 test ở `frontend/src/lib/payment/api-gateway.test.ts`:
+- [x] `frontend/src/lib/payment/types.ts:52`: sửa doc comment của `newIdempotencyKey()` (hiện ghi "Mỗi lần 'Xác nhận trả' sinh 1 key").
+- [x] Test frontend: môi trường vitest là `node`, không có jsdom hay testing-library, nên **không thêm thư viện** để bấm nút trong component. Thêm 1 test ở `frontend/src/lib/payment/api-gateway.test.ts`:
   - lần 1 `POST /payments` rớt mạng (`fetch` reject) → `PaymentError` mang `orderId`;
   - lần 2 gọi `pay()` với **cùng** `idempotencyKey` và `orderId` đó, backend trả 200 `{ orderId, amount }` → kết quả `PAID`;
   - kiểm header `Idempotency-Key` của 2 lần `/payments` bằng nhau và chỉ có 1 lần `POST /orders`.
-- [ ] Tài liệu `docs/user-sequence-specifications.md`:
+- [x] Tài liệu `docs/user-sequence-specifications.md`:
   - §2.4 A.2: thay "Mỗi lần bấm sinh một Idempotency-Key mới" và "key mới" ở gạch "Thử lại sau khi lỗi" bằng: 1 key trả tiền cho mỗi phiên màn Thanh toán, dùng lại khi thử lại.
   - §2.4 sơ đồ: note "Gửi kèm Idempotency-Key MỚI cho mỗi lần bấm" và bước "Giữ orderId #1042 … (key mới)" đổi thành cùng key. Ở nhánh Cache Hit thêm note "bấm lại sau khi mất phản hồi (cùng key) cũng vào nhánh này, nhận lại biên lai 200". Giữ note "đơn đã PAID mà gửi key mới → 400" vì vẫn đúng với người gọi API tay.
   - §2.4 mục C: dòng "Thứ tự gọi ở Frontend" (bỏ "`newIdempotencyKey()` mỗi lần bấm") và cuối dòng "Chống trừ tiền trùng" (thay "FE luôn sinh key mới cho mỗi lần thử lại" bằng lý do dùng lại key: lần lỗi không lưu key nên trừ tiền lại được, lần đã trả thì trúng cache).
   - §2.5 KB1 sơ đồ: "Idempotency-Key MỚI" → "cùng Idempotency-Key (có thể đổi phương thức)"; note "(key mới nên đi nhánh Cache Miss)" → "(lần trước lỗi nên key chưa được lưu: đi nhánh Cache Miss)".
   - Phần III dòng UC05: thêm "FE dùng lại key khi thử lại".
-- [ ] `docs/develop-status-report.md` mục 6: chuyển gạch "Mất phản hồi sau khi đã trả tiền" từ "Giới hạn còn lại" sang đã sửa, ghi commit.
-- [ ] Render lại khối PlantUML §2.4 và §2.5 (PlantUML 1.2024.7 từ Maven Central, SHA-1 `cb57b315d96413d55622edaa8c4b234e2ebf4b1f`, tải vào thư mục tạm, không commit), mở PNG kiểm không có "Syntax Error".
-- [ ] Commit `fix(frontend): giu mot key tra tien cho moi man Thanh toan (phuong an A)`.
+- [x] `docs/develop-status-report.md` mục 6: chuyển gạch "Mất phản hồi sau khi đã trả tiền" từ "Giới hạn còn lại" sang đã sửa, ghi commit.
+- [x] Render lại khối PlantUML §2.4 và §2.5 (PlantUML 1.2024.7 từ Maven Central, SHA-1 `cb57b315d96413d55622edaa8c4b234e2ebf4b1f`, tải vào thư mục tạm, không commit), mở PNG kiểm không có "Syntax Error".
+- [x] Commit `fix(frontend): giu mot key tra tien cho moi man Thanh toan (phuong an A)`.
 
 ## Task 3: Chốt chặn trước khi merge
 

@@ -108,6 +108,6 @@ Quy tắc chung:
 **PlantUML:** 9 khối của `user-sequence-specifications.md` và 2 khối của `use-case-specifications.md` render bằng PlantUML 1.2024.7 (SHA-1 khớp trang Maven), exit 0, 8 sơ đồ sequence + 1 sơ đồ trạng thái; đã mở PNG sơ đồ §2.4 xem nhánh `Idempotency-Key` ở bước 2a và nhánh 422 ở bước 21, không có "Syntax Error".
 
 **Giới hạn còn lại (chưa sửa, cần quyết định):**
-- Mất phản hồi sau khi đã trả tiền: khách bấm lại thì `POST /orders` (cùng key) trả lại đơn `PAID`, rồi `POST /payments` với key trả tiền MỚI bị 400 `Invalid transition PAID -> PAID`. Không trừ tiền hai lần, nhưng giao diện báo lỗi dù đơn đã trả. Hướng sửa: giữ nguyên key trả tiền cho các lần thử lại sau lỗi mạng (chỉ sinh key mới sau khi cổng trả lỗi rõ ràng 400 / 409).
+- ~~Mất phản hồi sau khi đã trả tiền~~ — **đã sửa** (phương án A, nhánh `fix/backend-hardening`): `PaymentForm` giữ một key trả tiền cho cả phiên màn Thanh toán, bấm lại cùng key thì backend trả lại biên lai cũ (200) thay vì 400 `PAID -> PAID`. Lần trả lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. Còn lại: rời màn thanh toán hoặc reload thì mất `orderId` và key (chưa lưu `sessionStorage`).
 - Chưa kiểm bằng mắt trên trình duyệt: ảnh món có hiện thay cho ☕ không, màn Thanh toán khi đổi Thẻ → Ví (môi trường làm việc không có trình duyệt).
 - Giỏ hàng chưa chặn quá 20 dòng khác nhau (DTO chặn 20); cần 21 tổ hợp size/topping khác nhau mới gặp.

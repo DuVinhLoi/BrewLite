@@ -112,6 +112,34 @@ describe('ApiPaymentGateway retry', () => {
     expect(fetchMock.mock.calls[1][1].headers['Idempotency-Key']).toBe('order-key');
   });
 
+  // Phương án A: PaymentForm giữ 1 key trả tiền cho cả phiên màn Thanh toán. Đã trả mà mất phản hồi, bấm lại cùng key
+  // thì backend trúng cache (200 biên lai cũ) thay vì 400 PAID -> PAID như khi key mới.
+  test('/payments rớt mạng rồi thử lại CÙNG idempotencyKey → PAID; 2 lần /payments cùng header, chỉ 1 lần POST /orders', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json(201, { id: 'order-1' }))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(json(200, { isCached: true, orderId: 'order-1', amount: 40000 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const gw = new ApiPaymentGateway();
+    const items = [{ productId: 'p1', quantity: 1 }];
+
+    const err = await gw.pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'pay-key', orderIdempotencyKey: 'order-key', items }).catch((e) => e);
+    expect(err).toBeInstanceOf(PaymentError);
+    expect(err.orderId).toBe('order-1'); // đơn đã tạo: lần thử lại không tạo đơn mới
+
+    const r = await gw.pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'pay-key', orderId: err.orderId });
+    expect(r).toMatchObject({ status: 'PAID', amount: 40000 });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const urls = fetchMock.mock.calls.map(([u]) => String(u));
+    expect(urls.filter((u) => u.endsWith('/orders'))).toHaveLength(1);
+    const payCalls = fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/payments'));
+    expect(payCalls).toHaveLength(2);
+    expect(payCalls[0][1].headers['Idempotency-Key']).toBe('pay-key');
+    expect(payCalls[1][1].headers['Idempotency-Key']).toBe('pay-key');
+  });
+
   // Backend trả JSON { message, error, statusCode }: UI chỉ được thấy câu tiếng Việt, không phải JSON thô
   const payErr = async (res: Response) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(res));

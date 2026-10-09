@@ -27,10 +27,14 @@ export default function PaymentForm({
   const [error, setError] = useState<string | null>(null);
   const [voucher, setVoucher] = useState('');
   const [applied, setApplied] = useState<string | null>(null);
-  // Đơn đã tạo ở lần trả lỗi trước → thử lại trả tiếp đơn này với key MỚI (UC06 KB1), không tạo đơn mới
+  // Đơn đã tạo ở lần trả lỗi trước → thử lại trả tiếp đơn này (UC06 KB1), không tạo đơn mới
   const [orderId, setOrderId] = useState<string | undefined>();
-  // Key tạo đơn giữ nguyên cho tới khi rời màn này: lỗi mạng giữa chừng rồi bấm lại vẫn chỉ ra 1 đơn (khác key trả tiền, mỗi lần một key mới)
+  // Hai key cố định trong cả phiên màn Thanh toán (rời màn thì sinh lại), khác nhau giữa tạo đơn và trả tiền:
+  // - orderKey: lỗi mạng khi tạo đơn rồi bấm lại vẫn chỉ ra 1 đơn;
+  // - payKey: đã trả mà mất phản hồi, bấm lại cùng key thì backend trả lại biên lai cũ (200) thay vì 400 PAID -> PAID.
+  //   Lần trả lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được.
   const [orderKey] = useState(newIdempotencyKey);
+  const [payKey] = useState(newIdempotencyKey);
 
   const discount = applied === 'BREWLITE10' ? Math.floor(total * 0.1) : 0;
   const final = total - discount;
@@ -43,7 +47,7 @@ export default function PaymentForm({
       const result = await getPaymentGateway().pay({
         amount: final,
         method,
-        idempotencyKey: newIdempotencyKey(),
+        idempotencyKey: payKey,
         ...(orderId ? { orderId } : { items, orderIdempotencyKey: orderKey }),
         ...(applied ? { voucherCode: applied } : {}),
       });
