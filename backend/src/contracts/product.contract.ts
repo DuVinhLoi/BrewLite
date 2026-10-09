@@ -12,6 +12,10 @@ export interface ProductDto {
 export interface IProductRepository {
   findById(id: string, tx?: TxContext): Promise<ProductDto | null>;
   findAvailable(tx?: TxContext): Promise<ProductDto[]>;
+  /** UC14: mọi món, kể cả hết hàng, sắp theo tên. */
+  findAll(tx?: TxContext): Promise<ProductDto[]>;
+  /** UC14: đặt tồn kho tuyệt đối nếu version khớp; tăng version. false = có người đổi trước. */
+  setStockWithOptimisticLock(id: string, stock: number, currentVersion: number, tx?: TxContext): Promise<boolean>;
   deductStockWithOptimisticLock(id: string, quantity: number, currentVersion: number, tx?: TxContext): Promise<boolean>;
   restoreStock(id: string, quantity: number, tx?: TxContext): Promise<void>;
   save(product: ProductDto, tx?: TxContext): Promise<ProductDto>;
