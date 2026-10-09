@@ -87,7 +87,7 @@ Quy tắc chung:
 
 ## 6. Hoàn thiện nghiệp vụ backend theo đề (2026-10-09, nhánh `fix/backend-hardening`)
 
-> Nguồn: `/code-review` toàn bộ backend (2 trục Standards và Spec) rồi chạy thử lại từng lỗi; plan `docs/planning/2026-10-09-backend-hardening-plan.md` (Task 0 → Task 9, mỗi task 1 commit, chưa merge, chưa push).
+> Nguồn: `/code-review` toàn bộ backend (2 trục Standards và Spec) rồi chạy thử lại từng lỗi; plan đã xong nên đã xóa khỏi `docs/planning/`, bản đầy đủ: `git show b2bb5f6:docs/planning/2026-10-09-backend-hardening-plan.md` (Task 0 → Task 9, mỗi task 1 commit).
 
 | Task | Commit | Nội dung |
 |---|---|---|
@@ -114,7 +114,7 @@ Quy tắc chung:
 
 ### 6.1 Phương án A: giữ một key trả tiền cho mỗi màn Thanh toán (2026-10-09)
 
-> Plan `docs/planning/2026-10-09-payment-retry-key-plan.md`. Commit: `57fd521` (plan), `1998d45` (test ghim hành vi backend), `4c1675c` (frontend + tài liệu).
+> Plan đã xong nên đã xóa khỏi `docs/planning/`, bản đầy đủ: `git show b2bb5f6:docs/planning/2026-10-09-payment-retry-key-plan.md`. Commit: `57fd521` (plan), `1998d45` (test ghim hành vi backend), `4c1675c` (frontend + tài liệu).
 
 - **Lỗi đã sửa:** đã trả tiền mà mất phản hồi, bấm lại thì giao diện sinh key mới nên backend trả 400 `Invalid transition PAID -> PAID`. Nay `PaymentForm` giữ `payKey` (cạnh `orderKey`), bấm lại cùng key thì backend trả lại biên lai cũ (200, `isCached: true`).
 - **Vì sao an toàn:** backend chỉ lưu key khi trả thành công; lần lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. `PaymentForm` chỉ render khi `step === 'payment'` (`cart/page.tsx:41`), nên mỗi lần vào lại màn thanh toán là một instance mới với cặp key mới.
@@ -142,4 +142,4 @@ Quy tắc chung:
 
 **Việc còn cần người làm:**
 1. Kiểm bằng mắt trên trình duyệt: tab 1 khách, tab 2 barista, reload cả hai vẫn đúng tài khoản, header mỗi tab hiện email + vai trò; khách đặt và trả 1 đơn, tab barista thấy đơn ở cột "Chờ pha" trong 5 giây; Đăng xuất ở tab 1 không làm tab 2 mất phiên; với `MOCK_GATEWAY_DECLINE_METHOD=CARD`: trả Thẻ lỗi → reload → bấm "Thanh toán" → trả Ví thành công, `/history` chỉ có 1 đơn.
-2. **Xác nhận làm sạch DB demo một lần.** Volume hiện còn rác do smoke test cũ tạo trên tài khoản demo (trước quy ước `@smoke.test`): 11 đơn `PAID` đang hiện ở quầy, các tài khoản test, đơn `order-1042` cũ. `smoke:clean` không dọn được phần này. Nếu đồng ý: `docker compose down -v && docker compose up -d --build` (xóa mọi đơn và lịch sử). Chưa chạy khi chưa có xác nhận.
+2. ~~Xác nhận làm sạch DB demo một lần~~ — **đã xong (2026-10-09):** volume `brewlite_pgdata` được tạo lại lúc 18:13 (`down -v` rồi `up -d --build`), xóa 11 đơn `PAID` rác, các tài khoản test và đơn `order-1042` cũ. Dữ liệu smoke tạo sau đó (kiểm trình duyệt và 1 đơn kiểm tay, 3 tài khoản `@smoke.test`, 5 đơn) đã dọn bằng `npm run smoke:clean`. DB còn đúng 3 tài khoản demo, 0 đơn, kho 4 món đều 10.
