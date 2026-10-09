@@ -831,7 +831,7 @@ deactivate FE
 UC14 là **mở rộng ngoài đề §3.2** nhưng **có trên biểu đồ Use Case gốc (Bản 1)**. Admin đăng nhập tài khoản demo `admin@brewlite.vn` / `admin1234` (seed tạo lại mỗi lần container backend khởi động, như §2.7), giao diện tự điều hướng tới `/admin`: bảng mọi món **kể cả món `stock = 0`**, kèm nhãn `Hết hàng` / `Sắp hết` (`stock` ≤ 3) / `Còn hàng`. Admin chỉnh `Product.stock` bằng nút `−1` / `+1` / `+10` (mode `delta`) hoặc nhập số rồi `Lưu` (mode `set`).
 * **Chỉ chỉnh tồn kho món:** không có bảng nguyên liệu, không thêm/sửa/xóa món (UC13 là backlog) và không có voucher (UC15 là backlog).
 * **Khóa lạc quan:** mỗi lần gửi kèm `version` đang thấy. Nếu trong lúc đó có đơn vừa trừ kho hoặc người khác vừa sửa thì backend trả 409, giao diện tải lại bảng và báo thử lại trên số mới. Kết quả âm hoặc vượt giới hạn `Int` 32-bit thì 400.
-* **Seed đặt lại kho:** `seed.ts` đặt lại tồn kho 4 món về 10 (`version = 1`) mỗi lần container backend khởi động, nên số Admin đã chỉnh chỉ giữ tới lần khởi động lại.
+* **Tồn kho giữ qua các lần khởi động:** `seed.ts` chỉ đặt tồn kho 10 khi tạo món mới; món đã có giữ nguyên số Admin chỉnh và số đã bán sau khi container backend khởi động lại.
 * **Liên hệ UC01:** `GET /products` của khách vẫn lọc `stock > 0`, nên món Admin đặt về 0 biến mất khỏi menu và hiện lại khi Admin cộng kho.
 
 #### B. Sơ đồ tuần tự (PlantUML)

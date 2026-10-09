@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { SIZE_UPCHARGE, Size } from '../src/order/pricing';
 
 // Đề §8 Task 2: GET /products trả (id, tên, giá, ảnh). Seed đặt imageUrl cho p1..p4 trỏ tới SVG tĩnh của frontend.
 const root = join(__dirname, '..', '..');
@@ -21,10 +20,12 @@ repo('seed imageUrl', () => {
     expect(src).toMatch(/update:\s*\{[^}]*imageUrl/);
   });
 
-  // Đơn seed hiện ở /history: total phải đúng bảng giá server (Latte 35.000 + phụ thu size), không lệch với đơn khách tự đặt
-  test('order-1042: total = giá Latte + phụ thu size theo bảng giá (order/pricing.ts)', () => {
-    const order = /id: 'order-1042'[\s\S]*?total: (\d+)[\s\S]*?size: '([SML])'/.exec(src)!;
-    const price = Number(/id: 'p1', name: 'Latte', price: (\d+)/.exec(src)![1]);
-    expect(Number(order[1])).toBe(price + SIZE_UPCHARGE[order[2] as Size]);
+  // Dữ liệu demo giữ qua các lần khởi động: seed chạy mỗi lần container backend lên (CMD của backend/Dockerfile),
+  // nên không được xóa / tạo đơn, biên lai, cũng không đặt lại tồn kho hay điểm thưởng của dữ liệu đã có
+  test('seed không đụng đơn / biên lai và không đặt lại tồn kho của món đã có', () => {
+    expect(src).not.toMatch(/db\.(order|orderItem|payment)\./);
+    const updates = [...src.matchAll(/update:\s*\{([^}]*)\}/g)].map((m) => m[1]);
+    expect(updates.length).toBeGreaterThan(0);
+    for (const u of updates) expect(u).not.toMatch(/\b(stock|version|loyaltyPoints)\b/);
   });
 });

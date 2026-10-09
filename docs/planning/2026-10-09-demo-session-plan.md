@@ -740,7 +740,7 @@ git commit -m "feat(frontend): header hien tai khoan cua tab va nut Dang xuat"
 - Test: `backend/test/seed-images.spec.ts` (thay test `order-1042`)
 - Docs: `README.md:89`, `docs/user-sequence-specifications.md:824` (§2.8), `.claude/rules/doc-code-sync.md:42`
 
-- [ ] **Step 1: Viết test đỏ.** Trong `backend/test/seed-images.spec.ts`: xóa dòng `import { SIZE_UPCHARGE, Size } from '../src/order/pricing';`; thay cả test `'order-1042: total = giá Latte + phụ thu size theo bảng giá (order/pricing.ts)'` bằng
+- [x] **Step 1: Viết test đỏ.** Trong `backend/test/seed-images.spec.ts`: xóa dòng `import { SIZE_UPCHARGE, Size } from '../src/order/pricing';`; thay cả test `'order-1042: total = giá Latte + phụ thu size theo bảng giá (order/pricing.ts)'` bằng
 
 ```ts
   // Dữ liệu demo giữ qua các lần khởi động: seed chạy mỗi lần container backend lên (CMD của backend/Dockerfile),
@@ -753,12 +753,12 @@ git commit -m "feat(frontend): header hien tai khoan cua tab va nut Dang xuat"
   });
 ```
 
-- [ ] **Step 2: Chạy cho thấy đỏ.**
+- [x] **Step 2: Chạy cho thấy đỏ.**
 
 Run: `cd backend && npx jest seed-images`
 Expected: FAIL. Seed hiện có `db.order.` và `stock` trong `update`.
 
-- [ ] **Step 3: Viết lại `backend/prisma/seed.ts`:**
+- [x] **Step 3: Viết lại `backend/prisma/seed.ts`:**
 
 ```ts
 import { PrismaClient } from '@prisma/client';
@@ -811,16 +811,16 @@ async function main() {
 main();
 ```
 
-- [ ] **Step 4: Chạy cho thấy xanh.**
+- [x] **Step 4: Chạy cho thấy xanh.**
 
 Run: `cd backend && npx jest seed-images && npx jest && npx tsc --noEmit`
 Expected: PASS; toàn bộ backend 122 pass / 2 skip (thay 1 test bằng 1 test); tsc không lỗi.
 
-- [ ] **Step 5: Tài liệu.**
+- [x] **Step 5: Tài liệu.**
   - `README.md` dòng 89, thay cả gạch "Seed chạy lại mỗi lần container backend khởi động." bằng: `- **Seed chạy lại mỗi lần container backend khởi động.** Nó tạo lại `barista@brewlite.vn` / `admin@brewlite.vn` với đúng mật khẩu ghi ở bảng trên (mật khẩu đã đổi sẽ bị đặt lại khi khởi động lại). Seed chỉ tạo tài khoản và món còn thiếu: đơn, biên lai, điểm thưởng và tồn kho đã có được giữ qua các lần khởi động lại (làm lại từ đầu: xem mục "Dữ liệu demo"). Chỉ phù hợp cho demo.`
   - `docs/user-sequence-specifications.md` dòng 824 (§2.8 mục A), thay cả gạch "Seed đặt lại kho" bằng: `* **Tồn kho giữ qua các lần khởi động:** `seed.ts` chỉ đặt tồn kho 10 khi tạo món mới; món đã có giữ nguyên số Admin chỉnh và số đã bán sau khi container backend khởi động lại.`
   - `.claude/rules/doc-code-sync.md` dòng 42, thay `(seed đặt lại mật khẩu và tồn kho mỗi lần backend khởi động)` bằng `(seed đặt lại mật khẩu demo mỗi lần backend khởi động; đơn và tồn kho được giữ)`. Người dùng duyệt plan này nghĩa là duyệt dòng sửa rule này.
-- [ ] **Step 6: Commit.**
+- [x] **Step 6: Commit.**
 
 ```bash
 git add backend/prisma/seed.ts backend/test/seed-images.spec.ts README.md docs/user-sequence-specifications.md .claude/rules/doc-code-sync.md

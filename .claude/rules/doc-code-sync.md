@@ -39,7 +39,7 @@ Hành vi là: endpoint, guard / vai trò, chuyển trạng thái, mã HTTP, th�
 
 - Đúng 5 thực thể của đề §12.2. Cần thêm dữ liệu thì thêm cột và ghi chú như `User.role`.
 - Sơ đồ sequence và dòng Phần III chỉ dành cho UC đã hiện thực. UC13, UC15 (backlog) chỉ có trên biểu đồ Bản 1 và bảng §4.
-- Mật khẩu chỉ ghi cho tài khoản demo của `backend/prisma/seed.ts`, luôn kèm chữ "demo" (seed đặt lại mật khẩu và tồn kho mỗi lần backend khởi động).
+- Mật khẩu chỉ ghi cho tài khoản demo của `backend/prisma/seed.ts`, luôn kèm chữ "demo" (seed đặt lại mật khẩu demo mỗi lần backend khởi động; đơn và tồn kho được giữ).
 
 ## Xong khi
 
