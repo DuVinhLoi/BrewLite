@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatVND } from '@/lib/pricing';
 import { cancelOrder } from '@/lib/api';
+import { getToken } from '@/lib/auth';
 import { canCancel } from '@/lib/order-status';
 import OrderStatusTrack from '@/components/OrderStatusTrack';
 
@@ -34,7 +35,7 @@ export default function HistoryPage() {
   const [actionError, setActionError] = useState<{ id: string; message: string } | null>(null);
 
   useEffect(() => {
-    setToken(localStorage.getItem('brewlite-token'));
+    setToken(getToken());
   }, []);
 
   useEffect(() => {

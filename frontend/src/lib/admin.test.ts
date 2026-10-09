@@ -44,4 +44,14 @@ describe('adjustStock', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(400, { message: 'Stock cannot be negative' })));
     await expect(adjustStock('tok', 'p1', { mode: 'delta', value: -99, version: 1 })).rejects.toThrow(/âm/);
   });
+  test('400 khác (vượt giới hạn, message mảng của class-validator) → báo không hợp lệ, không bảo "âm"', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(400, { message: ['value must not be greater than 2147483647'] })));
+    const err = await adjustStock('tok', 'p1', { mode: 'set', value: 2147483648, version: 1 }).catch((e) => e);
+    expect(err.message).toMatch(/không hợp lệ/);
+    expect(err.message).not.toMatch(/âm/);
+  });
+  test('400 body không phải JSON → báo không hợp lệ', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response('<html>bad</html>', { status: 400 })));
+    await expect(adjustStock('tok', 'p1', { mode: 'set', value: 1, version: 1 })).rejects.toThrow(/không hợp lệ/);
+  });
 });

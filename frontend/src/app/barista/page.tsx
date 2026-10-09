@@ -1,13 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { formatVND } from '@/lib/pricing';
 import { advanceOrder, cancelOrder } from '@/lib/api';
 import { nextStatus } from '@/lib/order-status';
 import { getToken, roleFromToken } from '@/lib/auth';
-import { ACTION_LABEL, QUEUE_COLUMNS, fetchQueue, groupQueue, type QueueOrder } from '@/lib/barista';
+import { ACTION_LABEL, QUEUE_COLUMNS, QueueAuthError, fetchQueue, groupQueue, type QueueOrder } from '@/lib/barista';
 
 // FEATURE: Màn quầy (UC08–UC12, mở rộng §3.2). Tự tải lại mỗi 5 giây; mọi chuyển trạng thái do backend kiểm (assertTransition).
 const POLL_MS = 5000;
@@ -17,24 +17,38 @@ export default function BaristaPage() {
   const [orders, setOrders] = useState<QueueOrder[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [halted, setHalted] = useState(false); // gặp 401/403 thì ngừng tự tải lại
+  const started = useRef(0); // số thứ tự lần tải; kết quả cũ hơn lần đã áp dụng thì bỏ (tránh bản cũ ghi đè sau khi vừa PATCH)
+  const applied = useRef(0);
 
   useEffect(() => setToken(getToken()), []);
 
+  const role = roleFromToken(token ?? null);
+  const isStaff = role === 'BARISTA' || role === 'ADMIN';
+
   const load = useCallback(async () => {
-    if (!token) return;
+    if (!token || !isStaff) return;
+    const mine = ++started.current;
     try {
-      setOrders(await fetchQueue(token));
+      const data = await fetchQueue(token);
+      if (mine < applied.current) return;
+      applied.current = mine;
+      setOrders(data);
       setError(null);
     } catch (e) {
+      if (mine < applied.current) return;
+      applied.current = mine;
+      if (e instanceof QueueAuthError) setHalted(true);
       setError(e instanceof Error ? e.message : 'Lỗi không xác định');
     }
-  }, [token]);
+  }, [token, isStaff]);
 
   useEffect(() => {
+    if (!isStaff || halted) return;
     load();
     const t = setInterval(load, POLL_MS);
     return () => clearInterval(t);
-  }, [load]);
+  }, [load, isStaff, halted]);
 
   async function act(o: QueueOrder, run: (t: string) => Promise<void>) {
     if (!token) return;
@@ -50,8 +64,7 @@ export default function BaristaPage() {
   }
 
   if (token === undefined) return null;
-  const role = roleFromToken(token);
-  if (role !== 'BARISTA' && role !== 'ADMIN')
+  if (!isStaff)
     return (
       <section>
         <h1>Quầy pha chế</h1>

@@ -34,7 +34,12 @@ async function call<T>(token: string, path: string, init: RequestInit = {}): Pro
   if (res.status === 401) throw new Error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
   if (res.status === 403) throw new Error('Trang này cần tài khoản quản trị (Admin).');
   if (res.status === 409) throw new Error('Tồn kho vừa thay đổi (có đơn mới hoặc người khác sửa). Đã tải lại, hãy thử lại.');
-  if (res.status === 400) throw new Error('Tồn kho không được âm.');
+  if (res.status === 400) {
+    // Chỉ lỗi "âm" mới báo âm; 400 khác (vượt giới hạn, sai kiểu…) báo chung. message có thể là chuỗi hoặc mảng (class-validator).
+    const body = await res.json().catch(() => ({}));
+    const message = Array.isArray(body?.message) ? body.message.join(', ') : String(body?.message ?? '');
+    throw new Error(/negative/i.test(message) ? 'Tồn kho không được âm.' : 'Giá trị tồn kho không hợp lệ.');
+  }
   if (!res.ok) throw new Error(`Thao tác tồn kho lỗi (mã ${res.status}).`);
   return res.json();
 }

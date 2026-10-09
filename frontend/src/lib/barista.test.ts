@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { ACTION_LABEL, QUEUE_COLUMNS, fetchQueue, groupQueue, type QueueOrder } from './barista';
+import { ACTION_LABEL, QUEUE_COLUMNS, QueueAuthError, fetchQueue, groupQueue, type QueueOrder } from './barista';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -38,5 +38,17 @@ describe('fetchQueue', () => {
   test('401 → báo đăng nhập lại', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(401, {})));
     await expect(fetchQueue('tok')).rejects.toThrow(/đăng nhập/);
+  });
+  test('401/403 ném QueueAuthError (để màn quầy ngừng tự tải lại); lỗi khác thì không', async () => {
+    for (const status of [401, 403]) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(status, {})));
+      await expect(fetchQueue('tok')).rejects.toBeInstanceOf(QueueAuthError);
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(500, {})));
+    const e500 = await fetchQueue('tok').catch((e) => e);
+    expect(e500).toBeInstanceOf(Error);
+    expect(e500).not.toBeInstanceOf(QueueAuthError);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('fetch failed')));
+    expect(await fetchQueue('tok').catch((e) => e)).not.toBeInstanceOf(QueueAuthError);
   });
 });

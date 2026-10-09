@@ -46,7 +46,7 @@ async function patchOrderStatus(orderId: string, status: string, token: string, 
   const data = await res.json().catch(() => ({}));
   const detail = Array.isArray(data.message) ? data.message.join(', ') : data.message;
   if (res.status === 401) throw new Error(`Bạn cần đăng nhập lại để ${verb}.`);
-  if (res.status === 403) throw new Error(`Bạn không có quyền ${verb} này (đơn thuộc tài khoản khác).`);
+  if (res.status === 403) throw new Error('Bạn không có quyền thực hiện thao tác này (đơn của tài khoản khác hoặc cần tài khoản quầy).');
   if (res.status === 404) throw new Error('Không tìm thấy đơn.');
   throw new Error(transitionError(res.status, detail, verb));
 }
