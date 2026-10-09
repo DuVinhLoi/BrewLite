@@ -32,7 +32,7 @@ Backend không tự đọc file `.env`. Muốn chạy rời với Postgres: bậ
 
 ## Tiến độ 10 task (đã merge vào develop)
 
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 68 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 71 pass. Bằng chứng từng task: `docs/develop-status-report.md`.
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 92 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 86 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine). Bằng chứng từng task: `docs/develop-status-report.md`.
 
 | Task | Hiện thực chính |
 |---|---|
@@ -47,11 +47,11 @@ Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 68 pass 
 | 9 Bàn giao | màn xác nhận, `/history` (`GET /orders/me`), compose 3 service, seed tài khoản demo |
 | 10 Nghiệp vụ | State Machine `assertTransition`, Idempotency-Key, optimistic lock + transaction, voucher `BREWLITE10` + điểm thưởng |
 
-## API (7 endpoint tối thiểu + 2 mở rộng) và Entity (5)
+## API (7 endpoint tối thiểu + 5 mở rộng) và Entity (5)
 
 Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`.
-Mở rộng của nhóm: `PATCH /orders/:id` (hủy / tiến trạng thái đơn, Task 10), `GET /orders/:id` (chi tiết đơn) — chỉ chủ đơn. Không có `GET /orders` (hàng đợi quầy, Barista ngoài MVP). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
-`Product(stock,version)`, `User(loyaltyPoints)`, `Order`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
+Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2): `GET /orders?status=PAID,PREPARING,READY` (UC08, BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (UC14, chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
+`Product(stock,version)`, `User(loyaltyPoints, role)`, `Order`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
 Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
 
 ## Demo end-to-end
@@ -62,7 +62,15 @@ docker compose up --build
 # Frontend http://localhost:3001, Backend http://localhost:3000
 ```
 
-1. Mở `:3001`, đăng nhập `demo@brewlite.vn` / `demo1234` (seed sẵn trong `backend/prisma/seed.ts`).
+Tài khoản demo (seed sẵn trong `backend/prisma/seed.ts`):
+
+| Vai trò | Email | Mật khẩu | Vào sau đăng nhập |
+|---|---|---|---|
+| Khách | `demo@brewlite.vn` | `demo1234` | `/` |
+| Quầy (Barista) | `barista@brewlite.vn` | `barista1234` | `/barista` |
+| Quản trị (Admin) | `admin@brewlite.vn` | `admin1234` | `/admin` |
+
+1. Mở `:3001`, đăng nhập tài khoản khách (bảng trên).
 2. Menu → bấm món mở modal chọn size/topping → thêm vào giỏ.
 3. Vào giỏ → nhập voucher `BREWLITE10` → thanh toán → xem biên lai.
 4. Mở `/history` xem đơn vừa đặt (mới nhất trước).
@@ -72,9 +80,13 @@ không có `DATABASE_URL` thì các test pg tự skip, suite còn lại vẫn xa
 
 ## Demo State Machine (đề §9 + §9.1, tiêu chí a)
 
-Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua tô xanh, bước hiện tại đậm; `Thanh toán lỗi` đỏ, `Đã hủy` xám). Nút **"Quầy (demo)"** ở `/history` mô phỏng Barista (ngoài MVP theo đề §3.2; chỉ gọi `PATCH /orders/:id` có sẵn, không thêm vai trò hay endpoint): bấm 3 lần đưa đơn đã trả tới `COMPLETED`; ẩn nút bằng `NEXT_PUBLIC_DEMO_COUNTER=false`. Nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy (`PREPARING` trở đi backend chặn 400).
+Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua tô xanh, bước hiện tại đậm; `Thanh toán lỗi` đỏ, `Đã hủy` xám). Khách chỉ xem và hủy đơn của mình (nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy, `PREPARING` trở đi backend chặn 400); khách không tự tiến đơn (403). Tiến đơn là việc của Barista (UC09–UC11), mở rộng ngoài MVP theo đề §3.2:
 
-Dự phòng nếu giao diện trục trặc (cần compose đang chạy, đã seed tài khoản demo):
+1. Khách `demo@brewlite.vn` đặt và trả một đơn (đơn sang `PAID`), mở `/history` xem thanh tiến trình.
+2. Đăng nhập `barista@brewlite.vn` / `barista1234` thì vào thẳng `/barista`: đơn nằm ở cột **Chờ pha**. Bấm **Nhận pha** → **Pha xong** → **Đã giao** (trang tự tải lại mỗi 5 giây). Hoặc bấm **Hủy (hết nguyên liệu)** để hủy đơn `PAID` (UC12: hoàn tiền + hoàn kho).
+3. Quay lại `/history` của khách (tải lại trang) thấy thanh tiến trình đã chuyển.
+
+Dự phòng nếu giao diện trục trặc (cần compose đang chạy, đã seed tài khoản khách và quầy):
 
 ```bash
 bash scripts/demo-state-machine.sh   # đăng nhập → tạo đơn → trả → PREPARING → READY → COMPLETED → thử COMPLETED → CANCELLED (phải 400)
@@ -83,6 +95,11 @@ bash scripts/demo-state-machine.sh   # đăng nhập → tạo đơn → trả �
 Test chứng minh chặn chuyển trạng thái sai (tiêu chí a của đề):
 
 ```bash
-cd backend && npx jest order-state order-advance              # State Machine + tiến đơn + chặn người lạ
+cd backend && npx jest order-state order-advance              # State Machine + tiến đơn theo vai trò + chặn người lạ
+cd backend && npx jest roles barista-queue admin-inventory    # RolesGuard, hàng đợi quầy, tồn kho Admin
 cd frontend && npx vitest run src/lib/order-status.test.ts    # bảng chuyển trạng thái FE = 9 mũi tên §9.1 = ALLOWED của backend
 ```
+
+## Demo tồn kho (UC14, chỉ Admin)
+
+Đăng nhập `admin@brewlite.vn` / `admin1234` thì vào thẳng `/admin`: bảng mọi món, kể cả món hết hàng. Bấm `−1` / `+1` / `+10` hoặc nhập số rồi `Lưu`. Nếu trong lúc đó có đơn vừa trừ kho (hoặc người khác vừa sửa) thì backend trả 409, trang tự tải lại và báo thử lại trên số mới; không cho tồn kho âm (400). Món đặt về 0 biến khỏi menu của khách.
