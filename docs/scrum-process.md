@@ -126,7 +126,7 @@ Burndown thực tế **phẳng ở 10 từ 09-30 đến 10-06 rồi rơi về 0 
 Đề §11 yêu cầu: (1) demo end-to-end chọn món → giỏ → thanh toán → xác nhận; (2) bàn giao mã nguồn, `docker-compose`, README; (3) Retrospective; (4) nhận phản hồi và ghi backlog cho phiên bản sau.
 
 - Demo end-to-end ngày, người xem, phản hồi: **[nhóm điền]**.
-- Tình trạng kiểm thử hiện có (chạy lại ngày 2026-10-08): backend `npx jest` 62 pass / 1 skip (suite Postgres chỉ chạy khi có `DATABASE_URL`), frontend `npx vitest run` 46 pass. Bằng chứng chi tiết từng task: `docs/develop-status-report.md`.
+- Tình trạng kiểm thử hiện có (chạy lại ngày 2026-10-09, gồm phần mở rộng Barista + Admin): backend `npx jest` 104 pass / 1 skip (suite Postgres chỉ chạy khi có `DATABASE_URL`), frontend `npx vitest run` 89 pass. Bằng chứng chi tiết từng task: `docs/develop-status-report.md`.
 - Backlog cho phiên bản sau (đề §11.4): UC13 (quản lý món & thực đơn) và UC15 (quản lý mã giảm giá) của Barista/Admin, vẫn ngoài MVP theo đề §3.2 và ghi "chưa hiện thực" trong `docs/use-case-specifications.md` (UC08–UC12 và UC14 đã hiện thực như mở rộng ngoài đề, xem `docs/develop-status-report.md` mục 5); mục chốt thêm: **[nhóm điền]**.
 
 ## 5. Sprint Retrospective (đề §11.3) — KHUNG NHÁP
@@ -137,10 +137,10 @@ Burndown thực tế **phẳng ở 10 từ 09-30 đến 10-06 rồi rơi về 0 
 
 | Gợi ý (nháp) | Bằng chứng trong repo | Nhóm xác nhận / sửa |
 |---|---|---|
-| Có test cho nghiệp vụ khó: idempotent, state machine, tồn kho đồng thời, voucher/điểm, thanh toán song song, quyền chủ đơn | `backend/test/*` (62 pass / 1 skip), `frontend/src/**/*.test.ts` (46 pass); `c9454dc`, `a209b88`, `b6a2f76` | **[nhóm điền]** |
+| Có test cho nghiệp vụ khó: idempotent, state machine, tồn kho đồng thời, voucher/điểm, thanh toán song song, quyền chủ đơn | `backend/test/*` (104 pass / 1 skip), `frontend/src/**/*.test.ts` (89 pass); `c9454dc`, `a209b88`, `b6a2f76` | **[nhóm điền]** |
 | Đợt rà soát tài liệu ↔ mã tìm ra lỗi thật trước khi nộp và sửa cùng đợt | `b6a2f76` / `b290706` (CORS, giá server, khóa song song, auth `POST /payments`) | **[nhóm điền]** |
 | Tách việc theo nhánh rồi merge vào `develop` | merge `a92dc00`, `c26455e`, `61602da`, `685f1be`; PR #1–#3 | **[nhóm điền]** |
-| Sơ đồ tuần tự/use case viết bằng PlantUML, render sạch cả 8 khối | `docs/user-sequence-specifications.md`, `docs/use-case-specifications.md` | **[nhóm điền]** |
+| Sơ đồ tuần tự/use case viết bằng PlantUML, render sạch cả 11 khối | `docs/user-sequence-specifications.md`, `docs/use-case-specifications.md` | **[nhóm điền]** |
 
 ### 5.2 Điều cần cải thiện
 
@@ -152,7 +152,7 @@ Burndown thực tế **phẳng ở 10 từ 09-30 đến 10-06 rồi rơi về 0 
 | `POST /payments` chưa yêu cầu đăng nhập, không kiểm tra chủ đơn | sửa ở `b6a2f76` (JwtAuthGuard + 404/403 trước nhánh cache) | **[nhóm điền]** |
 | Làm dồn: 34 commit trong ngày 10-07, cả 10 task vào develop trong 1 ngày sau 6 ngày gần như chỉ có tài liệu; burndown phẳng rồi dốc đứng | mục 3 file này | **[nhóm điền]** |
 | Thứ tự làm không theo Sprint và phụ thuộc làm ngược: Task 8/10 trước Task 3/5; FE checkout 2 bước trước `POST /orders` | mục 2 file này (10-07 16:55 → 20:05; `c04947d` 21:12 → `eb865e0` 23:43) | **[nhóm điền]** |
-| Tài liệu và mã lệch nhau, phải đồng bộ lại nhiều lần: spec barista viết rồi xóa, sau đó bỏ hẳn hàng đợi quầy | `74419a8`…`c35b740` (thêm, 10-07 16:02–16:27), `9966119` (xóa, 16:47), `fc8ce19` (bỏ barista queue, 10-08), `a60a304`, `652b5f6` (đồng bộ) | **[nhóm điền]** |
+| Tài liệu và mã lệch nhau, phải đồng bộ lại nhiều lần: spec barista viết rồi xóa, sau đó bỏ hẳn hàng đợi quầy | `74419a8`…`c35b740` (thêm, 10-07 16:02–16:27), `9966119` (xóa, 16:47), `fc8ce19` (bỏ barista queue, 10-08), `a60a304`, `652b5f6` (đồng bộ); sau đó nhóm làm lại UC08–UC12, UC14 ở merge `4974abd` (10-09) | **[nhóm điền]** |
 | Test Postgres không chạy lại được từ lần thứ 2 (đơn/biên lai lần trước còn trong DB làm vướng khóa ngoại); suite này còn mặc định bị bỏ qua khi không có `DATABASE_URL` | sửa ở `8f2c514` (nhánh `chore/pg-test-plantuml-scrum`) | **[nhóm điền]** |
 | Nhiều danh tính tác giả trong git (6 tên) nên khó truy vết ai làm việc nào; bằng chứng review (đề §10: "được review trong nhóm") chỉ rõ ở PR #1–#3, các commit còn lại vào `develop` trực tiếp | mục 1 file này | **[nhóm điền]** |
 
