@@ -108,7 +108,7 @@ Quy tắc chung:
 **PlantUML:** 9 khối của `user-sequence-specifications.md` và 2 khối của `use-case-specifications.md` render bằng PlantUML 1.2024.7 (SHA-1 khớp trang Maven), exit 0, 8 sơ đồ sequence + 1 sơ đồ trạng thái; đã mở PNG sơ đồ §2.4 xem nhánh `Idempotency-Key` ở bước 2a và nhánh 422 ở bước 21, không có "Syntax Error".
 
 **Giới hạn còn lại (chưa sửa, cần quyết định):**
-- ~~Mất phản hồi sau khi đã trả tiền~~ — **đã sửa** (phương án A, nhánh `fix/backend-hardening`): `PaymentForm` giữ một key trả tiền cho cả phiên màn Thanh toán, bấm lại cùng key thì backend trả lại biên lai cũ (200) thay vì 400 `PAID -> PAID`. Lần trả lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. Còn lại: rời màn thanh toán hoặc reload thì mất `orderId` và key (chưa lưu `sessionStorage`).
+- ~~Mất phản hồi sau khi đã trả tiền~~ — **đã sửa** (phương án A, nhánh `fix/backend-hardening`): `PaymentForm` giữ một key trả tiền cho cả phiên màn Thanh toán, bấm lại cùng key thì backend trả lại biên lai cũ (200) thay vì 400 `PAID -> PAID`. Lần trả lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. Reload hoặc rời màn rồi vào lại (giỏ không đổi) nay cũng giữ được `orderId` và key: plan `docs/planning/2026-10-09-demo-session-plan.md` Task 2.
 - Chưa kiểm bằng mắt trên trình duyệt: ảnh món có hiện thay cho ☕ không, màn Thanh toán khi đổi Thẻ → Ví (môi trường làm việc không có trình duyệt).
 - Giỏ hàng chưa chặn quá 20 dòng khác nhau (DTO chặn 20); cần 21 tổ hợp size/topping khác nhau mới gặp.
 
@@ -120,4 +120,4 @@ Quy tắc chung:
 - **Vì sao an toàn:** backend chỉ lưu key khi trả thành công; lần lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. `PaymentForm` chỉ render khi `step === 'payment'` (`cart/page.tsx:41`), nên mỗi lần vào lại màn thanh toán là một instance mới với cặp key mới.
 - **Test mới:** 2 test backend ghim "lỗi rồi thử lại cùng key" (Thẻ bị từ chối → Ví; kẹt kho 409 → nhập kho), 1 test gateway frontend (`/payments` rớt mạng rồi thử lại cùng key → `PAID`, chỉ 1 lần `POST /orders`). Không có test bấm nút trong component (vitest chạy môi trường `node`, không có jsdom hay testing-library; không thêm phụ thuộc).
 - **Smoke compose:** trả 2 lần cùng key → 201 rồi 200, cùng `paymentId`; `MOCK_GATEWAY_DECLINE_METHOD=CARD` (qua `.env`) → Thẻ với K2 trả 400, Ví cùng K2 trả 201, 1 biên lai theo K2; xóa biến, dựng lại backend → Thẻ trả được (201).
-- **Không làm:** hủy ở tab khác rồi bấm lại cùng key vẫn nhận biên lai cũ kèm đơn `CANCELLED` (cache trả kết quả đã lưu, đúng §2.4; muốn sửa phải đổi backend và giao diện); lưu `orderId` và key vào `sessionStorage` để cứu cả trường hợp reload.
+- **Không làm:** hủy ở tab khác rồi bấm lại cùng key vẫn nhận biên lai cũ kèm đơn `CANCELLED` (cache trả kết quả đã lưu, đúng §2.4; muốn sửa phải đổi backend và giao diện).

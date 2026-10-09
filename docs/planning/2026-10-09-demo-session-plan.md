@@ -296,7 +296,7 @@ git commit -m "fix(frontend): moi tab mot phien dang nhap (token o sessionStorag
 - Consumes: `newIdempotencyKey()`, `CartLine`, `PaymentError` từ `./types`.
 - Produces: `CHECKOUT_KEY = 'brewlite-checkout'`, `interface CheckoutState { cart: string; orderKey: string; payKey: string; orderId?: string }`, `cartFingerprint(items: CartLine[]): string`, `loadCheckout(items: CartLine[]): CheckoutState`, `rememberOrder(orderId: string): void`, `clearCheckout(): void`, `dropsCheckout(e: unknown): boolean`; `PaymentError(message: string, orderId?: string, status?: number, detail?: string)`.
 
-- [ ] **Step 1: Viết test đỏ** `frontend/src/lib/payment/checkout-session.test.ts`:
+- [x] **Step 1: Viết test đỏ** `frontend/src/lib/payment/checkout-session.test.ts`:
 
 ```ts
 import { afterEach, describe, expect, test } from 'vitest';
@@ -385,12 +385,12 @@ Thêm vào `describe('ApiPaymentGateway retry', …)` trong `frontend/src/lib/pa
   });
 ```
 
-- [ ] **Step 2: Chạy cho thấy đỏ.**
+- [x] **Step 2: Chạy cho thấy đỏ.**
 
 Run: `cd frontend && npx vitest run src/lib/payment`
 Expected: FAIL, không import được `./checkout-session`; test gateway mới đỏ vì `status` là `undefined`.
 
-- [ ] **Step 3: `PaymentError` mang mã HTTP.** Trong `frontend/src/lib/payment/types.ts`, thay class `PaymentError` và comment phía trên bằng:
+- [x] **Step 3: `PaymentError` mang mã HTTP.** Trong `frontend/src/lib/payment/types.ts`, thay class `PaymentError` và comment phía trên bằng:
 
 ```ts
 /**
@@ -411,7 +411,7 @@ export class PaymentError extends Error {
 }
 ```
 
-- [ ] **Step 4: Gateway điền `status` và `detail`.** Trong `frontend/src/lib/payment/api-gateway.ts`:
+- [x] **Step 4: Gateway điền `status` và `detail`.** Trong `frontend/src/lib/payment/api-gateway.ts`:
   - `createOrderId()`: thay 2 dòng xử lý 401 và `!res.ok` bằng
 
 ```ts
@@ -431,7 +431,7 @@ export class PaymentError extends Error {
     }
 ```
 
-- [ ] **Step 5: Tạo `frontend/src/lib/payment/checkout-session.ts`:**
+- [x] **Step 5: Tạo `frontend/src/lib/payment/checkout-session.ts`:**
 
 ```ts
 import { PaymentError, newIdempotencyKey, type CartLine } from './types';
@@ -501,7 +501,7 @@ export function dropsCheckout(e: unknown): boolean {
 }
 ```
 
-- [ ] **Step 6: `PaymentForm` dùng phiên thanh toán.** Trong `frontend/src/components/PaymentForm.tsx`:
+- [x] **Step 6: `PaymentForm` dùng phiên thanh toán.** Trong `frontend/src/components/PaymentForm.tsx`:
   - dòng import `@/lib/payment` bỏ `newIdempotencyKey`; thêm `import { clearCheckout, dropsCheckout, loadCheckout, rememberOrder } from '@/lib/payment/checkout-session';`
   - thay khối từ comment "Đơn đã tạo ở lần trả lỗi trước…" tới `const [payKey] = useState(newIdempotencyKey);` bằng
 
@@ -539,18 +539,18 @@ export function dropsCheckout(e: unknown): boolean {
     } finally {
 ```
 
-- [ ] **Step 7: Đăng nhập bỏ phiên thanh toán của tài khoản trước.** Trong `frontend/src/app/login/page.tsx` thêm `import { clearCheckout } from '@/lib/payment/checkout-session';` và ngay sau `saveToken(data.accessToken);`:
+- [x] **Step 7: Đăng nhập bỏ phiên thanh toán của tài khoản trước.** Trong `frontend/src/app/login/page.tsx` thêm `import { clearCheckout } from '@/lib/payment/checkout-session';` và ngay sau `saveToken(data.accessToken);`:
 
 ```ts
         clearCheckout(); // tài khoản mới trong tab: bỏ đơn đang trả dở của phiên trước
 ```
 
-- [ ] **Step 8: Chạy cho thấy xanh.**
+- [x] **Step 8: Chạy cho thấy xanh.**
 
 Run: `cd frontend && npx vitest run && npx tsc --noEmit`
 Expected: PASS, 117 test (100 + 16 + 1), tsc không lỗi.
 
-- [ ] **Step 9: Tài liệu.** Trong `docs/user-sequence-specifications.md`:
+- [x] **Step 9: Tài liệu.** Trong `docs/user-sequence-specifications.md`:
   - §2.3 sơ đồ, ngay sau dòng lưu token (đã sửa ở Task 1), thêm `    FE -> FE : Bỏ đơn đang thanh toán dở của tab (clearCheckout)`.
   - §2.4 dòng 309, thay cả gạch "Thử lại sau khi lỗi" bằng: `   - **Thử lại sau khi lỗi:** giao diện giữ `orderId` của đơn vừa tạo cùng 2 key (`orderKey`, `payKey`) trong `sessionStorage` của tab, gắn với nội dung giỏ, nên lần bấm tiếp theo **chỉ gọi `POST /payments`** với `orderId` cũ và **cùng key trả tiền** (UC06 KB1), không tạo đơn mới, kể cả sau khi reload hoặc quay lại giỏ rồi vào lại (giỏ không đổi). Dùng lại key an toàn vì lần trả lỗi không lưu key (xem mục C). Giỏ đổi, hoặc backend báo đơn không trả tiếp được (400 sai trạng thái, 403, 404, 422), thì bỏ phiên đó và tạo đơn mới.`
   - §2.4 sơ đồ dòng 429, thay `FE -> FE : Giữ orderId #1042 để lần thử lại\nchỉ gọi POST /payments (cùng key)` bằng `FE -> FE : Lưu orderId #1042 + 2 key vào sessionStorage\n(theo giỏ): thử lại, kể cả sau reload,\nchỉ gọi POST /payments (cùng key)`.
@@ -558,8 +558,8 @@ Expected: PASS, 117 test (100 + 16 + 1), tsc không lỗi.
   - §2.4 mục C dòng 474, thay cả gạch "Thứ tự gọi ở Frontend" bằng: `* **Thứ tự gọi ở Frontend:** `PaymentForm` → `ApiPaymentGateway.pay()` gọi `POST /orders` rồi `POST /payments` trong cùng một lần bấm "Xác nhận trả". Lỗi ném `PaymentError` mang `orderId` (khi đơn đã tạo), mã HTTP (`status`, không có khi mất kết nối) và message backend (`detail`). Phiên thanh toán của tab nằm ở `frontend/src/lib/payment/checkout-session.ts`: `loadCheckout(items)` trả `{ orderKey, payKey, orderId? }` lưu `sessionStorage` (key `brewlite-checkout`) theo dấu vân tay giỏ (`cartFingerprint`), nên reload hoặc quay lại giỏ rồi vào lại mà giỏ không đổi vẫn trả tiếp đúng đơn với đúng `payKey`; `rememberOrder()` ghi `orderId`; trả xong, đăng nhập hoặc đăng xuất thì `clearCheckout()`. `dropsCheckout(e)` bỏ phiên khi đơn đang giữ không trả tiếp được (400 khác "Payment failed", 403, 404, 422), giữ phiên khi mất kết nối, 5xx, 400 "Payment failed", 401, 409. Test: `frontend/src/lib/payment/checkout-session.test.ts`, `frontend/src/lib/payment/api-gateway.test.ts`.`
   - §2.5 dòng 495, trong Kịch bản 1 thay `Màn Thanh toán vẫn mở và giữ `orderId` của đơn lỗi;` bằng `Màn Thanh toán giữ `orderId` của đơn lỗi (lưu `sessionStorage` của tab, nên reload hoặc quay lại giỏ rồi vào lại mà giỏ không đổi vẫn giữ);`.
   - `docs/develop-status-report.md` dòng 111, thay câu `Còn lại: rời màn thanh toán hoặc reload thì mất `orderId` và key (chưa lưu `sessionStorage`).` bằng `Reload hoặc rời màn rồi vào lại (giỏ không đổi) nay cũng giữ được `orderId` và key: plan `docs/planning/2026-10-09-demo-session-plan.md` Task 2.`; dòng 123 bỏ vế `; lưu `orderId` và key vào `sessionStorage` để cứu cả trường hợp reload`.
-- [ ] **Step 10:** Render lại khối PlantUML §2.3, §2.4, §2.5, mở PNG kiểm.
-- [ ] **Step 11: Commit.**
+- [x] **Step 10:** Render lại khối PlantUML §2.3, §2.4, §2.5, mở PNG kiểm.
+- [x] **Step 11: Commit.**
 
 ```bash
 git add frontend/src/lib/payment/checkout-session.ts frontend/src/lib/payment/checkout-session.test.ts frontend/src/lib/payment/types.ts frontend/src/lib/payment/api-gateway.ts frontend/src/lib/payment/api-gateway.test.ts frontend/src/components/PaymentForm.tsx frontend/src/app/login/page.tsx docs/user-sequence-specifications.md docs/develop-status-report.md

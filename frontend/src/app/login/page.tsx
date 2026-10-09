@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { homeFor, roleFromToken, saveToken } from '@/lib/auth';
+import { clearCheckout } from '@/lib/payment/checkout-session';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -31,6 +32,7 @@ export default function LoginPage() {
         setError(null);
       } else {
         saveToken(data.accessToken);
+        clearCheckout(); // tài khoản mới trong tab: bỏ đơn đang trả dở của phiên trước
         router.push(homeFor(roleFromToken(data.accessToken) ?? 'CUSTOMER'));
       }
     } catch (err) {

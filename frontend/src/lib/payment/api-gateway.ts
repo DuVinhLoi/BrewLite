@@ -46,8 +46,8 @@ export class ApiPaymentGateway implements PaymentGateway {
     } catch {
       throw new PaymentError('Không kết nối được máy chủ để tạo đơn (POST /orders). Giỏ hàng được giữ nguyên.');
     }
-    if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập trước khi đặt đơn (thiếu JWT).');
-    if (!res.ok) throw new PaymentError(`Tạo đơn thất bại (mã ${res.status}). Giỏ hàng được giữ nguyên.`);
+    if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập trước khi đặt đơn (thiếu JWT).', undefined, 401);
+    if (!res.ok) throw new PaymentError(`Tạo đơn thất bại (mã ${res.status}). Giỏ hàng được giữ nguyên.`, undefined, res.status, await readMessage(res));
     const json = await res.json();
     if (!json?.id) throw new PaymentError('Tạo đơn thất bại: backend không trả mã đơn.');
     return String(json.id);
@@ -74,11 +74,12 @@ export class ApiPaymentGateway implements PaymentGateway {
     } catch {
       throw new PaymentError('Không kết nối được máy chủ thanh toán. Giỏ hàng được giữ nguyên.', orderId);
     }
-    if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập trước khi thanh toán (thiếu hoặc hết hạn JWT). Giỏ hàng được giữ nguyên.', orderId);
-    if (res.status === 403) throw new PaymentError('Bạn không có quyền thanh toán đơn này (đơn thuộc tài khoản khác). Giỏ hàng được giữ nguyên.', orderId);
+    if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập trước khi thanh toán (thiếu hoặc hết hạn JWT). Giỏ hàng được giữ nguyên.', orderId, 401);
+    if (res.status === 403) throw new PaymentError('Bạn không có quyền thanh toán đơn này (đơn thuộc tài khoản khác). Giỏ hàng được giữ nguyên.', orderId, 403);
     if (!res.ok) {
       // Lỗi -> UI giữ giỏ (US-05). Backend trả JSON { message, ... }: chỉ lấy message, không đẩy JSON thô lên UI.
-      throw new PaymentError(paymentErrorMessage(res.status, await readMessage(res)), orderId);
+      const detail = await readMessage(res);
+      throw new PaymentError(paymentErrorMessage(res.status, detail), orderId, res.status, detail);
     }
     const json = await res.json();
     return {

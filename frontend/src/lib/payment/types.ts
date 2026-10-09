@@ -41,9 +41,18 @@ export interface PaymentResult {
   idempotencyKey: string;
 }
 
-/** Lỗi thanh toán; có orderId khi đơn đã tạo → lần thử lại trả tiếp đơn này (UC06 KB1), không tạo đơn mới. */
+/**
+ * Lỗi thanh toán. `orderId`: đơn đã tạo → lần thử lại trả tiếp đơn này (UC06 KB1), không tạo đơn mới.
+ * `status`: mã HTTP (không có khi mất kết nối); `detail`: message gốc của backend. PaymentForm dùng hai trường này
+ * (`dropsCheckout()`) để quyết định giữ hay bỏ đơn đang trả dở.
+ */
 export class PaymentError extends Error {
-  constructor(message: string, readonly orderId?: string) {
+  constructor(
+    message: string,
+    readonly orderId?: string,
+    readonly status?: number,
+    readonly detail?: string,
+  ) {
     super(message);
     this.name = 'PaymentError';
   }

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import { formatVND } from '@/lib/pricing';
-import { PAYMENT_METHODS, PaymentError, getPaymentGateway, newIdempotencyKey } from '@/lib/payment';
+import { PAYMENT_METHODS, PaymentError, getPaymentGateway } from '@/lib/payment';
 import type { PaymentMethod, PaymentResult } from '@/lib/payment';
+import { clearCheckout, dropsCheckout, loadCheckout, rememberOrder } from '@/lib/payment/checkout-session';
 import type { CartLine } from '@/lib/payment/types';
 
 // ============================================================
@@ -27,14 +28,10 @@ export default function PaymentForm({
   const [error, setError] = useState<string | null>(null);
   const [voucher, setVoucher] = useState('');
   const [applied, setApplied] = useState<string | null>(null);
-  // Đơn đã tạo ở lần trả lỗi trước → thử lại trả tiếp đơn này (UC06 KB1), không tạo đơn mới
-  const [orderId, setOrderId] = useState<string | undefined>();
-  // Hai key cố định trong cả phiên màn Thanh toán (rời màn thì sinh lại), khác nhau giữa tạo đơn và trả tiền:
-  // - orderKey: lỗi mạng khi tạo đơn rồi bấm lại vẫn chỉ ra 1 đơn;
-  // - payKey: đã trả mà mất phản hồi, bấm lại cùng key thì backend trả lại biên lai cũ (200) thay vì 400 PAID -> PAID.
-  //   Lần trả lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được.
-  const [orderKey] = useState(newIdempotencyKey);
-  const [payKey] = useState(newIdempotencyKey);
+  // Phiên thanh toán của tab (lib/payment/checkout-session.ts): mã đơn + key tạo đơn + key trả tiền, gắn với nội dung giỏ.
+  // Reload, hoặc quay lại giỏ rồi vào lại mà giỏ không đổi, vẫn trả tiếp đúng đơn đó với cùng key (UC06 KB1, phương án A).
+  const [checkout, setCheckout] = useState(() => loadCheckout(items));
+  const [orderId, setOrderId] = useState<string | undefined>(checkout.orderId);
 
   const discount = applied === 'BREWLITE10' ? Math.floor(total * 0.1) : 0;
   const final = total - discount;
@@ -47,13 +44,22 @@ export default function PaymentForm({
       const result = await getPaymentGateway().pay({
         amount: final,
         method,
-        idempotencyKey: payKey,
-        ...(orderId ? { orderId } : { items, orderIdempotencyKey: orderKey }),
+        idempotencyKey: checkout.payKey,
+        ...(orderId ? { orderId } : { items, orderIdempotencyKey: checkout.orderKey }),
         ...(applied ? { voucherCode: applied } : {}),
       });
+      clearCheckout();
       onSuccess(result);
     } catch (e) {
-      if (e instanceof PaymentError && e.orderId) setOrderId(e.orderId);
+      if (dropsCheckout(e)) {
+        // đơn đang giữ không trả tiếp được (đã hủy, đang pha, của tài khoản khác…): lần bấm sau tạo đơn mới
+        clearCheckout();
+        setCheckout(loadCheckout(items));
+        setOrderId(undefined);
+      } else if (e instanceof PaymentError && e.orderId) {
+        rememberOrder(e.orderId);
+        setOrderId(e.orderId);
+      }
       setError(e instanceof Error ? e.message : 'Thanh toán thất bại, vui lòng thử lại.');
     } finally {
       setProcessing(false);

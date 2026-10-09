@@ -86,6 +86,22 @@ describe('ApiPaymentGateway retry', () => {
     });
   });
 
+  test('PaymentError mang mã HTTP và message backend để giao diện quyết định giữ hay bỏ đơn đang trả dở', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json(400, { message: 'Payment failed' }))
+      .mockResolvedValueOnce(json(400, { message: 'Invalid transition CANCELLED -> PAID' }))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', fetchMock);
+    const gw = new ApiPaymentGateway();
+    const req = { amount: 1, method: 'WALLET' as const, idempotencyKey: 'k', orderId: 'o1' };
+    expect(await gw.pay(req).catch((e) => e)).toMatchObject({ orderId: 'o1', status: 400, detail: 'Payment failed' });
+    expect(await gw.pay(req).catch((e) => e)).toMatchObject({ status: 400, detail: 'Invalid transition CANCELLED -> PAID' });
+    const net = await gw.pay(req).catch((e) => e);
+    expect(net).toBeInstanceOf(PaymentError);
+    expect(net.status).toBeUndefined();
+  });
+
   // Đề §9 tiêu chí (b) cho POST /orders: header Idempotency-Key của đơn khác key của POST /payments
   test('POST /orders gửi Idempotency-Key = orderIdempotencyKey; POST /payments dùng key riêng', async () => {
     const fetchMock = vi
