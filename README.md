@@ -32,7 +32,7 @@ Backend không tự đọc file `.env` và **bắt buộc có `DATABASE_URL`**: 
 
 ## Tiến độ 10 task (đã merge vào develop)
 
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 122 pass / 2 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 94 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine). Bằng chứng từng task: `docs/develop-status-report.md`.
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 122 pass / 3 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 117 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine). Bằng chứng từng task: `docs/develop-status-report.md`.
 
 | Task | Hiện thực chính |
 |---|---|

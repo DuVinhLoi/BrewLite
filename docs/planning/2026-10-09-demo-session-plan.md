@@ -972,17 +972,17 @@ git commit -m "feat(backend): smoke:clean don du lieu smoke (@smoke.test) khoi D
 
 ### Task 6: Chốt chặn trên stack thật
 
-- [ ] **Step 1: Toàn bộ test.** Backend `npx jest` (không `DATABASE_URL`: 122 pass / 3 skip) + `npx tsc --noEmit`; suite pg có `DATABASE_URL` (`npx jest pg-`: 3 pass); frontend `npx vitest run` (117 pass) + `npx tsc --noEmit`.
-- [ ] **Step 2: Dựng stack.** `docker compose up -d --build`; `docker compose logs backend | grep seeded` thấy dòng log mới của seed.
-- [ ] **Step 3: Smoke bằng curl, chỉ dùng tài khoản `@smoke.test`.**
+- [x] **Step 1: Toàn bộ test.** Backend `npx jest` (không `DATABASE_URL`: 122 pass / 3 skip) + `npx tsc --noEmit`; suite pg có `DATABASE_URL` (`npx jest pg-`: 3 pass); frontend `npx vitest run` (117 pass) + `npx tsc --noEmit`.
+- [x] **Step 2: Dựng stack.** `docker compose up -d --build`; `docker compose logs backend | grep seeded` thấy dòng log mới của seed.
+- [x] **Step 3: Smoke bằng curl, chỉ dùng tài khoản `@smoke.test`.**
   1. `POST /auth/register` `smoke-<số>@smoke.test`, đăng nhập lấy token. Ghi `stock` của `p1` (`GET /products`).
   2. `POST /orders` (Idempotency-Key K1) với `p1` × 1 → `POST /payments` (K2) → 201.
   3. Barista (`barista@brewlite.vn`) `GET /orders?status=PAID,PREPARING,READY` thấy đơn ở bước 2.
   4. `docker compose restart backend`, chờ backend lên. `GET /orders/me` (token smoke) vẫn có đơn `PAID`; `stock` của `p1` vẫn bằng số ghi ở bước 1 trừ 1 (seed không đặt lại).
   5. `docker compose exec backend npm run smoke:clean` → log `xóa 1 tài khoản @smoke.test, 1 đơn`. Barista `GET /orders?status=…` không còn đơn đó; `stock` của `p1` trở lại số ở bước 1.
-- [ ] **Step 4: Chạy skill `.agents/skills/requesting-code-review`** cho cả nhánh (so với `develop`). Sửa finding (commit riêng nếu có).
-- [ ] **Step 5: Báo cáo.** Thêm mục "7. Demo mượt (2026-10-09)" vào `docs/develop-status-report.md`: commit từng task, số test mới, kết quả smoke. Cập nhật số test ở `docs/scrum-process.md`. Tick plan này. Commit `docs: bao cao demo muot`.
-- [ ] **Step 6: Báo người dùng.** Gồm danh sách commit, kết quả test và smoke, và 2 việc cần người dùng:
+- [x] **Step 4: Chạy skill `.agents/skills/requesting-code-review`** cho cả nhánh (so với `develop`). Sửa finding (commit riêng nếu có).
+- [x] **Step 5: Báo cáo.** Thêm mục "7. Demo mượt (2026-10-09)" vào `docs/develop-status-report.md`: commit từng task, số test mới, kết quả smoke. Cập nhật số test ở `docs/scrum-process.md`. Tick plan này. Commit `docs: bao cao demo muot`.
+- [x] **Step 6: Báo người dùng.** Gồm danh sách commit, kết quả test và smoke, và 2 việc cần người dùng:
   1. **Kiểm bằng mắt trên trình duyệt:**
      - tab 1 đăng nhập khách, tab 2 đăng nhập barista, reload cả hai vẫn đúng tài khoản; header mỗi tab hiện email + vai trò;
      - khách đặt và trả 1 đơn, tab barista thấy đơn ở cột "Chờ pha" trong 5 giây;
