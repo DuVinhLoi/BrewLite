@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { IOrderRepository, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
 import { IPaymentRepository } from '../contracts/payment.contract';
-import { Actor, IUserRepository, Role } from '../contracts/user.contract';
+import { Actor, IUserRepository, isStaff } from '../contracts/user.contract';
 import { MockPaymentGatewayService } from './mock-payment-gateway.service';
 import { assertTransition } from '../state-machine/order-state.machine';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -161,7 +161,7 @@ export class PaymentService {
   // UC09–UC11 (mở rộng §3.2): chỉ quầy/quản trị tiến đơn PAID→PREPARING→READY→COMPLETED; khách nhận 403
   async advanceOrder(actor: Actor, orderId: string, status: OrderStatus) {
     if (status === OrderStatus.CANCELLED) throw new BadRequestException('Use cancel for CANCELLED');
-    if (actor.role === Role.CUSTOMER) throw new ForbiddenException('Only staff can advance orders');
+    if (!isStaff(actor)) throw new ForbiddenException('Only staff can advance orders');
     return this.withLock(`order:${orderId}`, async () => {
       const order = await this.orders.findById(orderId);
       if (!order) throw new NotFoundException('Order not found');
@@ -174,9 +174,9 @@ export class PaymentService {
   async cancelOrderAs(actor: Actor, orderId: string) {
     const order = await this.orders.findById(orderId);
     if (!order) throw new NotFoundException('Order not found');
-    if (actor.role === Role.CUSTOMER && order.userId !== actor.id) throw new ForbiddenException('Not your order');
+    if (!isStaff(actor) && order.userId !== actor.id) throw new ForbiddenException('Not your order');
     // UC12: quầy chỉ hủy đơn đã trả (hết nguyên liệu); PREPARING trở đi để assertTransition trả 400 như cũ
-    if (actor.role !== Role.CUSTOMER && (order.status === OrderStatus.PENDING || order.status === OrderStatus.PAYMENT_FAILED))
+    if (isStaff(actor) && (order.status === OrderStatus.PENDING || order.status === OrderStatus.PAYMENT_FAILED))
       throw new ForbiddenException('Staff can only cancel paid orders');
     return this.cancelOrder(orderId);
   }

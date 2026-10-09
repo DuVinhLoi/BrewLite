@@ -4,7 +4,7 @@ import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { OrderStatus } from '../src/contracts/order.contract';
-import { Role } from '../src/contracts/user.contract';
+import { isStaff, Role, toRole } from '../src/contracts/user.contract';
 import { OrderController } from '../src/order/order.controller';
 import { OrderService } from '../src/order/order.service';
 import { UpdateOrderStatusDto } from '../src/payment/dto/update-order-status.dto';
@@ -113,6 +113,31 @@ describe('order advance PAID->PREPARING->READY->COMPLETED (gap 1)', () => {
     expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAID);
   });
 
+  test.each([
+    ['chuỗi lạ (barista viết thường)', 'barista'],
+    ['gõ sai ADMN', 'ADMN'],
+    ['undefined', undefined],
+  ])('vai trò không hợp lệ (%s) KHÔNG phải staff: advance → 403, đơn giữ nguyên', async (_name, role) => {
+    const s = setup();
+    await seedPaid(s);
+    const bogus = { id: 'x', role } as any;
+    await expect(s.svc.advanceOrder(bogus, 'o1', OrderStatus.PREPARING)).rejects.toBeInstanceOf(ForbiddenException);
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAID);
+  });
+
+  test.each([
+    ['chuỗi lạ (barista viết thường)', 'barista'],
+    ['gõ sai ADMN', 'ADMN'],
+    ['undefined', undefined],
+  ])('vai trò không hợp lệ (%s) hủy đơn của người khác → 403, đơn giữ nguyên', async (_name, role) => {
+    const s = setup();
+    await seedPaid(s);
+    const bogus = { id: 'x', role } as any;
+    await expect(s.svc.cancelOrderAs(bogus, 'o1')).rejects.toBeInstanceOf(ForbiddenException);
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAID);
+    expect(s.gateway.refunds).toEqual([]);
+  });
+
   test('ADMIN cũng tiến đơn được (không cần là chủ đơn)', async () => {
     const s = setup();
     await seedPaid(s);
@@ -144,6 +169,21 @@ describe('order advance PAID->PREPARING->READY->COMPLETED (gap 1)', () => {
     });
     await expect(s.svc.cancelOrderAs(barista, 'o1')).rejects.toBeInstanceOf(ForbiddenException);
     expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PENDING);
+  });
+});
+
+describe('toRole / isStaff (không fail-open với vai trò lạ)', () => {
+  test('toRole: giá trị thuộc enum đi qua, còn lại về CUSTOMER', () => {
+    expect([Role.CUSTOMER, Role.BARISTA, Role.ADMIN].map(toRole)).toEqual([Role.CUSTOMER, Role.BARISTA, Role.ADMIN]);
+    for (const bad of ['barista', 'ADMN', '', undefined, null, 1]) expect(toRole(bad)).toBe(Role.CUSTOMER);
+  });
+
+  test('isStaff chỉ true với BARISTA/ADMIN', () => {
+    expect(isStaff({ role: Role.BARISTA })).toBe(true);
+    expect(isStaff({ role: Role.ADMIN })).toBe(true);
+    expect(isStaff({ role: Role.CUSTOMER })).toBe(false);
+    expect(isStaff({ role: 'barista' })).toBe(false);
+    expect(isStaff({})).toBe(false);
   });
 });
 

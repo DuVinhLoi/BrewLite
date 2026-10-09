@@ -23,6 +23,8 @@ export class OrderController {
   @Roles(Role.BARISTA, Role.ADMIN)
   async queue(@Query('status') status?: string) {
     if (!status) return this.orders.listQueue();
+    // ?status=A&status=B tới dạng mảng: .split sẽ ném 500, nên báo 400
+    if (typeof status !== 'string') throw new BadRequestException('status must be a comma-separated string');
     const list = status.split(',').map((s) => s.trim());
     const bad = list.find((s) => !(s in OrderStatus));
     if (bad) throw new BadRequestException(`Unknown status ${bad}`);

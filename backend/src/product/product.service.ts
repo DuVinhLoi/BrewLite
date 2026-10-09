@@ -27,6 +27,8 @@ export class ProductService {
     if (p.version !== dto.version) throw new ConflictException('Stock changed, reload');
     const next = dto.mode === 'set' ? dto.value : p.stock + dto.value;
     if (next < 0) throw new BadRequestException('Stock cannot be negative');
+    // delta cộng dồn có thể vượt Int32 dù từng value hợp lệ
+    if (next > 2147483647) throw new BadRequestException('Stock too large');
     if (!(await this.products.setStockWithOptimisticLock(id, next, dto.version))) throw new ConflictException('Stock changed, reload');
     return this.getById(id);
   }

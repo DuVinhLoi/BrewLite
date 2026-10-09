@@ -50,6 +50,12 @@ describe('hàng đợi quầy GET /orders?status=', () => {
     await expect(ctl.queue('PAID,FOO')).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  test('controller: ?status= lặp lại (mảng) → 400 chứ không 500', async () => {
+    const { svc } = await setup();
+    const ctl = new OrderController(svc);
+    await expect(ctl.queue(['PAID', 'READY'] as any)).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   test('route gắn JwtAuthGuard + RolesGuard, chỉ BARISTA/ADMIN', () => {
     const guards = Reflect.getMetadata(GUARDS_METADATA, OrderController.prototype.queue);
     expect(guards).toEqual([JwtAuthGuard, RolesGuard]);

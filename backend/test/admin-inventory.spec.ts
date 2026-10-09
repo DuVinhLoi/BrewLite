@@ -53,6 +53,22 @@ describe('UC14 admin tồn kho', () => {
     expect(await errs({ mode: 'set', value: 1.5, version: 1 })).toBeGreaterThan(0);
   });
 
+  test('DTO: value vượt Int32 bị từ chối, đúng biên thì nhận', async () => {
+    const errs = async (o: object) => (await validate(plainToInstance(AdjustStockDto, o))).length;
+    expect(await errs({ mode: 'set', value: 2147483647, version: 1 })).toBe(0);
+    expect(await errs({ mode: 'delta', value: -2147483648, version: 1 })).toBe(0);
+    expect(await errs({ mode: 'set', value: 2147483648, version: 1 })).toBeGreaterThan(0);
+    expect(await errs({ mode: 'delta', value: -2147483649, version: 1 })).toBeGreaterThan(0);
+  });
+
+  test('cộng dồn vượt Int32 (mỗi value hợp lệ) → 400 Stock too large, kho không đổi', async () => {
+    const { svc, repo } = await setup();
+    const err = await svc.adjustStock('p1', { mode: 'delta', value: 2147483647, version: 3 }).catch((e) => e);
+    expect(err).toBeInstanceOf(BadRequestException);
+    expect(err.message).toBe('Stock too large');
+    expect((await repo.findById('p1'))!.stock).toBe(10);
+  });
+
   test('controller chỉ ADMIN (BARISTA bị 403)', () => {
     expect(Reflect.getMetadata(GUARDS_METADATA, AdminProductController)).toEqual([JwtAuthGuard, RolesGuard]);
     const guard = new RolesGuard(new Reflector());

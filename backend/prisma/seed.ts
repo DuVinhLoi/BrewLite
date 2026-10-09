@@ -17,8 +17,9 @@ async function main() {
     { id: 'staff-admin', email: 'admin@brewlite.vn', password: 'admin1234', role: 'ADMIN' },
   ]) {
     const passwordHash = await bcrypt.hash(s.password, 10);
+    // upsert theo email (unique): DB cũ đã có sẵn email này dưới id khác thì update thay vì lỗi P2002 làm container không khởi động
     await db.user.upsert({
-      where: { id: s.id },
+      where: { email: s.email },
       create: { id: s.id, email: s.email, passwordHash, role: s.role, loyaltyPoints: 0 },
       update: { email: s.email, passwordHash, role: s.role },
     });
