@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { IOrderRepository, OrderDto, OrderStatus } from '../contracts/order.contract';
 import { TxContext } from '../contracts/transaction.contract';
+import { DEFAULT_SIZE } from '../order/pricing';
 import { PrismaService } from './prisma.service';
 
 type OrderRow = Prisma.OrderGetPayload<{ include: { items: true } }>;
@@ -69,7 +70,7 @@ export class PrismaOrderRepo implements IOrderRepository {
         items: {
           create: order.items.map((i) => ({
             productId: i.productId,
-            size: i.size ?? 'M',
+            size: i.size ?? DEFAULT_SIZE,
             toppings: JSON.stringify(i.toppings ?? []),
             qty: i.quantity,
             lineTotal: i.unitPrice * i.quantity,

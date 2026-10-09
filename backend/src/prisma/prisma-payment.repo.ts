@@ -17,11 +17,6 @@ export class PrismaPaymentRepo implements IPaymentRepository {
     return p && this.toDto(p);
   }
 
-  async findByOrderId(orderId: string, tx?: TxContext): Promise<PaymentDto | null> {
-    const p = await this.cx(tx).payment.findFirst({ where: { orderId }, orderBy: { createdAt: 'desc' } });
-    return p && this.toDto(p);
-  }
-
   // UC06 KB3: hoàn đúng số tiền thực thu = cộng mọi biên lai SUCCESS của đơn
   async findAllByOrderId(orderId: string, tx?: TxContext): Promise<PaymentDto[]> {
     const rows = await this.cx(tx).payment.findMany({ where: { orderId }, orderBy: { createdAt: 'asc' } });
@@ -42,10 +37,6 @@ export class PrismaPaymentRepo implements IPaymentRepository {
       },
     });
     return this.toDto(p);
-  }
-
-  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T> {
-    return this.db.$transaction((tx) => fn(tx));
   }
 
   private toDto(p: PaymentRow): PaymentDto {

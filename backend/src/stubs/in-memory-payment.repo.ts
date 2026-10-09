@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { IPaymentRepository, PaymentDto } from '../contracts/payment.contract';
 import { TxContext } from '../contracts/transaction.contract';
-import { registerInMemoryRepo, runInMemoryTransaction, snapshotMap } from './in-memory-tx';
+import { registerInMemoryRepo, snapshotMap } from './in-memory-tx';
 
+// Lưu và trả bản sao (như Prisma trả hàng mới mỗi lần đọc)
 @Injectable()
 export class InMemoryPaymentRepo implements IPaymentRepository {
   private byKey = new Map<string, PaymentDto>();
@@ -18,24 +19,16 @@ export class InMemoryPaymentRepo implements IPaymentRepository {
   }
 
   async findByIdempotencyKey(key: string, _tx?: TxContext): Promise<PaymentDto | null> {
-    return this.byKey.get(key) ?? null;
-  }
-
-  async findByOrderId(orderId: string, _tx?: TxContext): Promise<PaymentDto | null> {
-    for (const p of this.byKey.values()) if (p.orderId === orderId) return p;
-    return null;
+    const p = this.byKey.get(key);
+    return p ? structuredClone(p) : null;
   }
 
   async findAllByOrderId(orderId: string, _tx?: TxContext): Promise<PaymentDto[]> {
-    return [...this.byKey.values()].filter((p) => p.orderId === orderId);
+    return [...this.byKey.values()].filter((p) => p.orderId === orderId).map((p) => structuredClone(p));
   }
 
   async save(payment: PaymentDto, _tx?: TxContext): Promise<PaymentDto> {
-    this.byKey.set(payment.idempotencyKey, payment);
-    return payment;
-  }
-
-  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T> {
-    return runInMemoryTransaction(() => fn(undefined));
+    this.byKey.set(payment.idempotencyKey, structuredClone(payment));
+    return structuredClone(payment);
   }
 }

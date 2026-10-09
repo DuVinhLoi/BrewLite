@@ -61,7 +61,7 @@ export class PaymentService {
         // cùng chủ nhưng key đã dùng cho đơn khác: không trả biên lai đơn cũ như thể đơn này đã trả (422, không dùng 409 vì FE gán 409 cho "hết hàng")
         throw new UnprocessableEntityException('Idempotency-Key already used for another order');
       }
-      return { isCached: true, status: 'PAID', orderId: hit.orderId, amount: hit.amount, paymentId: hit.id, discount: hit.discount, loyaltyPointsEarned: hit.loyaltyPointsEarned };
+      return { isCached: true, status: OrderStatus.PAID, orderId: hit.orderId, amount: hit.amount, paymentId: hit.id, discount: hit.discount, loyaltyPointsEarned: hit.loyaltyPointsEarned };
     }
 
     const discount = dto.voucherCode === VOUCHER_CODE ? Math.floor(order.total * VOUCHER_RATE) : 0;
@@ -129,12 +129,12 @@ export class PaymentService {
       // để thử lại bằng key mới không trừ tiền lần 2; luôn ném lại lỗi gốc (lỗi của bước bù không được che nó).
       // ponytail: hoàn tiền/ghi PAYMENT_FAILED lỗi thì bỏ qua (chưa có sổ đối soát) — cần job đối soát nếu chạy thật
       await this.gateway.refund(order.id, finalAmount).catch(() => undefined);
-      // transaction đã rollback nên đơn đang PENDING (không đọc order.status: repo in-memory trả cùng object, đã bị đổi sang PAID)
-      assertTransition(OrderStatus.PENDING, OrderStatus.PAYMENT_FAILED);
+      // transaction đã rollback nên đơn vẫn ở trạng thái đã đọc ở đầu hàm (PENDING)
+      assertTransition(order.status, OrderStatus.PAYMENT_FAILED);
       await this.orders.updateStatus(order.id, OrderStatus.PAYMENT_FAILED).catch(() => undefined);
       throw e;
     }
-    return { isCached: false, status: 'PAID', orderId: order.id, amount: finalAmount, discount, loyaltyPointsEarned: points, paymentId };
+    return { isCached: false, status: OrderStatus.PAID, orderId: order.id, amount: finalAmount, discount, loyaltyPointsEarned: points, paymentId };
   }
 
   async cancelOrder(orderId: string) {

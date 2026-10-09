@@ -21,9 +21,9 @@ export class MockPaymentGatewayService {
     if (process.env.MOCK_GATEWAY_DECLINE_METHOD === opts.method) throw new Error('Mock charge declined');
   }
 
-  async refund(_orderId: string, _amount: number): Promise<void> {
+  async refund(orderId: string, amount: number): Promise<void> {
     this.callCount++;
-    this.refunds.push({ orderId: _orderId, amount: _amount });
+    this.refunds.push({ orderId, amount });
   }
 
   /** Sổ hoàn tiền để test UC06 KB3 pin đúng số thực thu. */

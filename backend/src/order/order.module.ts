@@ -6,7 +6,6 @@ import { IOrderRepository } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
 import { InMemoryOrderRepo } from '../stubs/in-memory-order.repo';
 import { InMemoryProductRepo } from '../stubs/in-memory-product.repo';
-import { PrismaService } from '../prisma/prisma.service';
 import { PrismaOrderRepo } from '../prisma/prisma-order.repo';
 import { PrismaProductRepo } from '../prisma/prisma-product.repo';
 
@@ -23,7 +22,7 @@ const ProductRepo = useDb ? PrismaProductRepo : InMemoryProductRepo;
       useFactory: (o: IOrderRepository, p: IProductRepository) => new OrderService(o, p),
       inject: [OrderRepo, ProductRepo],
     },
-    ...(useDb ? [PrismaService, PrismaOrderRepo, PrismaProductRepo] : [InMemoryOrderRepo, InMemoryProductRepo]),
+    ...(useDb ? [PrismaOrderRepo, PrismaProductRepo] : [InMemoryOrderRepo, InMemoryProductRepo]),
   ],
 })
 export class OrderModule {}

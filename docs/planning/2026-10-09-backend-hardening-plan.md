@@ -109,19 +109,19 @@ Hiện tại cùng chủ gửi key K đã dùng cho đơn A kèm `orderId` B th�
 
 Không đổi hành vi; toàn bộ test giữ xanh sau mỗi bước.
 
-- [ ] **Hằng giả trong `assertTransition` (Standards 5):** repo in-memory (`backend/src/stubs/*`) lưu bản sao khi `save` và trả bản sao khi đọc (`structuredClone`), giống Prisma. Nhánh bù lỗi trong `payment.service.ts` dùng `order.status` thật thay cho `assertTransition(OrderStatus.PENDING, …)`, xóa comment giải thích về stub.
-- [ ] **Chuẩn hóa role (Standards 6):** `toRole()` ở `jwt-auth.guard.ts:16` và `auth.service.ts:34`.
-- [ ] **Code chết (Standards 7):**
+- [x] **Hằng giả trong `assertTransition` (Standards 5):** repo in-memory (`backend/src/stubs/*`) lưu bản sao khi `save` và trả bản sao khi đọc (`structuredClone`), giống Prisma. Nhánh bù lỗi trong `payment.service.ts` dùng `order.status` thật thay cho `assertTransition(OrderStatus.PENDING, …)`, xóa comment giải thích về stub.
+- [x] **Chuẩn hóa role (Standards 6):** `toRole()` ở `jwt-auth.guard.ts:16` và `auth.service.ts:34`.
+- [x] **Code chết (Standards 7):**
   - xóa `auth/current-user.decorator.ts` và dòng export;
   - xóa `IPaymentRepository.findByOrderId` cùng 2 bản cài;
   - xóa `runInTransaction` khỏi `IProductRepository`, `IPaymentRepository`, `IUserRepository` và các bản cài (chỉ `orders.runInTransaction` được gọi);
   - `PaymentStatus` bỏ `'FAILED'`.
-- [ ] **Một `PrismaService` (Standards 8):** tạo `PrismaModule` `@Global()` (providers/exports `PrismaService` khi `useDb`), import ở `AppModule`, bỏ `PrismaService` khỏi providers của 4 module. Gom phần map row → DTO trong `prisma-product.repo.ts` và `prisma-user.repo.ts` thành `toDto` như 2 repo còn lại.
-- [ ] **Hằng thay chuỗi (Standards 9):** `OrderStatus.PAID` ở `payment.service.ts:62,135`; `DEFAULT_SIZE` ở `prisma-order.repo.ts:65`.
-- [ ] **Tên tham số (Standards 10):** `_orderId` / `_amount` → `orderId` / `amount` trong `mock-payment-gateway.service.ts`.
-- [ ] **Khóa JWT (Standards 2, quyết định Q4):** comment `ponytail:` ở `auth.module.ts:18` trỏ README "Lưu ý bảo mật".
-- [ ] **Giới hạn chưa ghi (Standards 4):** `user-sequence` §2.4 mục C ghi giới hạn `ponytail: sequential stock loop`.
-- [ ] Commit `refactor(backend): don smell sau code-review (khong doi hanh vi)`.
+- [x] **Một `PrismaService` (Standards 8):** tạo `PrismaModule` `@Global()` (providers/exports `PrismaService` khi `useDb`), import ở `AppModule`, bỏ `PrismaService` khỏi providers của 4 module. Gom phần map row → DTO trong `prisma-product.repo.ts` và `prisma-user.repo.ts` thành `toDto` như 2 repo còn lại.
+- [x] **Hằng thay chuỗi (Standards 9):** `OrderStatus.PAID` ở `payment.service.ts:62,135`; `DEFAULT_SIZE` ở `prisma-order.repo.ts:65`.
+- [x] **Tên tham số (Standards 10):** `_orderId` / `_amount` → `orderId` / `amount` trong `mock-payment-gateway.service.ts`.
+- [x] **Khóa JWT (Standards 2, quyết định Q4):** comment `ponytail:` ở `auth.module.ts:18` trỏ README "Lưu ý bảo mật".
+- [x] **Giới hạn chưa ghi (Standards 4):** `user-sequence` §2.4 mục C ghi giới hạn `ponytail: sequential stock loop`.
+- [x] Commit `refactor(backend): don smell sau code-review (khong doi hanh vi)`.
 
 ## Task 9: Kiểm chứng cuối và báo cáo
 

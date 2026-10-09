@@ -2,7 +2,7 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
-import { IUserRepository, Role } from '../contracts/user.contract';
+import { IUserRepository, Role, toRole } from '../contracts/user.contract';
 import { LoginDto, RegisterDto } from './dto';
 
 @Injectable()
@@ -31,7 +31,7 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(dto.password, user.passwordHash ?? ''))) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const role = user.role ?? Role.CUSTOMER;
+    const role = toRole(user.role);
     const accessToken = await this.jwt.signAsync({ sub: user.id, email: user.email, role });
     return { accessToken, user: { id: user.id, email: user.email, role } };
   }

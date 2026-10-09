@@ -19,5 +19,4 @@ export interface IProductRepository {
   deductStockWithOptimisticLock(id: string, quantity: number, currentVersion: number, tx?: TxContext): Promise<boolean>;
   restoreStock(id: string, quantity: number, tx?: TxContext): Promise<void>;
   save(product: ProductDto, tx?: TxContext): Promise<ProductDto>;
-  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T>;
 }

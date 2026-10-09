@@ -5,7 +5,6 @@ import { AuthModule } from '../auth/auth.module';
 import { ProductService } from './product.service';
 import { IProductRepository } from '../contracts/product.contract';
 import { InMemoryProductRepo } from '../stubs/in-memory-product.repo';
-import { PrismaService } from '../prisma/prisma.service';
 import { PrismaProductRepo } from '../prisma/prisma-product.repo';
 
 const useDb = !!process.env.DATABASE_URL;
@@ -20,7 +19,7 @@ const ProductRepo = useDb ? PrismaProductRepo : InMemoryProductRepo;
       useFactory: (p: IProductRepository) => new ProductService(p),
       inject: [ProductRepo],
     },
-    ...(useDb ? [PrismaService, PrismaProductRepo] : [InMemoryProductRepo]),
+    ...(useDb ? [PrismaProductRepo] : [InMemoryProductRepo]),
   ],
 })
 export class ProductModule {}
