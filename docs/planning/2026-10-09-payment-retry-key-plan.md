@@ -32,10 +32,10 @@ Lý do S1–S4 đúng: backend chỉ lưu key khi trả **thành công** (biên 
 
 S1 và S4 đã có test (`(b) same Idempotency-Key charges once`, `(b) concurrent same Idempotency-Key charges once` trong `backend/test/order-payment.integration.spec.ts`). Thêm 2 test cho "lỗi rồi thử lại cùng key". Đây là test ghim hành vi đã có, xanh ngay là đúng.
 
-- [ ] `backend/test/payment-failure.spec.ts`, trong `describe('MOCK_GATEWAY_DECLINE_METHOD')`: CARD bị từ chối → 400 + `PAYMENT_FAILED`; thử lại cùng đơn bằng WALLET với **cùng key** → `PAID`, đúng 1 biên lai theo key đó. Giữ test cũ dùng key mới (cả hai cách đều phải chạy được).
-- [ ] `backend/test/order-payment.integration.spec.ts`, trong `describe('lỗi sau charge thành công → hoàn tiền + PAYMENT_FAILED')`: kẹt kho (409, hoàn tiền, `PAYMENT_FAILED`) rồi nhập thêm kho, thử lại **cùng key** → `PAID`; gateway hoàn đúng 1 lần, có 1 biên lai.
-- [ ] Không sửa file nào trong `backend/src`.
-- [ ] Commit `test(backend): ghim thu lai cung Idempotency-Key sau loi cong / ket kho`.
+- [x] `backend/test/payment-failure.spec.ts`, trong `describe('MOCK_GATEWAY_DECLINE_METHOD')`: CARD bị từ chối → 400 + `PAYMENT_FAILED`; thử lại cùng đơn bằng WALLET với **cùng key** → `PAID`, đúng 1 biên lai theo key đó. Giữ test cũ dùng key mới (cả hai cách đều phải chạy được).
+- [x] `backend/test/order-payment.integration.spec.ts`, trong `describe('lỗi sau charge thành công → hoàn tiền + PAYMENT_FAILED')`: kẹt kho (409, hoàn tiền, `PAYMENT_FAILED`) rồi nhập thêm kho, thử lại **cùng key** → `PAID`; gateway hoàn đúng 1 lần, có 1 biên lai.
+- [x] Không sửa file nào trong `backend/src`.
+- [x] Commit `test(backend): ghim thu lai cung Idempotency-Key sau loi cong / ket kho`.
 
 ## Task 2: Phương án A ở frontend, kèm tài liệu
 

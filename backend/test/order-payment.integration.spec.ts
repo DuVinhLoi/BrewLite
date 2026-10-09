@@ -383,4 +383,20 @@ describe('lỗi sau charge thành công → hoàn tiền + PAYMENT_FAILED', () =
     expect(s.gateway.refunds).toEqual([{ orderId: 'o1', amount: 35000 }]);
     expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
   });
+
+  // Phương án A (PaymentForm giữ 1 key trả tiền): lần lỗi không lưu key nên thử lại CÙNG key vẫn trừ tiền lại được
+  test('kẹt kho (409, đã hoàn tiền) rồi nhập thêm kho, thử lại CÙNG key → PAID, hoàn đúng 1 lần, 1 biên lai', async () => {
+    const s = await seed({ stock: 0 });
+    await expect(s.svc.processPayment('u1', dto, 'K-E6')).rejects.toBeInstanceOf(ConflictException);
+    expect(await s.payments.findByIdempotencyKey('K-E6')).toBeNull();
+
+    await s.products.save({ id: 'p1', name: 'Latte', price: 35000, stock: 5, version: 1 });
+    await expect(s.svc.processPayment('u1', dto, 'K-E6')).resolves.toMatchObject({ isCached: false, status: 'PAID', amount: 35000 });
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAID);
+    expect(s.gateway.refunds).toHaveLength(1); // lần thử lại không hoàn thêm
+    expect(await s.payments.findAllByOrderId('o1')).toHaveLength(1);
+    // bấm lại lần nữa (mất phản hồi của lần thành công): cùng key trúng cache, không trừ tiền thêm
+    await expect(s.svc.processPayment('u1', dto, 'K-E6')).resolves.toMatchObject({ isCached: true, status: 'PAID' });
+    expect(s.gateway.getCallCount()).toBe(3); // charge (lỗi kho) + refund + charge (thử lại): lần cache không gọi cổng
+  });
 });
