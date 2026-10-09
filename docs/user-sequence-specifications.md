@@ -452,7 +452,7 @@ Phục vụ máy trạng thái **Order State Machine** tại Mục 9.1 tài li�
   - **Frontend có nút "Hủy đơn" ở `/history`** cho đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (helper `cancelOrder()` trong `frontend/src/lib/api.ts`): gọi `PATCH /orders/:id { status: 'CANCELLED' }` kèm Bearer JWT, đơn `PAID` hỏi xác nhận (có hoàn tiền) trước khi gọi, lỗi 400/403 hiện ngay dưới thẻ đơn, thành công thì tải lại danh sách. Màn biên lai không có nút này.
   - **Chỉ CHỦ ĐƠN được hủy:** `PaymentService.cancelOrderAs()` so `order.userId` với user trong token; khác chủ → 403, đơn không tồn tại → 404.
   - **Hiện trạng code cho KB4 và thanh tiến trình:** `/history` và màn biên lai hiện **thanh 5 bước** `Chờ thanh toán → Đã thanh toán → Đang pha → Sẵn sàng → Hoàn tất` (component `OrderStatusTrack`; `Thanh toán lỗi` đỏ, `Đã hủy` xám). Nút "Quầy (demo): → <bước kế>" chỉ hiện ở đơn `PAID` / `PREPARING` / `READY`, có tooltip "Mô phỏng thao tác của Barista (ngoài MVP theo đề §3.2)", ẩn được bằng `NEXT_PUBLIC_DEMO_COUNTER=false`; không hiện ở `PENDING`, `PAYMENT_FAILED` (bước kế là thanh toán), `COMPLETED`, `CANCELLED`.
-  - Barista hủy đơn khi hết nguyên liệu: **ngoài phạm vi MVP** (đề §3.2), không có trên biểu đồ Use Case gốc; hệ thống không có vai trò Barista.
+  - Barista hủy đơn khi hết nguyên liệu: **ngoài phạm vi MVP** (đề §3.2); là UC12 trên Bản 1 của `use-case-specifications.md` (mở rộng, **chưa hiện thực trên `develop`**, đang làm ở nhánh `feat/barista-admin`); hiện hệ thống chưa có vai trò Barista.
 
 #### B. Sơ đồ tuần tự (PlantUML)
 ```plantuml
@@ -500,7 +500,7 @@ else Kịch bản 2: Chủ đơn hủy đơn chưa thanh toán (PENDING -> CANCE
     deactivate FE
 
 else Kịch bản 3: Chủ đơn hủy đơn đã thanh toán (PAID -> CANCELLED / Hoàn tiền)
-    note over User, FE : Barista hủy đơn: ngoài MVP (đề §3.2),\nkhông có trên biểu đồ Use Case gốc
+    note over User, FE : Barista hủy đơn (UC12): ngoài MVP (đề §3.2),\nchưa hiện thực trên develop
     User -> FE : Bấm nút "Hủy đơn" ở trang Lịch sử
     activate FE
     FE --> User : Hộp thoại xác nhận: hủy sẽ hoàn tiền + hoàn kho
@@ -520,7 +520,7 @@ else Kịch bản 3: Chủ đơn hủy đơn đã thanh toán (PAID -> CANCELLED
     deactivate FE
 
 else Kịch bản 4 (mở rộng, demo quầy): Chủ đơn tiến đơn PAID -> PREPARING bằng nút "Quầy (demo)"
-    note over User, FE : Mô phỏng Barista (ngoài MVP, đề §3.2): không có tác nhân Barista,\nchỉ gọi PATCH /orders/:id có sẵn; nút ghi rõ chữ "demo"
+    note over User, FE : Mô phỏng Barista (ngoài MVP, đề §3.2): chưa có tác nhân Barista (UC09–UC11 chưa hiện thực),\nchỉ gọi PATCH /orders/:id có sẵn; nút ghi rõ chữ "demo"
     User -> FE : Bấm nút "Quầy (demo): → Đang pha" ở trang Lịch sử
     activate FE
     FE -> BE : PATCH /orders/1042 { status: 'PREPARING' } + Bearer JWT

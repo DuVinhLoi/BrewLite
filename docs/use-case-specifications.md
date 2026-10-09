@@ -22,7 +22,7 @@ Hệ thống BrewLite bao gồm 4 nhóm tác nhân người dùng chính (Primar
 
 > **Lưu ý về phạm vi triển khai:**  
 > • **Phân hệ Khách hàng (UC01–UC07 + UC05a):** Là phạm vi cốt lõi của bài tập lớn (MVP 10 Task Scrum), đã được hiện thực hoàn chỉnh cả Frontend (Next.js) lẫn Backend (NestJS + PostgreSQL/Prisma).  
-> • **Phân hệ Pha chế (UC08–UC12) & Quản trị (UC13–UC15):** Đại diện cho các tác nhân vận hành mở rộng trong mô hình nghiệp vụ thực tế của quán cà phê.
+> • **Phân hệ Pha chế (UC08–UC12) & Quản trị (UC13–UC15):** Đại diện cho các tác nhân vận hành mở rộng trong mô hình nghiệp vụ thực tế của quán cà phê. **Mở rộng ngoài MVP (đề §3.2)**, hiện **chưa hiện thực trên `develop`**: UC08–UC12 và UC14 (chỉ tồn kho `Product.stock`) đang làm ở nhánh `feat/barista-admin`; UC13 và UC15 là backlog (đề §11.4). Trong lúc chờ, thay cho Barista, chủ đơn tiến đơn bằng nút "Quầy (demo)" (xem sequence §2.5, Kịch bản 4). Cột **Trạng thái** ở mục 4 là nguồn sự thật về từng UC; khi một Task của nhánh đó xong thì đổi trạng thái cùng commit với code.
 
 ---
 
@@ -73,7 +73,7 @@ rectangle "Hệ Thống Đặt Cà Phê BrewLite" {
   }
 
   ' --- PHÂN HỆ PHA CHẾ (BARISTA SUBSYSTEM) ---
-  package "Phân hệ Pha chế (Barista Subsystem)" {
+  package "Phân hệ Pha chế (Barista) – mở rộng ngoài MVP §3.2" {
     usecase "UC08: Xem hàng đợi đơn (PAID)" as UC08
     usecase "UC09: Tiếp nhận pha chế\n(PAID -> PREPARING)" as UC09
     usecase "UC10: Báo xong pha chế\n(PREPARING -> READY)" as UC10
@@ -82,7 +82,7 @@ rectangle "Hệ Thống Đặt Cà Phê BrewLite" {
   }
 
   ' --- PHÂN HỆ QUẢN TRỊ (ADMIN SUBSYSTEM) ---
-  package "Phân hệ Quản trị (Admin Subsystem)" {
+  package "Phân hệ Quản trị (Admin) – mở rộng ngoài MVP §3.2" {
     usecase "UC13: Quản lý món & Thực đơn" as UC13
     usecase "UC14: Quản lý tồn kho (Stock)" as UC14
     usecase "UC15: Quản lý mã giảm giá" as UC15
@@ -135,7 +135,7 @@ Admin --- UC15
 
 ## 3. BẢN 2: BIỂU ĐỒ TRỌNG TÂM PHÂN HỆ KHÁCH HÀNG (CUSTOMER SUBSYSTEM)
 
-> **Mô tả:** Biểu đồ này trích xuất riêng biệt phân hệ Khách hàng (8 UC: UC01–UC07 + UC05a). Đây là biểu đồ cốt lõi khớp 100% với các sơ đồ tuần tự trong [user-sequence-specifications.md](user-sequence-specifications.md) và thiết kế giao diện đặt hàng của nhóm.
+> **Mô tả:** Biểu đồ này trích xuất riêng biệt phân hệ Khách hàng (8 UC: UC01–UC07 + UC05a). Đây là phần trích phân hệ Khách hàng từ Bản 1 (gốc), dùng khi thuyết trình MVP và khớp với các sơ đồ tuần tự trong [user-sequence-specifications.md](user-sequence-specifications.md) và thiết kế giao diện đặt hàng của nhóm.
 
 ```plantuml
 @startuml
@@ -212,24 +212,24 @@ UC06 --- Gateway
 
 Bảng dưới đây liệt kê đầy đủ 16 Use Case thuộc cả 3 phân hệ, phân định rõ tác nhân thực hiện, quan hệ phụ thuộc và căn cứ kỹ thuật:
 
-| Mã UC | Tên Ca Sử Dụng | Phân hệ | Tác Nhân Thực Hiện | Quan Hệ Phụ Thuộc | Căn Cứ Đề Bài & Hiện Thực Mã Nguồn | Sơ đồ tuần tự |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **UC01** | Xem menu & Tùy chọn món | Khách hàng | `Guest` *(và Customer)* | Độc lập | Task 2, 3, 4 (`GET /products`, `GET /products/:id`) | §2.1 |
-| **UC02** | Quản lý giỏ hàng | Khách hàng | `Guest` *(và Customer)* | Độc lập | Task 5 (Zustand / LocalStorage Client-side) | §2.2 |
-| **UC03** | Đăng ký / Đăng nhập (JWT) | Khách hàng | `Guest` *(Customer dùng lại)* | Độc lập | Task 7 (`POST /auth/register`, `POST /auth/login`) | §2.3 |
-| **UC04** | Tạo đơn hàng (PENDING) | Khách hàng | `Customer` | Độc lập (gọi trước khi trả tiền) | Task 6 (`POST /orders`, server tính giá dựa trên menu gốc) | §2.4 (bước 2a) |
-| **UC05** | Thanh toán không tiền mặt | Khách hàng | `Customer`, `Mock Gateway` | Nối Gateway; mở rộng bởi UC05a | Task 8, 10 (`POST /payments`) | §2.4 (bước 2b) |
-| **UC05a** | Áp mã giảm giá | Khách hàng | `Customer` | `<<extend>> UC05` | Task 10 (Áp mã `BREWLITE10`, chiết khấu hợp lệ trước khi trừ tiền) | §2.4 (bước 1) |
-| **UC06** | Hủy đơn / Thử lại thanh toán | Khách hàng | `Customer`, `Mock Gateway` | Nối Gateway (hoàn tiền đơn `PAID`) | Task 10 (`PATCH /orders/:id`, `POST /payments`). Hủy đơn `PENDING`/`PAID` hoặc thanh toán lại đơn lỗi | §2.5 |
-| **UC07** | Xem xác nhận & Lịch sử đơn | Khách hàng | `Customer` | Độc lập | Task 9 (`GET /orders/me`) | §2.6 |
-| **UC08** | Xem hàng đợi đơn (PAID) | Pha chế | `Barista` | Độc lập | Order State Machine §9.1 (Theo dõi hàng đợi đơn chờ pha chế) | §2.5 (State Machine) |
-| **UC09** | Tiếp nhận pha chế | Pha chế | `Barista` | Phụ thuộc UC08 | `PAID` $\rightarrow$ `PREPARING` (Cập nhật tiến trình qua `PATCH /orders/:id`) | §2.5 (Kịch bản 4) |
-| **UC10** | Báo hoàn tất pha chế | Pha chế | `Barista` | Phụ thuộc UC09 | `PREPARING` $\rightarrow$ `READY` (Thông báo nước đã sẵn sàng lấy) | §2.5 (State Machine) |
-| **UC11** | Xác nhận giao nước | Pha chế | `Barista` | Phụ thuộc UC10 | `READY` $\rightarrow$ `COMPLETED` (Đơn hàng hoàn tất chu trình) | §2.5 (State Machine) |
-| **UC12** | Hủy đơn do hết nguyên liệu | Pha chế | `Barista`, `Mock Gateway` | Nối Gateway (hoàn tiền) | `PAID` $\rightarrow$ `CANCELLED` (Hoàn tiền cho khách & hoàn kho các món khả dụng) | §2.5 (State Machine) |
-| **UC13** | Quản lý món & Thực đơn | Quản trị | `Admin` | Độc lập | Quản trị danh mục đồ uống (CRUD Product, giá, size, topping) | Seed / Admin DB |
-| **UC14** | Quản lý tồn kho (Stock) | Quản trị | `Admin` | Độc lập | Quản lý số lượng tồn kho nguyên liệu (Cập nhật ngưỡng an toàn) | Task 10 Concurrency |
-| **UC15** | Quản lý mã giảm giá | Quản trị | `Admin` | Độc lập | Thiết lập và quản lý danh sách chương trình khuyến mãi (Voucher) | Task 10 Voucher Rule |
+| Mã UC | Tên Ca Sử Dụng | Phân hệ | Tác Nhân Thực Hiện | Quan Hệ Phụ Thuộc | Căn Cứ Đề Bài & Hiện Thực Mã Nguồn | Sơ đồ tuần tự | Trạng thái |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **UC01** | Xem menu & Tùy chọn món | Khách hàng | `Guest` *(và Customer)* | Độc lập | Task 2, 3, 4 (`GET /products`, `GET /products/:id`) | §2.1 | Đã hiện thực |
+| **UC02** | Quản lý giỏ hàng | Khách hàng | `Guest` *(và Customer)* | Độc lập | Task 5 (Zustand / LocalStorage Client-side) | §2.2 | Đã hiện thực |
+| **UC03** | Đăng ký / Đăng nhập (JWT) | Khách hàng | `Guest` *(Customer dùng lại)* | Độc lập | Task 7 (`POST /auth/register`, `POST /auth/login`) | §2.3 | Đã hiện thực |
+| **UC04** | Tạo đơn hàng (PENDING) | Khách hàng | `Customer` | Độc lập (gọi trước khi trả tiền) | Task 6 (`POST /orders`, server tính giá dựa trên menu gốc) | §2.4 (bước 2a) | Đã hiện thực |
+| **UC05** | Thanh toán không tiền mặt | Khách hàng | `Customer`, `Mock Gateway` | Nối Gateway; mở rộng bởi UC05a | Task 8, 10 (`POST /payments`) | §2.4 (bước 2b) | Đã hiện thực |
+| **UC05a** | Áp mã giảm giá | Khách hàng | `Customer` | `<<extend>> UC05` | Task 10 (Áp mã `BREWLITE10`, chiết khấu hợp lệ trước khi trừ tiền) | §2.4 (bước 1) | Đã hiện thực |
+| **UC06** | Hủy đơn / Thử lại thanh toán | Khách hàng | `Customer`, `Mock Gateway` | Nối Gateway (hoàn tiền đơn `PAID`) | Task 10 (`PATCH /orders/:id`, `POST /payments`). Hủy đơn `PENDING`/`PAID` hoặc thanh toán lại đơn lỗi | §2.5 | Đã hiện thực |
+| **UC07** | Xem xác nhận & Lịch sử đơn | Khách hàng | `Customer` | Độc lập | Task 9 (`GET /orders/me`) | §2.6 | Đã hiện thực |
+| **UC08** | Xem hàng đợi đơn (PAID) | Pha chế | `Barista` | Độc lập | Order State Machine §9.1 (Theo dõi hàng đợi đơn chờ pha chế) | §2.5 (State Machine) | Chưa hiện thực trên `develop` (mở rộng, đang làm ở `feat/barista-admin`) |
+| **UC09** | Tiếp nhận pha chế | Pha chế | `Barista` | Phụ thuộc UC08 | `PAID` $\rightarrow$ `PREPARING` (Cập nhật tiến trình qua `PATCH /orders/:id`) | §2.5 (Kịch bản 4) | Chưa hiện thực trên `develop` (mở rộng, đang làm ở `feat/barista-admin`); tạm thay bằng nút "Quầy (demo)" |
+| **UC10** | Báo hoàn tất pha chế | Pha chế | `Barista` | Phụ thuộc UC09 | `PREPARING` $\rightarrow$ `READY` (Thông báo nước đã sẵn sàng lấy) | §2.5 (State Machine) | Chưa hiện thực trên `develop` (mở rộng, đang làm ở `feat/barista-admin`); tạm thay bằng nút "Quầy (demo)" |
+| **UC11** | Xác nhận giao nước | Pha chế | `Barista` | Phụ thuộc UC10 | `READY` $\rightarrow$ `COMPLETED` (Đơn hàng hoàn tất chu trình) | §2.5 (State Machine) | Chưa hiện thực trên `develop` (mở rộng, đang làm ở `feat/barista-admin`); tạm thay bằng nút "Quầy (demo)" |
+| **UC12** | Hủy đơn do hết nguyên liệu | Pha chế | `Barista`, `Mock Gateway` | Nối Gateway (hoàn tiền) | `PAID` $\rightarrow$ `CANCELLED` (Hoàn tiền cho khách & hoàn kho các món khả dụng) | §2.5 (State Machine) | Chưa hiện thực trên `develop` (mở rộng, đang làm ở `feat/barista-admin`) |
+| **UC13** | Quản lý món & Thực đơn | Quản trị | `Admin` | Độc lập | Quản trị danh mục đồ uống (CRUD Product, giá, size, topping) | Seed / Admin DB | Chưa hiện thực (backlog đề §11.4) |
+| **UC14** | Quản lý tồn kho (Stock) | Quản trị | `Admin` | Độc lập | Quản lý số lượng tồn kho nguyên liệu (Cập nhật ngưỡng an toàn) | Task 10 Concurrency | Chưa hiện thực trên `develop` (mở rộng, đang làm ở `feat/barista-admin`, phạm vi thu hẹp: chỉ `Product.stock`) |
+| **UC15** | Quản lý mã giảm giá | Quản trị | `Admin` | Độc lập | Thiết lập và quản lý danh sách chương trình khuyến mãi (Voucher) | Task 10 Voucher Rule | Chưa hiện thực (backlog đề §11.4) |
 
 ---
 
