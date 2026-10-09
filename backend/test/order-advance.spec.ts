@@ -192,6 +192,8 @@ describe('PATCH/GET wiring + guard 401', () => {
     const s = setup();
     await seedPaid(s, 'o1');
     await seedPaid(s, 'o2');
+    // đơn PAID thật luôn có biên lai; hoàn tiền chỉ theo số đã thu
+    await s.payments.save({ id: 'pay2', orderId: 'o2', idempotencyKey: 'k2', amount: 20000, method: 'WALLET', status: 'SUCCESS', discount: 0, loyaltyPointsEarned: 2, createdAt: new Date() });
     const ctl = new PaymentController(s.svc);
     await expect(ctl.update('o1', { status: OrderStatus.PREPARING } as UpdateOrderStatusDto, { user: barista }))
       .resolves.toMatchObject({ status: OrderStatus.PREPARING });

@@ -109,6 +109,18 @@ describe('Task 8+10 integration (b/c)', () => {
     expect((await products.findById('p1'))!.stock).toBe(10);
   });
 
+  // Không có biên lai SUCCESS thì chưa thu đồng nào: không được hoàn theo order.total (sẽ hoàn khống)
+  test('cancel PAID không có biên lai SUCCESS → hoàn kho + CANCELLED nhưng không gọi hoàn tiền', async () => {
+    const { orders, products, users, gateway, svc } = setup();
+    await products.save({ id: 'p1', name: 'Latte', price: 35000, stock: 4, version: 1 });
+    await users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+    await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PAID, total: 35000, items: [{ productId: 'p1', quantity: 1, unitPrice: 35000 }], createdAt: new Date() });
+    await svc.cancelOrder('o1');
+    expect(gateway.refunds).toEqual([]);
+    expect((await orders.findById('o1'))!.status).toBe(OrderStatus.CANCELLED);
+    expect((await products.findById('p1'))!.stock).toBe(5);
+  });
+
   test('cancel PENDING issues no refund', async () => {
     const { orders, products, users, gateway, svc } = setup();
     await products.save({ id: 'p1', name: 'Latte', price: 20000, stock: 5, version: 1 });

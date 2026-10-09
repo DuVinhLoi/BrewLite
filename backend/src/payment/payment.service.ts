@@ -147,7 +147,8 @@ export class PaymentService {
       // UC06 KB3: hoàn đúng số tiền thực thu = cộng mọi biên lai SUCCESS của đơn
       const receipts = await this.payments.findAllByOrderId(order.id);
       const collected = receipts.filter((p) => p.status === 'SUCCESS').reduce((s, p) => s + p.amount, 0);
-      await this.gateway.refund(order.id, collected > 0 ? collected : order.total);
+      // không có biên lai SUCCESS (đơn PAID tạo ngoài luồng thanh toán) thì chưa thu đồng nào: không hoàn
+      if (collected > 0) await this.gateway.refund(order.id, collected);
       // hoàn kho (mọi món) + CANCELLED trong 1 transaction: lỗi giữa chừng thì rollback, đơn vẫn PAID, kho không đổi dở.
       // ponytail: refund nằm ngoài transaction (gọi cổng ngoài) — transaction lỗi sau refund thì tiền đã hoàn mà đơn vẫn PAID, hủy lại sẽ hoàn lần 2
       return this.orders.runInTransaction(async (tx) => {

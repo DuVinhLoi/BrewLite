@@ -46,10 +46,10 @@ Lỗi đã tái hiện: topping `"constructor"` / `"toString"` lọt DTO và ser
 
 ## Task 2: Hoàn đúng số thực thu khi hủy đơn `PAID` (Standards 3)
 
-- [ ] Test đỏ trong `backend/test/order-payment.integration.spec.ts`: đơn `PAID` không có biên lai `SUCCESS` → hủy thành công (hoàn kho + `CANCELLED`) nhưng `gateway.refunds` rỗng.
-- [ ] `backend/src/payment/payment.service.ts:150`: bỏ nhánh `: order.total`; chỉ gọi `refund` khi `collected > 0`.
-- [ ] Tài liệu: `user-sequence` §2.5 mục C (quy tắc `PAID -> CANCELLED`) và §2.7 mục C: "không có biên lai thì không gọi hoàn tiền".
-- [ ] Commit `fix(backend): huy don PAID chi hoan so thuc thu`.
+- [x] Test đỏ trong `backend/test/order-payment.integration.spec.ts`: đơn `PAID` không có biên lai `SUCCESS` → hủy thành công (hoàn kho + `CANCELLED`) nhưng `gateway.refunds` rỗng.
+- [x] `backend/src/payment/payment.service.ts:150`: bỏ nhánh `: order.total`; chỉ gọi `refund` khi `collected > 0`.
+- [x] Tài liệu: `user-sequence` §2.5 mục C (quy tắc `PAID -> CANCELLED`) và §2.7 mục C: "không có biên lai thì không gọi hoàn tiền".
+- [x] Commit `fix(backend): huy don PAID chi hoan so thuc thu`.
 
 ## Task 3: Một Idempotency-Key dùng cho đơn khác → 422 (Spec 6)
 
