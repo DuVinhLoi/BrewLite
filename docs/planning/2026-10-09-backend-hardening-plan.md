@@ -125,17 +125,17 @@ Không đổi hành vi; toàn bộ test giữ xanh sau mỗi bước.
 
 ## Task 9: Kiểm chứng cuối và báo cáo
 
-- [ ] Backend jest, `tsc --noEmit`, suite pg (sau `migrate deploy`), frontend vitest. Ghi số test mới.
-- [ ] `docker compose up -d --build`. Smoke bằng curl:
+- [x] Backend jest, `tsc --noEmit`, suite pg (sau `migrate deploy`), frontend vitest. Ghi số test mới.
+- [x] `docker compose up -d --build`. Smoke bằng curl:
   - `GET /products` có `imageUrl`;
   - `POST /orders` 2 lần cùng key → cùng `id`, lần 2 là 200;
   - topping `constructor` → 400;
   - đặt `MOCK_GATEWAY_DECLINE_METHOD=CARD` → trả Thẻ 400, trả Ví 201.
   - Đo thời gian `GET /products`, `POST /orders`, `POST /payments` (`curl -w '%{time_total}'`) làm bằng chứng đề §4.2 "API < 500ms".
-- [ ] Render lại mọi khối PlantUML đã sửa, mở PNG kiểm.
-- [ ] Chạy skill `code-review` với fixed point `develop`. Sửa finding (commit riêng nếu có).
-- [ ] Cập nhật số test và tóm tắt đợt sửa ở `docs/develop-status-report.md`, `docs/scrum-process.md`. Tick plan này. Commit `docs: bao cao backend-hardening`.
-- [ ] Báo người dùng: tên nhánh, danh sách commit, kết quả test và smoke, finding còn lại. Chờ duyệt rồi mới merge.
+- [x] Render lại mọi khối PlantUML đã sửa, mở PNG kiểm.
+- [x] Chạy skill `code-review` với fixed point `develop`. Sửa finding (commit riêng nếu có).
+- [x] Cập nhật số test và tóm tắt đợt sửa ở `docs/develop-status-report.md`, `docs/scrum-process.md`. Tick plan này. Commit `docs: bao cao backend-hardening`.
+- [x] Báo người dùng: tên nhánh, danh sách commit, kết quả test và smoke, finding còn lại. Chờ duyệt rồi mới merge.
 
 ## Không làm (có lý do)
 

@@ -84,3 +84,30 @@ Quy tắc chung:
 **Đồng bộ đề → code → tài liệu (2026-10-09, `db47dda`):** đã đối chiếu và sửa `use-case-specifications.md` + `user-sequence-specifications.md` theo code (plan `docs/planning/2026-10-09-doc-code-sync-plan.md`, rule `.claude/rules/doc-code-sync.md`). Chạy lại suite pg trên Postgres compose (`localhost:5432`, volume cũ nên `prisma migrate deploy` áp thêm migration `user_role`; trước đó `npx prisma generate`): `pg-payment.integration.spec.ts` pass (1 test). Chạy lại không có `DATABASE_URL`: backend `npx jest` 104 pass / 1 skip (gồm `bootstrap-env.spec.ts`: thiếu `DATABASE_URL` thì backend không khởi động), frontend `npx vitest run` 89 pass.
 
 **Còn lại:** chưa có bước duyệt tay trên trình duyệt (`/barista`, `/admin`, `/history` của khách); việc này người dùng sẽ tự làm.
+
+## 6. Hoàn thiện nghiệp vụ backend theo đề (2026-10-09, nhánh `fix/backend-hardening`)
+
+> Nguồn: `/code-review` toàn bộ backend (2 trục Standards và Spec) rồi chạy thử lại từng lỗi; plan `docs/planning/2026-10-09-backend-hardening-plan.md` (Task 0 → Task 9, mỗi task 1 commit, chưa merge, chưa push).
+
+| Task | Commit | Nội dung |
+|---|---|---|
+| 1 | `9344b9c` | Topping trùng khóa prototype (`constructor`) trước đây ra `total = NaN` rồi Postgres 500: nay 400. `quantity` tối đa 99, tối đa 20 dòng, tổng đơn vượt Int32 → 400 `Order total too large`. |
+| 2 | `facd300` | Hủy đơn `PAID` chỉ hoàn số thực thu; không có biên lai thì không gọi hoàn tiền (bỏ nhánh hoàn theo `order.total`). |
+| 3 | `a37842f` | Key `Idempotency-Key` đã dùng cho đơn khác (cùng chủ) → 422, không trả biên lai đơn cũ. |
+| 4 | `bd3fb8b` | `Idempotency-Key` cho `POST /orders` (đề §9 tiêu chí b): cột `Order.idempotencyKey @unique` (migration `20261009120000_order_idempotency_key`), cùng key cùng người → 200 trả lại đơn cũ, người khác → 422, song song → 1 đơn (bắt `P2002`). Frontend giữ 1 key tạo đơn. |
+| 5 | `751e734` | Ảnh món: 4 SVG tĩnh ở `frontend/public/images`, seed đặt `imageUrl`, menu mẫu dùng cùng bộ ảnh. |
+| 6 | `a4ba4d5` | `MOCK_GATEWAY_DECLINE_METHOD` (`CARD` / `WALLET`) để demo `PAYMENT_FAILED` không sửa code. |
+| 7 | `049327b` | Đơn seed `order-1042` đổi size M → S để 35.000đ đúng bảng giá. |
+| 8 | `2b819ed` | Dọn smell, không đổi hành vi: repo in-memory lưu/trả bản sao, `toRole()`, xóa mã chết, `PrismaModule` toàn cục, hằng thay chuỗi. |
+| 9 | `cbf1f85`, `8230566`, `7081334` + commit báo cáo | Finding sau review: key quá dài (3200 ký tự ngẫu nhiên) làm cả `POST /orders` và `POST /payments` trả 500 → nay 400 `Idempotency-Key too long` (> 255 ký tự); sửa kiểu trong `mock-products.test.ts`; giỏ hàng chặn 99 mỗi dòng khớp DTO. |
+
+**Số test (chạy lại 2026-10-09):** backend `npx jest` **120 pass / 2 skip** (không có `DATABASE_URL`; baseline 104 / 1 skip), **122 pass** khi có Postgres (gồm 2 test pg); `npx tsc --noEmit` sạch ở cả backend và frontend; frontend `npx vitest run` **93 pass** (baseline 89).
+
+**Smoke trên compose thật** (`docker compose up -d --build`, DB mới migrate + seed): `GET /products` có `imageUrl` cho 4 món và `:3001/images/latte.svg` trả 200; `POST /orders` hai lần cùng key → cùng `id`, lần 2 là 200; topping `constructor` → 400; key khác chủ → 422; key đơn cũ gửi kèm đơn khác → 422; `MOCK_GATEWAY_DECLINE_METHOD=CARD` → trả Thẻ 400 (đơn `PAYMENT_FAILED`), thử lại bằng Ví → 201 (đơn `PAID`); tắt biến → dựng lại backend, biến rỗng. Thời gian (`curl -w %{time_total}`, đề §4.2 yêu cầu API < 500ms): `GET /products` 5ms, `POST /orders` 15ms, `POST /payments` 16ms.
+
+**PlantUML:** 9 khối của `user-sequence-specifications.md` và 2 khối của `use-case-specifications.md` render bằng PlantUML 1.2024.7 (SHA-1 khớp trang Maven), exit 0, 8 sơ đồ sequence + 1 sơ đồ trạng thái; đã mở PNG sơ đồ §2.4 xem nhánh `Idempotency-Key` ở bước 2a và nhánh 422 ở bước 21, không có "Syntax Error".
+
+**Giới hạn còn lại (chưa sửa, cần quyết định):**
+- Mất phản hồi sau khi đã trả tiền: khách bấm lại thì `POST /orders` (cùng key) trả lại đơn `PAID`, rồi `POST /payments` với key trả tiền MỚI bị 400 `Invalid transition PAID -> PAID`. Không trừ tiền hai lần, nhưng giao diện báo lỗi dù đơn đã trả. Hướng sửa: giữ nguyên key trả tiền cho các lần thử lại sau lỗi mạng (chỉ sinh key mới sau khi cổng trả lỗi rõ ràng 400 / 409).
+- Chưa kiểm bằng mắt trên trình duyệt: ảnh món có hiện thay cho ☕ không, màn Thanh toán khi đổi Thẻ → Ví (môi trường làm việc không có trình duyệt).
+- Giỏ hàng chưa chặn quá 20 dòng khác nhau (DTO chặn 20); cần 21 tổ hợp size/topping khác nhau mới gặp.
