@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException,
 import { randomUUID } from 'crypto';
 import { IOrderRepository, OrderDto, OrderItemDto, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
+import { assertIdempotencyKeyLength } from '../common/idempotency-key';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { DEFAULT_SIZE, SIZE_UPCHARGE, TOPPING_PRICES } from './pricing';
 
@@ -19,6 +20,7 @@ export class OrderService {
   // (FE giữ 1 key cho 1 giỏ). Key của người khác → 422.
   async create(userId: string, dto: CreateOrderDto, idempotencyKey?: string): Promise<OrderDto & { isCached: boolean }> {
     if (idempotencyKey) {
+      assertIdempotencyKeyLength(idempotencyKey);
       const hit = await this.orders.findByIdempotencyKey(idempotencyKey);
       if (hit) return this.replay(userId, hit);
     }

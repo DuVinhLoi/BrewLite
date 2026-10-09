@@ -270,6 +270,14 @@ describe('payment ownership (POST /payments)', () => {
     await expect(s.svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'K-X6')).resolves.toMatchObject({ isCached: true, orderId: 'o1' });
   });
 
+  test('Idempotency-Key dài hơn 255 ký tự → 400, không charge, đơn vẫn PENDING (tránh 500 từ chỉ số unique)', async () => {
+    const s = setup();
+    await seed(s);
+    await expect(s.svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'k'.repeat(256))).rejects.toThrow('Idempotency-Key too long');
+    expect(s.gateway.getCallCount()).toBe(0);
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PENDING);
+  });
+
   test('PaymentController: gắn JwtAuthGuard và truyền req.user.id vào service', async () => {
     const s = setup();
     await seed(s);

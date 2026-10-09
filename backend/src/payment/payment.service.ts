@@ -5,6 +5,7 @@ import { IPaymentRepository } from '../contracts/payment.contract';
 import { Actor, IUserRepository, isStaff } from '../contracts/user.contract';
 import { MockPaymentGatewayService } from './mock-payment-gateway.service';
 import { assertTransition } from '../state-machine/order-state.machine';
+import { assertIdempotencyKeyLength } from '../common/idempotency-key';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 
 const VOUCHER_CODE = 'BREWLITE10';
@@ -40,6 +41,7 @@ export class PaymentService {
   // chờ nhau, request sau đọc lại cache/trạng thái mới nên không gọi charge() lần 2
   async processPayment(userId: string, dto: CreatePaymentDto, idempotencyKey: string) {
     if (!idempotencyKey) throw new BadRequestException('Missing Idempotency-Key');
+    assertIdempotencyKeyLength(idempotencyKey);
     return this.withLock(`key:${idempotencyKey}`, () =>
       this.withLock(`order:${dto.orderId}`, () => this.pay(userId, dto, idempotencyKey)),
     );

@@ -101,6 +101,14 @@ describe('products + orders (task 2,6)', () => {
       expect(await or.findByUserId('u2')).toHaveLength(0);
     });
 
+    // key ngẫu nhiên dài vài nghìn ký tự làm chỉ số unique của Postgres từ chối → 500 (đã tái hiện trên compose); chặn ở biên API
+    it('key dài hơn 255 ký tự → 400 Idempotency-Key too long, không tạo đơn; đúng 255 vẫn được', async () => {
+      const { or, svc } = await setup();
+      await expect(svc.create('u1', dto, 'k'.repeat(256))).rejects.toThrow('Idempotency-Key too long');
+      expect(await or.findByUserId('u1')).toHaveLength(0);
+      await expect(svc.create('u1', dto, 'k'.repeat(255))).resolves.toMatchObject({ isCached: false });
+    });
+
     it('không có key → mỗi lần một đơn mới (như cũ)', async () => {
       const { or, svc } = await setup();
       const a = await svc.create('u1', dto);
