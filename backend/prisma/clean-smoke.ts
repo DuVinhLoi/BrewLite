@@ -22,7 +22,7 @@ export async function cleanSmokeData(db: PrismaClient): Promise<{ users: number;
     await tx.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
     await tx.order.deleteMany({ where: { id: { in: orderIds } } });
     await tx.user.deleteMany({ where: { id: { in: userIds } } });
-  });
+  }, { timeout: 60000 }); // mặc định 5 giây: hàng trăm đơn smoke sẽ hết giờ và không dọn được gì
   return { users: userIds.length, orders: orderIds.length };
 }
 
