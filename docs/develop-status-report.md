@@ -101,7 +101,7 @@ Quy tắc chung:
 | 8 | `2b819ed` | Dọn smell, không đổi hành vi: repo in-memory lưu/trả bản sao, `toRole()`, xóa mã chết, `PrismaModule` toàn cục, hằng thay chuỗi. |
 | 9 | `cbf1f85`, `8230566`, `7081334` + commit báo cáo | Finding sau review: key quá dài (3200 ký tự ngẫu nhiên) làm cả `POST /orders` và `POST /payments` trả 500 → nay 400 `Idempotency-Key too long` (> 255 ký tự); sửa kiểu trong `mock-products.test.ts`; giỏ hàng chặn 99 mỗi dòng khớp DTO. |
 
-**Số test (chạy lại 2026-10-09):** backend `npx jest` **120 pass / 2 skip** (không có `DATABASE_URL`; baseline 104 / 1 skip), **122 pass** khi có Postgres (gồm 2 test pg); `npx tsc --noEmit` sạch ở cả backend và frontend; frontend `npx vitest run` **93 pass** (baseline 89).
+**Số test (chạy lại 2026-10-09):** backend `npx jest` **122 pass / 2 skip** (không có `DATABASE_URL`; baseline 104 / 1 skip), **124 pass** khi có Postgres (gồm 2 test pg); `npx tsc --noEmit` sạch ở cả backend và frontend; frontend `npx vitest run` **94 pass** (baseline 89).
 
 **Smoke trên compose thật** (`docker compose up -d --build`, DB mới migrate + seed): `GET /products` có `imageUrl` cho 4 món và `:3001/images/latte.svg` trả 200; `POST /orders` hai lần cùng key → cùng `id`, lần 2 là 200; topping `constructor` → 400; key khác chủ → 422; key đơn cũ gửi kèm đơn khác → 422; `MOCK_GATEWAY_DECLINE_METHOD=CARD` → trả Thẻ 400 (đơn `PAYMENT_FAILED`), thử lại bằng Ví → 201 (đơn `PAID`); tắt biến → dựng lại backend, biến rỗng. Thời gian (`curl -w %{time_total}`, đề §4.2 yêu cầu API < 500ms): `GET /products` 5ms, `POST /orders` 15ms, `POST /payments` 16ms.
 
@@ -111,3 +111,13 @@ Quy tắc chung:
 - ~~Mất phản hồi sau khi đã trả tiền~~ — **đã sửa** (phương án A, nhánh `fix/backend-hardening`): `PaymentForm` giữ một key trả tiền cho cả phiên màn Thanh toán, bấm lại cùng key thì backend trả lại biên lai cũ (200) thay vì 400 `PAID -> PAID`. Lần trả lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. Còn lại: rời màn thanh toán hoặc reload thì mất `orderId` và key (chưa lưu `sessionStorage`).
 - Chưa kiểm bằng mắt trên trình duyệt: ảnh món có hiện thay cho ☕ không, màn Thanh toán khi đổi Thẻ → Ví (môi trường làm việc không có trình duyệt).
 - Giỏ hàng chưa chặn quá 20 dòng khác nhau (DTO chặn 20); cần 21 tổ hợp size/topping khác nhau mới gặp.
+
+### 6.1 Phương án A: giữ một key trả tiền cho mỗi màn Thanh toán (2026-10-09)
+
+> Plan `docs/planning/2026-10-09-payment-retry-key-plan.md`. Commit: `57fd521` (plan), `1998d45` (test ghim hành vi backend), `4c1675c` (frontend + tài liệu).
+
+- **Lỗi đã sửa:** đã trả tiền mà mất phản hồi, bấm lại thì giao diện sinh key mới nên backend trả 400 `Invalid transition PAID -> PAID`. Nay `PaymentForm` giữ `payKey` (cạnh `orderKey`), bấm lại cùng key thì backend trả lại biên lai cũ (200, `isCached: true`).
+- **Vì sao an toàn:** backend chỉ lưu key khi trả thành công; lần lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. `PaymentForm` chỉ render khi `step === 'payment'` (`cart/page.tsx:41`), nên mỗi lần vào lại màn thanh toán là một instance mới với cặp key mới.
+- **Test mới:** 2 test backend ghim "lỗi rồi thử lại cùng key" (Thẻ bị từ chối → Ví; kẹt kho 409 → nhập kho), 1 test gateway frontend (`/payments` rớt mạng rồi thử lại cùng key → `PAID`, chỉ 1 lần `POST /orders`). Không có test bấm nút trong component (vitest chạy môi trường `node`, không có jsdom hay testing-library; không thêm phụ thuộc).
+- **Smoke compose:** trả 2 lần cùng key → 201 rồi 200, cùng `paymentId`; `MOCK_GATEWAY_DECLINE_METHOD=CARD` (qua `.env`) → Thẻ với K2 trả 400, Ví cùng K2 trả 201, 1 biên lai theo K2; xóa biến, dựng lại backend → Thẻ trả được (201).
+- **Không làm:** hủy ở tab khác rồi bấm lại cùng key vẫn nhận biên lai cũ kèm đơn `CANCELLED` (cache trả kết quả đã lưu, đúng §2.4; muốn sửa phải đổi backend và giao diện); lưu `orderId` và key vào `sessionStorage` để cứu cả trường hợp reload.

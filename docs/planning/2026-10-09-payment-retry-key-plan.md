@@ -60,14 +60,14 @@ S1 và S4 đã có test (`(b) same Idempotency-Key charges once`, `(b) concurren
 
 ## Task 3: Chốt chặn trước khi merge
 
-- [ ] Backend `npx jest` + `npx tsc --noEmit`, suite pg, frontend `npx vitest run` + `npx tsc --noEmit`. Ghi số test mới.
-- [ ] `docker compose up -d --build`, rồi smoke bằng curl với tài khoản demo:
+- [x] Backend `npx jest` + `npx tsc --noEmit`, suite pg, frontend `npx vitest run` + `npx tsc --noEmit`. Ghi số test mới.
+- [x] `docker compose up -d --build`, rồi smoke bằng curl với tài khoản demo:
   1. `POST /orders` (có key tạo đơn) → `POST /payments` key K → 201 → gửi lại đúng request với K → 200, cùng `paymentId`.
   2. Đặt `MOCK_GATEWAY_DECLINE_METHOD=CARD` trong `.env`, `docker compose up -d backend`. Đơn mới: trả `CARD` với K2 → 400; trả `WALLET` cùng K2 → 201.
   3. Xóa biến khỏi `.env`, `docker compose up -d backend`, kiểm Thẻ trả được.
-- [ ] Chạy skill `code-review` cho cả nhánh (fixed point `develop`). Sửa finding (commit riêng nếu có).
-- [ ] Cập nhật số test ở `docs/develop-status-report.md` và `docs/scrum-process.md`; tick plan này. Commit `docs: bao cao phuong an A va chot chan truoc merge`.
-- [ ] Báo người dùng: danh sách commit mới, kết quả test và smoke, finding còn lại. Ghi rõ việc còn cần người làm: xem bằng mắt trên trình duyệt (ảnh món; Thẻ bị từ chối → đổi Ví → thành công trên giao diện).
+- [x] Chạy skill `code-review` cho cả nhánh (fixed point `develop`). Sửa finding (commit riêng nếu có).
+- [x] Cập nhật số test ở `docs/develop-status-report.md` và `docs/scrum-process.md`; tick plan này. Commit `docs: bao cao phuong an A va chot chan truoc merge`.
+- [x] Báo người dùng: danh sách commit mới, kết quả test và smoke, finding còn lại. Ghi rõ việc còn cần người làm: xem bằng mắt trên trình duyệt (ảnh món; Thẻ bị từ chối → đổi Ví → thành công trên giao diện).
 
 ## Không làm (có lý do)
 
