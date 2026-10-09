@@ -47,11 +47,11 @@ describe('auth', () => {
     expect(e2.message).toBe('Invalid credentials');
   });
 
-  it('login ok → token payload {sub,email}', async () => {
+  it('login ok → token payload {sub,email,role}', async () => {
     const reg = await svc.register({ email: 'a@b.co', password: 'secret1' });
     const res = await svc.login({ email: 'a@b.co', password: 'secret1' });
     expect(res.accessToken).toBeTruthy();
-    expect(res.user).toEqual({ id: reg.id, email: 'a@b.co' });
+    expect(res.user).toEqual({ id: reg.id, email: 'a@b.co', role: 'CUSTOMER' });
     const payload = decodePayload(res.accessToken);
     expect(payload.sub).toBe(reg.id);
     expect(payload.email).toBe('a@b.co');
@@ -63,7 +63,7 @@ describe('auth', () => {
     const req: any = { headers: { authorization: `Bearer ${token}` } };
     const ctx: any = { switchToHttp: () => ({ getRequest: () => req }) };
     await expect(guard.canActivate(ctx)).resolves.toBe(true);
-    expect(req.user).toEqual({ id: 'u1', email: 'a@b.co' });
+    expect(req.user).toEqual({ id: 'u1', email: 'a@b.co', role: 'CUSTOMER' });
   });
 
   it('guard: no header → 401, Bearer bad → 401', async () => {
@@ -74,5 +74,29 @@ describe('auth', () => {
       switchToHttp: () => ({ getRequest: () => ({ headers: { authorization: 'Bearer bad' } }) }),
     } as any;
     await expect(guard.canActivate(ctxBad)).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('register luôn tạo CUSTOMER; login trả role và nhét role vào JWT', async () => {
+    await svc.register({ email: 'c@b.co', password: 'secret1' });
+    expect((await repo.findByEmail('c@b.co'))!.role).toBe('CUSTOMER');
+    const r = await svc.login({ email: 'c@b.co', password: 'secret1' });
+    expect(r.user.role).toBe('CUSTOMER');
+    expect(decodePayload(r.accessToken).role).toBe('CUSTOMER');
+  });
+
+  it('login tài khoản BARISTA → role BARISTA trong JWT và trong req.user', async () => {
+    await repo.save({ id: 'b1', email: 'b@b.co', loyaltyPoints: 0, role: 'BARISTA' as any, passwordHash: await bcrypt.hash('secret1', 10) });
+    const r = await svc.login({ email: 'b@b.co', password: 'secret1' });
+    expect(decodePayload(r.accessToken).role).toBe('BARISTA');
+    const req: any = { headers: { authorization: `Bearer ${r.accessToken}` } };
+    await new JwtAuthGuard(jwt).canActivate({ switchToHttp: () => ({ getRequest: () => req }) } as any);
+    expect(req.user).toEqual({ id: 'b1', email: 'b@b.co', role: 'BARISTA' });
+  });
+
+  it('token cũ không có role → req.user.role = CUSTOMER', async () => {
+    const token = await jwt.signAsync({ sub: 'u9', email: 'old@b.co' });
+    const req: any = { headers: { authorization: `Bearer ${token}` } };
+    await new JwtAuthGuard(jwt).canActivate({ switchToHttp: () => ({ getRequest: () => req }) } as any);
+    expect(req.user.role).toBe('CUSTOMER');
   });
 });

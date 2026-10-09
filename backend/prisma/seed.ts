@@ -8,9 +8,21 @@ async function main() {
   try {
     await db.user.upsert({
     where: { id: 'u1' },
-    create: { id: 'u1', email: 'demo@brewlite.vn', passwordHash: await bcrypt.hash('demo1234', 10), loyaltyPoints: 0 },
-    update: { email: 'demo@brewlite.vn', passwordHash: await bcrypt.hash('demo1234', 10) },
+    create: { id: 'u1', email: 'demo@brewlite.vn', passwordHash: await bcrypt.hash('demo1234', 10), loyaltyPoints: 0, role: 'CUSTOMER' },
+    update: { email: 'demo@brewlite.vn', passwordHash: await bcrypt.hash('demo1234', 10), role: 'CUSTOMER' },
   });
+  // Mở rộng ngoài đề (§3.2): tài khoản quầy + quản trị cho demo /barista, /admin
+  for (const s of [
+    { id: 'staff-barista', email: 'barista@brewlite.vn', password: 'barista1234', role: 'BARISTA' },
+    { id: 'staff-admin', email: 'admin@brewlite.vn', password: 'admin1234', role: 'ADMIN' },
+  ]) {
+    const passwordHash = await bcrypt.hash(s.password, 10);
+    await db.user.upsert({
+      where: { id: s.id },
+      create: { id: s.id, email: s.email, passwordHash, role: s.role, loyaltyPoints: 0 },
+      update: { email: s.email, passwordHash, role: s.role },
+    });
+  }
   await db.product.upsert({
     where: { id: 'p1' },
     create: { id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 },
@@ -39,7 +51,7 @@ async function main() {
       items: { create: [{ productId: 'p1', size: 'M', qty: 1, lineTotal: 35000 }] },
     },
   });
-    console.log('seeded: u1, p1 (stock 10), order-1042 PENDING 35000');
+    console.log('seeded: u1 (CUSTOMER), staff-barista, staff-admin, p1..p4 (stock 10), order-1042 PENDING 35000');
   } finally {
     await db.$disconnect();
   }

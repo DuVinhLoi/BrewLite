@@ -12,7 +12,8 @@ export class JwtAuthGuard implements CanActivate {
     if (scheme !== 'Bearer' || !token) throw new UnauthorizedException('Unauthorized');
     try {
       const payload = await this.jwt.verifyAsync(token);
-      req.user = { id: payload.sub, email: payload.email };
+      // Token phát trước khi có role (hoặc thiếu role) coi là CUSTOMER
+      req.user = { id: payload.sub, email: payload.email, role: payload.role ?? 'CUSTOMER' };
       return true;
     } catch {
       throw new UnauthorizedException('Unauthorized');
