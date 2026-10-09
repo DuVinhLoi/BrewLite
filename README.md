@@ -32,7 +32,7 @@ Backend không tự đọc file `.env`. Muốn chạy rời với Postgres: bậ
 
 ## Tiến độ 10 task (đã merge vào develop)
 
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 92 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 86 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine). Bằng chứng từng task: `docs/develop-status-report.md`.
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 103 pass / 1 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 89 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine). Bằng chứng từng task: `docs/develop-status-report.md`.
 
 | Task | Hiện thực chính |
 |---|---|
@@ -77,6 +77,12 @@ Tài khoản demo (seed sẵn trong `backend/prisma/seed.ts`):
 
 Lưu ý: test pg (`backend/npm test` suite có DB thật) cần `DATABASE_URL` trỏ Postgres chạy được;
 không có `DATABASE_URL` thì các test pg tự skip, suite còn lại vẫn xanh.
+
+### Lưu ý bảo mật (chỉ dành cho demo)
+
+- **Khóa JWT mặc định là công khai.** Giá trị mặc định (`dev-secret` trong `docker-compose.yml`, `brewlite-dev-secret` trong mã, `change-me-in-production` trong `.env.example`) nằm ngay trong repo này. Vì JWT nay mang `role`, ai biết khóa đều tự ký được token ADMIN. Với mọi thứ ngoài bản demo cục bộ, hãy đặt `JWT_SECRET` riêng và kín. Compose cũng công bố cổng 3000/3001/5432 trên mọi giao diện mạng của máy chạy, nên đừng để cấu hình mặc định chạy trên máy truy cập được từ ngoài.
+- **Seed chạy lại mỗi lần container backend khởi động.** Nó tạo lại `barista@brewlite.vn` / `admin@brewlite.vn` với đúng mật khẩu ghi ở bảng trên (mật khẩu đã đổi sẽ bị đặt lại khi khởi động lại), đồng thời đặt lại tồn kho 4 món về 10; chỉ phù hợp cho demo.
+- **Giới hạn đã biết.** Vai trò được đọc từ JWT (hạn 7 ngày), nên đổi vai trò trong DB chỉ có hiệu lực sau khi token hết hạn hoặc đăng nhập lại. Quầy/Admin hủy đơn `PAID` thì hoàn tiền và hoàn kho nhưng không thu hồi điểm thưởng đã cộng (giống khi khách tự hủy).
 
 ## Demo State Machine (đề §9 + §9.1, tiêu chí a)
 
