@@ -22,3 +22,39 @@ test('gateway failure -> PAYMENT_FAILED, cart kept (order retryable)', async () 
   expect((await orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
   expect((await products.findById('p1'))!.stock).toBe(10);
 });
+
+// Demo nhánh PAYMENT_FAILED (UC06 KB1) mà không sửa code: biến môi trường backend, đọc lúc gọi charge(), mặc định tắt
+describe('MOCK_GATEWAY_DECLINE_METHOD', () => {
+  const saved = process.env.MOCK_GATEWAY_DECLINE_METHOD;
+  afterEach(() => {
+    if (saved === undefined) delete process.env.MOCK_GATEWAY_DECLINE_METHOD;
+    else process.env.MOCK_GATEWAY_DECLINE_METHOD = saved;
+  });
+
+  async function setup() {
+    const orders = new InMemoryOrderRepo();
+    const products = new InMemoryProductRepo();
+    const users = new InMemoryUserRepo();
+    const svc = new PaymentService(orders, products, new InMemoryPaymentRepo(), users, new MockPaymentGatewayService());
+    await products.save({ id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 });
+    await users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+    await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 35000, items: [{ productId: 'p1', quantity: 1, unitPrice: 35000 }], createdAt: new Date() });
+    return { orders, products, svc };
+  }
+
+  test('CARD bị từ chối → 400 + PAYMENT_FAILED; thử lại cùng đơn bằng WALLET (key mới) → PAID', async () => {
+    process.env.MOCK_GATEWAY_DECLINE_METHOD = 'CARD';
+    const { orders, products, svc } = await setup();
+    await expect(svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'CARD' }, 'K-D1')).rejects.toThrow('Payment failed');
+    expect((await orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
+    expect((await products.findById('p1'))!.stock).toBe(10);
+    await expect(svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'K-D2')).resolves.toMatchObject({ status: 'PAID', isCached: false });
+    expect((await orders.findById('o1'))!.status).toBe(OrderStatus.PAID);
+  });
+
+  test('mặc định tắt: không đặt biến thì Thẻ vẫn trả được', async () => {
+    delete process.env.MOCK_GATEWAY_DECLINE_METHOD;
+    const { svc } = await setup();
+    await expect(svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'CARD' }, 'K-D3')).resolves.toMatchObject({ status: 'PAID' });
+  });
+});

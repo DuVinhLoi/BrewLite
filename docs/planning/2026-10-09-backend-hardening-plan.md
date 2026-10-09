@@ -93,12 +93,12 @@ Hiện tại cùng chủ gửi key K đã dùng cho đơn A kèm `orderId` B th�
 
 ## Task 6: Demo nhánh thanh toán lỗi bằng biến môi trường (Spec 3, quyết định Q3)
 
-- [ ] Test đỏ trong `backend/test/payment-failure.spec.ts`: đặt `process.env.MOCK_GATEWAY_DECLINE_METHOD = 'CARD'` (khôi phục sau test). Trả bằng `CARD` → 400, đơn `PAYMENT_FAILED`; thử lại cùng đơn bằng `WALLET` với key mới → `PAID` (UC06 KB1).
-- [ ] `backend/src/payment/mock-payment-gateway.service.ts`: `charge()` ném lỗi khi `process.env.MOCK_GATEWAY_DECLINE_METHOD === opts.method` (đọc lúc gọi). Giữ `failNextCharge()` cho test cũ.
-- [ ] `docker-compose.yml` (backend): `MOCK_GATEWAY_DECLINE_METHOD: ${MOCK_GATEWAY_DECLINE_METHOD:-}`. `.env.example`: dòng mẫu đã comment kèm giải thích.
-- [ ] README: mục demo thanh toán lỗi (đặt biến trong `.env`, `docker compose up -d backend`, trả bằng Thẻ → lỗi, đổi sang Ví → thành công).
-- [ ] Tài liệu: `user-sequence` §2.4 mục C (Mock Gateway), §2.5 KB1 (cách gây lỗi khi demo).
-- [ ] Commit `feat: cong gia tu choi theo MOCK_GATEWAY_DECLINE_METHOD de demo PAYMENT_FAILED`.
+- [x] Test đỏ trong `backend/test/payment-failure.spec.ts`: đặt `process.env.MOCK_GATEWAY_DECLINE_METHOD = 'CARD'` (khôi phục sau test). Trả bằng `CARD` → 400, đơn `PAYMENT_FAILED`; thử lại cùng đơn bằng `WALLET` với key mới → `PAID` (UC06 KB1).
+- [x] `backend/src/payment/mock-payment-gateway.service.ts`: `charge()` ném lỗi khi `process.env.MOCK_GATEWAY_DECLINE_METHOD === opts.method` (đọc lúc gọi). Giữ `failNextCharge()` cho test cũ.
+- [x] `docker-compose.yml` (backend): `MOCK_GATEWAY_DECLINE_METHOD: ${MOCK_GATEWAY_DECLINE_METHOD:-}`. `.env.example`: dòng mẫu đã comment kèm giải thích.
+- [x] README: mục demo thanh toán lỗi (đặt biến trong `.env`, `docker compose up -d backend`, trả bằng Thẻ → lỗi, đổi sang Ví → thành công).
+- [x] Tài liệu: `user-sequence` §2.4 mục C (Mock Gateway), §2.5 KB1 (cách gây lỗi khi demo).
+- [x] Commit `feat: cong gia tu choi theo MOCK_GATEWAY_DECLINE_METHOD de demo PAYMENT_FAILED`.
 
 ## Task 7: Đơn seed `order-1042` khớp bảng giá (Spec 7)
 

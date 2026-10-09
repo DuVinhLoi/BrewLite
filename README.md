@@ -79,6 +79,10 @@ Lưu ý: test pg (`backend/npm test` suite có DB thật) cần `DATABASE_URL` t
 không có `DATABASE_URL` thì các test pg tự skip, suite còn lại vẫn xanh.
 Chạy suite pg: `docker compose up -d db`, rồi trong `backend/`: `npx prisma generate` (chạy lại mỗi khi schema đổi), `npx prisma migrate deploy`, đặt `DATABASE_URL` như trên và `npx jest pg-payment`.
 
+### Demo thanh toán lỗi (UC06 KB1, `PAYMENT_FAILED`)
+
+Cổng thanh toán là bản giả nên mặc định luôn thành công. Muốn xem nhánh lỗi: đặt `MOCK_GATEWAY_DECLINE_METHOD=CARD` trong `.env` (bỏ dấu `#` ở dòng mẫu trong `.env.example`), chạy `docker compose up -d backend`, rồi ở màn Thanh toán chọn **Thẻ ngân hàng** → báo thanh toán thất bại, đơn sang `PAYMENT_FAILED`, giỏ hàng được giữ. Đổi sang **Ví điện tử** và bấm lại → thanh toán được, đơn cũ sang `PAID` (không tạo đơn mới). Xóa dòng biến rồi `docker compose up -d backend` để tắt.
+
 ### Lưu ý bảo mật (chỉ dành cho demo)
 
 - **Khóa JWT mặc định là công khai.** Giá trị mặc định (`dev-secret` trong `docker-compose.yml`, `brewlite-dev-secret` trong mã, `change-me-in-production` trong `.env.example`) nằm ngay trong repo này. Vì JWT nay mang `role`, ai biết khóa đều tự ký được token ADMIN. Với mọi thứ ngoài bản demo cục bộ, hãy đặt `JWT_SECRET` riêng và kín. Compose cũng công bố cổng 3000/3001/5432 trên mọi giao diện mạng của máy chạy, nên đừng để cấu hình mặc định chạy trên máy truy cập được từ ngoài.

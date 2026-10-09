@@ -25,6 +25,8 @@ services:
       DATABASE_URL: postgresql://brewlite:brewlite@db:5432/brewlite
       JWT_SECRET: ${JWT_SECRET:-dev-secret}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
+      # Demo nhánh thanh toán lỗi: CARD hoặc WALLET thì phương thức đó luôn bị cổng giả từ chối; rỗng = tắt
+      MOCK_GATEWAY_DECLINE_METHOD: ${MOCK_GATEWAY_DECLINE_METHOD:-}
     depends_on:
       db:
         condition: service_healthy

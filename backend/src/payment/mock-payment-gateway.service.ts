@@ -17,6 +17,8 @@ export class MockPaymentGatewayService {
       this.failNext = false;
       throw new Error('Mock charge failed');
     }
+    // Demo UC06 KB1 không cần sửa code: đặt MOCK_GATEWAY_DECLINE_METHOD=CARD (hoặc WALLET) thì phương thức đó luôn bị từ chối
+    if (process.env.MOCK_GATEWAY_DECLINE_METHOD === opts.method) throw new Error('Mock charge declined');
   }
 
   async refund(_orderId: string, _amount: number): Promise<void> {
