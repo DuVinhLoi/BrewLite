@@ -1,4 +1,5 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { OrderController } from '../src/order/order.controller';
 import { ProductService } from '../src/product/product.service';
 import { OrderService } from '../src/order/order.service';
 import { InMemoryProductRepo } from '../src/stubs/in-memory-product.repo';
@@ -71,6 +72,62 @@ describe('products + orders (task 2,6)', () => {
     expect(await errs([{ ...line, quantity: 100 }])).toBeGreaterThan(0);
     expect(await errs(Array(20).fill(line))).toBe(0);
     expect(await errs(Array(21).fill(line))).toBeGreaterThan(0);
+  });
+
+  // Đề §9 tiêu chí (b): gửi 2 lần cùng Idempotency-Key chỉ tạo 1 đơn
+  describe('POST /orders Idempotency-Key', () => {
+    const setup = async () => {
+      const pr = new InMemoryProductRepo();
+      await pr.save({ id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 });
+      const or = new InMemoryOrderRepo();
+      return { or, svc: new OrderService(or, pr) };
+    };
+    const dto = { items: [{ productId: 'p1', quantity: 1 }] };
+
+    it('cùng key, cùng người → trả lại đúng đơn cũ (isCached), kho chỉ có 1 đơn', async () => {
+      const { or, svc } = await setup();
+      const a = await svc.create('u1', dto, 'K1');
+      const b = await svc.create('u1', dto, 'K1');
+      expect(a.isCached).toBe(false);
+      expect(b.isCached).toBe(true);
+      expect(b.id).toBe(a.id);
+      expect(await or.findByUserId('u1')).toHaveLength(1);
+    });
+
+    it('key của người khác → 422, không tạo đơn, không lộ đơn của họ', async () => {
+      const { or, svc } = await setup();
+      await svc.create('u1', dto, 'K2');
+      await expect(svc.create('u2', dto, 'K2')).rejects.toBeInstanceOf(UnprocessableEntityException);
+      expect(await or.findByUserId('u2')).toHaveLength(0);
+    });
+
+    it('không có key → mỗi lần một đơn mới (như cũ)', async () => {
+      const { or, svc } = await setup();
+      const a = await svc.create('u1', dto);
+      const b = await svc.create('u1', dto);
+      expect(b.id).not.toBe(a.id);
+      expect(await or.findByUserId('u1')).toHaveLength(2);
+    });
+
+    it('2 request song song cùng key → vẫn chỉ 1 đơn, cùng id', async () => {
+      const { or, svc } = await setup();
+      const [a, b] = await Promise.all([svc.create('u1', dto, 'K3'), svc.create('u1', dto, 'K3')]);
+      expect(b.id).toBe(a.id);
+      expect([a.isCached, b.isCached].sort()).toEqual([false, true]);
+      expect(await or.findByUserId('u1')).toHaveLength(1);
+    });
+
+    it('controller: 201 khi tạo mới, 200 khi trả lại đơn cũ; header idempotency-key được chuyển xuống service', async () => {
+      const { svc } = await setup();
+      const ctl = new OrderController(svc);
+      const status: number[] = [];
+      const res = { status: (c: number) => status.push(c) };
+      const req = { user: { id: 'u1' } };
+      const a = await ctl.create(dto, 'K4', req, res);
+      const b = await ctl.create(dto, 'K4', req, res);
+      expect(b.id).toBe(a.id);
+      expect(status).toEqual([201, 200]);
+    });
   });
 
   it('listMine returns newest-first', async () => {

@@ -85,6 +85,33 @@ describe('ApiPaymentGateway retry', () => {
     });
   });
 
+  // Đề §9 tiêu chí (b) cho POST /orders: header Idempotency-Key của đơn khác key của POST /payments
+  test('POST /orders gửi Idempotency-Key = orderIdempotencyKey; POST /payments dùng key riêng', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json(201, { id: 'order-1' }))
+      .mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 1 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await new ApiPaymentGateway().pay({ amount: 1, method: 'WALLET', idempotencyKey: 'pay-key', orderIdempotencyKey: 'order-key', items: [{ productId: 'p1', quantity: 1 }] });
+    expect(fetchMock.mock.calls[0][1].headers['Idempotency-Key']).toBe('order-key');
+    expect(fetchMock.mock.calls[1][1].headers['Idempotency-Key']).toBe('pay-key');
+  });
+
+  test('tạo đơn lỗi mạng rồi thử lại với cùng orderIdempotencyKey → backend gộp về 1 đơn', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(json(200, { id: 'order-1', isCached: true }))
+      .mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 1 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const gw = new ApiPaymentGateway();
+    const req = { amount: 1, method: 'WALLET' as const, orderIdempotencyKey: 'order-key', items: [{ productId: 'p1', quantity: 1 }] };
+    await expect(gw.pay({ ...req, idempotencyKey: 'k1' })).rejects.toBeInstanceOf(PaymentError);
+    await expect(gw.pay({ ...req, idempotencyKey: 'k2' })).resolves.toMatchObject({ status: 'PAID' });
+    expect(fetchMock.mock.calls[0][1].headers['Idempotency-Key']).toBe('order-key');
+    expect(fetchMock.mock.calls[1][1].headers['Idempotency-Key']).toBe('order-key');
+  });
+
   // Backend trả JSON { message, error, statusCode }: UI chỉ được thấy câu tiếng Việt, không phải JSON thô
   const payErr = async (res: Response) => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(res));

@@ -51,7 +51,7 @@ Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 104 pass
 
 Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`.
 Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2): `GET /orders?status=PAID,PREPARING,READY` (UC08, BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (UC14, chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
-`Product(stock,version)`, `User(loyaltyPoints, role)`, `Order`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
+`Product(stock,version)`, `User(loyaltyPoints, role)`, `Order(idempotencyKey unique)`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
 Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
 
 ## Demo end-to-end

@@ -29,6 +29,8 @@ export default function PaymentForm({
   const [applied, setApplied] = useState<string | null>(null);
   // Đơn đã tạo ở lần trả lỗi trước → thử lại trả tiếp đơn này với key MỚI (UC06 KB1), không tạo đơn mới
   const [orderId, setOrderId] = useState<string | undefined>();
+  // Key tạo đơn giữ nguyên cho tới khi rời màn này: lỗi mạng giữa chừng rồi bấm lại vẫn chỉ ra 1 đơn (khác key trả tiền, mỗi lần một key mới)
+  const [orderKey] = useState(newIdempotencyKey);
 
   const discount = applied === 'BREWLITE10' ? Math.floor(total * 0.1) : 0;
   const final = total - discount;
@@ -42,7 +44,7 @@ export default function PaymentForm({
         amount: final,
         method,
         idempotencyKey: newIdempotencyKey(),
-        ...(orderId ? { orderId } : { items }),
+        ...(orderId ? { orderId } : { items, orderIdempotencyKey: orderKey }),
         ...(applied ? { voucherCode: applied } : {}),
       });
       onSuccess(result);

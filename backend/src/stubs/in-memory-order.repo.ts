@@ -21,6 +21,10 @@ export class InMemoryOrderRepo implements IOrderRepository {
     return this.store.get(id) ?? null;
   }
 
+  async findByIdempotencyKey(key: string, _tx?: TxContext): Promise<OrderDto | null> {
+    return [...this.store.values()].find((o) => o.idempotencyKey === key) ?? null;
+  }
+
   async findByUserId(userId: string, _tx?: TxContext): Promise<OrderDto[]> {
     return [...this.store.values()]
       .filter((o) => o.userId === userId)
@@ -41,6 +45,10 @@ export class InMemoryOrderRepo implements IOrderRepository {
   }
 
   async save(order: OrderDto, _tx?: TxContext): Promise<OrderDto> {
+    // giả lập chỉ số unique của Postgres
+    if (order.idempotencyKey && [...this.store.values()].some((o) => o.idempotencyKey === order.idempotencyKey && o.id !== order.id)) {
+      throw new Error('Unique constraint failed on idempotencyKey');
+    }
     this.store.set(order.id, order);
     return order;
   }

@@ -219,7 +219,7 @@ Bảng dưới đây liệt kê đầy đủ 16 Use Case thuộc cả 3 phân h�
 | **UC01** | Xem menu & Tùy chọn món | Khách hàng | `Guest` *(và Customer)* | Độc lập | Task 2, 3, 4 (`GET /products`, `GET /products/:id`) | §2.1 | Đã hiện thực |
 | **UC02** | Quản lý giỏ hàng | Khách hàng | `Guest` *(và Customer)* | Độc lập | Task 5 (Zustand / LocalStorage Client-side) | §2.2 | Đã hiện thực |
 | **UC03** | Đăng ký / Đăng nhập (JWT) | Khách hàng | `Guest` *(Customer dùng lại)* | Độc lập | Task 7 (`POST /auth/register`, `POST /auth/login`) | §2.3 | Đã hiện thực |
-| **UC04** | Tạo đơn hàng (PENDING) | Khách hàng | `Customer` | Độc lập (gọi trước khi trả tiền) | Task 6 (`POST /orders`, server tính giá dựa trên menu gốc) | §2.4 (bước 2a) | Đã hiện thực |
+| **UC04** | Tạo đơn hàng (PENDING) | Khách hàng | `Customer` | Độc lập (gọi trước khi trả tiền) | Task 6 (`POST /orders`, server tính giá dựa trên menu gốc, `Idempotency-Key` chống tạo trùng đơn) | §2.4 (bước 2a) | Đã hiện thực |
 | **UC05** | Thanh toán không tiền mặt | Khách hàng | `Customer`, `Mock Gateway` | Nối Gateway; mở rộng bởi UC05a | Task 8, 10 (`POST /payments`) | §2.4 (bước 2b) | Đã hiện thực |
 | **UC05a** | Áp mã giảm giá | Khách hàng | `Customer` | `<<extend>> UC05` | Task 10 (Áp mã `BREWLITE10`, chiết khấu hợp lệ trước khi trừ tiền) | §2.4 (bước 1) | Đã hiện thực |
 | **UC06** | Hủy đơn / Thử lại thanh toán | Khách hàng | `Customer`, `Mock Gateway` | Nối Gateway (hoàn tiền đơn `PAID`) | Task 10 (`PATCH /orders/:id`, `POST /payments`). Hủy đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (nút Hủy ở `/history`, `PAID` có hoàn tiền + hoàn kho) hoặc thanh toán lại đơn `PAYMENT_FAILED`. Khách **không** tự tiến đơn (403). | §2.5 | Đã hiện thực |

@@ -64,21 +64,21 @@ Hiện tại cùng chủ gửi key K đã dùng cho đơn A kèm `orderId` B th�
 
 Đề §9 tiêu chí (b): "gửi 2 lần cùng Idempotency-Key chỉ tạo 1 đơn".
 
-- [ ] `backend/prisma/schema.prisma`: `Order.idempotencyKey String? @unique`. Migration viết tay như `20261009000000_user_role`: `backend/prisma/migrations/20261009120000_order_idempotency_key/migration.sql` gồm `ALTER TABLE "Order" ADD COLUMN "idempotencyKey" TEXT;` và `CREATE UNIQUE INDEX "Order_idempotencyKey_key" ON "Order"("idempotencyKey");`. Chạy `npx prisma generate`, `npx prisma migrate deploy` trên DB compose.
-- [ ] Contract `order.contract.ts`: `OrderDto.idempotencyKey?`, `IOrderRepository.findByIdempotencyKey(key, tx?)`. Cài ở `PrismaOrderRepo` và `InMemoryOrderRepo`; `save` lưu key.
-- [ ] Hành vi (header tùy chọn, frontend luôn gửi):
+- [x] `backend/prisma/schema.prisma`: `Order.idempotencyKey String? @unique`. Migration viết tay như `20261009000000_user_role`: `backend/prisma/migrations/20261009120000_order_idempotency_key/migration.sql` gồm `ALTER TABLE "Order" ADD COLUMN "idempotencyKey" TEXT;` và `CREATE UNIQUE INDEX "Order_idempotencyKey_key" ON "Order"("idempotencyKey");`. Chạy `npx prisma generate`, `npx prisma migrate deploy` trên DB compose.
+- [x] Contract `order.contract.ts`: `OrderDto.idempotencyKey?`, `IOrderRepository.findByIdempotencyKey(key, tx?)`. Cài ở `PrismaOrderRepo` và `InMemoryOrderRepo`; `save` lưu key.
+- [x] Hành vi (header tùy chọn, frontend luôn gửi):
   - không có key → tạo đơn như cũ, 201;
   - key đã có, cùng người → trả lại đúng đơn cũ, **200**, không tạo đơn mới;
   - key thuộc người khác → 422;
   - 2 request song song cùng key → vẫn chỉ 1 đơn (bắt lỗi unique `P2002` khi `save`, đọc lại theo key).
-- [ ] `OrderController.create()` đọc header `idempotency-key`, đặt 200/201 như `PaymentController.pay()`.
-- [ ] Frontend: `PaymentForm.tsx` giữ 1 key tạo đơn (`useState(() => newIdempotencyKey())`) cho tới khi rời màn thanh toán; `PaymentRequest` thêm `orderIdempotencyKey?`; `ApiPaymentGateway.createOrderId()` gửi header `Idempotency-Key`. Key này khác key của `POST /payments`.
-- [ ] Test backend: 2 lần cùng key → cùng `id`, kho chỉ có 1 đơn, lần 2 là 200; khác người → 422; không key → 2 đơn. Thêm 1 case vào suite pg (2 request song song cùng key → 1 đơn). Test frontend (`api-gateway.test.ts`): `POST /orders` có header; lỗi mạng rồi thử lại dùng cùng key.
-- [ ] Tài liệu:
+- [x] `OrderController.create()` đọc header `idempotency-key`, đặt 200/201 như `PaymentController.pay()`.
+- [x] Frontend: `PaymentForm.tsx` giữ 1 key tạo đơn (`useState(() => newIdempotencyKey())`) cho tới khi rời màn thanh toán; `PaymentRequest` thêm `orderIdempotencyKey?`; `ApiPaymentGateway.createOrderId()` gửi header `Idempotency-Key`. Key này khác key của `POST /payments`.
+- [x] Test backend: 2 lần cùng key → cùng `id`, kho chỉ có 1 đơn, lần 2 là 200; khác người → 422; không key → 2 đơn. Thêm 1 case vào suite pg (2 request song song cùng key → 1 đơn). Test frontend (`api-gateway.test.ts`): `POST /orders` có header; lỗi mạng rồi thử lại dùng cùng key.
+- [x] Tài liệu:
   - đề `BrewLite-CongNghePhanMem-fixed.md` §12.2: ghi chú nhóm thêm `Order.idempotencyKey`, sửa danh sách `Order(...)`;
   - `user-sequence` §2.4 (A.2, sơ đồ bước 2a có header và nhánh "key đã dùng → 200 đơn cũ", mục C), Phần III UC04, Agent Rules §2(b): "chỉ tạo 1 đơn (`POST /orders`) và chỉ trừ tiền 1 lần (`POST /payments`)";
   - `use-case` §4 dòng UC04.
-- [ ] Commit `feat: Idempotency-Key cho POST /orders (tieu chi b)`.
+- [x] Commit `feat: Idempotency-Key cho POST /orders (tieu chi b)`.
 
 ## Task 5: Ảnh món (Spec 1, quyết định Q2)
 

@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { IOrderRepository, OrderDto, OrderItemDto, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
@@ -15,7 +15,13 @@ export class OrderService {
     private products: IProductRepository,
   ) {}
 
-  async create(userId: string, dto: CreateOrderDto) {
+  // Đề §9 tiêu chí (b): cùng Idempotency-Key chỉ tạo 1 đơn. Key đã có → trả lại đơn cũ (isCached), không so sánh nội dung giỏ
+  // (FE giữ 1 key cho 1 giỏ). Key của người khác → 422.
+  async create(userId: string, dto: CreateOrderDto, idempotencyKey?: string): Promise<OrderDto & { isCached: boolean }> {
+    if (idempotencyKey) {
+      const hit = await this.orders.findByIdempotencyKey(idempotencyKey);
+      if (hit) return this.replay(userId, hit);
+    }
     // Giá tính lại hoàn toàn ở server: client sửa giá trong request không có tác dụng
     const items = [];
     for (const i of dto.items) {
@@ -32,14 +38,28 @@ export class OrderService {
     const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
     // cột total là Int ở Postgres: vượt Int32 sẽ 500
     if (total > 2147483647) throw new BadRequestException('Order total too large');
-    return this.orders.save({
-      id: randomUUID(),
-      userId,
-      status: OrderStatus.PENDING,
-      total,
-      items,
-      createdAt: new Date(),
-    });
+    try {
+      const saved = await this.orders.save({
+        id: randomUUID(),
+        userId,
+        status: OrderStatus.PENDING,
+        total,
+        items,
+        createdAt: new Date(),
+        idempotencyKey,
+      });
+      return { ...saved, isCached: false };
+    } catch (e) {
+      // 2 request song song cùng key: bên thua vi phạm chỉ số unique, đọc lại đơn của bên thắng thay vì tạo đơn thứ 2
+      const hit = idempotencyKey ? await this.orders.findByIdempotencyKey(idempotencyKey) : null;
+      if (hit) return this.replay(userId, hit);
+      throw e;
+    }
+  }
+
+  private replay(userId: string, hit: OrderDto) {
+    if (hit.userId !== userId) throw new UnprocessableEntityException('Idempotency-Key already used by another user');
+    return { ...hit, isCached: true };
   }
 
   listMine(userId: string) {

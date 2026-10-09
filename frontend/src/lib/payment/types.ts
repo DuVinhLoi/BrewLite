@@ -27,6 +27,8 @@ export interface PaymentRequest {
   orderId?: string;
   /** Dòng giỏ để tạo đơn Task 6 khi chưa có orderId. */
   items?: CartLine[];
+  /** Idempotency-Key của POST /orders (khác `idempotencyKey` của POST /payments): thử lại tạo đơn vẫn chỉ ra 1 đơn. */
+  orderIdempotencyKey?: string;
   /** Mã giảm giá UC05a, backend validate nội bộ. */
   voucherCode?: string;
 }

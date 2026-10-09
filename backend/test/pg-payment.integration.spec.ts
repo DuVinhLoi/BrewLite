@@ -1,3 +1,4 @@
+import { OrderService } from '../src/order/order.service';
 import { PaymentService } from '../src/payment/payment.service';
 import { MockPaymentGatewayService } from '../src/payment/mock-payment-gateway.service';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -65,5 +66,24 @@ pg('Task 8+10 on Postgres', () => {
     const ok = results.filter((r) => r.status === 'fulfilled').length;
     expect(ok).toBe(2); // opg0 đã lấy 1 suất trong tổng kho 3
     expect((await products.findById('p-pg'))!.stock).toBe(0);
+  });
+
+  // Đề §9 tiêu chí (b) cho POST /orders: bên thua cuộc đua vi phạm chỉ số unique Order.idempotencyKey rồi đọc lại đơn của bên thắng
+  test('POST /orders: 2 request song song cùng Idempotency-Key chỉ tạo 1 đơn', async () => {
+    const products = new PrismaProductRepo(db);
+    await new PrismaUserRepo(db).save({ id: 'u-pg', email: 'pg@test.vn', loyaltyPoints: 0 });
+    await products.save({ id: 'p-pg', name: 'Latte', price: 10000, stock: 3, version: 1 });
+    const orderSvc = new OrderService(new PrismaOrderRepo(db), products);
+    const key = `PG-ORD-${crypto.randomUUID().slice(0, 8)}`;
+    try {
+      const dto = { items: [{ productId: 'p-pg', quantity: 1 }] };
+      const [a, b] = await Promise.all([orderSvc.create('u-pg', dto, key), orderSvc.create('u-pg', dto, key)]);
+      expect(b.id).toBe(a.id);
+      expect([a.isCached, b.isCached].sort()).toEqual([false, true]);
+      expect(await db.order.count({ where: { idempotencyKey: key } })).toBe(1);
+    } finally {
+      await db.orderItem.deleteMany({ where: { order: { idempotencyKey: key } } });
+      await db.order.deleteMany({ where: { idempotencyKey: key } });
+    }
   });
 });

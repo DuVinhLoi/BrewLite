@@ -303,7 +303,7 @@ deactivate FE
 Đây là **trọng tâm nghiệp vụ lớn nhất của dự án BrewLite** (Bao gồm Task 6, 8 và 10):
 1. **Bước 1 (UC05a - Khối `opt`):** Trên màn Thanh toán, khách có mã giảm giá (`BREWLITE10`) thì nhập mã để giao diện tính giảm trừ tạm (hành động tùy chọn). Mã này được gửi kèm yêu cầu thanh toán để máy chủ xác thực và tính lại nội bộ (không tạo thêm endpoint hay bảng ngoài đề bài).
 2. **Bước 2 (UC04 + UC05 - bấm "Xác nhận trả"):** Một lần bấm chạy **liền 2 lời gọi**: `POST /orders` rồi ngay sau đó `POST /payments`. Nghĩa là đơn chỉ được tạo **sau** bước áp voucher, không có bước tạo đơn riêng trước màn thanh toán.
-   - **`POST /orders` (UC04):** Gửi giỏ (`productId, quantity, size, toppings`) kèm token JWT; thiếu/sai token → 401. **Máy chủ tự tính giá**: `unitPrice = product.price + phụ thu size + tổng giá topping` theo `backend/src/order/pricing.ts`, giá client gửi lên bị bỏ qua. Thiếu size → mặc định `M`; topping lạ (kể cả tên trùng khóa prototype như `constructor`) → 400; sản phẩm lạ → 404. Giới hạn đầu vào: tối đa 20 dòng, mỗi dòng `quantity` từ 1 đến 99 (DTO, 400); tổng đơn vượt Int32 (2147483647, cột `total` là `Int`) → 400 `Order total too large`. Đơn lưu ở `PENDING`.
+   - **`POST /orders` (UC04):** Gửi giỏ (`productId, quantity, size, toppings`) kèm token JWT; thiếu/sai token → 401. **Máy chủ tự tính giá**: `unitPrice = product.price + phụ thu size + tổng giá topping` theo `backend/src/order/pricing.ts`, giá client gửi lên bị bỏ qua. Thiếu size → mặc định `M`; topping lạ (kể cả tên trùng khóa prototype như `constructor`) → 400; sản phẩm lạ → 404. Giới hạn đầu vào: tối đa 20 dòng, mỗi dòng `quantity` từ 1 đến 99 (DTO, 400); tổng đơn vượt Int32 (2147483647, cột `total` là `Int`) → 400 `Order total too large`. Đơn lưu ở `PENDING`. Header `Idempotency-Key` (tùy chọn, giao diện luôn gửi; đề §9 tiêu chí b): key đã dùng bởi cùng người → trả lại đúng đơn cũ với **200**, không tạo đơn mới; key của người khác → 422; không gửi key → luôn tạo đơn mới (201). Hai request song song cùng key vẫn chỉ ra 1 đơn nhờ chỉ số unique `Order.idempotencyKey`.
    - **`POST /payments` (UC05):** Khách chọn Ví/Thẻ. Mỗi lần bấm sinh một **Idempotency-Key** mới. Voucher và số tiền tính lại trên `order.total` của server.
    - **Thử lại sau khi lỗi:** giao diện đã giữ `orderId` của đơn vừa tạo nên lần bấm tiếp theo **chỉ gọi `POST /payments`** với `orderId` cũ và key mới (UC06 KB1), không tạo đơn mới.
 3. **Xử lý trong `POST /payments`** (thứ tự cố định: **guard → validate → khóa → chủ đơn → cache → kiểm trạng thái → charge**):
@@ -350,20 +350,31 @@ end
 User -> FE : Tôi chọn trả bằng ví, bấm "Xác nhận trả"
 activate FE
 opt Chưa có đơn (lần bấm đầu; lần thử lại đã giữ orderId thì bỏ qua)
-    FE -> BE : POST /orders (giỏ hàng: món, số lượng, size, topping)
-    note right of FE #fef3c7 : Gửi kèm token đăng nhập.\nLỗi ở bước này (thiếu/sai token 401, 400, 404) thì dừng:\nkhông gọi POST /payments, lần bấm sau tạo đơn lại
+    FE -> BE : POST /orders (giỏ hàng: món, số lượng, size, topping)\nkèm Idempotency-Key của đơn
+    note right of FE #fef3c7 : Gửi kèm token đăng nhập.\nKey tạo đơn giữ nguyên tới khi rời màn Thanh toán\n(khác key của POST /payments).\nLỗi ở bước này (thiếu/sai token 401, 400, 404, 422) thì dừng:\nkhông gọi POST /payments, lần bấm sau tạo đơn lại
     activate BE
-    BE -> DB : Tra giá gốc từng món
+    BE -> DB : Kiểm xem Idempotency-Key này đã tạo đơn chưa
     activate DB
-    DB --> BE : Giá gốc các món
+    DB --> BE : Đơn đã tạo bằng key này (nếu có)
     deactivate DB
-    BE -> BE : Tự tính giá: giá gốc + phụ thu size\n+ topping (bỏ qua giá client gửi)
-    note right of BE #fef3c7 : Thiếu size -> M\nGiỏ rỗng hoặc > 20 dòng, quantity ngoài 1..99,\nsize ngoài S/M/L -> 400 (DTO)\nTopping lạ -> 400, món lạ -> 404\nTổng đơn > 2147483647 -> 400
-    BE -> DB : Lưu đơn mới, đơn đang chờ thanh toán (PENDING)
-    activate DB
-    DB --> BE : Xong rồi, đơn số #1042 đây nhé
-    deactivate DB
-    BE --> FE : 201 Tạo đơn thành công, mã đơn là #1042
+    alt Key đã có, cùng người (bấm lại, hoặc lần trước lỗi mạng)
+        BE --> FE : 200 Trả lại đúng đơn cũ #1042, không tạo đơn mới
+    else Key của người khác
+        BE --> FE : 422 Idempotency-Key đã dùng bởi người khác
+    else Key mới (hoặc không gửi key)
+        BE -> DB : Tra giá gốc từng món
+        activate DB
+        DB --> BE : Giá gốc các món
+        deactivate DB
+        BE -> BE : Tự tính giá: giá gốc + phụ thu size\n+ topping (bỏ qua giá client gửi)
+        note right of BE #fef3c7 : Thiếu size -> M\nGiỏ rỗng hoặc > 20 dòng, quantity ngoài 1..99,\nsize ngoài S/M/L -> 400 (DTO)\nTopping lạ -> 400, món lạ -> 404\nTổng đơn > 2147483647 -> 400
+        BE -> DB : Lưu đơn mới, đơn đang chờ thanh toán (PENDING)
+        note right of DB #fef3c7 : Cột idempotencyKey là duy nhất:\n2 request song song cùng key -> bên thua\nvi phạm chỉ số, đọc lại đơn bên thắng -> 200
+        activate DB
+        DB --> BE : Xong rồi, đơn số #1042 đây nhé
+        deactivate DB
+        BE --> FE : 201 Tạo đơn thành công, mã đơn là #1042
+    end
     deactivate BE
 end
 
@@ -461,6 +472,7 @@ deactivate FE
   - Thanh toán: `POST /payments` (Body: `{ orderId, paymentMethod, voucherCode? }`, Header: `Idempotency-Key: <UUID>`, `Bearer JWT`)
 * **Thứ tự gọi ở Frontend:** `PaymentForm` → `ApiPaymentGateway.pay()` gọi `POST /orders` rồi `POST /payments` trong cùng một lần bấm "Xác nhận trả". Lỗi sau khi đơn đã tạo ném `PaymentError` mang `orderId`; `PaymentForm` giữ `orderId` đó, lần thử lại chỉ gọi `POST /payments` với key mới (`newIdempotencyKey()` mỗi lần bấm).
 * Tạo đơn yêu cầu Bearer JWT, thiếu token trả 401 (khớp Task 7). `POST /payments` cũng gắn `@UseGuards(JwtAuthGuard)` (thiếu/sai token → 401) và `PaymentController.pay()` truyền `req.user.id` vào `PaymentService.processPayment(userId, dto, key)`. FE (`ApiPaymentGateway`) gửi `Authorization: Bearer <brewlite-token>` cho cả `/orders` lẫn `/payments`; 401/403 ném `PaymentError` mang `orderId`. Lỗi khác cũng ném `PaymentError` mang `orderId` với câu tiếng Việt lấy từ `message` của body JSON (không hiện JSON thô): 400 "Thanh toán thất bại…" (message dạng mảng của validate thì nối lại), 409 "Món đã hết hàng, tiền đã được hoàn lại", mã khác kèm mã và thông điệp backend; body không phải JSON thì chỉ báo mã. Giỏ hàng luôn được giữ nguyên.
+* **Idempotency-Key cho `POST /orders` (đề §9 tiêu chí b):** `OrderController.create()` đọc header `idempotency-key` và đặt 200 (trả lại đơn cũ) / 201 (đơn mới) như `PaymentController.pay()`. `OrderService.create()` tra `IOrderRepository.findByIdempotencyKey()` trước khi tính giá: có đơn cùng người → trả lại (`isCached: true`), khác người → 422 `Idempotency-Key already used by another user`. Hai request song song: bên thua vi phạm chỉ số unique `Order.idempotencyKey` (Prisma `P2002`; bản In-Memory giả lập bằng lỗi trùng key) nên service đọc lại theo key và trả đơn của bên thắng. Cột `Order.idempotencyKey String? @unique` (migration `20261009120000_order_idempotency_key`), vẫn 5 thực thể. Không so sánh nội dung giỏ giữa hai lần gửi cùng key (giao diện giữ 1 key cho 1 giỏ: `PaymentForm` sinh key bằng `useState(newIdempotencyKey)` và gửi qua `PaymentRequest.orderIdempotencyKey`, `ApiPaymentGateway.createOrderId()` đặt vào header; key này khác key của `POST /payments`). Test: `backend/test/order-product.spec.ts`, `backend/test/pg-payment.integration.spec.ts`, `frontend/src/lib/payment/api-gateway.test.ts`.
 * **Chỉ chủ đơn mới thanh toán được:** trong khóa `order:<orderId>`, `processPayment()` đọc đơn trước: không có → 404, `order.userId !== userId` → 403 (`ForbiddenException`, giống `cancelOrderAs()` khi khách hủy đơn của người khác). Bước này chạy **trước** nhánh cache `Idempotency-Key` nên người lạ không đọc được biên lai của người khác bằng key; nếu key trỏ tới biên lai của đơn khác `dto.orderId` thì đơn đó cũng phải là của người gọi, nếu không trả 403; đúng chủ nhưng khác đơn thì trả 422 `Idempotency-Key already used for another order` (theo bản nháp IETF `Idempotency-Key`: dùng lại key cho payload khác là lỗi), không charge và không trả biên lai đơn cũ.
 * **Giá do server tính (`OrderService.create()`):** `unitPrice = product.price + SIZE_UPCHARGE[size] + Σ TOPPING_PRICES` (`backend/src/order/pricing.ts`), `total = Σ quantity × unitPrice`. DTO không có trường `unitPrice`; FE (`ApiPaymentGateway.createOrderId()`) chỉ gửi `{ productId, quantity, size, toppings }` cho mỗi dòng, không gửi `unitPrice` / `name` / `key` / `lineTotal` (có test); `ValidationPipe({ whitelist: true })` vẫn là lớp chặn thứ hai. Thiếu `size` → `M`; topping ngoài bảng → 400 (so bằng `hasOwnProperty`, nên tên trùng khóa prototype như `constructor` cũng bị chặn, không ra `unitPrice` NaN); `productId` lạ → 404. DTO giới hạn tối đa 20 dòng (`@ArrayMaxSize`) và `quantity` 1–99 (`@Max(99)`); tổng đơn vượt Int32 → 400 `Order total too large` (nếu không, Postgres ném 500).
 * **Tuần tự hóa song song:** `PaymentService.processPayment()` bọc xử lý trong `withLock('key:<Idempotency-Key>')` rồi `withLock('order:<orderId>')`; `cancelOrder()` / `advanceOrder()` dùng chung khóa `order:<orderId>`. Đây là khóa trong tiến trình, chỉ đúng khi chạy 1 instance backend (như compose hiện tại).
@@ -895,7 +907,7 @@ Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 10
 | **UC01** | Xem menu & Tùy chọn món (Size, Topping) | `GET /products`<br>`GET /products/:id` | `ProductController.list()` / `detail()`<br>`ProductService.listAvailable()` / `getById()` | `Product` | Lọc `stock > 0`; `ProductDto` (`id, name, price, imageUrl, stock, version`) **không** có size/topping — bảng giá size/topping nằm ở `frontend/src/lib/pricing.ts` + `backend/src/order/pricing.ts` |
 | **UC02** | Quản lý giỏ hàng (Thêm/Sửa/Xóa) | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal` |
 | **UC03** | Đăng ký / Đăng nhập (JWT) | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService.login()` / `register()` | `User` | `bcrypt.compare`, cấp JWT Access Token |
-| **UC04** | Tạo đơn hàng (PENDING) | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu); **server tự tính giá** từ `product.price` + `order/pricing.ts` (bỏ qua giá client, thiếu size → M, topping lạ → 400; tối đa 20 dòng, `quantity` 1–99, tổng vượt Int32 → 400) |
+| **UC04** | Tạo đơn hàng (PENDING) | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu); **server tự tính giá** từ `product.price` + `order/pricing.ts` (bỏ qua giá client, thiếu size → M, topping lạ → 400; tối đa 20 dòng, `quantity` 1–99, tổng vượt Int32 → 400); header `Idempotency-Key` tùy chọn: cùng key chỉ tạo 1 đơn (cùng người → 200 trả lại đơn cũ, người khác → 422; song song nhờ unique `Order.idempotencyKey`) |
 | **UC05 / UC05a** | Thanh toán không tiền mặt (Ví / Thẻ) / Áp mã giảm giá | `POST /payments` | `PaymentController`<br>`PaymentService` (+ `PrismaPaymentRepo` / `PrismaProductRepo`; chạy thật bắt buộc có `DATABASE_URL`) | `Payment`, `Order`, `Product`, `User` | `@UseGuards(JwtAuthGuard)` (thiếu JWT → 401), kiểm tra chủ đơn trước cache (đơn không có → 404, khác chủ → 403, kể cả khi trúng cache Idempotency-Key; cùng chủ nhưng key đã dùng cho đơn khác → 422), header `Idempotency-Key` (alt hit/miss), khóa trong tiến trình theo key + `orderId` (request song song chỉ charge 1 lần), validate voucher `BREWLITE10` nội bộ (Task 10), ghi sau charge trong 1 `runInTransaction` (trừ kho `updateMany` kèm `version` retry 3, `PAID`, điểm, biên lai); mọi lỗi trong transaction → rollback + hoàn tiền + `PAYMENT_FAILED` + ném lại lỗi gốc (kẹt kho 409, món mất 404, lỗi DB 500); thiếu `Idempotency-Key` hoặc đơn không ở `PENDING` / `PAYMENT_FAILED` → 400, không charge |
 | **UC06** | Hủy đơn / Thử lại thanh toán | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `PaymentController.update()`<br>`PaymentService.cancelOrderAs()` (route `PATCH` hiện nằm ở PaymentController) | `Order`, `Payment` | Khách chỉ hủy đơn của mình (403/404) và không tự tiến đơn (`advanceOrder` → 403); hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho, hoàn kho + `CANCELLED` trong 1 transaction); FE có nút Hủy ở `/history` (`cancelOrder()` trong `lib/api.ts`); thanh tiến trình 5 bước chỉ để xem (tiến đơn là việc của Barista, UC09–UC11) |
 | **UC07** | Xem xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController.mine()`<br>`OrderService.listMine()` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
@@ -912,7 +924,7 @@ UC13, UC15: chưa hiện thực (backlog) nên chưa có sơ đồ tuần tự v
 1. **Tuyệt đối không tạo thêm bảng CSDL ngoài:** Hệ thống chỉ có 5 thực thể tối thiểu (`Product`, `User`, `Order`, `OrderItem`, `Payment`). Khuyến mãi và mã giảm giá `BREWLITE10` được cấu hình và validate nội bộ trong `PaymentService`.
 2. **Tiêu chí chấm điểm Task 10:**
    - **(a) State Machine:** Mọi cập nhật trạng thái đơn phải đi qua `assertTransition()`.
-   - **(b) Idempotency:** Gửi 2 lần cùng `Idempotency-Key` chỉ trừ tiền 1 lần (nhánh Cache Hit trả kết quả cũ đã lưu).
+   - **(b) Idempotency:** Gửi 2 lần cùng `Idempotency-Key` chỉ tạo 1 đơn (`POST /orders`) và chỉ trừ tiền 1 lần (`POST /payments`, nhánh Cache Hit trả kết quả cũ đã lưu).
    - **(c) Concurrency:** Kho bị trừ lúc thanh toán (`POST /payments`), không phải lúc tạo đơn (`POST /orders` không kiểm tồn kho). Thanh toán đồng thời sử dụng Optimistic Locking (`version` trên bảng `Product` + điều kiện `stock >= số lượng` trong cùng 1 lệnh `updateMany` nguyên tử), retry 3 lần, chạy trong cùng 1 `runInTransaction` với các ghi sau charge; hết kho thì rollback transaction + hoàn tiền + `PAYMENT_FAILED` rồi trả lỗi xung đột 409.
 3. **Phạm vi nộp bài:** Tài liệu này đóng vai trò **Phụ lục kiến trúc chuyên sâu (Appendix)** cho đội ngũ phát triển và AI Agent. Khi nộp bài chính, nhóm sử dụng bộ 3 biểu đồ tổng quan tinh gọn đã chốt.
 

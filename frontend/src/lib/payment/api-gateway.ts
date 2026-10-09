@@ -27,7 +27,7 @@ function paymentErrorMessage(status: number, detail: string): string {
 export class ApiPaymentGateway implements PaymentGateway {
   readonly name = 'api';
 
-  private async createOrderId(items: CartLine[]): Promise<string> {
+  private async createOrderId(items: CartLine[], idempotencyKey?: string): Promise<string> {
     const token = getToken();
     let res: Response;
     try {
@@ -35,6 +35,7 @@ export class ApiPaymentGateway implements PaymentGateway {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         // Chỉ gửi các trường DTO nhận; giá do server tính (giỏ có thêm key/name/unitPrice/lineTotal thì bỏ)
@@ -53,7 +54,7 @@ export class ApiPaymentGateway implements PaymentGateway {
   }
 
   async pay(req: PaymentRequest): Promise<PaymentResult> {
-    const orderId = req.orderId ?? (req.items?.length ? await this.createOrderId(req.items) : undefined);
+    const orderId = req.orderId ?? (req.items?.length ? await this.createOrderId(req.items, req.orderIdempotencyKey) : undefined);
     if (!orderId) {
       throw new Error('Thiếu orderId: cần Task 6 (POST /orders) tạo đơn trước khi gọi POST /payments.');
     }
