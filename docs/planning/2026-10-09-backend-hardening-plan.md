@@ -102,8 +102,8 @@ Hiện tại cùng chủ gửi key K đã dùng cho đơn A kèm `orderId` B th�
 
 ## Task 7: Đơn seed `order-1042` khớp bảng giá (Spec 7)
 
-- [ ] `backend/prisma/seed.ts`: đơn `order-1042` đổi size `M` → `S` để giữ `35000` đúng bảng giá (S +0), sửa comment dòng 5 và `console.log`.
-- [ ] Commit `fix(seed): order-1042 dung bang gia`.
+- [x] `backend/prisma/seed.ts`: đơn `order-1042` đổi size `M` → `S` để giữ `35000` đúng bảng giá (S +0), sửa comment dòng 5 và `console.log`.
+- [x] Commit `fix(seed): order-1042 dung bang gia`.
 
 ## Task 8: Dọn smell (Standards 2, 4–10)
 

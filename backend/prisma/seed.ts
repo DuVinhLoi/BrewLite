@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { OrderStatus } from '../src/contracts/order.contract';
 
-// Seed tối thiểu cho demo Task 8: user + Latte 35k + đơn order-1042 PENDING
+// Seed tối thiểu cho demo Task 8: user + Latte 35k + đơn order-1042 PENDING (Latte size S: 35.000 + S 0 = 35.000, khớp bảng giá server)
 async function main() {
   const db = new PrismaClient();
   try {
@@ -50,10 +50,10 @@ async function main() {
       userId: 'u1',
       status: OrderStatus.PENDING,
       total: 35000,
-      items: { create: [{ productId: 'p1', size: 'M', qty: 1, lineTotal: 35000 }] },
+      items: { create: [{ productId: 'p1', size: 'S', qty: 1, lineTotal: 35000 }] },
     },
   });
-    console.log('seeded: u1 (CUSTOMER), staff-barista, staff-admin, p1..p4 (stock 10), order-1042 PENDING 35000');
+    console.log('seeded: u1 (CUSTOMER), staff-barista, staff-admin, p1..p4 (stock 10), order-1042 PENDING 35000 (Latte size S)');
   } finally {
     await db.$disconnect();
   }
