@@ -16,7 +16,7 @@ Hệ thống BrewLite bao gồm 4 nhóm tác nhân người dùng chính (Primar
 | :--- | :--- | :--- | :--- |
 | **Khách vãng lai** *(Guest)* | Tác nhân chính *(Primary)* | Phân hệ Khách hàng | Người dùng chưa đăng nhập: xem thực đơn, xem chi tiết món (size, topping), quản lý giỏ hàng tạm tính, thực hiện đăng ký / đăng nhập tài khoản. |
 | **Khách hàng thành viên** *(Customer)* | Tác nhân chính *(Primary)* | Phân hệ Khách hàng | Người dùng đã đăng nhập (có token JWT): kế thừa toàn bộ quyền của Khách vãng lai (`Customer --|> Guest`), đồng thời có thêm quyền tạo đơn hàng (`PENDING`), thanh toán không tiền mặt, áp mã giảm giá, hủy đơn / thử lại thanh toán, và xem lịch sử đơn hàng. |
-| **Nhân viên pha chế** *(Barista)* | Tác nhân chính *(Primary)* | Phân hệ Pha chế | Vận hành quầy pha chế theo máy trạng thái đơn hàng (Order State Machine): xem hàng đợi đơn đã thanh toán (`PAID`), tiếp nhận pha chế (`PREPARING`), báo hoàn tất pha chế (`READY`), giao nước cho khách (`COMPLETED`), hoặc hủy đơn khi hết nguyên liệu (`CANCELLED`). |
+| **Nhân viên pha chế** *(Barista)* | Tác nhân chính *(Primary)* | Phân hệ Pha chế | Vận hành quầy pha chế theo máy trạng thái đơn hàng (Order State Machine): xem hàng đợi quầy gồm đơn chờ pha (`PAID`), đang pha (`PREPARING`) và sẵn sàng (`READY`), tiếp nhận pha chế (`PREPARING`), báo hoàn tất pha chế (`READY`), giao nước cho khách (`COMPLETED`), hoặc hủy đơn khi hết nguyên liệu (`CANCELLED`). |
 | **Quản trị viên** *(Admin)* | Tác nhân chính *(Primary)* | Phân hệ Quản trị | Kiểm và điều chỉnh tồn kho món (`Product.stock`), chưa có quản lý thực đơn / voucher (UC13, UC15 là backlog). |
 | **Cổng thanh toán** *(Mock Gateway)* | Tác nhân dịch vụ *(Secondary)* | Tích hợp dịch vụ ngoài | Hệ thống bên ngoài hỗ trợ xử lý trừ tiền giao dịch không tiền mặt (Ví điện tử / Thẻ ngân hàng) và hoàn tiền khi đơn hàng bị hủy. |
 
@@ -75,7 +75,7 @@ rectangle "Hệ Thống Đặt Cà Phê BrewLite" {
 
   ' --- PHÂN HỆ PHA CHẾ (BARISTA SUBSYSTEM) ---
   package "Phân hệ Pha chế (Barista) – mở rộng ngoài MVP §3.2" {
-    usecase "UC08: Xem hàng đợi đơn (PAID)" as UC08
+    usecase "UC08: Xem hàng đợi đơn\n(PAID / PREPARING / READY)" as UC08
     usecase "UC09: Tiếp nhận pha chế\n(PAID -> PREPARING)" as UC09
     usecase "UC10: Báo xong pha chế\n(PREPARING -> READY)" as UC10
     usecase "UC11: Xác nhận giao nước\n(READY -> COMPLETED)" as UC11
@@ -224,7 +224,7 @@ Bảng dưới đây liệt kê đầy đủ 16 Use Case thuộc cả 3 phân h�
 | **UC05a** | Áp mã giảm giá | Khách hàng | `Customer` | `<<extend>> UC05` | Task 10 (Áp mã `BREWLITE10`, chiết khấu hợp lệ trước khi trừ tiền) | §2.4 (bước 1) | Đã hiện thực |
 | **UC06** | Hủy đơn / Thử lại thanh toán | Khách hàng | `Customer`, `Mock Gateway` | Nối Gateway (hoàn tiền đơn `PAID`) | Task 10 (`PATCH /orders/:id`, `POST /payments`). Hủy đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (nút Hủy ở `/history`, `PAID` có hoàn tiền + hoàn kho) hoặc thanh toán lại đơn `PAYMENT_FAILED`. Khách **không** tự tiến đơn (403). | §2.5 | Đã hiện thực |
 | **UC07** | Xem xác nhận & Lịch sử đơn | Khách hàng | `Customer` | Độc lập | Task 9 (`GET /orders/me`) | §2.6 | Đã hiện thực |
-| **UC08** | Xem hàng đợi đơn (PAID) | Pha chế | `Barista` | Độc lập | Order State Machine §9.1 (theo dõi hàng đợi đơn chờ pha chế): `GET /orders?status=PAID,PREPARING,READY` (JWT + BARISTA/ADMIN), màn `/barista` 3 cột | §2.7 | Đã hiện thực (mở rộng ngoài đề §3.2) |
+| **UC08** | Xem hàng đợi đơn (PAID / PREPARING / READY) | Pha chế | `Barista` | Độc lập | Order State Machine §9.1 (theo dõi hàng đợi đơn chờ pha chế): `GET /orders?status=PAID,PREPARING,READY` (JWT + BARISTA/ADMIN), màn `/barista` 3 cột | §2.7 | Đã hiện thực (mở rộng ngoài đề §3.2) |
 | **UC09** | Tiếp nhận pha chế | Pha chế | `Barista` | Phụ thuộc UC08 | `PAID` $\rightarrow$ `PREPARING`: `PATCH /orders/:id {PREPARING}` chỉ BARISTA/ADMIN (khách 403), nút Nhận pha ở `/barista` | §2.7 | Đã hiện thực (mở rộng ngoài đề §3.2) |
 | **UC10** | Báo xong pha chế | Pha chế | `Barista` | Phụ thuộc UC09 | `PREPARING` $\rightarrow$ `READY`: `PATCH /orders/:id {READY}` chỉ BARISTA/ADMIN, nút Pha xong ở `/barista` | §2.7 | Đã hiện thực (mở rộng ngoài đề §3.2) |
 | **UC11** | Xác nhận giao nước | Pha chế | `Barista` | Phụ thuộc UC10 | `READY` $\rightarrow$ `COMPLETED`: `PATCH /orders/:id {COMPLETED}` chỉ BARISTA/ADMIN, nút Đã giao ở `/barista` | §2.7 | Đã hiện thực (mở rộng ngoài đề §3.2) |
