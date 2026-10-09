@@ -4,7 +4,8 @@
   "scripts": {
     "start:dev": "ts-node src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "smoke:clean": "ts-node prisma/clean-smoke.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",

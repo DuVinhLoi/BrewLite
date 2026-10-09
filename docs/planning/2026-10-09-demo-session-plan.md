@@ -840,7 +840,7 @@ git commit -m "fix(seed): chi tao du lieu con thieu, giu don va ton kho qua cac 
 **Interfaces:**
 - Produces: `SMOKE_EMAIL_SUFFIX = '@smoke.test'`, `cleanSmokeData(db: PrismaClient): Promise<{ users: number; orders: number }>`.
 
-- [ ] **Step 1: Viết test đỏ** `backend/test/pg-smoke-clean.integration.spec.ts`:
+- [x] **Step 1: Viết test đỏ** `backend/test/pg-smoke-clean.integration.spec.ts`:
 
 ```ts
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -894,12 +894,12 @@ pg('smoke:clean trên Postgres', () => {
 });
 ```
 
-- [ ] **Step 2: Chạy cho thấy đỏ** (cần DB compose: `docker compose up -d db`).
+- [x] **Step 2: Chạy cho thấy đỏ** (cần DB compose: `docker compose up -d db`).
 
 Run: `cd backend && DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite npx jest pg-smoke-clean`
 Expected: FAIL, `Cannot find module '../prisma/clean-smoke'`.
 
-- [ ] **Step 3: Tạo `backend/prisma/clean-smoke.ts`:**
+- [x] **Step 3: Tạo `backend/prisma/clean-smoke.ts`:**
 
 ```ts
 import { PrismaClient } from '@prisma/client';
@@ -938,18 +938,18 @@ if (require.main === module) {
 }
 ```
 
-- [ ] **Step 4: Thêm script** vào `"scripts"` của `backend/package.json`:
+- [x] **Step 4: Thêm script** vào `"scripts"` của `backend/package.json`:
 
 ```json
     "smoke:clean": "ts-node prisma/clean-smoke.ts"
 ```
 
-- [ ] **Step 5: Chạy cho thấy xanh.**
+- [x] **Step 5: Chạy cho thấy xanh.**
 
 Run: `cd backend && DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite npx jest pg- && env -u DATABASE_URL npx jest && npx tsc --noEmit`
 Expected: các suite pg pass (3 test); không có `DATABASE_URL` thì 122 pass / 3 skip; tsc không lỗi.
 
-- [ ] **Step 6: Tài liệu.**
+- [x] **Step 6: Tài liệu.**
   - `README.md`, thêm mục mới ngay trước "### Lưu ý bảo mật (chỉ dành cho demo)":
 
 ```markdown
@@ -961,7 +961,7 @@ Expected: các suite pg pass (3 test); không có `DATABASE_URL` thì 122 pass /
 ```
 
   - `.claude/rules/doc-code-sync.md`, mục "Phạm vi", thêm gạch cuối: `- Smoke test hoặc thử API trên DB compose: dùng tài khoản email `@smoke.test`, không dùng tài khoản demo; xong chạy `docker compose exec backend npm run smoke:clean`.` Người dùng duyệt plan này nghĩa là duyệt dòng thêm vào rule này.
-- [ ] **Step 7: Commit.**
+- [x] **Step 7: Commit.**
 
 ```bash
 git add backend/prisma/clean-smoke.ts backend/package.json backend/test/pg-smoke-clean.integration.spec.ts README.md .claude/rules/doc-code-sync.md
