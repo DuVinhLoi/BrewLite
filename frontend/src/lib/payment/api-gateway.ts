@@ -1,10 +1,9 @@
+import { getToken } from '../auth';
 import type { PaymentGateway } from './gateway';
 import { PaymentError } from './types';
 import type { CartLine, PaymentRequest, PaymentResult } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-
-const getToken = () => (typeof localStorage !== 'undefined' ? localStorage.getItem('brewlite-token') : null);
 
 // Body lỗi của NestJS: { statusCode, message: string | string[], error }; body không phải JSON (proxy trả HTML…) thì bỏ qua.
 async function readMessage(res: Response): Promise<string> {

@@ -6,7 +6,7 @@ import type { Product } from './types';
 import { MOCK_PRODUCTS } from './mock-products';
 import { STATUS_LABEL, isOrderStatus } from './order-status';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 interface RawProduct {
   id: string;
@@ -30,7 +30,7 @@ function normalize(raw: RawProduct): Product {
 }
 
 // PATCH /orders/:id { status } kèm Bearer JWT; ném Error với thông điệp tiếng Việt cho UI hiển thị.
-// Dùng chung cho nút Hủy và nút "Quầy (demo)"; verb là cụm động từ trong thông báo lỗi.
+// Dùng chung cho nút Hủy và các nút ở quầy; verb là cụm động từ trong thông báo lỗi.
 async function patchOrderStatus(orderId: string, status: string, token: string, verb: string): Promise<void> {
   let res: Response;
   try {
@@ -46,7 +46,7 @@ async function patchOrderStatus(orderId: string, status: string, token: string, 
   const data = await res.json().catch(() => ({}));
   const detail = Array.isArray(data.message) ? data.message.join(', ') : data.message;
   if (res.status === 401) throw new Error(`Bạn cần đăng nhập lại để ${verb}.`);
-  if (res.status === 403) throw new Error(`Bạn không có quyền ${verb} này (đơn thuộc tài khoản khác).`);
+  if (res.status === 403) throw new Error('Bạn không có quyền thực hiện thao tác này (đơn của tài khoản khác hoặc cần tài khoản quầy).');
   if (res.status === 404) throw new Error('Không tìm thấy đơn.');
   throw new Error(transitionError(res.status, detail, verb));
 }
@@ -64,8 +64,8 @@ function transitionError(status: number, detail: string | undefined, verb: strin
 export const cancelOrder = (orderId: string, token: string): Promise<void> =>
   patchOrderStatus(orderId, 'CANCELLED', token, 'hủy đơn');
 
-// Nút "Quầy (demo)": mô phỏng Barista (ngoài MVP theo đề §3.2) tiến đơn PAID → PREPARING → READY → COMPLETED
-// bằng chính PATCH /orders/:id có sẵn; backend vẫn kiểm chủ đơn và assertTransition.
+// Màn quầy (/barista): Barista/Admin tiến đơn PAID → PREPARING → READY → COMPLETED bằng PATCH /orders/:id;
+// backend kiểm vai trò và assertTransition.
 export const advanceOrder = (orderId: string, status: string, token: string): Promise<void> =>
   patchOrderStatus(orderId, status, token, 'chuyển trạng thái đơn');
 

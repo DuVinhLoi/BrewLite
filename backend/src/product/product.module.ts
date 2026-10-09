@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ProductController } from './product.controller';
+import { AdminProductController } from './admin-product.controller';
+import { AuthModule } from '../auth/auth.module';
 import { ProductService } from './product.service';
 import { IProductRepository } from '../contracts/product.contract';
 import { InMemoryProductRepo } from '../stubs/in-memory-product.repo';
@@ -10,7 +12,8 @@ const useDb = !!process.env.DATABASE_URL;
 const ProductRepo = useDb ? PrismaProductRepo : InMemoryProductRepo;
 
 @Module({
-  controllers: [ProductController],
+  imports: [AuthModule],
+  controllers: [ProductController, AdminProductController],
   providers: [
     {
       provide: ProductService,

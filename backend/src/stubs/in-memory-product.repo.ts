@@ -25,6 +25,18 @@ export class InMemoryProductRepo implements IProductRepository {
     return [...this.store.values()].filter((p) => p.stock > 0);
   }
 
+  async findAll(_tx?: TxContext): Promise<ProductDto[]> {
+    return [...this.store.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async setStockWithOptimisticLock(id: string, stock: number, currentVersion: number, _tx?: TxContext): Promise<boolean> {
+    const p = this.store.get(id);
+    if (!p || p.version !== currentVersion) return false;
+    p.stock = stock;
+    p.version += 1;
+    return true;
+  }
+
   async deductStockWithOptimisticLock(id: string, quantity: number, currentVersion: number, _tx?: TxContext): Promise<boolean> {
     const p = this.store.get(id);
     if (!p || p.version !== currentVersion || p.stock < quantity) return false;

@@ -1,13 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
   HAPPY_PATH,
   ORDER_STATUSES,
   STATUS_LABEL,
   TRANSITIONS,
   canCancel,
-  demoCounterEnabled,
   nextStatus,
   statusTrack,
 } from './order-status';
@@ -140,21 +139,5 @@ describe('statusTrack (thanh tiến trình 5 bước)', () => {
 
   test('trạng thái lạ: giữ nguyên chữ, không vỡ', () => {
     expect(statusTrack('XYZ')).toEqual({ kind: 'unknown', label: 'XYZ' });
-  });
-});
-
-describe('demoCounterEnabled (NEXT_PUBLIC_DEMO_COUNTER)', () => {
-  afterEach(() => vi.unstubAllEnvs());
-
-  test('mặc định bật (chưa đặt biến), bật khi "true"', () => {
-    vi.stubEnv('NEXT_PUBLIC_DEMO_COUNTER', '');
-    expect(demoCounterEnabled()).toBe(true);
-    vi.stubEnv('NEXT_PUBLIC_DEMO_COUNTER', 'true');
-    expect(demoCounterEnabled()).toBe(true);
-  });
-
-  test('chỉ tắt khi đặt đúng "false"', () => {
-    vi.stubEnv('NEXT_PUBLIC_DEMO_COUNTER', 'false');
-    expect(demoCounterEnabled()).toBe(false);
   });
 });

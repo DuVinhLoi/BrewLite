@@ -22,6 +22,16 @@ export class PrismaProductRepo implements IProductRepository {
     return list.map((p) => ({ id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl ?? undefined, stock: p.stock, version: p.version }));
   }
 
+  async findAll(tx?: TxContext): Promise<ProductDto[]> {
+    const list = await this.cx(tx).product.findMany({ orderBy: { name: 'asc' } });
+    return list.map((p) => ({ id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl ?? undefined, stock: p.stock, version: p.version }));
+  }
+
+  async setStockWithOptimisticLock(id: string, stock: number, currentVersion: number, tx?: TxContext): Promise<boolean> {
+    const r = await this.cx(tx).product.updateMany({ where: { id, version: currentVersion }, data: { stock, version: { increment: 1 } } });
+    return r.count === 1;
+  }
+
   async deductStockWithOptimisticLock(id: string, quantity: number, currentVersion: number, tx?: TxContext): Promise<boolean> {
     const r = await this.cx(tx).product.updateMany({
       where: { id, version: currentVersion, stock: { gte: quantity } },

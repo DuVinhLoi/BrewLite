@@ -359,18 +359,19 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 | `POST /payments` | Thanh toán (idempotent) |
 | `GET /orders/me` | Lịch sử đơn của user |
 
-> **Ghi chú của nhóm (không thuộc đề gốc `BrewLite-CongNghePhanMem.pdf`):** bảng trên giữ nguyên 7 endpoint tối thiểu của đề. Nhóm hiện thực thêm 2 endpoint mở rộng:
+> **Ghi chú của nhóm (không thuộc đề gốc `BrewLite-CongNghePhanMem.pdf`):** bảng trên giữ nguyên 7 endpoint tối thiểu của đề. Nhóm hiện thực thêm 5 endpoint mở rộng:
 >
 > | Endpoint | Chức năng | Lý do |
 > |---|---|---|
-> | `PATCH /orders/:id` | Hủy đơn / tiến trạng thái (`CANCELLED`, `PREPARING`, `READY`, `COMPLETED`), chỉ chủ đơn | Phục vụ Order State Machine §9.1 (Task 10): hủy đơn và các chuyển tiếp sau `PAID` |
+> | `PATCH /orders/:id` | Khách: hủy đơn của mình; BARISTA/ADMIN: tiến đơn (`PREPARING`, `READY`, `COMPLETED`) + hủy đơn `PAID` | Phục vụ Order State Machine §9.1 (Task 10): hủy đơn và các chuyển tiếp sau `PAID`; khách không tự tiến đơn (403) |
 > | `GET /orders/:id` | Chi tiết một đơn, chỉ chủ đơn (404 đơn lạ, 403 đơn người khác) | Xem trạng thái một đơn qua API; giao diện hiện chưa gọi, lịch sử dùng `GET /orders/me` |
->
-> Không có `GET /orders?status=PAID` (hàng đợi quầy): đề gốc không liệt kê, và Barista nằm ngoài phạm vi MVP theo §3.2.
+> | `GET /orders?status=` | Hàng đợi quầy (UC08), mặc định `PAID,PREPARING,READY`; JWT + BARISTA/ADMIN | Barista xem đơn cần pha; mở rộng ngoài phạm vi MVP §3.2 |
+> | `GET /admin/products` | Mọi món kể cả hết hàng (UC14); chỉ ADMIN | Admin kiểm tồn kho; mở rộng ngoài phạm vi MVP §3.2 |
+> | `PATCH /admin/products/:id/stock` | Đặt số / cộng trừ tồn kho `{ mode: set\|delta, value, version }` (UC14); chỉ ADMIN, 409 khi `version` lệch, 400 khi âm | Điều chỉnh kho theo cùng cơ chế optimistic lock của §9 ý 3 |
 
 ### 12.2 Thực thể tối thiểu
 
-> **Ghi chú của nhóm:** đề gốc chỉ liệt kê *Product(id, name, price, imageUrl, stock)*, *OrderItem(id, orderId, productId, size, qty, lineTotal)*, *Payment(id, orderId, idempotencyKey, amount, method)*. Các trường thêm dưới đây là mở rộng của nhóm: `Product.version` (optimistic locking, §9 ý 3), `OrderItem.toppings` (§4.1 chọn topping), `Payment.status / discount / loyaltyPointsEarned` và `idempotencyKey @unique` (§9 ý 2, 4). Vẫn đúng 5 thực thể, không thêm bảng.
+> **Ghi chú của nhóm:** đề gốc chỉ liệt kê *Product(id, name, price, imageUrl, stock)*, *OrderItem(id, orderId, productId, size, qty, lineTotal)*, *Payment(id, orderId, idempotencyKey, amount, method)*. Các trường thêm dưới đây là mở rộng của nhóm: `Product.version` (optimistic locking, §9 ý 3), `OrderItem.toppings` (§4.1 chọn topping), `Payment.status / discount / loyaltyPointsEarned` và `idempotencyKey @unique` (§9 ý 2, 4). Ngoài danh sách dưới đây, `User` còn cột `role` (`CUSTOMER` / `BARISTA` / `ADMIN`, mặc định `CUSTOMER`) để phân quyền cho phân hệ Pha chế và Quản trị, là mở rộng ngoài phạm vi MVP §3.2. Vẫn đúng 5 thực thể, không thêm bảng.
 
 - **Product**(id, name, price, imageUrl, stock, version).
 - **User**(id, email, passwordHash, loyaltyPoints).

@@ -2,7 +2,7 @@ import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/co
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
-import { IUserRepository } from '../contracts/user.contract';
+import { IUserRepository, Role } from '../contracts/user.contract';
 import { LoginDto, RegisterDto } from './dto';
 
 @Injectable()
@@ -21,6 +21,7 @@ export class AuthService {
       email: dto.email,
       passwordHash: hash,
       loyaltyPoints: 0,
+      role: Role.CUSTOMER, // đăng ký công khai không bao giờ tạo nhân viên
     });
     return { id: user.id, email: user.email };
   }
@@ -30,7 +31,8 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(dto.password, user.passwordHash ?? ''))) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const accessToken = await this.jwt.signAsync({ sub: user.id, email: user.email });
-    return { accessToken, user: { id: user.id, email: user.email } };
+    const role = user.role ?? Role.CUSTOMER;
+    const accessToken = await this.jwt.signAsync({ sub: user.id, email: user.email, role });
+    return { accessToken, user: { id: user.id, email: user.email, role } };
   }
 }

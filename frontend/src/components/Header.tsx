@@ -1,12 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { getToken, roleFromToken, type Role } from '@/lib/auth';
 import { useCart } from '@/store/cart';
 
-// FEATURE: App header — logo + badge tổng số ly trong giỏ.
+// FEATURE: App header — logo + badge tổng số ly trong giỏ + link Quầy/Kho theo vai trò (chỉ ẩn/hiện, server mới chặn quyền).
 export default function Header() {
   const count = useCart((s) => s.count);
+  // Header nằm trong layout: App Router không mount lại layout sau router.push('/barista'),
+  // nên đọc lại role mỗi lần đổi trang (không thì phải F5 mới thấy link Quầy/Kho sau khi đăng nhập).
+  const pathname = usePathname();
+  const [role, setRole] = useState<Role | null>(null);
+  useEffect(() => setRole(roleFromToken(getToken())), [pathname]);
 
   return (
     <header style={styles.bar}>
@@ -20,6 +27,16 @@ export default function Header() {
         <Link href="/login" style={styles.link}>
           Đăng nhập
         </Link>
+        {(role === 'BARISTA' || role === 'ADMIN') && (
+          <Link href="/barista" style={styles.link}>
+            Quầy
+          </Link>
+        )}
+        {role === 'ADMIN' && (
+          <Link href="/admin" style={styles.link}>
+            Kho
+          </Link>
+        )}
         <Link href="/history" style={styles.link}>
           Lịch sử
         </Link>

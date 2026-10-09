@@ -30,6 +30,8 @@ export interface OrderDto {
 export interface IOrderRepository {
   findById(id: string, tx?: TxContext): Promise<OrderDto | null>;
   findByUserId(userId: string, tx?: TxContext): Promise<OrderDto[]>;
+  /** Hàng đợi quầy: đơn có trạng thái thuộc `statuses`, cũ trước (FIFO theo createdAt). */
+  findByStatuses(statuses: OrderStatus[], tx?: TxContext): Promise<OrderDto[]>;
   updateStatus(id: string, status: OrderStatus, tx?: TxContext): Promise<OrderDto>;
   save(order: OrderDto, tx?: TxContext): Promise<OrderDto>;
   runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T>;

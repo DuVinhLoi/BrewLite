@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 # Demo Order State Machine (đề §9.1) bằng curl, dự phòng cho buổi demo khi giao diện trục trặc.
-# Luồng: đăng nhập demo → tạo đơn (PENDING) → thanh toán (PAID) → PATCH PREPARING → READY → COMPLETED,
-# in trạng thái đọc lại từ backend sau mỗi bước, rồi thử 1 chuyển sai (COMPLETED → CANCELLED) để thấy 400.
+# Luồng: đăng nhập khách + quầy → khách tạo đơn (PENDING) → thanh toán (PAID) → khách tự PATCH PREPARING bị 403
+# → quầy (barista) PATCH PREPARING → READY → COMPLETED, in trạng thái đọc lại từ backend sau mỗi bước,
+# rồi thử 1 chuyển sai (COMPLETED → CANCELLED) để thấy 400.
 # Chỉ gọi các endpoint có sẵn. Không cần jq. Thoát mã khác 0 nếu có bước không ra đúng kết quả.
 #
-# Chạy:  bash scripts/demo-state-machine.sh        (backend ở http://localhost:3000, đã seed tài khoản demo)
-# Biến:  API=http://host:3000  DEMO_EMAIL=...  DEMO_PASSWORD=...
+# Chạy:  bash scripts/demo-state-machine.sh        (backend ở http://localhost:3000, đã seed tài khoản khách + quầy)
+# Biến:  API=http://host:3000  DEMO_EMAIL=...  DEMO_PASSWORD=...  STAFF_EMAIL=...  STAFF_PASSWORD=...
 set -u
 
 API="${API:-http://localhost:3000}"
 EMAIL="${DEMO_EMAIL:-demo@brewlite.vn}"
 PASSWORD="${DEMO_PASSWORD:-demo1234}"
+STAFF_EMAIL="${STAFF_EMAIL:-barista@brewlite.vn}"
+STAFF_PASSWORD="${STAFF_PASSWORD:-barista1234}"
 BODY="$(mktemp)"
 trap 'rm -f "$BODY"' EXIT
 
@@ -53,6 +56,11 @@ expect "$code" 200 "Đăng nhập $EMAIL"
 TOKEN="$(json_get accessToken)"
 [ -n "$TOKEN" ] || fail "Không lấy được accessToken"
 echo "[0] Đăng nhập $EMAIL                    -> có JWT"
+code="$(call POST /auth/login "{\"email\":\"$STAFF_EMAIL\",\"password\":\"$STAFF_PASSWORD\"}")"
+expect "$code" 200 "Đăng nhập $STAFF_EMAIL"
+STAFF_TOKEN="$(json_get accessToken)"
+[ -n "$STAFF_TOKEN" ] || fail "Không lấy được accessToken quầy"
+echo "[0] Đăng nhập $STAFF_EMAIL             -> có JWT (BARISTA)"
 
 # 2. Chọn món còn hàng
 code="$(call GET /products '')"
@@ -73,19 +81,24 @@ code="$(call POST /payments "{\"orderId\":\"$ORDER_ID\",\"paymentMethod\":\"WALL
 expect "$code" 201 "POST /payments"
 step 2 "POST /payments" PAID
 
-# 5. Tiến đơn như "quầy": PAID → PREPARING → READY → COMPLETED
-n=3
+# 5. Khách tự tiến đơn phải bị chặn: chỉ quầy/quản trị được tiến đơn (UC09–UC11)
+code="$(call PATCH "/orders/$ORDER_ID" '{"status":"PREPARING"}')"
+expect "$code" 403 "khách tự tiến đơn"
+echo "[3] Khách PATCH {PREPARING}             -> HTTP 403 (chặn đúng): $(json_get message)"
+
+# 6. Quầy tiến đơn: PAID → PREPARING → READY → COMPLETED
+n=4
 for next in PREPARING READY COMPLETED; do
-  code="$(call PATCH "/orders/$ORDER_ID" "{\"status\":\"$next\"}")"
-  expect "$code" 200 "PATCH $next"
-  step "$n" "PATCH /orders/:id {$next}" "$next"
+  code="$(TOKEN="$STAFF_TOKEN" call PATCH "/orders/$ORDER_ID" "{\"status\":\"$next\"}")"
+  expect "$code" 200 "Quầy PATCH $next"
+  step "$n" "Quầy PATCH /orders/:id {$next}" "$next"
   n=$((n + 1))
 done
 
-# 6. Chuyển sai có chủ đích: COMPLETED là trạng thái cuối nên hủy phải bị chặn
-code="$(call PATCH "/orders/$ORDER_ID" '{"status":"CANCELLED"}')"
-expect "$code" 400 "PATCH CANCELLED trên đơn COMPLETED"
-echo "[6] PATCH CANCELLED trên đơn COMPLETED  -> HTTP 400 (chặn đúng): $(json_get message)"
-step 7 "Trạng thái sau khi bị chặn" COMPLETED
+# 7. Chuyển sai có chủ đích: COMPLETED là trạng thái cuối nên hủy phải bị chặn (kể cả quầy)
+code="$(TOKEN="$STAFF_TOKEN" call PATCH "/orders/$ORDER_ID" '{"status":"CANCELLED"}')"
+expect "$code" 400 "Quầy PATCH CANCELLED trên đơn COMPLETED"
+echo "[7] Quầy PATCH CANCELLED trên COMPLETED -> HTTP 400 (chặn đúng): $(json_get message)"
+step 8 "Trạng thái sau khi bị chặn" COMPLETED
 
-echo "== Xong: PENDING → PAID → PREPARING → READY → COMPLETED, chuyển sai bị chặn 400 =="
+echo "== Xong: PENDING → PAID, khách tự tiến đơn 403, quầy PREPARING → READY → COMPLETED, chuyển sai bị chặn 400 =="

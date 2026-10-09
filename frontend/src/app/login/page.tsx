@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { TOKEN_KEY, homeFor, roleFromToken } from '@/lib/auth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -29,8 +30,8 @@ export default function LoginPage() {
         setMode('login');
         setError(null);
       } else {
-        localStorage.setItem('brewlite-token', data.accessToken);
-        router.push('/');
+        localStorage.setItem(TOKEN_KEY, data.accessToken);
+        router.push(homeFor(roleFromToken(data.accessToken) ?? 'CUSTOMER'));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Lỗi không xác định');

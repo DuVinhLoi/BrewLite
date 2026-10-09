@@ -36,13 +36,11 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
         NEXT_PUBLIC_PAYMENT_MODE: ${NEXT_PUBLIC_PAYMENT_MODE:-api}
-        NEXT_PUBLIC_DEMO_COUNTER: ${NEXT_PUBLIC_DEMO_COUNTER:-true}
     ports:
       - "3001:3001"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
       NEXT_PUBLIC_PAYMENT_MODE: ${NEXT_PUBLIC_PAYMENT_MODE:-api}
-      NEXT_PUBLIC_DEMO_COUNTER: ${NEXT_PUBLIC_DEMO_COUNTER:-true}
     depends_on:
       - backend
 

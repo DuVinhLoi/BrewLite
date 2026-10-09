@@ -52,8 +52,8 @@ export const isOrderStatus = (s: string): s is OrderStatus => (ORDER_STATUSES as
 // UC06 KB2/KB3: khách hủy được khi chưa vào quầy (PENDING, PAYMENT_FAILED, PAID); PREPARING trở đi backend trả 400.
 export const canCancel = (s: string): boolean => isOrderStatus(s) && TRANSITIONS[s].includes('CANCELLED');
 
-// Bước "quầy": PAID → PREPARING → READY → COMPLETED. PENDING/PAYMENT_FAILED không có bước kế ở đây
-// (bước kế của chúng là thanh toán / thử lại, không phải quầy).
+// Bước tiếp theo ở quầy (UC09–UC11, màn /barista): PAID → PREPARING → READY → COMPLETED.
+// PENDING/PAYMENT_FAILED không có bước kế ở đây (bước kế của chúng là thanh toán / thử lại, không phải quầy).
 const COUNTER_NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
   PAID: 'PREPARING',
   PREPARING: 'READY',
@@ -61,10 +61,6 @@ const COUNTER_NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
 };
 
 export const nextStatus = (s: string): OrderStatus | null => (isOrderStatus(s) ? COUNTER_NEXT[s] ?? null : null);
-
-// Nút "Quầy (demo)" ở /history: mô phỏng Barista (ngoài MVP theo đề §3.2). Mặc định bật (compose đặt true);
-// NEXT_PUBLIC_DEMO_COUNTER=false để ẩn khi không demo. Đọc lúc gọi để test đổi biến được (Next thay chữ này lúc build).
-export const demoCounterEnabled = (): boolean => process.env.NEXT_PUBLIC_DEMO_COUNTER !== 'false';
 
 export interface TrackStep {
   status: OrderStatus;

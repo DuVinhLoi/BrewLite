@@ -127,7 +127,7 @@ Burndown thực tế **phẳng ở 10 từ 09-30 đến 10-06 rồi rơi về 0 
 
 - Demo end-to-end ngày, người xem, phản hồi: **[nhóm điền]**.
 - Tình trạng kiểm thử hiện có (chạy lại ngày 2026-10-08): backend `npx jest` 62 pass / 1 skip (suite Postgres chỉ chạy khi có `DATABASE_URL`), frontend `npx vitest run` 46 pass. Bằng chứng chi tiết từng task: `docs/develop-status-report.md`.
-- Backlog cho phiên bản sau (đề §11.4): chức năng Barista/Admin (ngoài MVP theo đề §3.2; vẫn nằm trên Bản 1 của `docs/use-case-specifications.md` với cột Trạng thái "chưa hiện thực"; UC08–UC12 + UC14 đang làm ở `feat/barista-admin`, UC13/UC15 là backlog); mục chốt thêm: **[nhóm điền]**.
+- Backlog cho phiên bản sau (đề §11.4): UC13 (quản lý món & thực đơn) và UC15 (quản lý mã giảm giá) của Barista/Admin, vẫn ngoài MVP theo đề §3.2 và ghi "chưa hiện thực" trong `docs/use-case-specifications.md` (UC08–UC12 và UC14 đã hiện thực như mở rộng ngoài đề, xem `docs/develop-status-report.md` mục 5); mục chốt thêm: **[nhóm điền]**.
 
 ## 5. Sprint Retrospective (đề §11.3) — KHUNG NHÁP
 

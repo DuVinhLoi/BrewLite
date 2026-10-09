@@ -27,9 +27,12 @@ describe('cancelOrder', () => {
     expect(JSON.parse(init.body)).toEqual({ status: 'CANCELLED' });
   });
 
-  test('403 (đơn người khác) → ném lỗi báo không có quyền', async () => {
+  test('403 → báo không có quyền, nêu cả hai lý do (đơn người khác hoặc cần tài khoản quầy)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(403, { message: 'Not your order' })));
-    await expect(cancelOrder('o1', 't')).rejects.toThrow(/không có quyền/);
+    const err = await cancelOrder('o1', 't').catch((e) => e);
+    expect(err.message).toMatch(/không có quyền/);
+    expect(err.message).toMatch(/tài khoản khác/);
+    expect(err.message).toMatch(/tài khoản quầy/);
   });
 
   test('400 (sai trạng thái) → thông điệp tiếng Việt theo nhãn trạng thái, không lộ chữ tiếng Anh của backend', async () => {
@@ -101,7 +104,7 @@ describe('getProducts', () => {
   });
 });
 
-// Nút "Quầy (demo)": mô phỏng Barista (ngoài MVP theo đề §3.2) tiến đơn bằng chính PATCH /orders/:id có sẵn.
+// Màn quầy (/barista): Barista/Admin tiến đơn bằng PATCH /orders/:id.
 describe('advanceOrder', () => {
   test('gửi PATCH /orders/:id với body { status } và header Authorization', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(json(200, { id: 'o1', status: 'PREPARING' }));

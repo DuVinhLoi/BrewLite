@@ -12,6 +12,7 @@ model User {
   email         String  @unique
   passwordHash  String
   loyaltyPoints Int     @default(0)
+  role          String  @default("CUSTOMER")
   orders        Order[]
 }
 
