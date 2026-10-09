@@ -117,7 +117,7 @@ backend/
 - Consumes: docs `BrewLite-fixed.md:301-322,360-364` + UC04/UC06.
 - Produces: `OrderStatus, OrderDto/IOrderRepository, ProductDto/IProductRepository, PaymentDto/IPaymentRepository, UserDto/IUserRepository` cho Task 2-6.
 
-- [ ] **Step 1.1: Tạo các Interfaces hợp đồng**
+- [x] **Step 1.1: Tạo các Interfaces hợp đồng** *(Xong — `backend/src/contracts/*.contract.ts`; về sau mở rộng (transaction, `findByUserId`…) ở a209b88)*
 
 Khai báo `backend/src/contracts/order.contract.ts`:
 ```typescript
@@ -207,7 +207,7 @@ export interface IUserRepository {
 }
 ```
 
-- [ ] **Step 1.2: Định nghĩa Prisma Schema đúng 5 thực thể tối thiểu (Không đẻ bảng ngoài)**
+- [x] **Step 1.2: Định nghĩa Prisma Schema đúng 5 thực thể tối thiểu (Không đẻ bảng ngoài)** *(Xong — `backend/prisma/schema.prisma`: đúng 5 model)*
 
 Viết `backend/prisma/schema.prisma` với đúng 5 model: `User`, `Product`, `Order`, `OrderItem`, `Payment`.
 
@@ -223,12 +223,12 @@ Viết `backend/prisma/schema.prisma` với đúng 5 model: `User`, `Product`, `
 - Consumes: Task 1 `OrderStatus`.
 - Produces: `assertTransition(from,to)` cho Task 4/6. Chạy song song được với Task 3.
 
-- [ ] **Step 2.1: Viết Unit Test `order-state.machine.spec.ts` (Tiêu chí a)**
+- [x] **Step 2.1: Viết Unit Test `order-state.machine.spec.ts` (Tiêu chí a)** *(Xong — `order-state.machine.spec.ts`; assert mới chỉ `.toThrow()`, chưa kiểm loại exception)*
   - Kiểm thử cho phép: `PENDING -> PAID`, `PENDING -> PAYMENT_FAILED`, `PAYMENT_FAILED -> PENDING`, `PENDING -> CANCELLED`, `PAID -> CANCELLED`, `PAID -> PREPARING`, `PREPARING -> READY`, `READY -> COMPLETED`.
   - Kiểm thử ném `BadRequestException`: `PREPARING -> CANCELLED`, `COMPLETED -> CANCELLED`, `PENDING -> COMPLETED`, `COMPLETED -> PENDING`.
 - [ ] **Step 2.2: Chạy test để xem FAIL đỏ (TDD Red)**
-- [ ] **Step 2.3: Hiện thực hóa `order-state.machine.ts` với ma trận chuyển đổi**
-- [ ] **Step 2.4: Chạy test `npm test -- order-state.machine.spec.ts` (PASS xanh) + commit. Checkpoint review 1.**
+- [x] **Step 2.3: Hiện thực hóa `order-state.machine.ts` với ma trận chuyển đổi** *(Xong — `order-state.machine.ts`, đủ 9 mũi tên §9.1)*
+- [x] **Step 2.4: Chạy test `npm test -- order-state.machine.spec.ts` (PASS xanh) + commit. Checkpoint review 1.** *(Xong — commit d1be546; không thấy dấu vết "checkpoint review 1")*
 
 ---
 
@@ -245,11 +245,11 @@ Viết `backend/prisma/schema.prisma` với đúng 5 model: `User`, `Product`, `
 - Consumes: Task 1 contracts.
 - Produces: `charge()/refund()/getCallCount()` + stub repos cho Task 4-6. Chạy song song được với Task 2 (dispatch 2 agents).
 
-- [ ] **Step 3.1: Viết MockPaymentGatewayService**
+- [x] **Step 3.1: Viết MockPaymentGatewayService** *(Xong, đã đổi: 34a062b bỏ cờ DTO `shouldSimulateFailure`, thay bằng hook `failNextCharge`; gateway có thêm `refund`, `getCallCount`)*
   - Cung cấp hàm `charge({ amount, method, shouldSimulateFailure })`.
   - Cung cấp hàm `refund(orderId, amount)`.
   - Cung cấp bộ đếm `getCallCount()` để test Idempotency.
-- [ ] **Step 3.2: Viết các In-Memory Repositories**
+- [x] **Step 3.2: Viết các In-Memory Repositories** *(Xong — `backend/src/stubs/in-memory-*.repo.ts`; a209b88 thêm `in-memory-tx.ts`)*
   - Lưu trữ dữ liệu RAM, hiện thực hàm `deductStockWithOptimisticLock` so sánh `version` nguyên tử và `restoreStock`.
 
 ---
@@ -263,7 +263,7 @@ Viết `backend/prisma/schema.prisma` với đúng 5 model: `User`, `Product`, `
 - Consumes: Task 1-3 signatures.
 - Produces: 3 test đỏ cho Task 4 implement.
 
-- [ ] **Step 4-RED.1: Viết test b (Idempotency), test c (Concurrency stock=1, Promise.all), test hủy/hoàn tiền UC06**
+- [ ] **Step 4-RED.1: Viết test b (Idempotency), test c (Concurrency stock=1, Promise.all), test hủy/hoàn tiền UC06** *(Chưa tick: test (b) có; test (c) dùng 10 đơn/stock=3 và chưa assert `ConflictException`/409; chưa có test hủy PREPARING→400 ở tầng service)*
 - [ ] **Step 4-RED.2: Chạy `npm test` xác nhận FAIL (chưa có PaymentService)**
 
 ### Task 4: Triển khai PaymentService Hoàn Chỉnh (Mảnh 2, 4, 5)
@@ -277,10 +277,10 @@ Viết `backend/prisma/schema.prisma` với đúng 5 model: `User`, `Product`, `
 - Consumes: Task 1 contracts + Task 2 `assertTransition` + Task 3 gateway/stubs.
 - Produces: `processPayment(dto,key)/cancelOrder(id)` cho Task 5/6.
 
-- [ ] **Step 4.1: Định nghĩa DTO**
+- [x] **Step 4.1: Định nghĩa DTO** *(Xong, đã đổi: `method`→`paymentMethod`; bỏ `shouldSimulateFailure` (34a062b); `update-order-status.dto.ts` nhận 4 trạng thái (7f2346b))*
   - `CreatePaymentDto`: `{ orderId, method, voucherCode?, shouldSimulateFailure? }`.
   - `UpdateOrderStatusDto`: `{ status: OrderStatus }`.
-- [ ] **Step 4.2: Hiện thực hóa `PaymentService`**
+- [ ] **Step 4.2: Hiện thực hóa `PaymentService`** *(Chưa tick: `processPayment`/`cancelOrder` đã làm, nhưng thiếu lưu biên lai FAILED (bước 5) và exponential backoff (bước 7) — sequence spec không đòi hai điểm này)*
   - **Hàm `processPayment(dto, idempotencyKey)`:**
     1. Kiểm tra `idempotencyKey` trong repo. Nếu Hit $\rightarrow$ Trả về kết quả cũ (HTTP 200), không gọi Gateway.
     2. Lấy đơn hàng, tính `discount` nếu mã là `BREWLITE10` (-10%).
@@ -310,10 +310,10 @@ Viết `backend/prisma/schema.prisma` với đúng 5 model: `User`, `Product`, `
 - Consumes: Task 4 `processPayment/cancelOrder`.
 - Produces: `POST /payments + PATCH /orders/:id` cho Task 6 verify. Checkpoint review 2 sau Task 4+5.
 
-- [ ] **Step 5.1: Viết `PaymentController`**
+- [x] **Step 5.1: Viết `PaymentController`** *(Xong — `payment.controller.ts`; thêm `JwtAuthGuard` ở b6a2f76)*
   - `POST /payments`: Nhận Header `Idempotency-Key` và Body `CreatePaymentDto`. Trả về mã HTTP 201 (mới), 200 (cache hit).
   - `PATCH /orders/:id`: Nhận Body `UpdateOrderStatusDto`. Trả về 200 (hủy thành công).
-- [ ] **Step 5.2: Cấu hình `PaymentModule`, `AppModule`, `main.ts`**
+- [x] **Step 5.2: Cấu hình `PaymentModule`, `AppModule`, `main.ts`** *(Xong, đã đổi: `payment.module.ts` chọn repo Prisma khi có `DATABASE_URL` (5fa3272))*
   - Nạp các Stub Repositories làm provider. Khởi động server trên port 3000.
 
 ---
@@ -327,9 +327,9 @@ Viết `backend/prisma/schema.prisma` với đúng 5 model: `User`, `Product`, `
 - Consumes: Task 4-5 implementation.
 - Produces: evidence pass + checkpoint review 3 + requesting-code-review trước merge.
 
-- [ ] **Step 6.1: Viết Integration Test Suite**
+- [ ] **Step 6.1: Viết Integration Test Suite** *(Chưa tick: (b) có; (c) lệch như 4-RED.1; test "cancel PAID refunds stock, PREPARING blocks" không có đơn PREPARING (ca này chỉ được chặn ở unit test state machine))*
   - **Tiêu chí (b) Idempotency:** Gửi 2 request có cùng `Idempotency-Key` $\rightarrow$ `mockGateway.getCallCount()` đúng bằng 1, kết quả lần 2 trả về `isCached: true`, điểm loyalty không bị cộng trùng.
   - **Tiêu chí (c) Concurrency Optimistic Lock:** Dùng `Promise.all()` cho 2 khách cùng mua sản phẩm cuối cùng (stock = 1) $\rightarrow$ đúng 1 request thành công (HTTP 201), 1 request nhận lỗi `ConflictException (409)`, stock cuối cùng = 0 (tuyệt đối không âm kho).
   - **Kiểm thử Hủy & Hoàn tiền (UC06):** Đơn `PAID` hủy thành công $\rightarrow$ chuyển `CANCELLED`, kho được hoàn lại. Đơn `PREPARING` hủy $\rightarrow$ ném lỗi 400.
-- [ ] **Step 6.2: Chạy kiểm thử toàn bộ `npm test` (PASS 100%)**
-- [ ] **Step 6.3: Kiểm thử thủ công bằng curl thực tế trên cổng 3000**
+- [x] **Step 6.2: Chạy kiểm thử toàn bộ `npm test` (PASS 100%)** *(Xong 2026-10-09 — backend `jest` 69/69 với Postgres thật (suite pg chạy 2 lần liên tiếp đều pass), frontend `vitest` 71/71)*
+- [x] **Step 6.3: Kiểm thử thủ công bằng curl thực tế trên cổng 3000** *(Xong 2026-10-09 — curl thật cổng 3000 nối Postgres: trả 2 lần cùng key → 201 rồi 200 `isCached:true`, 1 biên lai, kho 10→9, điểm +4; hủy PAID hoàn kho 9→10; hủy PREPARING → 400)*

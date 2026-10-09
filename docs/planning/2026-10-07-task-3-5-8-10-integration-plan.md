@@ -33,7 +33,7 @@
 - Consumes: `PaymentService.processPayment(dto, key)`, `MockPaymentGatewayService.charge/refund`, `InMemory*Repo.save` (existing, unchanged signatures).
 - Produces: `MockPaymentGatewayService.failNextCharge(): void` (used by Task 2 retry test).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test** *(Xong, đã đổi: chữ ký nay là `processPayment(userId, dto, key)` (b6a2f76), snippet trong plan không còn biên dịch nguyên văn)*
 
 ```ts
 import { PaymentService } from '../src/payment/payment.service';
@@ -67,7 +67,7 @@ test('gateway failure -> PAYMENT_FAILED, cart kept (order retryable)', async () 
 Run: `npm test -- test/payment-failure.spec.ts` (workdir `backend/`)
 Expected: FAIL with `gateway.failNextCharge is not a function`
 
-- [ ] **Step 3: Implement — gateway hook + drop DTO passthrough**
+- [x] **Step 3: Implement — gateway hook + drop DTO passthrough** *(Xong — 34a062b)*
 
 In `backend/src/payment/mock-payment-gateway.service.ts`, replace the `charge` method:
 
@@ -112,12 +112,12 @@ export class CreatePaymentDto {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify all pass**
+- [x] **Step 4: Run tests to verify all pass** *(Xong — nay backend 69 test, không phải 18)*
 
 Run: `npm test` (workdir `backend/`)
 Expected: PASS — 18/18 (14 state-machine + 3 existing integration + 1 new)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit** *(Xong — commit 34a062b)*
 
 ```bash
 git add backend/src/payment/dto/create-payment.dto.ts backend/src/payment/payment.service.ts backend/src/payment/mock-payment-gateway.service.ts backend/test/payment-failure.spec.ts
@@ -135,7 +135,7 @@ git commit -m "refactor(backend): replace shouldSimulateFailure DTO flag with ga
 - Consumes: `PaymentService.processPayment/cancelOrder`, `MockPaymentGatewayService.failNextCharge` (Task 1), `OrderStatus` enum.
 - Produces: nothing new (pure coverage).
 
-- [ ] **Step 1: Append the pinning tests**
+- [x] **Step 1: Append the pinning tests** *(Xong — `backend/test/order-payment.integration.spec.ts`)*
 
 Append to `backend/test/order-payment.integration.spec.ts`:
 
@@ -190,12 +190,12 @@ test('PENDING -> CANCELLED without payment touches no stock', async () => {
 });
 ```
 
-- [ ] **Step 2: Run tests**
+- [x] **Step 2: Run tests** *(Xong)*
 
 Run: `npm test` (workdir `backend/`)
 Expected: PASS — 22/22. These pin existing behavior (spec 2.4/2.5); a FAIL here means `payment.service.ts` regressed, not the test.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit** *(Xong — commit c9454dc)*
 
 ```bash
 git add backend/test/order-payment.integration.spec.ts
@@ -214,7 +214,7 @@ git commit -m "test(backend): pin voucher/loyalty math, failed-retry, pending-ca
 - Consumes: `Product, Size` (`lib/types.ts`), `calcUnitPrice, calcLineTotal, formatVND, SIZE_UPCHARGE, TOPPING_PRICES, DEFAULT_SIZE` (`lib/pricing.ts`), `useCart.addItem` (`store/cart.ts`).
 - Produces: `ProductDetailModal({ product, onClose })` used by `ProductCard`.
 
-- [ ] **Step 1: Create the modal**
+- [x] **Step 1: Create the modal** *(Xong — `frontend/src/components/ProductDetailModal.tsx`)*
 
 `frontend/src/components/ProductDetailModal.tsx`:
 
@@ -302,7 +302,7 @@ const styles: Record<string, CSSProperties> = {
 };
 ```
 
-- [ ] **Step 2: Wire it into `ProductCard`**
+- [x] **Step 2: Wire it into `ProductCard`** *(Xong — `frontend/src/components/ProductCard.tsx`)*
 
 In `frontend/src/components/ProductCard.tsx`: add import `import ProductDetailModal from './ProductDetailModal';`, add `const [customizing, setCustomizing] = useState(false);` next to `added`, and render below the quick-add button:
 
@@ -315,7 +315,7 @@ In `frontend/src/components/ProductCard.tsx`: add import `import ProductDetailMo
 
 Keep the existing quick "Thêm vào giỏ" button unchanged.
 
-- [ ] **Step 3: Build to verify**
+- [x] **Step 3: Build to verify** *(Xong 2026-10-09 — `npm run build` frontend exit 0)*
 
 Run: `npm run build` (workdir `frontend/`)
 Expected: `✓ Compiled successfully`, no type errors.
@@ -346,7 +346,7 @@ git commit -m "feat(frontend): product detail modal with size/topping live prici
   - Token source: `localStorage.getItem('brewlite-token')` (key owned by Task 7; confirm with owner, update this one line if different).
   - `POST /payments` body `{ orderId, paymentMethod, voucherCode? }`, header `Idempotency-Key` → `201` new / `200` replay.
 
-- [ ] **Step 1: Extend `PaymentRequest`**
+- [x] **Step 1: Extend `PaymentRequest`** *(Xong, đã đổi: `CartLine` bỏ `unitPrice` vì server tự tính giá (b6a2f76))*
 
 In `frontend/src/lib/payment/types.ts`, replace the `PaymentRequest` interface:
 
@@ -373,7 +373,7 @@ export interface PaymentRequest {
 }
 ```
 
-- [ ] **Step 2: 2-step `ApiPaymentGateway`**
+- [x] **Step 2: 2-step `ApiPaymentGateway`** *(Xong, đã đổi: thêm `PaymentError` mang `orderId`, gửi Bearer token tới `/payments`, xử lý 401/403/409 (b6a2f76, 03c8aa8))*
 
 Replace `frontend/src/lib/payment/api-gateway.ts` with:
 
@@ -440,7 +440,7 @@ export class ApiPaymentGateway implements PaymentGateway {
 }
 ```
 
-- [ ] **Step 3: Voucher UI in `PaymentForm`**
+- [x] **Step 3: Voucher UI in `PaymentForm`** *(Xong — `frontend/src/components/PaymentForm.tsx`)*
 
 `PaymentForm` props become `{ total, items, onSuccess, onBack }` where `items: CartLine[]`. Add state `voucher` + `applied` (+ derived `discount = applied === 'BREWLITE10' ? Math.floor(total * 0.1) : 0`, `final = total - discount`). Key changes to `frontend/src/components/PaymentForm.tsx`:
 
@@ -515,7 +515,7 @@ In `frontend/src/app/cart/page.tsx`, change line 42 to pass items (they already 
 return <PaymentForm total={total} items={items} onSuccess={handlePaymentSuccess} onBack={() => setStep('cart')} />;
 ```
 
-- [ ] **Step 4: Build to verify**
+- [x] **Step 4: Build to verify** *(Xong 2026-10-09 — `npm run build` frontend exit 0)*
 
 Run: `npm run build` (workdir `frontend/`)
 Expected: `✓ Compiled successfully`, no type errors.
@@ -532,22 +532,22 @@ git commit -m "feat(frontend): voucher input plus two-step order-then-pay checko
 
 ### Task 5: DONE gate — tests, builds, contract smoke, compose
 
-- [ ] **Step 1: Backend tests**
+- [x] **Step 1: Backend tests** *(Xong 2026-10-09 — backend `jest` 69/69, không phải 22/22 như plan ghi)*
 
 Run: `npm test` (workdir `backend/`)
 Expected: PASS — 22/22 (14 state-machine + 8 payment/failure/integration).
 
-- [ ] **Step 2: Backend build**
+- [x] **Step 2: Backend build** *(Xong 2026-10-09 — `npm run build` backend exit 0)*
 
 Run: `npm run build` (workdir `backend/`)
 Expected: clean `tsc`, no errors.
 
-- [ ] **Step 3: Frontend build**
+- [x] **Step 3: Frontend build** *(Xong 2026-10-09 — `npm run build` frontend exit 0)*
 
 Run: `npm run build` (workdir `frontend/`)
 Expected: `✓ Compiled successfully`.
 
-- [ ] **Step 4: Payment contract smoke (backend runs standalone — In-Memory stubs, no DB needed)**
+- [x] **Step 4: Payment contract smoke (backend runs standalone — In-Memory stubs, no DB needed)** *(Xong, kỳ vọng đã đổi: `POST /payments` không token nay trả 401 (JwtAuthGuard, b6a2f76); có token + đơn không tồn tại vẫn 404; 2026-10-09 đã chạy lại)*
 
 Run (workdir `backend/`, two terminals or background):
 1. `npm run start:dev`, wait for `Nest application successfully started` on `:3000`.
