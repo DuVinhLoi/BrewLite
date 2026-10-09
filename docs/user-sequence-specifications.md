@@ -207,7 +207,7 @@ deactivate UI
 * **Công nghệ Frontend:** Zustand store `useCart` (`frontend/src/store/cart.ts`), bảng giá ở `frontend/src/lib/pricing.ts`. Test: `frontend/src/store/cart.test.ts`.
 * **Cơ chế lưu trữ:** middleware `persist` ghi vào `window.localStorage` key `brewlite-cart` để F5 không bị mất giỏ hàng.
 * **Cấu trúc dữ liệu:** `CartItem { key, productId, name, imageUrl?, size, toppings: [], quantity, unitPrice, lineTotal }`, với `key = productId|size|topping (đã sắp xếp)`: cùng key thì gộp số lượng, khác size/topping thì tách dòng.
-* **Tồn kho:** `addItem` chặn số lượng vượt `product.stock` và bỏ qua món hết hàng; tăng số lượng trong giỏ (`updateQty`) chỉ giữ tối thiểu 1, không chặn theo tồn kho, nên vượt kho thì đến lúc thanh toán backend trả 409 (§2.4).
+* **Tồn kho:** `addItem` chặn số lượng vượt `product.stock` và bỏ qua món hết hàng; tăng số lượng trong giỏ (`updateQty`) chỉ giữ trong khoảng 1 đến 99, không chặn theo tồn kho, nên vượt kho thì đến lúc thanh toán backend trả 409 (§2.4). Trần 99 mỗi dòng (`MAX_LINE_QTY`, áp cho cả `addItem` và `updateQty`) khớp `@Max(99)` của `quantity` ở `POST /orders`, để giỏ không gửi được đơn bị backend từ chối 400.
 
 ---
 

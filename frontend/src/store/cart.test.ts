@@ -71,6 +71,20 @@ describe('updateQty / removeItem / total', () => {
     expect(state().count).toBe(4);
   });
 
+  // POST /orders giới hạn quantity 1..99 mỗi dòng (DTO @Max(99)); giỏ không được vượt để khỏi gặp lỗi 400 lúc trả tiền
+  test('qty tối đa 99 mỗi dòng, cả khi thêm lẫn khi bấm +', () => {
+    const big: Product = { ...latte, stock: 500 };
+    state().addItem(big, { quantity: 150 });
+    const key = state().items[0].key;
+    expect(state().items[0].quantity).toBe(99);
+    state().addItem(big, { quantity: 5 });
+    expect(state().items[0].quantity).toBe(99);
+    state().updateQty(key, 50);
+    state().updateQty(key, 150);
+    expect(state().items[0].quantity).toBe(99);
+    expect(state().items[0].lineTotal).toBe(99 * 35000);
+  });
+
   test('qty tối thiểu 1, lẻ thì floor', () => {
     state().addItem(latte);
     const key = state().items[0].key;

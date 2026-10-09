@@ -16,6 +16,9 @@ import {
   DEFAULT_TOPPINGS,
 } from '@/lib/pricing';
 
+// Khớp @Max(99) của quantity ở POST /orders (CreateOrderDto): vượt thì backend trả 400 lúc trả tiền
+const MAX_LINE_QTY = 99;
+
 interface CartState {
   items: CartItem[];
   /** Tổng số ly (đọc cho badge header). */
@@ -48,7 +51,7 @@ export const useCart = create<CartState>()(
           const toppings = opts?.toppings ?? DEFAULT_TOPPINGS;
           const qty = Math.max(1, Math.floor(opts?.quantity ?? 1));
           // Không cho vượt tồn kho (backend Task 10 kiểm tra lại).
-          const cappedQty = Math.min(qty, Math.max(0, product.stock));
+          const cappedQty = Math.min(qty, MAX_LINE_QTY, Math.max(0, product.stock));
           if (cappedQty <= 0) return state;
 
           const key = buildCartKey(product.id, size, toppings);
@@ -57,7 +60,7 @@ export const useCart = create<CartState>()(
 
           let items: CartItem[];
           if (existing) {
-            const nextQty = Math.min(existing.quantity + cappedQty, Math.max(0, product.stock));
+            const nextQty = Math.min(existing.quantity + cappedQty, MAX_LINE_QTY, Math.max(0, product.stock));
             items = state.items.map((i) =>
               i.key === key
                 ? { ...i, quantity: nextQty, lineTotal: calcLineTotal(i.unitPrice, nextQty) }
@@ -85,7 +88,7 @@ export const useCart = create<CartState>()(
       updateQty: (key, quantity) =>
         set((state) => {
           // Số lượng tối thiểu >= 1 (xóa món dùng nút Xóa riêng).
-          const qty = Math.max(1, Math.floor(quantity));
+          const qty = Math.min(MAX_LINE_QTY, Math.max(1, Math.floor(quantity)));
           const items = state.items.map((i) =>
             i.key === key ? { ...i, quantity: qty, lineTotal: calcLineTotal(i.unitPrice, qty) } : i,
           );
