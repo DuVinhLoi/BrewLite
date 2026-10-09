@@ -579,7 +579,7 @@ git commit -m "feat(frontend): giu don dang thanh toan do qua reload (sessionSto
 
 Header dùng `useRouter` của Next nên không render được trong vitest môi trường `node`. Logic đã có test ở Task 1 (`sessionFromToken`, `ROLE_LABEL`) và Task 2 (`clearCheckout`); phần hiển thị kiểm bằng mắt ở Task 6.
 
-- [ ] **Step 1: Viết lại `frontend/src/components/Header.tsx`:**
+- [x] **Step 1: Viết lại `frontend/src/components/Header.tsx`:**
 
 ```tsx
 'use client';
@@ -705,12 +705,12 @@ const styles: Record<string, CSSProperties> = {
 };
 ```
 
-- [ ] **Step 2: Chạy.**
+- [x] **Step 2: Chạy.**
 
 Run: `cd frontend && npx tsc --noEmit && npx vitest run`
 Expected: tsc không lỗi; vitest 117 pass.
 
-- [ ] **Step 3: Tài liệu.** Trong `docs/user-sequence-specifications.md`:
+- [x] **Step 3: Tài liệu.** Trong `docs/user-sequence-specifications.md`:
   - §2.3 sơ đồ, chèn trước `@enduml` (sau `deactivate FE` cuối luồng 2):
 
 ```
@@ -723,8 +723,8 @@ deactivate FE
 ```
 
   - §2.3 mục C, thêm sau gạch "Phiên đăng nhập theo tab": `* **Header và Đăng xuất:** `frontend/src/components/Header.tsx` hiện email + nhãn vai trò (`ROLE_LABEL`: Khách / Quầy / Quản trị) của tab, đọc lại mỗi lần đổi trang; "Đăng xuất" gọi `clearToken()` + `clearCheckout()` rồi về `/login`, chỉ tab đó bị đăng xuất. JWT không bị thu hồi ở backend (stateless, hết hạn sau 7 ngày).`
-- [ ] **Step 4:** Render lại khối PlantUML §2.3, mở PNG kiểm.
-- [ ] **Step 5: Commit.**
+- [x] **Step 4:** Render lại khối PlantUML §2.3, mở PNG kiểm.
+- [x] **Step 5: Commit.**
 
 ```bash
 git add frontend/src/components/Header.tsx docs/user-sequence-specifications.md

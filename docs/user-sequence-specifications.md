@@ -286,6 +286,13 @@ else Mật khẩu chính xác (Kịch bản thành công)
 end
 deactivate BE
 deactivate FE
+
+== LUỒNG 3: ĐĂNG XUẤT (chỉ ở giao diện, không gọi API) ==
+User -> FE : Bấm "Đăng xuất" trên header
+activate FE
+FE -> FE : Xóa token và đơn đang thanh toán dở của tab (sessionStorage)
+FE --> User : Về trang Đăng nhập (tab khác giữ nguyên phiên)
+deactivate FE
 @enduml
 ```
 
@@ -297,6 +304,7 @@ deactivate FE
 * **Mã phiên JWT:** Cấp chuỗi Bearer Token chứa `{ sub: user.id, email: user.email, role }` có thời hạn hết hạn (`expiresIn`); đăng nhập trả `{ accessToken, user: { id, email, role } }`.
 * **Vai trò (`User.role`):** `CUSTOMER` (mặc định) / `BARISTA` / `ADMIN`. Đăng ký công khai luôn tạo `CUSTOMER`; tài khoản quầy và quản trị chỉ có từ seed (`barista@brewlite.vn`, `admin@brewlite.vn`). `JwtAuthGuard` đưa `role` vào `req.user` (token cũ thiếu `role` coi là `CUSTOMER`), `RolesGuard` + `@Roles(...)` chặn theo vai trò (403). Giao diện chỉ đọc `role` từ JWT để điều hướng (`/` khách, `/barista`, `/admin`), quyền thật do backend chặn.
 * **Phiên đăng nhập theo tab:** token lưu ở `sessionStorage` (`saveToken()` / `getToken()` / `clearToken()` trong `frontend/src/lib/auth.ts`): đăng nhập barista ở tab này không đổi phiên khách ở tab khác, reload vẫn giữ, tab mở mới bằng URL phải đăng nhập lại. Test: `frontend/src/lib/auth.test.ts`.
+* **Header và Đăng xuất:** `frontend/src/components/Header.tsx` hiện email + nhãn vai trò (`ROLE_LABEL`: Khách / Quầy / Quản trị) của tab, đọc lại mỗi lần đổi trang; "Đăng xuất" gọi `clearToken()` + `clearCheckout()` rồi về `/login`, chỉ tab đó bị đăng xuất. JWT không bị thu hồi ở backend (stateless, hết hạn sau 7 ngày).
 
 ---
 
