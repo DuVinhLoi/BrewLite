@@ -84,12 +84,12 @@ Hiện tại cùng chủ gửi key K đã dùng cho đơn A kèm `orderId` B th�
 
 Đề §8 Task 2: "`GET /products` trả về JSON menu (id, tên, giá, ảnh)". Hiện seed không đặt `imageUrl`.
 
-- [ ] Tạo `frontend/public/images/{latte,americano,cappuccino,tra-dao}.svg`: SVG phẳng đơn giản (cốc, màu riêng từng món), mỗi file vài KB.
-- [ ] `backend/prisma/seed.ts`: đặt `imageUrl` cho p1–p4 ở cả `create` lẫn `update` (DB cũ được cập nhật khi khởi động lại).
-- [ ] `frontend/src/lib/mock-products.ts`: `imageUrl` dùng cùng bộ ảnh ("Cà phê sữa" dùng `latte.svg`). Sửa comment dòng 1 cho đúng code: menu mẫu chỉ dùng khi chưa cấu hình `NEXT_PUBLIC_API_URL`.
-- [ ] Kiểm trên compose: `GET /products` có `imageUrl`, trang menu hiện ảnh thay cho ☕.
-- [ ] Tài liệu: `user-sequence` §2.1 mục C (nguồn ảnh).
-- [ ] Commit `feat: anh mon cho menu (seed imageUrl + SVG tinh)`.
+- [x] Tạo `frontend/public/images/{latte,americano,cappuccino,tra-dao}.svg`: SVG phẳng đơn giản (cốc, màu riêng từng món), mỗi file vài KB.
+- [x] `backend/prisma/seed.ts`: đặt `imageUrl` cho p1–p4 ở cả `create` lẫn `update` (DB cũ được cập nhật khi khởi động lại).
+- [x] `frontend/src/lib/mock-products.ts`: `imageUrl` dùng cùng bộ ảnh ("Cà phê sữa" dùng `latte.svg`). Sửa comment dòng 1 cho đúng code: menu mẫu chỉ dùng khi chưa cấu hình `NEXT_PUBLIC_API_URL`.
+- [x] Kiểm trên compose: `GET /products` có `imageUrl`, trang menu hiện ảnh thay cho ☕.
+- [x] Tài liệu: `user-sequence` §2.1 mục C (nguồn ảnh).
+- [x] Commit `feat: anh mon cho menu (seed imageUrl + SVG tinh)`.
 
 ## Task 6: Demo nhánh thanh toán lỗi bằng biến môi trường (Spec 3, quyết định Q3)
 

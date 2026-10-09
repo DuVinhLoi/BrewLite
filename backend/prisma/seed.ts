@@ -26,18 +26,19 @@ async function main() {
   }
   await db.product.upsert({
     where: { id: 'p1' },
-    create: { id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 },
-    update: { price: 35000, stock: 10, version: 1 },
+    create: { id: 'p1', name: 'Latte', price: 35000, imageUrl: '/images/latte.svg', stock: 10, version: 1 },
+    update: { price: 35000, imageUrl: '/images/latte.svg', stock: 10, version: 1 },
   });
+  // imageUrl: SVG tĩnh trong frontend/public/images (đề §8 Task 2 cần ảnh); update ghi lại để DB cũ có ảnh sau khi khởi động lại
   for (const p of [
-    { id: 'p2', name: 'Americano', price: 40000 },
-    { id: 'p3', name: 'Cappuccino', price: 45000 },
-    { id: 'p4', name: 'Trà đào', price: 39000 },
+    { id: 'p2', name: 'Americano', price: 40000, imageUrl: '/images/americano.svg' },
+    { id: 'p3', name: 'Cappuccino', price: 45000, imageUrl: '/images/cappuccino.svg' },
+    { id: 'p4', name: 'Trà đào', price: 39000, imageUrl: '/images/tra-dao.svg' },
   ]) {
     await db.product.upsert({
       where: { id: p.id },
       create: { ...p, stock: 10, version: 1 },
-      update: { price: p.price, stock: 10, version: 1 },
+      update: { price: p.price, imageUrl: p.imageUrl, stock: 10, version: 1 },
     });
   }
   await db.orderItem.deleteMany({ where: { orderId: 'order-1042' } });

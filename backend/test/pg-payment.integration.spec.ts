@@ -41,6 +41,9 @@ pg('Task 8+10 on Postgres', () => {
 
   afterAll(async () => {
     await cleanOrders();
+    // món/user của test không được nằm lại trong DB demo (GET /products liệt kê mọi món còn kho)
+    await db.product.deleteMany({ where: { id: 'p-pg' } });
+    await db.user.deleteMany({ where: { id: 'u-pg' } });
     await db.$disconnect();
   });
 

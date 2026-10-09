@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="t">
+  <title id="t">Trà đào</title>
+  <rect width="240" height="240" rx="24" fill="#fde7dc"/>
+  <ellipse cx="120" cy="206" rx="64" ry="11" fill="#f5cdb8"/>
+  <path d="M154 40l12-24" stroke="#4d9a5f" stroke-width="7" stroke-linecap="round"/>
+  <path d="M68 52h104l-12 144a14 14 0 0 1-14 12h-52a14 14 0 0 1-14-12z" fill="#fff" opacity=".9"/>
+  <path d="M74 84h92l-9 112a10 10 0 0 1-10 9h-54a10 10 0 0 1-10-9z" fill="#f7a97a"/>
+  <rect x="88" y="94" width="30" height="30" rx="6" fill="#fff" opacity=".55" transform="rotate(-12 103 109)"/>
+  <rect x="122" y="108" width="28" height="28" rx="6" fill="#fff" opacity=".45" transform="rotate(10 136 122)"/>
+  <path d="M96 168a22 22 0 1 1 44 0z" fill="#ffd2b0"/>
+  <path d="M118 148v20" stroke="#f08a5d" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="84" cy="64" r="5" fill="#fff" opacity=".6"/>
+</svg>

@@ -138,6 +138,7 @@ deactivate FE
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
 * **Backend Endpoint:** `GET /products`. `GET /products/:id` có ở backend (404 khi không có) nhưng giao diện chưa gọi: modal chi tiết dùng dữ liệu món đã có trong danh sách. Đã chốt (2026-10-09): `ProductDetailModal` là "màn hình chi tiết" của Task 4; wireframe đề §7 chỉ để tham khảo nên không cần trang riêng.
+* **Ảnh món (đề §8 Task 2: JSON gồm id, tên, giá, ảnh):** `Product.imageUrl` là đường dẫn tương đối tới SVG tĩnh trong `frontend/public/images/` (`latte.svg`, `americano.svg`, `cappuccino.svg`, `tra-dao.svg`), trình duyệt tải từ chính frontend (`:3001`). `backend/prisma/seed.ts` đặt `imageUrl` cho p1–p4 ở cả `create` lẫn `update` nên DB cũ có ảnh sau khi backend khởi động lại. `ProductCard` hiện ảnh khi `imageUrl` khác rỗng, ngược lại hiện ☕. Menu mẫu (`frontend/src/lib/mock-products.ts`) dùng cùng bộ ảnh. Giai đoạn UI sau sẽ thay bằng ảnh thật. Test: `backend/test/seed-images.spec.ts`, `frontend/src/lib/mock-products.test.ts`.
 * **Controller / Service:** `ProductController.list()` / `detail()` $\rightarrow$ `ProductService.listAvailable()` / `getById()`
 * **Thực thể CSDL:** Bảng `Product` (lọc điều kiện `stock > 0`)
 * **Xử lý Frontend:** Quản lý state hiển thị bằng React State (`useState` + `fetch`), không dùng React Query.
