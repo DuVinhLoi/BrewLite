@@ -23,12 +23,15 @@ export class OrderService {
       if (!p) throw new NotFoundException('Product not found');
       const size = i.size ?? DEFAULT_SIZE;
       const toppings = i.toppings ?? [];
-      const unknown = toppings.find((t) => !(t in TOPPING_PRICES));
+      // `in` nhận cả khóa prototype ("constructor"), ra unitPrice NaN: phải kiểm khóa sở hữu
+      const unknown = toppings.find((t) => !Object.prototype.hasOwnProperty.call(TOPPING_PRICES, t));
       if (unknown) throw new BadRequestException(`Unknown topping: ${unknown}`);
       const unitPrice = p.price + SIZE_UPCHARGE[size] + toppings.reduce((s, t) => s + TOPPING_PRICES[t], 0);
       items.push({ productId: i.productId, quantity: i.quantity, unitPrice, size, toppings });
     }
     const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
+    // cột total là Int ở Postgres: vượt Int32 sẽ 500
+    if (total > 2147483647) throw new BadRequestException('Order total too large');
     return this.orders.save({
       id: randomUUID(),
       userId,

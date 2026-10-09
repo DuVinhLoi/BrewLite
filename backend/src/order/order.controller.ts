@@ -26,7 +26,7 @@ export class OrderController {
     // ?status=A&status=B tới dạng mảng: .split sẽ ném 500, nên báo 400
     if (typeof status !== 'string') throw new BadRequestException('status must be a comma-separated string');
     const list = status.split(',').map((s) => s.trim());
-    const bad = list.find((s) => !(s in OrderStatus));
+    const bad = list.find((s) => !Object.values(OrderStatus).includes(s as OrderStatus));
     if (bad) throw new BadRequestException(`Unknown status ${bad}`);
     return this.orders.listQueue(list as OrderStatus[]);
   }

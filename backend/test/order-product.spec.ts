@@ -4,6 +4,9 @@ import { OrderService } from '../src/order/order.service';
 import { InMemoryProductRepo } from '../src/stubs/in-memory-product.repo';
 import { InMemoryOrderRepo } from '../src/stubs/in-memory-order.repo';
 import { OrderStatus } from '../src/contracts/order.contract';
+import { CreateOrderDto } from '../src/order/dto/create-order.dto';
+import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 
 describe('products + orders (task 2,6)', () => {
   it('product list excludes stock-0', async () => {
@@ -43,6 +46,31 @@ describe('products + orders (task 2,6)', () => {
     await expect(svc.create('u1', { items: [{ productId: 'p1', quantity: 1, toppings: ['Vàng'] }] })).rejects.toBeInstanceOf(
       BadRequestException,
     );
+  });
+
+  it('order create: topping trùng khóa prototype ("constructor") → 400, không ra total NaN', async () => {
+    const pr = new InMemoryProductRepo();
+    await pr.save({ id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 });
+    const svc = new OrderService(new InMemoryOrderRepo(), pr);
+    for (const t of ['constructor', 'toString', '__proto__']) {
+      await expect(svc.create('u1', { items: [{ productId: 'p1', quantity: 1, toppings: [t] }] })).rejects.toThrow(`Unknown topping: ${t}`);
+    }
+  });
+
+  it('order create: tổng vượt Int32 → 400 Order total too large (không để Postgres ném 500)', async () => {
+    const pr = new InMemoryProductRepo();
+    await pr.save({ id: 'big', name: 'Vàng', price: 2_000_000_000, stock: 10, version: 1 });
+    const svc = new OrderService(new InMemoryOrderRepo(), pr);
+    await expect(svc.create('u1', { items: [{ productId: 'big', quantity: 2 }] })).rejects.toThrow('Order total too large');
+  });
+
+  it('CreateOrderDto: quantity tối đa 99 và tối đa 20 dòng', async () => {
+    const errs = async (items: object[]) => (await validate(plainToInstance(CreateOrderDto, { items }))).length;
+    const line = { productId: 'p1', quantity: 1 };
+    expect(await errs([{ ...line, quantity: 99 }])).toBe(0);
+    expect(await errs([{ ...line, quantity: 100 }])).toBeGreaterThan(0);
+    expect(await errs(Array(20).fill(line))).toBe(0);
+    expect(await errs(Array(21).fill(line))).toBeGreaterThan(0);
   });
 
   it('listMine returns newest-first', async () => {

@@ -48,6 +48,8 @@ describe('hàng đợi quầy GET /orders?status=', () => {
     const ctl = new OrderController(svc);
     expect((await ctl.queue('PAID,READY')).map((o) => o.id)).toEqual(['o-paid-early', 'o-ready', 'o-paid-late']);
     await expect(ctl.queue('PAID,FOO')).rejects.toBeInstanceOf(BadRequestException);
+    // khóa prototype không được coi là trạng thái hợp lệ (báo "Unknown status" chứ không lọt xuống service)
+    await expect(ctl.queue('constructor')).rejects.toThrow('Unknown status constructor');
   });
 
   test('controller: ?status= lặp lại (mảng) → 400 chứ không 500', async () => {

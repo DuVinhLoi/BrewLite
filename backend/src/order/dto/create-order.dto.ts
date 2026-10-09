@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsInt, IsOptional, IsString, ArrayMinSize, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsOptional, IsString, ArrayMaxSize, ArrayMinSize, Max, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SIZES, Size } from '../pricing';
 
@@ -8,6 +8,7 @@ export class OrderItemInput {
 
   @IsInt()
   @Min(1)
+  @Max(99)
   quantity!: number;
 
   // Không nhận unitPrice từ client: server tự tính từ product.price + size/topping (order/pricing.ts)
@@ -24,6 +25,7 @@ export class OrderItemInput {
 export class CreateOrderDto {
   @IsArray()
   @ArrayMinSize(1)
+  @ArrayMaxSize(20)
   @ValidateNested({ each: true })
   @Type(() => OrderItemInput)
   items!: OrderItemInput[];

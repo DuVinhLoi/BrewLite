@@ -37,12 +37,12 @@
 
 Lỗi đã tái hiện: topping `"constructor"` / `"toString"` lọt DTO và service (`t in TOPPING_PRICES` nhận khóa prototype), đơn có `total = NaN`, Postgres trả 500. `quantity` không có giới hạn trên nên tổng vượt Int32 cũng ra 500.
 
-- [ ] Test đỏ trong `backend/test/order-product.spec.ts`: topping `constructor` → 400; `quantity: 100` → lỗi DTO; 21 dòng → lỗi DTO; món giá rất lớn làm tổng > `2147483647` → 400 `Order total too large`.
-- [ ] `backend/src/order/order.service.ts`: kiểm topping bằng `hasOwnProperty.call`; sau khi tính `total`, vượt `2147483647` → `BadRequestException('Order total too large')`.
-- [ ] `backend/src/order/dto/create-order.dto.ts`: `quantity` thêm `@Max(99)`, `items` thêm `@ArrayMaxSize(20)`.
-- [ ] `backend/src/order/order.controller.ts:29`: thay `!(s in OrderStatus)` bằng `!Object.values(OrderStatus).includes(s as OrderStatus)`.
-- [ ] Tài liệu: `user-sequence` §2.4 (A.2, note DTO ở sơ đồ bước 2a), Phần III dòng UC04.
-- [ ] Commit `fix(backend): chan topping khoa prototype, gioi han so luong va tong don`.
+- [x] Test đỏ trong `backend/test/order-product.spec.ts`: topping `constructor` → 400; `quantity: 100` → lỗi DTO; 21 dòng → lỗi DTO; món giá rất lớn làm tổng > `2147483647` → 400 `Order total too large`.
+- [x] `backend/src/order/order.service.ts`: kiểm topping bằng `hasOwnProperty.call`; sau khi tính `total`, vượt `2147483647` → `BadRequestException('Order total too large')`.
+- [x] `backend/src/order/dto/create-order.dto.ts`: `quantity` thêm `@Max(99)`, `items` thêm `@ArrayMaxSize(20)`.
+- [x] `backend/src/order/order.controller.ts:29`: thay `!(s in OrderStatus)` bằng `!Object.values(OrderStatus).includes(s as OrderStatus)`.
+- [x] Tài liệu: `user-sequence` §2.4 (A.2, note DTO ở sơ đồ bước 2a), Phần III dòng UC04.
+- [x] Commit `fix(backend): chan topping khoa prototype, gioi han so luong va tong don`.
 
 ## Task 2: Hoàn đúng số thực thu khi hủy đơn `PAID` (Standards 3)
 
