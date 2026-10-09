@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -13,8 +13,10 @@ export class OrderController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(@Body() dto: CreateOrderDto, @Req() req: any) {
-    return this.orders.create(req.user.id, dto);
+  async create(@Body() dto: CreateOrderDto, @Headers('idempotency-key') key: string | undefined, @Req() req: any, @Res({ passthrough: true }) res: any) {
+    const r = await this.orders.create(req.user.id, dto, key);
+    res.status(r.isCached ? 200 : 201);
+    return r;
   }
 
   // UC08: GET /orders?status=PAID,PREPARING,READY — chỉ quầy/quản trị
@@ -26,7 +28,7 @@ export class OrderController {
     // ?status=A&status=B tới dạng mảng: .split sẽ ném 500, nên báo 400
     if (typeof status !== 'string') throw new BadRequestException('status must be a comma-separated string');
     const list = status.split(',').map((s) => s.trim());
-    const bad = list.find((s) => !(s in OrderStatus));
+    const bad = list.find((s) => !Object.values(OrderStatus).includes(s as OrderStatus));
     if (bad) throw new BadRequestException(`Unknown status ${bad}`);
     return this.orders.listQueue(list as OrderStatus[]);
   }

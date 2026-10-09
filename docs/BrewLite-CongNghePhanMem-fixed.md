@@ -371,10 +371,10 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 
 ### 12.2 Thực thể tối thiểu
 
-> **Ghi chú của nhóm:** đề gốc chỉ liệt kê *Product(id, name, price, imageUrl, stock)*, *OrderItem(id, orderId, productId, size, qty, lineTotal)*, *Payment(id, orderId, idempotencyKey, amount, method)*. Các trường thêm dưới đây là mở rộng của nhóm: `Product.version` (optimistic locking, §9 ý 3), `OrderItem.toppings` (§4.1 chọn topping), `Payment.status / discount / loyaltyPointsEarned` và `idempotencyKey @unique` (§9 ý 2, 4). Ngoài danh sách dưới đây, `User` còn cột `role` (`CUSTOMER` / `BARISTA` / `ADMIN`, mặc định `CUSTOMER`) để phân quyền cho phân hệ Pha chế và Quản trị, là mở rộng ngoài phạm vi MVP §3.2. Vẫn đúng 5 thực thể, không thêm bảng.
+> **Ghi chú của nhóm:** đề gốc chỉ liệt kê *Product(id, name, price, imageUrl, stock)*, *OrderItem(id, orderId, productId, size, qty, lineTotal)*, *Payment(id, orderId, idempotencyKey, amount, method)*. Các trường thêm dưới đây là mở rộng của nhóm: `Product.version` (optimistic locking, §9 ý 3), `OrderItem.toppings` (§4.1 chọn topping), `Payment.status / discount / loyaltyPointsEarned` và `idempotencyKey @unique` (§9 ý 2, 4), `Order.idempotencyKey @unique` (§9 ý 2 áp cho `POST /orders`: gửi 2 lần cùng key chỉ tạo 1 đơn). Ngoài danh sách dưới đây, `User` còn cột `role` (`CUSTOMER` / `BARISTA` / `ADMIN`, mặc định `CUSTOMER`) để phân quyền cho phân hệ Pha chế và Quản trị, là mở rộng ngoài phạm vi MVP §3.2. Vẫn đúng 5 thực thể, không thêm bảng.
 
 - **Product**(id, name, price, imageUrl, stock, version).
 - **User**(id, email, passwordHash, loyaltyPoints).
-- **Order**(id, userId, status, total, createdAt).
+- **Order**(id, userId, status, total, idempotencyKey @unique, createdAt).
 - **OrderItem**(id, orderId, productId, size, toppings, qty, lineTotal).
 - **Payment**(id, orderId, idempotencyKey @unique, amount, method, status, discount, loyaltyPointsEarned).

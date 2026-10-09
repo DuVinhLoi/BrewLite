@@ -31,5 +31,4 @@ export interface IUserRepository {
   findByEmail(email: string, tx?: TxContext): Promise<UserDto | null>;
   addLoyaltyPoints(id: string, points: number, tx?: TxContext): Promise<UserDto>;
   save(user: UserDto, tx?: TxContext): Promise<UserDto>;
-  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T>;
 }

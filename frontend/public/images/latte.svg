@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="t">
+  <title id="t">Latte</title>
+  <rect width="240" height="240" rx="24" fill="#fbeedd"/>
+  <ellipse cx="120" cy="196" rx="84" ry="14" fill="#e6cfb2"/>
+  <path d="M168 100h18a22 22 0 0 1 0 44h-22" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M52 92h116v52a46 46 0 0 1-46 46h-24a46 46 0 0 1-46-46z" fill="#fff"/>
+  <path d="M52 92h116v14H52z" fill="#c8a27c"/>
+  <ellipse cx="110" cy="92" rx="58" ry="10" fill="#d9b48a"/>
+  <path d="M110 96c-9-9-17-3-12 4 3 4 8 7 12 10 4-3 9-6 12-10 5-7-3-13-12-4z" fill="#fff" opacity=".85"/>
+  <g fill="none" stroke="#b08968" stroke-width="5" stroke-linecap="round" opacity=".7">
+    <path d="M90 66c-8-10 8-14 0-26"/>
+    <path d="M114 66c-8-10 8-14 0-26"/>
+    <path d="M138 66c-8-10 8-14 0-26"/>
+  </g>
+</svg>

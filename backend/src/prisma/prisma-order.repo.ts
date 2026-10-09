@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { IOrderRepository, OrderDto, OrderStatus } from '../contracts/order.contract';
 import { TxContext } from '../contracts/transaction.contract';
+import { DEFAULT_SIZE } from '../order/pricing';
 import { PrismaService } from './prisma.service';
 
 type OrderRow = Prisma.OrderGetPayload<{ include: { items: true } }>;
@@ -21,6 +22,7 @@ function toOrderDto(o: OrderRow): OrderDto {
       toppings: parseToppings(i.toppings),
     })),
     createdAt: o.createdAt,
+    idempotencyKey: o.idempotencyKey ?? undefined,
   };
 }
 
@@ -34,6 +36,11 @@ export class PrismaOrderRepo implements IOrderRepository {
 
   async findById(id: string, tx?: TxContext): Promise<OrderDto | null> {
     const o = await this.cx(tx).order.findUnique({ where: { id }, include: { items: true } });
+    return o ? toOrderDto(o) : null;
+  }
+
+  async findByIdempotencyKey(key: string, tx?: TxContext): Promise<OrderDto | null> {
+    const o = await this.cx(tx).order.findUnique({ where: { idempotencyKey: key }, include: { items: true } });
     return o ? toOrderDto(o) : null;
   }
 
@@ -59,10 +66,11 @@ export class PrismaOrderRepo implements IOrderRepository {
         userId: order.userId,
         status: order.status,
         total: order.total,
+        idempotencyKey: order.idempotencyKey ?? null, // trùng key thì Prisma ném P2002 (chỉ số unique)
         items: {
           create: order.items.map((i) => ({
             productId: i.productId,
-            size: i.size ?? 'M',
+            size: i.size ?? DEFAULT_SIZE,
             toppings: JSON.stringify(i.toppings ?? []),
             qty: i.quantity,
             lineTotal: i.unitPrice * i.quantity,

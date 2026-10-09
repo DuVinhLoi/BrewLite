@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { IProductRepository, ProductDto } from '../contracts/product.contract';
 import { TxContext } from '../contracts/transaction.contract';
-import { registerInMemoryRepo, runInMemoryTransaction, snapshotMap } from './in-memory-tx';
+import { registerInMemoryRepo, snapshotMap } from './in-memory-tx';
 
+// Lưu và trả bản sao (như Prisma trả hàng mới mỗi lần đọc): gọi bên ngoài không sửa được kho qua object nhận về
 @Injectable()
 export class InMemoryProductRepo implements IProductRepository {
   private store = new Map<string, ProductDto>();
@@ -18,15 +19,16 @@ export class InMemoryProductRepo implements IProductRepository {
   }
 
   async findById(id: string, _tx?: TxContext): Promise<ProductDto | null> {
-    return this.store.get(id) ?? null;
+    const p = this.store.get(id);
+    return p ? structuredClone(p) : null;
   }
 
   async findAvailable(_tx?: TxContext): Promise<ProductDto[]> {
-    return [...this.store.values()].filter((p) => p.stock > 0);
+    return [...this.store.values()].filter((p) => p.stock > 0).map((p) => structuredClone(p));
   }
 
   async findAll(_tx?: TxContext): Promise<ProductDto[]> {
-    return [...this.store.values()].sort((a, b) => a.name.localeCompare(b.name));
+    return [...this.store.values()].sort((a, b) => a.name.localeCompare(b.name)).map((p) => structuredClone(p));
   }
 
   async setStockWithOptimisticLock(id: string, stock: number, currentVersion: number, _tx?: TxContext): Promise<boolean> {
@@ -54,11 +56,7 @@ export class InMemoryProductRepo implements IProductRepository {
   }
 
   async save(product: ProductDto, _tx?: TxContext): Promise<ProductDto> {
-    this.store.set(product.id, product);
-    return product;
-  }
-
-  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T> {
-    return runInMemoryTransaction(() => fn(undefined));
+    this.store.set(product.id, structuredClone(product));
+    return structuredClone(product);
   }
 }

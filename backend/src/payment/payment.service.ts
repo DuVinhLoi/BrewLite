@@ -1,10 +1,11 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { IOrderRepository, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
 import { IPaymentRepository } from '../contracts/payment.contract';
 import { Actor, IUserRepository, isStaff } from '../contracts/user.contract';
 import { MockPaymentGatewayService } from './mock-payment-gateway.service';
 import { assertTransition } from '../state-machine/order-state.machine';
+import { assertIdempotencyKeyLength } from '../common/idempotency-key';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 
 const VOUCHER_CODE = 'BREWLITE10';
@@ -40,6 +41,7 @@ export class PaymentService {
   // chờ nhau, request sau đọc lại cache/trạng thái mới nên không gọi charge() lần 2
   async processPayment(userId: string, dto: CreatePaymentDto, idempotencyKey: string) {
     if (!idempotencyKey) throw new BadRequestException('Missing Idempotency-Key');
+    assertIdempotencyKeyLength(idempotencyKey);
     return this.withLock(`key:${idempotencyKey}`, () =>
       this.withLock(`order:${dto.orderId}`, () => this.pay(userId, dto, idempotencyKey)),
     );
@@ -58,8 +60,10 @@ export class PaymentService {
         const hitOrder = await this.orders.findById(hit.orderId);
         if (!hitOrder) throw new NotFoundException('Order not found');
         if (hitOrder.userId !== userId) throw new ForbiddenException('Not your order');
+        // cùng chủ nhưng key đã dùng cho đơn khác: không trả biên lai đơn cũ như thể đơn này đã trả (422, không dùng 409 vì FE gán 409 cho "hết hàng")
+        throw new UnprocessableEntityException('Idempotency-Key already used for another order');
       }
-      return { isCached: true, status: 'PAID', orderId: hit.orderId, amount: hit.amount, paymentId: hit.id, discount: hit.discount, loyaltyPointsEarned: hit.loyaltyPointsEarned };
+      return { isCached: true, status: OrderStatus.PAID, orderId: hit.orderId, amount: hit.amount, paymentId: hit.id, discount: hit.discount, loyaltyPointsEarned: hit.loyaltyPointsEarned };
     }
 
     const discount = dto.voucherCode === VOUCHER_CODE ? Math.floor(order.total * VOUCHER_RATE) : 0;
@@ -127,12 +131,12 @@ export class PaymentService {
       // để thử lại bằng key mới không trừ tiền lần 2; luôn ném lại lỗi gốc (lỗi của bước bù không được che nó).
       // ponytail: hoàn tiền/ghi PAYMENT_FAILED lỗi thì bỏ qua (chưa có sổ đối soát) — cần job đối soát nếu chạy thật
       await this.gateway.refund(order.id, finalAmount).catch(() => undefined);
-      // transaction đã rollback nên đơn đang PENDING (không đọc order.status: repo in-memory trả cùng object, đã bị đổi sang PAID)
-      assertTransition(OrderStatus.PENDING, OrderStatus.PAYMENT_FAILED);
+      // transaction đã rollback nên đơn vẫn ở trạng thái đã đọc ở đầu hàm (PENDING)
+      assertTransition(order.status, OrderStatus.PAYMENT_FAILED);
       await this.orders.updateStatus(order.id, OrderStatus.PAYMENT_FAILED).catch(() => undefined);
       throw e;
     }
-    return { isCached: false, status: 'PAID', orderId: order.id, amount: finalAmount, discount, loyaltyPointsEarned: points, paymentId };
+    return { isCached: false, status: OrderStatus.PAID, orderId: order.id, amount: finalAmount, discount, loyaltyPointsEarned: points, paymentId };
   }
 
   async cancelOrder(orderId: string) {
@@ -147,7 +151,8 @@ export class PaymentService {
       // UC06 KB3: hoàn đúng số tiền thực thu = cộng mọi biên lai SUCCESS của đơn
       const receipts = await this.payments.findAllByOrderId(order.id);
       const collected = receipts.filter((p) => p.status === 'SUCCESS').reduce((s, p) => s + p.amount, 0);
-      await this.gateway.refund(order.id, collected > 0 ? collected : order.total);
+      // không có biên lai SUCCESS (đơn PAID tạo ngoài luồng thanh toán) thì chưa thu đồng nào: không hoàn
+      if (collected > 0) await this.gateway.refund(order.id, collected);
       // hoàn kho (mọi món) + CANCELLED trong 1 transaction: lỗi giữa chừng thì rollback, đơn vẫn PAID, kho không đổi dở.
       // ponytail: refund nằm ngoài transaction (gọi cổng ngoài) — transaction lỗi sau refund thì tiền đã hoàn mà đơn vẫn PAID, hủy lại sẽ hoàn lần 2
       return this.orders.runInTransaction(async (tx) => {

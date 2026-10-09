@@ -1,7 +1,8 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { IOrderRepository, OrderDto, OrderItemDto, OrderStatus } from '../contracts/order.contract';
 import { IProductRepository } from '../contracts/product.contract';
+import { assertIdempotencyKeyLength } from '../common/idempotency-key';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { DEFAULT_SIZE, SIZE_UPCHARGE, TOPPING_PRICES } from './pricing';
 
@@ -15,7 +16,14 @@ export class OrderService {
     private products: IProductRepository,
   ) {}
 
-  async create(userId: string, dto: CreateOrderDto) {
+  // Đề §9 tiêu chí (b): cùng Idempotency-Key chỉ tạo 1 đơn. Key đã có → trả lại đơn cũ (isCached), không so sánh nội dung giỏ
+  // (FE giữ 1 key cho 1 giỏ). Key của người khác → 422.
+  async create(userId: string, dto: CreateOrderDto, idempotencyKey?: string): Promise<OrderDto & { isCached: boolean }> {
+    if (idempotencyKey) {
+      assertIdempotencyKeyLength(idempotencyKey);
+      const hit = await this.orders.findByIdempotencyKey(idempotencyKey);
+      if (hit) return this.replay(userId, hit);
+    }
     // Giá tính lại hoàn toàn ở server: client sửa giá trong request không có tác dụng
     const items = [];
     for (const i of dto.items) {
@@ -23,20 +31,37 @@ export class OrderService {
       if (!p) throw new NotFoundException('Product not found');
       const size = i.size ?? DEFAULT_SIZE;
       const toppings = i.toppings ?? [];
-      const unknown = toppings.find((t) => !(t in TOPPING_PRICES));
+      // `in` nhận cả khóa prototype ("constructor"), ra unitPrice NaN: phải kiểm khóa sở hữu
+      const unknown = toppings.find((t) => !Object.prototype.hasOwnProperty.call(TOPPING_PRICES, t));
       if (unknown) throw new BadRequestException(`Unknown topping: ${unknown}`);
       const unitPrice = p.price + SIZE_UPCHARGE[size] + toppings.reduce((s, t) => s + TOPPING_PRICES[t], 0);
       items.push({ productId: i.productId, quantity: i.quantity, unitPrice, size, toppings });
     }
     const total = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
-    return this.orders.save({
-      id: randomUUID(),
-      userId,
-      status: OrderStatus.PENDING,
-      total,
-      items,
-      createdAt: new Date(),
-    });
+    // cột total là Int ở Postgres: vượt Int32 sẽ 500
+    if (total > 2147483647) throw new BadRequestException('Order total too large');
+    try {
+      const saved = await this.orders.save({
+        id: randomUUID(),
+        userId,
+        status: OrderStatus.PENDING,
+        total,
+        items,
+        createdAt: new Date(),
+        idempotencyKey,
+      });
+      return { ...saved, isCached: false };
+    } catch (e) {
+      // 2 request song song cùng key: bên thua vi phạm chỉ số unique, đọc lại đơn của bên thắng thay vì tạo đơn thứ 2
+      const hit = idempotencyKey ? await this.orders.findByIdempotencyKey(idempotencyKey) : null;
+      if (hit) return this.replay(userId, hit);
+      throw e;
+    }
+  }
+
+  private replay(userId: string, hit: OrderDto) {
+    if (hit.userId !== userId) throw new UnprocessableEntityException('Idempotency-Key already used by another user');
+    return { ...hit, isCached: true };
   }
 
   listMine(userId: string) {

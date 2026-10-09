@@ -84,3 +84,62 @@ Quy tắc chung:
 **Đồng bộ đề → code → tài liệu (2026-10-09, `db47dda`):** đã đối chiếu và sửa `use-case-specifications.md` + `user-sequence-specifications.md` theo code (plan `docs/planning/2026-10-09-doc-code-sync-plan.md`, rule `.claude/rules/doc-code-sync.md`). Chạy lại suite pg trên Postgres compose (`localhost:5432`, volume cũ nên `prisma migrate deploy` áp thêm migration `user_role`; trước đó `npx prisma generate`): `pg-payment.integration.spec.ts` pass (1 test). Chạy lại không có `DATABASE_URL`: backend `npx jest` 104 pass / 1 skip (gồm `bootstrap-env.spec.ts`: thiếu `DATABASE_URL` thì backend không khởi động), frontend `npx vitest run` 89 pass.
 
 **Còn lại:** chưa có bước duyệt tay trên trình duyệt (`/barista`, `/admin`, `/history` của khách); việc này người dùng sẽ tự làm.
+
+## 6. Hoàn thiện nghiệp vụ backend theo đề (2026-10-09, nhánh `fix/backend-hardening`)
+
+> Nguồn: `/code-review` toàn bộ backend (2 trục Standards và Spec) rồi chạy thử lại từng lỗi; plan đã xong nên đã xóa khỏi `docs/planning/`, bản đầy đủ: `git show b2bb5f6:docs/planning/2026-10-09-backend-hardening-plan.md` (Task 0 → Task 9, mỗi task 1 commit).
+
+| Task | Commit | Nội dung |
+|---|---|---|
+| 1 | `9344b9c` | Topping trùng khóa prototype (`constructor`) trước đây ra `total = NaN` rồi Postgres 500: nay 400. `quantity` tối đa 99, tối đa 20 dòng, tổng đơn vượt Int32 → 400 `Order total too large`. |
+| 2 | `facd300` | Hủy đơn `PAID` chỉ hoàn số thực thu; không có biên lai thì không gọi hoàn tiền (bỏ nhánh hoàn theo `order.total`). |
+| 3 | `a37842f` | Key `Idempotency-Key` đã dùng cho đơn khác (cùng chủ) → 422, không trả biên lai đơn cũ. |
+| 4 | `bd3fb8b` | `Idempotency-Key` cho `POST /orders` (đề §9 tiêu chí b): cột `Order.idempotencyKey @unique` (migration `20261009120000_order_idempotency_key`), cùng key cùng người → 200 trả lại đơn cũ, người khác → 422, song song → 1 đơn (bắt `P2002`). Frontend giữ 1 key tạo đơn. |
+| 5 | `751e734` | Ảnh món: 4 SVG tĩnh ở `frontend/public/images`, seed đặt `imageUrl`, menu mẫu dùng cùng bộ ảnh. |
+| 6 | `a4ba4d5` | `MOCK_GATEWAY_DECLINE_METHOD` (`CARD` / `WALLET`) để demo `PAYMENT_FAILED` không sửa code. |
+| 7 | `049327b` | Đơn seed `order-1042` đổi size M → S để 35.000đ đúng bảng giá. |
+| 8 | `2b819ed` | Dọn smell, không đổi hành vi: repo in-memory lưu/trả bản sao, `toRole()`, xóa mã chết, `PrismaModule` toàn cục, hằng thay chuỗi. |
+| 9 | `cbf1f85`, `8230566`, `7081334` + commit báo cáo | Finding sau review: key quá dài (3200 ký tự ngẫu nhiên) làm cả `POST /orders` và `POST /payments` trả 500 → nay 400 `Idempotency-Key too long` (> 255 ký tự); sửa kiểu trong `mock-products.test.ts`; giỏ hàng chặn 99 mỗi dòng khớp DTO. |
+
+**Số test (chạy lại 2026-10-09):** backend `npx jest` **122 pass / 2 skip** (không có `DATABASE_URL`; baseline 104 / 1 skip), **124 pass** khi có Postgres (gồm 2 test pg); `npx tsc --noEmit` sạch ở cả backend và frontend; frontend `npx vitest run` **94 pass** (baseline 89).
+
+**Smoke trên compose thật** (`docker compose up -d --build`, DB mới migrate + seed): `GET /products` có `imageUrl` cho 4 món và `:3001/images/latte.svg` trả 200; `POST /orders` hai lần cùng key → cùng `id`, lần 2 là 200; topping `constructor` → 400; key khác chủ → 422; key đơn cũ gửi kèm đơn khác → 422; `MOCK_GATEWAY_DECLINE_METHOD=CARD` → trả Thẻ 400 (đơn `PAYMENT_FAILED`), thử lại bằng Ví → 201 (đơn `PAID`); tắt biến → dựng lại backend, biến rỗng. Thời gian (`curl -w %{time_total}`, đề §4.2 yêu cầu API < 500ms): `GET /products` 5ms, `POST /orders` 15ms, `POST /payments` 16ms.
+
+**PlantUML:** 9 khối của `user-sequence-specifications.md` và 2 khối của `use-case-specifications.md` render bằng PlantUML 1.2024.7 (SHA-1 khớp trang Maven), exit 0, 8 sơ đồ sequence + 1 sơ đồ trạng thái; đã mở PNG sơ đồ §2.4 xem nhánh `Idempotency-Key` ở bước 2a và nhánh 422 ở bước 21, không có "Syntax Error".
+
+**Giới hạn còn lại (chưa sửa, cần quyết định):**
+- ~~Mất phản hồi sau khi đã trả tiền~~ — **đã sửa** (phương án A, nhánh `fix/backend-hardening`): `PaymentForm` giữ một key trả tiền cho cả phiên màn Thanh toán, bấm lại cùng key thì backend trả lại biên lai cũ (200) thay vì 400 `PAID -> PAID`. Lần trả lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. Reload hoặc rời màn rồi vào lại (giỏ không đổi) nay cũng giữ được `orderId` và key: plan `docs/planning/2026-10-09-demo-session-plan.md` Task 2.
+- Chưa kiểm bằng mắt trên trình duyệt: ảnh món có hiện thay cho ☕ không, màn Thanh toán khi đổi Thẻ → Ví (môi trường làm việc không có trình duyệt).
+- Giỏ hàng chưa chặn quá 20 dòng khác nhau (DTO chặn 20); cần 21 tổ hợp size/topping khác nhau mới gặp.
+
+### 6.1 Phương án A: giữ một key trả tiền cho mỗi màn Thanh toán (2026-10-09)
+
+> Plan đã xong nên đã xóa khỏi `docs/planning/`, bản đầy đủ: `git show b2bb5f6:docs/planning/2026-10-09-payment-retry-key-plan.md`. Commit: `57fd521` (plan), `1998d45` (test ghim hành vi backend), `4c1675c` (frontend + tài liệu).
+
+- **Lỗi đã sửa:** đã trả tiền mà mất phản hồi, bấm lại thì giao diện sinh key mới nên backend trả 400 `Invalid transition PAID -> PAID`. Nay `PaymentForm` giữ `payKey` (cạnh `orderKey`), bấm lại cùng key thì backend trả lại biên lai cũ (200, `isCached: true`).
+- **Vì sao an toàn:** backend chỉ lưu key khi trả thành công; lần lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. `PaymentForm` chỉ render khi `step === 'payment'` (`cart/page.tsx:41`), nên mỗi lần vào lại màn thanh toán là một instance mới với cặp key mới.
+- **Test mới:** 2 test backend ghim "lỗi rồi thử lại cùng key" (Thẻ bị từ chối → Ví; kẹt kho 409 → nhập kho), 1 test gateway frontend (`/payments` rớt mạng rồi thử lại cùng key → `PAID`, chỉ 1 lần `POST /orders`). Không có test bấm nút trong component (vitest chạy môi trường `node`, không có jsdom hay testing-library; không thêm phụ thuộc).
+- **Smoke compose:** trả 2 lần cùng key → 201 rồi 200, cùng `paymentId`; `MOCK_GATEWAY_DECLINE_METHOD=CARD` (qua `.env`) → Thẻ với K2 trả 400, Ví cùng K2 trả 201, 1 biên lai theo K2; xóa biến, dựng lại backend → Thẻ trả được (201).
+- **Không làm:** hủy ở tab khác rồi bấm lại cùng key vẫn nhận biên lai cũ kèm đơn `CANCELLED` (cache trả kết quả đã lưu, đúng §2.4; muốn sửa phải đổi backend và giao diện).
+
+## 7. Demo mượt (2026-10-09, nhánh `fix/backend-hardening`)
+
+> Plan `docs/planning/2026-10-09-demo-session-plan.md`. Mục tiêu: demo khách và barista cùng lúc trên 2 tab, đơn đang trả dở không mất khi reload, lịch sử và tồn kho giữ qua các lần bật container, quầy chỉ hiện đơn khách thật sự đặt.
+
+| Task | Commit | Nội dung |
+|---|---|---|
+| 1 | `ad3be60` | Token chuyển từ `localStorage` (chung mọi tab) sang `sessionStorage` (mỗi tab một phiên) qua `saveToken` / `getToken` / `clearToken`. Lỗi gốc: đăng nhập barista ở tab 2 ghi đè phiên khách ở tab 1 (đã tái hiện bằng test 2 tab trước khi sửa) |
+| 2 | `08941a6` | Phiên thanh toán của tab (`checkout-session.ts`): `orderId` + `orderKey` + `payKey` lưu `sessionStorage` theo dấu vân tay giỏ; reload hoặc quay lại giỏ rồi vào lại vẫn trả tiếp đúng đơn. `PaymentError` mang `status` + `detail`; `dropsCheckout` bỏ phiên khi đơn không trả tiếp được (400 sai trạng thái, 403, 404, 422) |
+| 3 | `ebafb05` | Header hiện email + vai trò của tab và nút Đăng xuất (chỉ đăng xuất tab đó) |
+| 4 | `313cebb` | Seed chỉ tạo dữ liệu còn thiếu: không xóa / tạo `order-1042`, không đặt lại tồn kho, `version`, điểm thưởng (chỉ đặt lại mật khẩu demo) |
+| 5 | `f9fa917`, `8559a24` | `npm run smoke:clean` dọn tài khoản `@smoke.test` cùng đơn, biên lai, hoàn kho đơn đã trừ kho; quy ước dùng `@smoke.test` ghi vào README và rule |
+
+**Số test (chạy lại 2026-10-09):** backend `npx jest` **122 pass / 3 skip** (không có `DATABASE_URL`), `npx jest pg-` **3 pass** khi có Postgres (2 suite); frontend `npx vitest run` **117 pass** (baseline 94; +6 Task 1, +17 Task 2); `npx tsc --noEmit` sạch ở cả hai.
+
+**Smoke trên compose** (`docker compose up -d --build`, chỉ dùng tài khoản `@smoke.test`): log `seeded` mới có dòng "giữ nguyên đơn và tồn kho đã có"; đăng ký `smoke-<số>@smoke.test`, đặt và trả 1 đơn `p1` × 1 (stock 10 → 9); barista thấy đơn trong hàng đợi; `docker compose restart backend` rồi `GET /orders/me` vẫn có đơn `PAID` và stock `p1` vẫn 9 (seed không đặt lại); `docker compose exec backend npm run smoke:clean` → "xóa 1 tài khoản @smoke.test, 1 đơn", đơn biến khỏi hàng đợi, stock `p1` về 10, không còn tài khoản `@smoke.test`.
+
+**Review (trục Standards và Spec, chạy trực tiếp):** 1 finding đã sửa: `smoke:clean` dùng transaction tương tác của Prisma với timeout mặc định 5 giây, hàng trăm đơn smoke sẽ hết giờ và không dọn được gì; nay timeout 60 giây (`8559a24`). Hai chỗ lệch nhỏ so với code mẫu trong plan: `auth.test.ts` dùng `Array.from(map.keys())` thay vì spread vì `tsc` của frontend không cho spread iterator; không có gì khác.
+
+**Việc còn cần người làm:**
+1. Kiểm bằng mắt trên trình duyệt: tab 1 khách, tab 2 barista, reload cả hai vẫn đúng tài khoản, header mỗi tab hiện email + vai trò; khách đặt và trả 1 đơn, tab barista thấy đơn ở cột "Chờ pha" trong 5 giây; Đăng xuất ở tab 1 không làm tab 2 mất phiên; với `MOCK_GATEWAY_DECLINE_METHOD=CARD`: trả Thẻ lỗi → reload → bấm "Thanh toán" → trả Ví thành công, `/history` chỉ có 1 đơn.
+2. ~~Xác nhận làm sạch DB demo một lần~~ — **đã xong (2026-10-09):** volume `brewlite_pgdata` được tạo lại lúc 18:13 (`down -v` rồi `up -d --build`), xóa 11 đơn `PAID` rác, các tài khoản test và đơn `order-1042` cũ. Dữ liệu smoke tạo sau đó (kiểm trình duyệt và 1 đơn kiểm tay, 3 tài khoản `@smoke.test`, 5 đơn) đã dọn bằng `npm run smoke:clean`. DB còn đúng 3 tài khoản demo, 0 đơn, kho 4 món đều 10.

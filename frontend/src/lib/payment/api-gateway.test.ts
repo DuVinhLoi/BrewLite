@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { ApiPaymentGateway } from './api-gateway';
 import { PaymentError } from './types';
+import { clearToken, saveToken } from '../auth';
 
 // UC06 KB1: thử lại sau lỗi trừ tiền phải trả tiếp ĐƠN CŨ (PAYMENT_FAILED -> PENDING),
 // không tạo đơn mới — gateway trả orderId trong lỗi để UI giữ lại.
@@ -9,7 +10,7 @@ const json = (status: number, body: unknown) =>
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  localStorage.removeItem('brewlite-token');
+  clearToken();
 });
 
 describe('ApiPaymentGateway retry', () => {
@@ -20,7 +21,7 @@ describe('ApiPaymentGateway retry', () => {
       .mockResolvedValueOnce(json(400, { message: 'Payment failed' }))
       .mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 40000 }));
     vi.stubGlobal('fetch', fetchMock);
-    localStorage.setItem('brewlite-token', 'tok-1');
+    saveToken('tok-1');
     const gw = new ApiPaymentGateway();
     const items = [{ productId: 'p1', quantity: 1, size: 'M' }];
 
@@ -83,6 +84,77 @@ describe('ApiPaymentGateway retry', () => {
     expect(JSON.parse(init.body)).toEqual({
       items: [{ productId: 'p1', quantity: 2, size: 'L', toppings: ['Trân châu'] }],
     });
+  });
+
+  test('PaymentError mang mã HTTP và message backend để giao diện quyết định giữ hay bỏ đơn đang trả dở', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json(400, { message: 'Payment failed' }))
+      .mockResolvedValueOnce(json(400, { message: 'Invalid transition CANCELLED -> PAID' }))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', fetchMock);
+    const gw = new ApiPaymentGateway();
+    const req = { amount: 1, method: 'WALLET' as const, idempotencyKey: 'k', orderId: 'o1' };
+    expect(await gw.pay(req).catch((e) => e)).toMatchObject({ orderId: 'o1', status: 400, detail: 'Payment failed' });
+    expect(await gw.pay(req).catch((e) => e)).toMatchObject({ status: 400, detail: 'Invalid transition CANCELLED -> PAID' });
+    const net = await gw.pay(req).catch((e) => e);
+    expect(net).toBeInstanceOf(PaymentError);
+    expect(net.status).toBeUndefined();
+  });
+
+  // Đề §9 tiêu chí (b) cho POST /orders: header Idempotency-Key của đơn khác key của POST /payments
+  test('POST /orders gửi Idempotency-Key = orderIdempotencyKey; POST /payments dùng key riêng', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json(201, { id: 'order-1' }))
+      .mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 1 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await new ApiPaymentGateway().pay({ amount: 1, method: 'WALLET', idempotencyKey: 'pay-key', orderIdempotencyKey: 'order-key', items: [{ productId: 'p1', quantity: 1 }] });
+    expect(fetchMock.mock.calls[0][1].headers['Idempotency-Key']).toBe('order-key');
+    expect(fetchMock.mock.calls[1][1].headers['Idempotency-Key']).toBe('pay-key');
+  });
+
+  test('tạo đơn lỗi mạng rồi thử lại với cùng orderIdempotencyKey → backend gộp về 1 đơn', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(json(200, { id: 'order-1', isCached: true }))
+      .mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 1 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const gw = new ApiPaymentGateway();
+    const req = { amount: 1, method: 'WALLET' as const, orderIdempotencyKey: 'order-key', items: [{ productId: 'p1', quantity: 1 }] };
+    await expect(gw.pay({ ...req, idempotencyKey: 'k1' })).rejects.toBeInstanceOf(PaymentError);
+    await expect(gw.pay({ ...req, idempotencyKey: 'k2' })).resolves.toMatchObject({ status: 'PAID' });
+    expect(fetchMock.mock.calls[0][1].headers['Idempotency-Key']).toBe('order-key');
+    expect(fetchMock.mock.calls[1][1].headers['Idempotency-Key']).toBe('order-key');
+  });
+
+  // Phương án A: PaymentForm giữ 1 key trả tiền cho cả phiên màn Thanh toán. Đã trả mà mất phản hồi, bấm lại cùng key
+  // thì backend trúng cache (200 biên lai cũ) thay vì 400 PAID -> PAID như khi key mới.
+  test('/payments rớt mạng rồi thử lại CÙNG idempotencyKey → PAID; 2 lần /payments cùng header, chỉ 1 lần POST /orders', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json(201, { id: 'order-1' }))
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(json(200, { isCached: true, orderId: 'order-1', amount: 40000 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const gw = new ApiPaymentGateway();
+    const items = [{ productId: 'p1', quantity: 1 }];
+
+    const err = await gw.pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'pay-key', orderIdempotencyKey: 'order-key', items }).catch((e) => e);
+    expect(err).toBeInstanceOf(PaymentError);
+    expect(err.orderId).toBe('order-1'); // đơn đã tạo: lần thử lại không tạo đơn mới
+
+    const r = await gw.pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'pay-key', orderId: err.orderId });
+    expect(r).toMatchObject({ status: 'PAID', amount: 40000 });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const urls = fetchMock.mock.calls.map(([u]) => String(u));
+    expect(urls.filter((u) => u.endsWith('/orders'))).toHaveLength(1);
+    const payCalls = fetchMock.mock.calls.filter(([u]) => String(u).endsWith('/payments'));
+    expect(payCalls).toHaveLength(2);
+    expect(payCalls[0][1].headers['Idempotency-Key']).toBe('pay-key');
+    expect(payCalls[1][1].headers['Idempotency-Key']).toBe('pay-key');
   });
 
   // Backend trả JSON { message, error, statusCode }: UI chỉ được thấy câu tiếng Việt, không phải JSON thô

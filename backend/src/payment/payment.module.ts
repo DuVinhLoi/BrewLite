@@ -11,7 +11,6 @@ import { InMemoryOrderRepo } from '../stubs/in-memory-order.repo';
 import { InMemoryProductRepo } from '../stubs/in-memory-product.repo';
 import { InMemoryPaymentRepo } from '../stubs/in-memory-payment.repo';
 import { InMemoryUserRepo } from '../stubs/in-memory-user.repo';
-import { PrismaService } from '../prisma/prisma.service';
 import { PrismaOrderRepo } from '../prisma/prisma-order.repo';
 import { PrismaProductRepo } from '../prisma/prisma-product.repo';
 import { PrismaPaymentRepo } from '../prisma/prisma-payment.repo';
@@ -40,7 +39,7 @@ const UserRepo = useDb ? PrismaUserRepo : InMemoryUserRepo;
       inject: [OrderRepo, ProductRepo, PaymentRepo, UserRepo, MockPaymentGatewayService],
     },
     MockPaymentGatewayService,
-    ...(useDb ? [PrismaService, PrismaOrderRepo, PrismaProductRepo, PrismaPaymentRepo, PrismaUserRepo] : [InMemoryOrderRepo, InMemoryProductRepo, InMemoryPaymentRepo, InMemoryUserRepo]),
+    ...(useDb ? [PrismaOrderRepo, PrismaProductRepo, PrismaPaymentRepo, PrismaUserRepo] : [InMemoryOrderRepo, InMemoryProductRepo, InMemoryPaymentRepo, InMemoryUserRepo]),
   ],
 })
 export class PaymentModule {}

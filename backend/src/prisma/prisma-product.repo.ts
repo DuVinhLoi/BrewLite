@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import type { Product as ProductRow } from '@prisma/client';
 import { IProductRepository, ProductDto } from '../contracts/product.contract';
 import { TxContext } from '../contracts/transaction.contract';
 import { PrismaService } from './prisma.service';
+
+function toProductDto(p: ProductRow): ProductDto {
+  return { id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl ?? undefined, stock: p.stock, version: p.version };
+}
 
 @Injectable()
 export class PrismaProductRepo implements IProductRepository {
@@ -13,18 +18,17 @@ export class PrismaProductRepo implements IProductRepository {
 
   async findById(id: string, tx?: TxContext): Promise<ProductDto | null> {
     const p = await this.cx(tx).product.findUnique({ where: { id } });
-    if (!p) return null;
-    return { id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl ?? undefined, stock: p.stock, version: p.version };
+    return p && toProductDto(p);
   }
 
   async findAvailable(tx?: TxContext): Promise<ProductDto[]> {
     const list = await this.cx(tx).product.findMany({ where: { stock: { gt: 0 } } });
-    return list.map((p) => ({ id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl ?? undefined, stock: p.stock, version: p.version }));
+    return list.map(toProductDto);
   }
 
   async findAll(tx?: TxContext): Promise<ProductDto[]> {
     const list = await this.cx(tx).product.findMany({ orderBy: { name: 'asc' } });
-    return list.map((p) => ({ id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl ?? undefined, stock: p.stock, version: p.version }));
+    return list.map(toProductDto);
   }
 
   async setStockWithOptimisticLock(id: string, stock: number, currentVersion: number, tx?: TxContext): Promise<boolean> {
@@ -51,10 +55,6 @@ export class PrismaProductRepo implements IProductRepository {
       create: { id: product.id, name: product.name, price: product.price, imageUrl: product.imageUrl, stock: product.stock, version: product.version },
       update: { name: product.name, price: product.price, imageUrl: product.imageUrl, stock: product.stock, version: product.version },
     });
-    return { id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl ?? undefined, stock: p.stock, version: p.version };
-  }
-
-  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T> {
-    return this.db.$transaction((tx) => fn(tx));
+    return toProductDto(p);
   }
 }

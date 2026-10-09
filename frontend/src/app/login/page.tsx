@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { TOKEN_KEY, homeFor, roleFromToken } from '@/lib/auth';
+import { homeFor, roleFromToken, saveToken } from '@/lib/auth';
+import { clearCheckout } from '@/lib/payment/checkout-session';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -30,7 +31,8 @@ export default function LoginPage() {
         setMode('login');
         setError(null);
       } else {
-        localStorage.setItem(TOKEN_KEY, data.accessToken);
+        saveToken(data.accessToken);
+        clearCheckout(); // tài khoản mới trong tab: bỏ đơn đang trả dở của phiên trước
         router.push(homeFor(roleFromToken(data.accessToken) ?? 'CUSTOMER'));
       }
     } catch (err) {

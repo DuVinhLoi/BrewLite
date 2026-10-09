@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { PaymentController } from '../src/payment/payment.controller';
@@ -107,6 +107,18 @@ describe('Task 8+10 integration (b/c)', () => {
     await svc.cancelOrder('o1');
     expect(gateway.refunds).toEqual([{ orderId: 'o1', amount: 31500 }]);
     expect((await products.findById('p1'))!.stock).toBe(10);
+  });
+
+  // Không có biên lai SUCCESS thì chưa thu đồng nào: không được hoàn theo order.total (sẽ hoàn khống)
+  test('cancel PAID không có biên lai SUCCESS → hoàn kho + CANCELLED nhưng không gọi hoàn tiền', async () => {
+    const { orders, products, users, gateway, svc } = setup();
+    await products.save({ id: 'p1', name: 'Latte', price: 35000, stock: 4, version: 1 });
+    await users.save({ id: 'u1', email: 'a@b.c', loyaltyPoints: 0 });
+    await orders.save({ id: 'o1', userId: 'u1', status: OrderStatus.PAID, total: 35000, items: [{ productId: 'p1', quantity: 1, unitPrice: 35000 }], createdAt: new Date() });
+    await svc.cancelOrder('o1');
+    expect(gateway.refunds).toEqual([]);
+    expect((await orders.findById('o1'))!.status).toBe(OrderStatus.CANCELLED);
+    expect((await products.findById('p1'))!.stock).toBe(5);
   });
 
   test('cancel PENDING issues no refund', async () => {
@@ -245,6 +257,27 @@ describe('payment ownership (POST /payments)', () => {
     expect((await s.orders.findById('o2'))!.status).toBe(OrderStatus.PENDING);
   });
 
+  // Cùng chủ nhưng key đã dùng cho đơn khác: trước đây trả 200 PAID của đơn cũ trong khi đơn mới vẫn PENDING
+  test('cache hit chéo đơn cùng chủ: key của o1 gửi kèm o3 (cũng của u1) → 422, không charge, o3 vẫn PENDING', async () => {
+    const s = setup();
+    await seed(s);
+    await s.orders.save({ id: 'o3', userId: 'u1', status: OrderStatus.PENDING, total: 20000, items: [{ productId: 'p1', quantity: 1, unitPrice: 20000 }], createdAt: new Date() });
+    await s.svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'K-X6');
+    await expect(s.svc.processPayment('u1', { orderId: 'o3', paymentMethod: 'WALLET' }, 'K-X6')).rejects.toBeInstanceOf(UnprocessableEntityException);
+    expect(s.gateway.getCallCount()).toBe(1);
+    expect((await s.orders.findById('o3'))!.status).toBe(OrderStatus.PENDING);
+    // gửi lại đúng cặp (key, o1) vẫn trả bản cache
+    await expect(s.svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'K-X6')).resolves.toMatchObject({ isCached: true, orderId: 'o1' });
+  });
+
+  test('Idempotency-Key dài hơn 255 ký tự → 400, không charge, đơn vẫn PENDING (tránh 500 từ chỉ số unique)', async () => {
+    const s = setup();
+    await seed(s);
+    await expect(s.svc.processPayment('u1', { orderId: 'o1', paymentMethod: 'WALLET' }, 'k'.repeat(256))).rejects.toThrow('Idempotency-Key too long');
+    expect(s.gateway.getCallCount()).toBe(0);
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PENDING);
+  });
+
   test('PaymentController: gắn JwtAuthGuard và truyền req.user.id vào service', async () => {
     const s = setup();
     await seed(s);
@@ -349,5 +382,21 @@ describe('lỗi sau charge thành công → hoàn tiền + PAYMENT_FAILED', () =
     await expect(s.svc.processPayment('u1', dto, 'K-E5')).rejects.toBeInstanceOf(ConflictException);
     expect(s.gateway.refunds).toEqual([{ orderId: 'o1', amount: 35000 }]);
     expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAYMENT_FAILED);
+  });
+
+  // Phương án A (PaymentForm giữ 1 key trả tiền): lần lỗi không lưu key nên thử lại CÙNG key vẫn trừ tiền lại được
+  test('kẹt kho (409, đã hoàn tiền) rồi nhập thêm kho, thử lại CÙNG key → PAID, hoàn đúng 1 lần, 1 biên lai', async () => {
+    const s = await seed({ stock: 0 });
+    await expect(s.svc.processPayment('u1', dto, 'K-E6')).rejects.toBeInstanceOf(ConflictException);
+    expect(await s.payments.findByIdempotencyKey('K-E6')).toBeNull();
+
+    await s.products.save({ id: 'p1', name: 'Latte', price: 35000, stock: 5, version: 1 });
+    await expect(s.svc.processPayment('u1', dto, 'K-E6')).resolves.toMatchObject({ isCached: false, status: 'PAID', amount: 35000 });
+    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PAID);
+    expect(s.gateway.refunds).toHaveLength(1); // lần thử lại không hoàn thêm
+    expect(await s.payments.findAllByOrderId('o1')).toHaveLength(1);
+    // bấm lại lần nữa (mất phản hồi của lần thành công): cùng key trúng cache, không trừ tiền thêm
+    await expect(s.svc.processPayment('u1', dto, 'K-E6')).resolves.toMatchObject({ isCached: true, status: 'PAID' });
+    expect(s.gateway.getCallCount()).toBe(3); // charge (lỗi kho) + refund + charge (thử lại): lần cache không gọi cổng
   });
 });

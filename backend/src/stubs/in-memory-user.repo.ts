@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { IUserRepository, UserDto } from '../contracts/user.contract';
 import { TxContext } from '../contracts/transaction.contract';
-import { registerInMemoryRepo, runInMemoryTransaction, snapshotMap } from './in-memory-tx';
+import { registerInMemoryRepo, snapshotMap } from './in-memory-tx';
 
+// Lưu và trả bản sao (như Prisma trả hàng mới mỗi lần đọc)
 @Injectable()
 export class InMemoryUserRepo implements IUserRepository {
   private store = new Map<string, UserDto>();
@@ -18,11 +19,12 @@ export class InMemoryUserRepo implements IUserRepository {
   }
 
   async findById(id: string, _tx?: TxContext): Promise<UserDto | null> {
-    return this.store.get(id) ?? null;
+    const u = this.store.get(id);
+    return u ? structuredClone(u) : null;
   }
 
   async findByEmail(email: string, _tx?: TxContext): Promise<UserDto | null> {
-    for (const u of this.store.values()) if (u.email === email) return u;
+    for (const u of this.store.values()) if (u.email === email) return structuredClone(u);
     return null;
   }
 
@@ -30,15 +32,11 @@ export class InMemoryUserRepo implements IUserRepository {
     const u = this.store.get(id);
     if (!u) throw new Error('User not found');
     u.loyaltyPoints += points;
-    return u;
+    return structuredClone(u);
   }
 
   async save(user: UserDto, _tx?: TxContext): Promise<UserDto> {
-    this.store.set(user.id, user);
-    return user;
-  }
-
-  runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): Promise<T> {
-    return runInMemoryTransaction(() => fn(undefined));
+    this.store.set(user.id, structuredClone(user));
+    return structuredClone(user);
   }
 }

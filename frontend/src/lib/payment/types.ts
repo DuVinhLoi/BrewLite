@@ -27,6 +27,8 @@ export interface PaymentRequest {
   orderId?: string;
   /** Dòng giỏ để tạo đơn Task 6 khi chưa có orderId. */
   items?: CartLine[];
+  /** Idempotency-Key của POST /orders (khác `idempotencyKey` của POST /payments): thử lại tạo đơn vẫn chỉ ra 1 đơn. */
+  orderIdempotencyKey?: string;
   /** Mã giảm giá UC05a, backend validate nội bộ. */
   voucherCode?: string;
 }
@@ -39,15 +41,24 @@ export interface PaymentResult {
   idempotencyKey: string;
 }
 
-/** Lỗi thanh toán; có orderId khi đơn đã tạo → lần thử lại trả tiếp đơn này (UC06 KB1), không tạo đơn mới. */
+/**
+ * Lỗi thanh toán. `orderId`: đơn đã tạo → lần thử lại trả tiếp đơn này (UC06 KB1), không tạo đơn mới.
+ * `status`: mã HTTP (không có khi mất kết nối); `detail`: message gốc của backend. PaymentForm dùng hai trường này
+ * (`dropsCheckout()`) để quyết định giữ hay bỏ đơn đang trả dở.
+ */
 export class PaymentError extends Error {
-  constructor(message: string, readonly orderId?: string) {
+  constructor(
+    message: string,
+    readonly orderId?: string,
+    readonly status?: number,
+    readonly detail?: string,
+  ) {
     super(message);
     this.name = 'PaymentError';
   }
 }
 
-/** Mỗi lần "Xác nhận trả" sinh 1 key để chống trừ tiền 2 lần. */
+/** Sinh 1 Idempotency-Key. PaymentForm giữ 1 key tạo đơn và 1 key trả tiền cho cả phiên màn Thanh toán để thử lại không trừ tiền / tạo đơn 2 lần. */
 export function newIdempotencyKey(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
