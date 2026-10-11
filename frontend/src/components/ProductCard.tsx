@@ -1,21 +1,27 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
 import type { Product } from '@/lib/types';
+import { stockBadge } from '@/lib/stock';
 import { formatVND } from '@/lib/pricing';
 import { useCart } from '@/store/cart';
 import { addItemMessage } from '@/lib/cart-limits';
 import { createTimeoutSlot } from '@/lib/timeout-slot';
+import Badge from './ui/Badge';
+import Button from './ui/Button';
 import ProductDetailModal from './ProductDetailModal';
+import styles from './ProductCard.module.css';
 
-// FEATURE: Product card — nút "Thêm" dùng size M mặc định (tùy chọn size/topping ở ProductDetailModal).
+// FEATURE: Product card: nút "Thêm vào giỏ" dùng size M mặc định (tùy chọn size/topping ở ProductDetailModal).
+// Giao diện nét mực: ui-visual-plan.md §6 mục 3, artboard MenuDoodle.
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
   const [added, setAdded] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [customizing, setCustomizing] = useState(false);
-  const outOfStock = product.stock <= 0;
+  // Cùng ngưỡng với màn Kho (stockBadge, LOW_STOCK trong lib/stock.ts): hết hàng khi stock <= 0, sắp hết khi stock <= LOW_STOCK.
+  const { tone } = stockBadge(product.stock);
+  const outOfStock = tone === 'out';
   // Một timer "Đã thêm ✓" duy nhất: lần bấm sau đặt lại hoặc hủy nó, rời màn thì dọn (không setAdded sau unmount).
   const addedTimer = useRef(createTimeoutSlot());
   useEffect(() => {
@@ -39,71 +45,48 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <div style={styles.card}>
-      <div style={styles.thumb} aria-hidden>
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={product.imageUrl} alt={product.name} style={styles.img} />
-        ) : (
-          <span style={styles.emoji}>☕</span>
+    <>
+      <article className={outOfStock ? `${styles.card} ${styles.out}` : styles.card}>
+        {/* Ô 4:3: ảnh món (SVG 240×180 đã có nền màu) phủ kín ô; không có ảnh thì ô trống nền mist */}
+        <div className={styles.media}>
+          {product.imageUrl ? (
+            <img src={product.imageUrl} alt={product.name} width={240} height={180} className={styles.img} />
+          ) : null}
+        </div>
+        <h3 className={`display ${styles.name}`}>{product.name}</h3>
+        <div className={styles.meta}>
+          <span className={styles.price}>{formatVND(product.price)}</span>
+          {outOfStock ? (
+            <Badge tone="danger">Hết hàng</Badge>
+          ) : (
+            <span className={styles.stock}>{tone === 'low' ? `Sắp hết, còn ${product.stock}` : `Còn ${product.stock}`}</span>
+          )}
+        </div>
+        <Button
+          variant="primary"
+          fullWidth
+          onClick={handleAdd}
+          disabled={outOfStock}
+          className={added ? `${styles.addBtn} ${styles.added}` : styles.addBtn}
+        >
+          {outOfStock ? 'Hết hàng' : added ? 'Đã thêm ✓' : 'Thêm vào giỏ'}
+        </Button>
+        {/* Vùng live riêng (luôn có mặt, rỗng khi chưa thêm): trình đọc màn hình báo "Đã thêm ✓" thay vì đọc nhãn nút đổi chữ */}
+        <span role="status" className="visually-hidden">
+          {added ? 'Đã thêm ✓' : ''}
+        </span>
+        {notice && (
+          <p role="status" className={styles.notice}>
+            {notice}
+          </p>
         )}
-      </div>
-      <h3 style={styles.name}>{product.name}</h3>
-      <p style={styles.price}>{formatVND(product.price)}</p>
-      <p style={styles.stock}>{outOfStock ? 'Hết hàng' : `Còn ${product.stock}`}</p>
-      <button onClick={handleAdd} disabled={outOfStock} style={outOfStock ? styles.btnDisabled : styles.btn}>
-        {outOfStock ? 'Hết hàng' : added ? 'Đã thêm ✓' : 'Thêm vào giỏ'}
-      </button>
-      {notice && <p role="status" style={styles.stock}>{notice}</p>}
-      <button onClick={() => setCustomizing(true)} disabled={outOfStock} style={outOfStock ? styles.btnDisabled : styles.btn}>
-        Tùy chọn size / topping
-      </button>
+        <Button variant="link" onClick={() => setCustomizing(true)} disabled={outOfStock} className={styles.options}>
+          Tùy chọn size / topping
+        </Button>
+      </article>
+      {/* Modal nằm ngoài <article>: rê chuột trên lớp phủ không kích hover của thẻ. Nếu nằm trong, transform khi hover
+          làm thẻ thành khối chứa của lớp phủ position: fixed và modal bị co vào trong thẻ. */}
       {customizing && <ProductDetailModal product={product} onClose={() => setCustomizing(false)} />}
-    </div>
+    </>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  card: {
-    border: '1px solid #e5e7eb',
-    borderRadius: 12,
-    padding: 16,
-    background: '#fff',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-  },
-  thumb: {
-    height: 120,
-    borderRadius: 8,
-    background: '#f3f4f6',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  emoji: { fontSize: 44 },
-  img: { width: '100%', height: '100%', objectFit: 'cover' },
-  name: { margin: 0, fontSize: 16 },
-  price: { margin: 0, fontWeight: 800, color: '#065f46' },
-  stock: { margin: 0, fontSize: 13, color: '#6b7280' },
-  btn: {
-    marginTop: 4,
-    background: '#065f46',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    padding: '10px 12px',
-    fontWeight: 700,
-    cursor: 'pointer',
-  },
-  btnDisabled: {
-    marginTop: 4,
-    background: '#e5e7eb',
-    color: '#6b7280',
-    border: 'none',
-    borderRadius: 8,
-    padding: '10px 12px',
-    fontWeight: 700,
-  },
-};

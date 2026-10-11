@@ -1,0 +1,66 @@
+/* Khối lưới món: ui-visual-plan.md §6 mục 3, đối chiếu artboard MenuDoodle (<section id="menu">). */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 32px 0 96px;
+  /* Header dính (sticky) cao khoảng 81px: nhảy tới #menu thì tiêu đề không chui dưới header */
+  scroll-margin-top: 88px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* padding-right chừa chỗ cho ngôi sao: sao nằm trong khung, không tràn ngang ở 360px */
+.titleWrap {
+  position: relative;
+  max-width: 100%;
+  padding-right: 40px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(40px, 5vw, 60px);
+  line-height: 1.12;
+}
+
+/* Gạch chân cam vẽ tay: cam chỉ là mảng nét, không phải chữ */
+.underline {
+  display: block;
+  width: 240px;
+  max-width: 100%;
+  height: 18px;
+  margin-top: 4px;
+  color: var(--accent);
+}
+
+.sparkle {
+  position: absolute;
+  right: 0;
+  top: -10px;
+  width: 30px;
+  height: auto;
+}
+
+.voucher {
+  margin: 0;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.voucher strong {
+  color: var(--ink);
+}
+
+/* Dưới 760px header xuống 2 đến 3 dòng nên cao hơn */
+@media (max-width: 760px) {
+  .section {
+    padding-top: 16px;
+    scroll-margin-top: 196px;
+  }
+}

@@ -93,4 +93,27 @@ describe('Skeleton', () => {
     expect(out).toContain('height:24px');
     expect(out).toContain('width:60%');
   });
+
+  test('ô ảnh theo tỉ lệ: aspectRatio thay cho chiều cao cố định', () => {
+    const out = html(createElement(Skeleton, { aspectRatio: '4 / 3' }));
+    expect(out).toContain('aspect-ratio:4 / 3');
+    expect(out).toContain('width:100%');
+    expect(out).not.toContain('height:');
+  });
+
+  test('kiểu: bắt buộc có height hoặc aspectRatio (kiểm bằng tsc)', () => {
+    // @ts-expect-error không height cũng không aspectRatio thì không biên dịch
+    createElement(Skeleton, {});
+    // @ts-expect-error chỉ width cũng không đủ
+    createElement(Skeleton, { width: 100 });
+    // đủ một trong hai thì hợp lệ
+    createElement(Skeleton, { height: 10 });
+    createElement(Skeleton, { aspectRatio: '1 / 1' });
+    createElement(Skeleton, { height: 10, aspectRatio: '1 / 1' });
+  });
+
+  test('className cộng thêm vào lớp skeleton (vẫn giữ nhịp mờ đậm chung)', () => {
+    const out = html(createElement(Skeleton, { height: 46, className: 'pill' }));
+    expect(out).toMatch(/class="[^"]*skeleton[^"]* pill"/);
+  });
 });

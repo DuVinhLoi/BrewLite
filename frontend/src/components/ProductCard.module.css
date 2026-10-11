@@ -1,0 +1,123 @@
+/* Thẻ món: ui-visual-plan.md §6 mục 3, đối chiếu artboard MenuDoodle (<article class="bl-card">). */
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: var(--stroke);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+}
+
+/* Ô 4:3. SVG món 240×180 đã có nền màu bo góc nên ô để trong suốt; không có ảnh thì ô trống nền mist. */
+.media {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-tile);
+  overflow: hidden;
+}
+
+.media:empty {
+  background: var(--mist);
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Tên dài xuống dòng, không đẩy thẻ rộng ra ở 360px */
+.name {
+  margin: 2px 6px 0;
+  font-size: 26px;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  margin: 0 6px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.price {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stock {
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hai lớp để thắng .btn / .primary / .link của Button.module.css bất kể thứ tự nạp CSS */
+.card .addBtn {
+  min-height: 46px;
+}
+
+.card .added {
+  background: var(--ok-bg);
+  border-color: var(--ok-ink);
+  color: var(--ok-ink);
+}
+
+/* Hết hàng: viên xám đặc thay cho viên mực mờ */
+.card .addBtn:disabled {
+  opacity: 1;
+  background: var(--mist);
+  border-color: var(--mist);
+  color: var(--muted);
+}
+
+.card .options {
+  align-self: center;
+  min-height: 36px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Câu từ chối của addItem (addItemMessage), thay cho "Đã thêm ✓" */
+.notice {
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: var(--radius-tile-sm);
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Hết hàng: ảnh mờ và xám, giá về màu chữ phụ */
+.out .media {
+  opacity: 0.5;
+  filter: grayscale(0.7);
+}
+
+.out .price {
+  color: var(--muted);
+}
+
+/* Bóng cứng khi rê chuột: không phải chuyển động nên vẫn có khi giảm chuyển động */
+@media (hover: hover) {
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+/* §5: nhấc 3px, xoay -1°; chỉ animate transform */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .card {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card:hover {
+    transform: translateY(-3px) rotate(-1deg);
+  }
+}

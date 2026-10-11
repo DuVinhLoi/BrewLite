@@ -17,12 +17,23 @@ describe('ProductGrid: loading', () => {
     expect(out).toContain('aria-label="Đang tải menu"');
   });
 
-  test('4 thẻ khung xương cùng dáng thẻ món: ảnh, 2 dòng chữ, nút', () => {
+  test('wrapper có role="status" (trình đọc màn hình không bỏ qua nhãn)', () => {
+    expect(out).toMatch(/^<div[^>]*role="status"[^>]*aria-label="Đang tải menu"/);
+  });
+
+  test('4 thẻ khung xương cùng dáng thẻ món: ảnh 4:3, 2 dòng chữ, nút', () => {
     expect(out.match(/class="[^"]*skeletonCard/g)).toHaveLength(4);
-    // mỗi thẻ 4 khối Skeleton: ảnh 120, dòng tên 16, dòng giá 16 (50%), nút
+    // mỗi thẻ 4 khối Skeleton: ô ảnh 4:3, dòng tên (70%), dòng giá (45%), nút viên
     expect(out.match(/class="[^"]*skeleton[^"]*" style=/g)).toHaveLength(16);
-    expect(out).toContain('height:120px');
-    expect(out).toContain('width:50%');
+    expect(out.match(/aspect-ratio:4 \/ 3/g)).toHaveLength(4);
+    expect(out.match(/width:70%/g)).toHaveLength(4);
+    expect(out.match(/width:45%/g)).toHaveLength(4);
+    expect(out.match(/class="[^"]*skeletonButton/g)).toHaveLength(4);
+    expect(out).not.toContain('height:120px');
+  });
+
+  test('khung xương nằm trong lưới cùng lớp grid với thẻ món', () => {
+    expect(out).toMatch(/^<div class="[^"]*grid[^"]*" aria-busy="true"/);
   });
 
   test('không hiện lỗi hay trạng thái rỗng', () => {
@@ -86,8 +97,20 @@ describe('ProductGrid: có món', () => {
     expect(out).not.toContain('Chưa có món nào.');
   });
 
-  test('banner menu mẫu chỉ hiện khi fromMock', () => {
-    expect(render({ products, fromMock: true })).toContain('Đang hiển thị menu mẫu');
+  test('banner menu mẫu chỉ hiện khi fromMock, giữ nguyên chữ, dùng lớp thay cho style inline', () => {
+    const out = render({ products, fromMock: true });
+    expect(out).toContain(
+      'Đang hiển thị menu mẫu vì chưa cấu hình NEXT_PUBLIC_API_URL. Đặt biến này (xem .env.example) để dùng API thật.',
+    );
+    expect(out).toMatch(/<p class="[^"]*mockBanner[^"]*">Đang hiển thị menu mẫu/);
+    expect(out).not.toContain('style=');
     expect(render({ products })).not.toContain('Đang hiển thị menu mẫu');
+  });
+
+  test('mỗi món một thẻ <article> trong lưới lớp grid', () => {
+    const two = [...products, { id: 'p2', name: 'Americano', price: 40000, imageUrl: '', stock: 0, version: 1 }];
+    const out = render({ products: two });
+    expect(out.match(/<article\b/g)).toHaveLength(2);
+    expect(out).toMatch(/<div class="[^"]*grid[^"]*"><article/);
   });
 });

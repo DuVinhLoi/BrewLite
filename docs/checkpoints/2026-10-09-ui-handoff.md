@@ -22,17 +22,20 @@ Kế hoạch gốc (ngoài git): `E:/CNPM/BrewLite/docs/superpowers/requests/202
 | 2, Task 5 | `49b88c1` | `discount`, `loyaltyPointsEarned`, `lib/promo.ts`, "+N điểm" (làm lại sau khi bị dừng giữa chừng) |
 | 2, Task 6 | `1ff396a` | giỏ chặn 20 dòng và 99 ly, `addItem` trả kết quả |
 | 2, Checkpoint 3 | `940e41c`, `f5a4388`, `9ca71b4` | fix wave sau `/code-review` (8 mục), re-review sạch; tài liệu `2026-10-09-ui-checkpoint-3.md` |
+| 3a, Header | `35c409b` | `HeaderView`, `lib/nav.ts`, logo bean, pill |
+| 3a, Menu | `841fb17`, `c8b3f12` | `MenuHero`, `menuSummary`, lưới và thẻ món |
+| 3a, fix wave | `b28996c`, `9b191fd` | sau `/code-review` (6 mục), re-review sạch; tài liệu `2026-10-10-ui-checkpoint-3a.md` |
 
 ## Đang dở / còn lại
 
-- **DỪNG ở Checkpoint 3 là điểm kế tiếp của người dùng**: duyệt luồng khách (xem `ui-checkpoint-3.md`, mục "Chưa kiểm bằng mắt hay trình duyệt"). Tay: hai tab hai phiên cho biên lai tự cập nhật; 401 thật ở màn Thanh toán; trần 99 ly và 20 dòng.
-- Giai đoạn 3 (Task 7, các màn theo `ui-visual-plan.md` §6, thứ tự Header, Menu, ... Kho; DỪNG 3a sau Header + Menu để người dùng duyệt hero). Trước đó đọc lại file kế hoạch worktree và `canvas/README.md`.
+- **DỪNG 3a là điểm kế tiếp của người dùng**: duyệt Header + Menu trên trình duyệt (xem `docs/checkpoints/2026-10-10-ui-checkpoint-3a.md`, mục "Bạn cần xem bằng mắt"). Cũng còn việc tay của Checkpoint 3: hai tab hai phiên cho biên lai tự cập nhật; 401 thật ở màn Thanh toán; trần 99 ly và 20 dòng.
+- Giai đoạn 3 còn 9 màn (Task 7 mục 3 đến 11): Chi tiết món, Giỏ hàng, Thanh toán, Đặt hàng thành công, Đăng nhập/Đăng ký, Hồ sơ, Lịch sử (`HistoryView.tsx`), Quầy, Kho. Mỗi màn: đọc đúng mục `ui-visual-plan.md` §6 và file artboard `<Tên>Doodle.dc.html` ngay trước khi dựng. Nếu người dùng đã sửa canvas thì đọc lại `canvas/README.md` (bản đồng bộ lần cuối: `1791559222-489f`).
 - Giai đoạn 4 (Task 9 đến 11; DỪNG ở Checkpoint 5). Task 10: kiểm `next/font/google` tải được trong Docker build.
 - Nợ nhỏ: danh sách ở cuối `ui-checkpoint-3.md`.
 
 ## Số liệu mới nhất đo được
 
-Mốc HEAD `9ca71b4`: backend `npx jest` 130 pass, 3 skip; frontend `npx vitest run` 385 pass (27 file); `tsc --noEmit` sạch cả hai; `next build` 8 route (chạy trên bản sao). `tsc --noEmit` sạch cả hai. `frontend/.next` đang bị một dev server `next dev` cổng 3001 giữ (không phải của phiên này), nên build chạy trên bản sao. Xóa `frontend/.next` và khởi động lại dev server trước khi build hay xem tay.
+Mốc HEAD `9b191fd`: backend `npx jest` 130 pass, 3 skip; frontend `npx vitest run` 522 pass (35 file); `tsc --noEmit` sạch cả hai; `next build` 8 route (chạy trên bản sao). `tsc --noEmit` sạch cả hai. `frontend/.next` đang bị một dev server `next dev` cổng 3001 giữ (không phải của phiên này), nên build chạy trên bản sao. Xóa `frontend/.next` và khởi động lại dev server trước khi build hay xem tay.
 
 ## Ruling đã chốt (đầy đủ trong ledger, tóm tắt ở đây)
 

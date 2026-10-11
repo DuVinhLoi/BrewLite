@@ -5,6 +5,8 @@
 
 export const VOUCHER_CODE = 'BREWLITE10';
 export const VOUCHER_RATE = 0.1;
+/** Mức giảm của VOUCHER_CODE theo phần trăm (0.1 → 10): số "10%" ở hero và dòng nhắc mã của trang Menu. */
+export const VOUCHER_PERCENT = Math.round(VOUCHER_RATE * 100);
 export const LOYALTY_RATE = 0.1;
 export const VND_PER_POINT = 1000;
 

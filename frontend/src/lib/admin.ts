@@ -13,13 +13,8 @@ export interface InventoryItem {
   imageUrl?: string;
 }
 
-export const LOW_STOCK = 3;
-
-export function stockBadge(stock: number): { label: string; tone: 'out' | 'low' | 'ok' } {
-  if (stock <= 0) return { label: 'Hết hàng', tone: 'out' };
-  if (stock <= LOW_STOCK) return { label: 'Sắp hết', tone: 'low' };
-  return { label: 'Còn hàng', tone: 'ok' };
-}
+// Định nghĩa ở lib/stock.ts (menu khách cũng dùng, không kéo theo client API admin); re-export để import cũ giữ nguyên.
+export { LOW_STOCK, stockBadge } from './stock';
 
 async function call<T>(token: string, path: string, init: RequestInit = {}): Promise<T> {
   let res: Response;

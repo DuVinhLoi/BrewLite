@@ -15,17 +15,18 @@ interface Props {
   onRetry: () => void;
 }
 
-// FEATURE: Menu grid — loading skeleton / empty / error + retry.
+// FEATURE: Menu grid: loading skeleton / empty / error + retry.
 export default function ProductGrid({ products, loading, error, fromMock, onRetry }: Props) {
   if (loading) {
     return (
-      <div className={styles.grid} aria-busy="true" aria-label="Đang tải menu">
+      <div className={styles.grid} aria-busy="true" role="status" aria-label="Đang tải menu">
         {Array.from({ length: 4 }).map((_, i) => (
+          // Cùng dáng thẻ món (ProductCard): ô ảnh 4:3, dòng tên, dòng giá, nút viên
           <div key={i} className={styles.skeletonCard}>
-            <Skeleton height={120} />
-            <Skeleton height={16} />
-            <Skeleton height={16} width="50%" />
-            <Skeleton height={40} />
+            <Skeleton aspectRatio="4 / 3" className={styles.skeletonMedia} />
+            <Skeleton height={26} width="70%" />
+            <Skeleton height={18} width="45%" />
+            <Skeleton height={46} className={styles.skeletonButton} />
           </div>
         ))}
       </div>
@@ -33,25 +34,17 @@ export default function ProductGrid({ products, loading, error, fromMock, onRetr
   }
 
   if (error) {
-    return (
-      <div className={styles.state}>
-        <ErrorState doodle="/doodles/mug.svg" message="Không tải được menu." detail={error} onRetry={onRetry} />
-      </div>
-    );
+    return <ErrorState doodle="/doodles/mug.svg" message="Không tải được menu." detail={error} onRetry={onRetry} />;
   }
 
   if (products.length === 0) {
-    return (
-      <div className={styles.state}>
-        <EmptyState doodle="/doodles/bag.svg" title="Chưa có món nào." hint="Menu đang trống. Quay lại sau nhé!" />
-      </div>
-    );
+    return <EmptyState doodle="/doodles/bag.svg" title="Chưa có món nào." hint="Menu đang trống. Quay lại sau nhé!" />;
   }
 
   return (
     <div>
       {fromMock && (
-        <p style={{ fontSize: 13, color: '#92400e', background: '#fef3c7', padding: '8px 12px', borderRadius: 8 }}>
+        <p className={styles.mockBanner}>
           Đang hiển thị menu mẫu vì chưa cấu hình NEXT_PUBLIC_API_URL. Đặt biến này (xem .env.example) để dùng API thật.
         </p>
       )}

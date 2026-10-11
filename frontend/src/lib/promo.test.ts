@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, test } from 'vitest';
-import { LOYALTY_RATE, VND_FOR_ONE_POINT, VND_PER_POINT, VOUCHER_CODE, VOUCHER_RATE } from './promo';
+import { LOYALTY_RATE, VND_FOR_ONE_POINT, VND_PER_POINT, VOUCHER_CODE, VOUCHER_PERCENT, VOUCHER_RATE } from './promo';
 
 // Hằng số thật nằm ở backend/src/payment/payment.service.ts: đọc thẳng từ mã nguồn để 2 bên không lệch nhau.
 const backendFile = fileURLToPath(new URL('../../../backend/src/payment/payment.service.ts', import.meta.url));
@@ -12,6 +12,11 @@ const constOf = (src: string, name: string): string | undefined =>
 describe('promo (hằng số khuyến mãi / tích điểm)', () => {
   test('VND_FOR_ONE_POINT = 10.000 đ cho mỗi điểm (câu "điểm cho mỗi 10.000 ₫" ở trang chủ)', () => {
     expect(VND_FOR_ONE_POINT).toBe(10000);
+  });
+
+  test('VOUCHER_PERCENT là VOUCHER_RATE đổi ra phần trăm (số "10%" ở hero và dòng nhắc mã)', () => {
+    expect(VOUCHER_PERCENT).toBe(Math.round(VOUCHER_RATE * 100));
+    expect(VOUCHER_PERCENT).toBe(10);
   });
 
   // Không skip khi thiếu file: monorepo luôn có backend, thiếu thì phải đỏ chứ không lặng lẽ bỏ qua.
