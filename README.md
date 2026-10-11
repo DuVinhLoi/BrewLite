@@ -17,6 +17,8 @@ docker compose up --build
 # Frontend http://localhost:3001, Backend http://localhost:3000/products
 ```
 
+Frontend trong compose là bản production (`next build` rồi `next start`), không có hot reload: sửa mã frontend thì chạy lại `docker compose up -d --build frontend` (hoặc `docker compose up -d --build` để dựng lại backend và frontend; db dùng image `postgres:16` nên không có gì để dựng). `NEXT_PUBLIC_API_URL` và `NEXT_PUBLIC_PAYMENT_MODE` được nhúng lúc `next build` (qua `args:` của service `frontend`), nên đổi một trong hai trong `.env` thì phải chạy `docker compose up -d --build frontend`; `up` không kèm `--build` không đổi gì. Muốn hot reload, chạy rời bằng `npm run dev` như dưới.
+
 `DATABASE_URL` trong `.env` (host `localhost`) chỉ dành cho **chạy rời** ở dưới. Compose bỏ qua biến đó: backend trong container luôn nối `db:5432`, nên `cp .env.example .env` rồi `docker compose up` vẫn chạy đúng. `.env` đã nằm trong `.gitignore`, đừng commit.
 
 Chạy rời từng phần:
@@ -24,6 +26,8 @@ Chạy rời từng phần:
 ```bash
 cd backend && npm install && npm test   # jest dùng kho in-memory, không cần DB
 cd frontend && npm install && npm run dev   # http://localhost:3001
+cd frontend && npm test                     # vitest
+cd frontend && npm run lint                 # ESLint next/core-web-vitals: 0 lỗi; cảnh báo no-img-element là có chủ đích (ảnh SVG tĩnh)
 ```
 
 Backend không tự đọc file `.env` và **bắt buộc có `DATABASE_URL`**: thiếu thì dừng ngay với lỗi `DATABASE_URL is required` (kho in-memory chỉ dành cho jest). Muốn chạy rời: bật DB (`docker compose up -d db`), đặt `DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite` trong shell (bash: `export`; PowerShell: `$env:DATABASE_URL=...`), chạy `npx prisma migrate deploy` và `npx ts-node prisma/seed.ts` một lần (như `CMD` của `backend/Dockerfile`; không seed thì menu rỗng và chưa có tài khoản demo) rồi `npm run start:dev`.
@@ -32,7 +36,7 @@ Backend không tự đọc file `.env` và **bắt buộc có `DATABASE_URL`**: 
 
 ## Tiến độ 10 task (đã merge vào develop)
 
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 122 pass / 3 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 117 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine). Bằng chứng từng task: `docs/develop-status-report.md`.
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 130 pass / 3 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 796 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine, và đợt làm lại giao diện, xem mục Giao diện); số đo ngày 2026-10-11. Bằng chứng từng task: `docs/develop-status-report.md`.
 
 | Task | Hiện thực chính |
 |---|---|
@@ -53,6 +57,12 @@ Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /au
 Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn), `GET /users/me` (hồ sơ + tổng điểm tích lũy, trang `/profile`). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2): `GET /orders?status=PAID,PREPARING,READY` (UC08, BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (UC14, chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
 `Product(stock,version)`, `User(loyaltyPoints, role)`, `Order(idempotencyKey unique)`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
 Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
+
+## Giao diện
+
+Giao diện theo phong cách "nét mực" (font Fraunces + Be Vietnam Pro, bộ hình minh họa SVG ở `frontend/public/doodles` và `frontend/public/images`). 11 màn: Header, Menu, Chi tiết món, Giỏ hàng (`/cart`), Thanh toán, Đặt hàng thành công (biên lai), Đăng nhập / Đăng ký (`/login`), Hồ sơ (`/profile`), Lịch sử (`/history`), Quầy pha chế (`/barista`) và Kho (`/admin`). Thanh toán và biên lai nằm trong `/cart`.
+
+**Chưa có ảnh chụp màn hình.** Đợt làm giao diện chạy trong môi trường không có trình duyệt nên chưa ai nhìn các màn bằng mắt và chưa chụp ảnh. Việc kiểm hình ảnh còn lại (1280, 1024, 760 và 360px) và kết quả kiểm thử cuối: `docs/develop-status-report.md` mục 8.
 
 ## Demo end-to-end
 

@@ -5,6 +5,7 @@
 > Lưu ý: commit `b6a2f76` gồm cả thay đổi FE đang dở trong working tree lúc commit (nút Hủy ở `/history` + `cancelOrder()`, `getProducts()` bỏ fallback menu mẫu, test `api.test.ts` và `pricing-table.spec.ts`) — chúng nằm trong scope `frontend/src/**` + `backend/test/**` của kế hoạch và test xanh nên đi kèm. Kế hoạch 5 task P1 (đã xong hết) trước nằm ở `docs/planning/2026-10-08-p1-must-do-plan.md`, đã xóa khỏi thư mục khi tick hết (xem `git show da047b6:docs/planning/2026-10-08-p1-must-do-plan.md`). Thư mục `docs/planning/` trước nằm ở `docs/superpowers/` (bị `.gitignore`), đã chuyển sang và commit ở `259f9ff`.
 > Lưu ý demo (cập nhật sau plan `docs/planning/2026-10-09-barista-admin-plan.md` (đã xóa sau merge `4974abd`; bản đầy đủ: `git show 4974abd:docs/planning/2026-10-09-barista-admin-plan.md`)): nút "Quầy (demo)" trên `/history` đã **gỡ**; tiến đơn do Barista làm ở `/barista` (mục 5). Ô chưa tick ở `2026-10-09-order-state-machine-visible-plan.md` trước ghi bấm "Quầy (demo)" 3 lần đến `COMPLETED`; nay đã đổi thành checklist `/barista` (khách đặt và trả, `barista@…` bấm Nhận pha → Pha xong → Đã giao, chụp `/barista` và thanh tiến trình ở `/history`), vẫn cần người làm.
 > Dọn `docs/planning/` (2026-10-09, commit `b5fe9db`): xóa 2 plan đã tick hết (`p1-must-do`, `review-3-bugs`), rút gọn 2 plan còn ô chưa tick (`p2-tech-debt` chỉ còn Task 7; `order-state-machine-visible` chỉ còn mục kiểm chứng cuối). Bản đầy đủ trước khi rút gọn: `git show da047b6:docs/planning/<tên file>`.
+> Cập nhật 2026-10-11: thêm mục 8 (đợt UI, nhánh `worktree-ui-plan-checkpoint`, chưa push, chưa merge); đã sửa hai chỗ không còn đúng (giỏ hàng chặn 20 dòng ở mục 6, "UI component chỉ có build + smoke tay" ở mục 2).
 > Nguồn chuẩn duy nhất cho yêu cầu là `docs/BrewLite-CongNghePhanMem-fixed.md`; file này chỉ ghi trạng thái + bằng chứng, không chép lại code.
 
 ## 1. Đã đạt (đủ điều kiện tính điểm cả 10 task)
@@ -32,7 +33,7 @@ Thực thể (Mục 12.2): đủ 5 bảng đúng field trong `backend/prisma/sch
 ## 2. Chưa đạt / còn nợ
 
 1. **Barista / `GET /orders` (queue quầy): ban đầu KHÔNG LÀM, nay đã làm như mở rộng ngoài đề (2026-10-09, mục 5); `GET /orders/:id` làm.** Đối chiếu đề gốc `BrewLite-CongNghePhanMem.pdf` (2026-10-08): §12.1 gốc chỉ có 7 endpoint, **không có** `GET /orders`, `GET /orders/:id`, `PATCH /orders/:id` — 3 dòng này do bản `-fixed.md` thêm vào, nay đã tách thành ghi chú "mở rộng của nhóm". Quyết định 2026-10-08 là không dựng barista/admin vì đề bài không yêu cầu; sau đó nhóm chốt lại 16 UC trên biểu đồ Use Case gốc nên đã hiện thực UC08–UC12 và UC14 (UC13, UC15 là backlog), xem mục 5. `GET /orders/:id` vẫn có để receipt poll trạng thái. Tồn kho khi thanh toán không đổi: trừ khi pay, hoàn khi cancel/kẹt kho, khóa `version` — đã xong trong luồng thanh toán.
-2. ~~Frontend không có test runner~~ — **đã xử lý** (merge `feat/frontend-tests`): vitest `pricing` + `cart` + `api-gateway` + `api` + `order-status` + `OrderStatusTrack` (render HTML), **71 pass** (`npx vitest run`, chạy lại 2026-10-09, trước phần mở rộng Barista + Admin: hiện **89 pass**, mục 5; `order-status.test.ts` ghim đúng 9 mũi tên §9.1 và đọc thẳng `ALLOWED` của backend). UI component (Task 3/4/9-UI) vẫn chỉ có build + smoke tay.
+2. ~~Frontend không có test runner~~ — **đã xử lý** (merge `feat/frontend-tests`): vitest `pricing` + `cart` + `api-gateway` + `api` + `order-status` + `OrderStatusTrack` (render HTML), **71 pass** (`npx vitest run`, chạy lại 2026-10-09, trước phần mở rộng Barista + Admin: hiện **89 pass**, mục 5; `order-status.test.ts` ghim đúng 9 mũi tên §9.1 và đọc thẳng `ALLOWED` của backend). *(Lịch sử tại thời điểm đó: UI component chỉ có build + smoke tay. Đợt UI 2026-10-09 đến 2026-10-11 đã thêm test render HTML và test CSS cho từng màn, frontend nay 796 pass, xem mục 8; phần nhìn bằng mắt trên trình duyệt vẫn chưa có.)*
 3. **pg suite mặc định skip** — chỉ chạy khi có `DATABASE_URL`; đã chạy lại trên DB compose 2026-10-08 (bằng chứng ở dòng Task 10).
 4. ~~Ghi sau charge chưa bọc `$transaction`~~ — **đã xử lý** (merge `feature/payment-tx`): trừ kho + `PAID` + cộng điểm + biên lai nằm trong 1 `runInTransaction`; kẹt kho → rollback + hoàn tiền + `PAYMENT_FAILED` + 409 (đã cập nhật UC 2.4 trong `docs/user-sequence-specifications.md`). Hủy đơn `PAID` cũng đã bọc transaction: refund (cổng ngoài) → `runInTransaction` { hoàn kho mọi món + `CANCELLED` }, test rollback ở `order-payment.integration.spec.ts`; giới hạn còn lại: refund nằm ngoài transaction nên transaction lỗi sau refund thì tiền đã hoàn mà đơn vẫn `PAID`, hủy lại sẽ hoàn lần 2. Người dùng đã chốt (2026-10-09) ghi nhận có chủ đích, không sửa code; giới hạn đã ghi ở mục C của UC06 / UC12 trong `docs/user-sequence-specifications.md`. Còn lại: khóa chống thanh toán song song là khóa trong tiến trình, chỉ đúng với 1 instance backend.
 5. **TailwindCSS / Passport / React Query không dùng** — quyết định có chủ ý (Mục 6 cho phép chọn: inline-style thay Tailwind, Zustand thay React Query, guard tự viết thay Passport). Không phải thiếu sót.
@@ -110,7 +111,7 @@ Quy tắc chung:
 **Giới hạn còn lại (chưa sửa, cần quyết định):**
 - ~~Mất phản hồi sau khi đã trả tiền~~ — **đã sửa** (phương án A, nhánh `fix/backend-hardening`): `PaymentForm` giữ một key trả tiền cho cả phiên màn Thanh toán, bấm lại cùng key thì backend trả lại biên lai cũ (200) thay vì 400 `PAID -> PAID`. Lần trả lỗi (cổng từ chối, kẹt kho đã hoàn tiền) không lưu key nên thử lại cùng key vẫn trừ tiền lại được. Reload hoặc rời màn rồi vào lại (giỏ không đổi) nay cũng giữ được `orderId` và key: plan `docs/planning/2026-10-09-demo-session-plan.md` Task 2.
 - Chưa kiểm bằng mắt trên trình duyệt: ảnh món có hiện thay cho ☕ không, màn Thanh toán khi đổi Thẻ → Ví (môi trường làm việc không có trình duyệt).
-- Giỏ hàng chưa chặn quá 20 dòng khác nhau (DTO chặn 20); cần 21 tổ hợp size/topping khác nhau mới gặp.
+- ~~Giỏ hàng chưa chặn quá 20 dòng khác nhau~~. **Đã sửa trong đợt UI (mục 8):** giỏ chặn 20 dòng và 99 ly mỗi dòng khớp DTO (`1ff396a`, `940e41c`), báo "Giỏ đã đủ 20 dòng." / "Mỗi dòng tối đa 99 ly." ngay ở thẻ món và modal.
 
 ### 6.1 Phương án A: giữ một key trả tiền cho mỗi màn Thanh toán (2026-10-09)
 
@@ -143,3 +144,72 @@ Quy tắc chung:
 **Việc còn cần người làm:**
 1. Kiểm bằng mắt trên trình duyệt: tab 1 khách, tab 2 barista, reload cả hai vẫn đúng tài khoản, header mỗi tab hiện email + vai trò; khách đặt và trả 1 đơn, tab barista thấy đơn ở cột "Chờ pha" trong 5 giây; Đăng xuất ở tab 1 không làm tab 2 mất phiên; với `MOCK_GATEWAY_DECLINE_METHOD=CARD`: trả Thẻ lỗi → reload → bấm "Thanh toán" → trả Ví thành công, `/history` chỉ có 1 đơn.
 2. ~~Xác nhận làm sạch DB demo một lần~~ — **đã xong (2026-10-09):** volume `brewlite_pgdata` được tạo lại lúc 18:13 (`down -v` rồi `up -d --build`), xóa 11 đơn `PAID` rác, các tài khoản test và đơn `order-1042` cũ. Dữ liệu smoke tạo sau đó (kiểm trình duyệt và 1 đơn kiểm tay, 3 tài khoản `@smoke.test`, 5 đơn) đã dọn bằng `npm run smoke:clean`. DB còn đúng 3 tài khoản demo, 0 đơn, kho 4 món đều 10.
+
+## 8. Đợt UI (2026-10-09 đến 2026-10-11)
+
+> Nhánh `worktree-ui-plan-checkpoint`, **chưa push, chưa merge** vào `main` hay `develop`. Plan `docs/planning/2026-10-09-frontend-ui-plan.md` (chức năng nối backend) và `docs/planning/2026-10-09-ui-visual-plan.md` (hình thức "nét mực"). Số liệu từng giai đoạn nằm ở `docs/checkpoints/2026-10-09-ui-checkpoint-0.md` đến `2026-10-11-ui-checkpoint-4.md` (ảnh chụp tại thời điểm đó, không sửa). Quy trình: mỗi task có implementer và reviewer riêng; sau Giai đoạn 3 chạy `/code-review` rồi sửa các finding.
+
+**Đã dựng**
+
+| Giai đoạn | Nội dung | Commit chính |
+|---|---|---|
+| Trước kế hoạch | `GET /users/me` và trang `/profile` (tổng điểm tích lũy); `/profile` trắng khi chưa đăng nhập | `f41c0a8`, `8713770` |
+| 0, 1 | Số liệu xuất phát; token thiết kế, font Fraunces + Be Vietnam Pro, 6 component dùng chung (`Button`, `Card`, `Badge`, `EmptyState`, `ErrorState`, `Skeleton`); bộ minh họa SVG nét mực (7 hình trang trí, 4 ảnh món) | `c9abf1f`, `4a56873`, `16bb685` |
+| 2 | `ApiError`, `useAsync`, xử lý 401 chung (`handleUnauthorized`, `?next=` qua `safeNext`); Menu có đủ trạng thái tải / lỗi / rỗng; `GET /orders/me` trả `items[].productName` | `d334a79`, `2fc3227`; sửa `8bb5535`, `2835698`, `8605364` |
+| 3 (chức năng) | Biên lai và Lịch sử tự cập nhật trạng thái (`startPolling`, `useOrderPoll`, 3 giây, dừng ở `COMPLETED` / `CANCELLED`); hiện giảm giá và điểm thưởng sau thanh toán; giỏ chặn 20 dòng và 99 ly | `54e36e9`, `49b88c1`, `1ff396a`; sửa `940e41c`, `f5a4388`, `9ca71b4` |
+| 3 (hình thức) | 11 màn theo canvas "nét mực": Header, Menu, Chi tiết món, Giỏ hàng, Thanh toán, Đặt hàng thành công, Đăng nhập / Đăng ký, Hồ sơ, Lịch sử, Quầy, Kho | `35c409b` đến `7e7d582`; sửa `a471b2b`, `fce6975`, `a05908d` |
+| 4 | Đối chiếu wireframe đề §7 (29 dòng: 10 khớp, 19 lệch có chủ đích, 0 lệch không chủ đích; `docs/checkpoints/2026-10-11-ui-wireframe-diff.md`); Dockerfile production và ESLint `next/core-web-vitals`; kiểm thử cuối (mục này) | `c35ee57`, `e4bdbaf`, `1f2ce02`, `733f315` |
+
+Toàn bộ khoảng `5faeafd..HEAD` là 40 commit (`git log --oneline 5faeafd..HEAD`).
+
+**Backend đổi (chỉ hai chỗ, đều có test và đã sửa sơ đồ UC cùng commit):** `GET /users/me` trả `{ id, email, role, loyaltyPoints }` (`f41c0a8`); `GET /orders/me` trả thêm `productName` ở **từng dòng** `items[]`, không phải ở cấp đơn (`2fc3227`, `8bb5535`).
+
+**Frontend trong compose nay là bản production:** `frontend/Dockerfile` chạy `next build` rồi `npm run start` (`1f2ce02`); `NEXT_PUBLIC_API_URL` được nhúng lúc build. Sửa mã frontend thì `docker compose up -d --build frontend`. Lint: `npm run lint` trong `frontend/`.
+
+**Số liệu đo ngày 2026-10-11 (HEAD `733f315`, chạy lại trong Task 11)**
+
+| Lệnh | Kết quả |
+|---|---|
+| `cd backend && npx jest` | `Test Suites: 2 skipped, 13 passed, 13 of 15 total`; `Tests: 3 skipped, 130 passed, 133 total` |
+| `cd backend && npx tsc --noEmit` | sạch (exit 0) |
+| `cd frontend && npx vitest run` | `Test Files 47 passed (47)`; `Tests 796 passed (796)` |
+| `cd frontend && npx tsc --noEmit` | sạch |
+| `cd frontend && npm run lint` | exit 0, 0 lỗi, 47 cảnh báo `@next/next/no-img-element` (cảnh báo, không phải lỗi) |
+| `docker image inspect bl-uiplan-frontend:latest` | có, tạo 2026-10-11 03:57 UTC; việc build chạy trong Docker (không chạy thêm `next build` trên máy) |
+
+So với mục 7: backend 122 pass / 3 skip thành **130 pass / 3 skip**; frontend 117 thành **796 pass**.
+
+**Smoke trên compose thật (2026-10-11):** stack `bl-uiplan` (db, backend, frontend production), chỉ dùng tài khoản `@smoke.test` (4 tài khoản; vai trò BARISTA và ADMIN đặt bằng SQL chỉ trên đúng hai dòng đó, vì đăng ký công khai luôn tạo CUSTOMER). Kết quả qua HTTP:
+
+- Đăng ký 201 (x4), đăng nhập 200, `GET /users/me` 200 (`loyaltyPoints: 0`), không token 401.
+- `POST /orders` 2 món (Latte size L, Cappuccino): 201, `total=95000`, `unitPrice` 45000 và 50000; gửi lại cùng `Idempotency-Key`: 200, cùng `id`, `isCached: true`.
+- `POST /payments` Ví + `BREWLITE10`: 201, `discount=9500`, `amount=85500`, `loyaltyPointsEarned=8` (đúng `floor(85500 x 0,1 / 1000)`); gửi lại cùng key: 200, `isCached: true`, cùng `amount` và `paymentId`; `GET /users/me` sau đó `loyaltyPoints=8` (không cộng hai lần).
+- Barista: hàng đợi `GET /orders?status=PAID,PREPARING,READY` 200 có đơn; `PATCH` `PREPARING`, `READY`, `COMPLETED` đều 200 và sau mỗi bước `GET /orders/:id` của khách trả đúng trạng thái đó.
+- `GET /orders/me` có `items[].productName` ("Latte", "Cappuccino").
+- Admin: `GET /admin/products` 200; Cappuccino (`p3`) kho 9 (version 2), `+10` ra 19, `-10` về 9 (version 4): kho về đúng số cũ, `version` tăng 2. Khách gọi `GET /admin/products` 403.
+- Khách thứ hai đọc đơn của khách đầu: 403 `Not your order`; không token: 401; khách gọi hàng đợi quầy: 403 `Insufficient role`.
+- `POST /orders` 21 dòng 400 (`items must contain no more than 20 elements`); `quantity` 100 400 (`must not be greater than 99`); 20 dòng, 1 dòng x 99 và 20 dòng x 99 đều 201.
+- Frontend production trên `:3001`: `/`, `/login`, `/cart`, `/history`, `/profile` đều 200; `/` chứa "Cà phê mỗi ngày".
+- Dọn: `smoke:clean` xóa 4 tài khoản `@smoke.test` và 4 đơn; kho `p1` và `p3` về 10 (`version` đã tăng), không còn tài khoản `@smoke.test`. Dừng stack bằng `docker compose -p bl-uiplan stop` (không `down -v`).
+
+Chi tiết từng lệnh và dòng kết quả nằm ở `.superpowers/sdd/2026-10-09-frontend-ui-plan/task-11-report.md` (thư mục làm việc, không commit).
+
+**Năm điểm Review Focus** (`docs/planning/2026-10-09-frontend-ui-plan.md`, mục "Review Focus"). Môi trường làm việc **không có trình duyệt**, nên phần nào cần trình duyệt thật ghi CHƯA KIỂM, không gọi là đã kiểm tay.
+
+| # | Tình huống | Đã kiểm (bằng API hoặc test) | CHƯA KIỂM (cần trình duyệt) | Kết luận |
+|---|---|---|---|---|
+| 1 | Token hết hạn / 401 giữa phiên | API: `GET /users/me`, `GET /orders/:id`, `GET /orders/me`, `POST /orders` không token đều 401. Test: `lib/session.test.ts` (`handleUnauthorized` xóa token rồi chuyển `/login?next=`), `lib/api.test.ts` ("401 ở hàm có xác thực"), `lib/payment/checkout-session.test.ts` (`isUnauthorizedPayment`), `lib/barista.test.ts` (401 / 403 dừng tự tải lại) | Chuyển trang thật ở Giỏ và Thanh toán khi token hết hạn | Logic đạt, hiển thị chưa kiểm |
+| 2 | Reload khi đang trả dở | API: tạo đơn lại cùng key trả 200 cùng `id`; đơn `PENDING` đọc lại được; trả lại cùng key trả 200 cache, điểm 8 (không 16). Test: `checkout-session.test.ts` ("cùng giỏ → cùng phiên: reload hoặc quay lại giỏ vẫn giữ 2 key và mã đơn", "cùng tài khoản đăng nhập lại ... giữ nguyên mã đơn và 2 key") | Bấm F5 giữa màn Thanh toán rồi xem giỏ và đơn | Logic đạt, thao tác thật chưa kiểm |
+| 3 | Backend tắt hoặc menu rỗng | Tắt container backend (`:3000` không trả lời, curl mã 000): frontend `/`, `/login`, `/cart`, `/history`, `/profile` vẫn 200; bật lại, `GET /products` 200. Test: `ProductGrid.test.ts` (lỗi có "Thử lại", rỗng có `EmptyState`, lỗi thắng rỗng), `api.test.ts` (`getProducts` lỗi mạng và lỗi HTTP ném lỗi; rỗng là rỗng thật) | Khối lỗi và nút Thử lại hiện ra trên trang (chạy ở trình duyệt); menu rỗng thật trên DB chưa thử | Logic đạt, màn lỗi chưa kiểm |
+| 4 | Tên món dài, nhiều topping ở 360px | Mã: `overflow-wrap: anywhere` và `min-width: 0` ở giỏ, thanh toán, lịch sử, quầy, kho, biên lai; test `PaymentForm.test.ts` (fieldset `min-width: 0`), `ProfileView.layout.test.ts` (360px, 6 ký tự). API: đơn 20 dòng x 99 ly (79.200.000) được nhận | Mọi màn ở 360px bằng mắt (không tràn, nút không bị đẩy ra) | CHƯA KIỂM |
+| 5 | Đơn đổi trạng thái khi mở biên lai | API: barista `PREPARING`, `READY`, `COMPLETED`, mỗi bước khách `GET /orders/:id` thấy đúng trạng thái. Test: `lib/use-order-poll.test.ts` (nhịp 3 giây, dừng khi `isDone`), `lib/order-status.test.ts` (`isTerminal`), `components/PaymentSuccess.test.ts` (`receiptStatus`, `COMPLETED`, `CANCELLED`), `lib/history.test.ts` (`needsPolling` chỉ khi còn `PAID` / `PREPARING` / `READY`) | Biên lai tự đổi trên màn khi barista bấm nút ở tab khác | Logic đạt, giao diện chưa kiểm |
+
+**Chưa kiểm, cần người làm**
+
+- **Mọi thứ về hình ảnh:** chưa ai nhìn 11 màn bằng mắt ở 1280, 1024, 760 và 360px, kèm "reduce motion" bật và tắt. Chưa chụp ảnh nào (xem README, mục "Giao diện"). Danh sách điểm cần xem theo thứ tự quan trọng: `docs/checkpoints/2026-10-11-ui-checkpoint-4.md` và `2026-10-10-ui-checkpoint-3a.md`.
+- Bốn thao tác ở bảng trên chỉ trình duyệt làm được: chuyển `/login` khi 401, F5 giữa thanh toán, màn lỗi và thử lại của Menu, biên lai tự đổi khi barista đổi trạng thái (hai tab).
+- Vai trò BARISTA / ADMIN của smoke đặt bằng SQL, không qua giao diện (không có màn quản lý người dùng, ngoài phạm vi).
+
+**Câu hỏi mở:** có đổi tên món "Latte" trong seed thành "Cà phê sữa" cho khớp wireframe đề §7 không (xem cuối `docs/checkpoints/2026-10-11-ui-wireframe-diff.md`)? Đổi `backend/prisma/seed.ts:31` kéo theo DB đã seed, test backend và frontend, tài liệu và các artboard gọi món này là "Latte". Hiện giữ "Latte".
+
+**Việc nhỏ còn nợ (không chặn):** danh sách đầy đủ ở cuối `docs/checkpoints/2026-10-11-ui-checkpoint-4.md`, `2026-10-10-ui-checkpoint-3a.md` và `2026-10-09-ui-checkpoint-3.md`. Nổi bật: catch cuối của `app/login/page.tsx` che lỗi hiếm (thân JSON `null`); bốn wrapper `Page` gần giống nhau ở `HistoryView`, `BaristaView`, `InventoryView`, `ProfileView`; thanh 5 bước ở 320 đến 360px; nút -/+ giỏ 40px (dưới 44px); lưới Quầy ép 3 cột từ 761px; docs §2.8 chưa nhắc hai trạng thái mới của Kho.

@@ -1,4 +1,4 @@
-import { createElement } from 'react';
+import { createElement, type ComponentProps } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import Badge from './Badge';
@@ -32,7 +32,7 @@ describe('Button', () => {
 
 describe('Card', () => {
   test('bọc nội dung và nhận className thêm', () => {
-    const out = html(createElement(Card, { className: 'them', children: 'Nội dung' }));
+    const out = html(createElement(Card, { className: 'them' } as ComponentProps<typeof Card>, 'Nội dung'));
     expect(out).toContain('Nội dung');
     expect(out).toContain('them');
   });
@@ -40,7 +40,7 @@ describe('Card', () => {
 
 describe('Badge', () => {
   test.each(['neutral', 'ink', 'ok', 'warn', 'danger'] as const)('tone %s: lớp tương ứng, hiện chữ', (tone) => {
-    const out = html(createElement(Badge, { tone, children: 'Còn hàng' }));
+    const out = html(createElement(Badge, { tone } as ComponentProps<typeof Badge>, 'Còn hàng'));
     expect(out).toContain('Còn hàng');
     expect(out).toMatch(new RegExp(`class="[^"]*${tone}`));
   });
