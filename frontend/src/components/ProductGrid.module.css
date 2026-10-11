@@ -1,0 +1,21 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+/* Cùng dáng thẻ món (ProductCard): ảnh, hai dòng chữ, nút. */
+.skeletonCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-tile-sm);
+  background: var(--paper);
+}
+
+.state {
+  margin-top: var(--space-4);
+}

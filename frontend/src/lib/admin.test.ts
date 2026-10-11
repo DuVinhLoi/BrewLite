@@ -1,9 +1,15 @@
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { TOKEN_KEY, getToken, saveToken } from './auth';
+import { setRedirect } from './session';
 import { LOW_STOCK, adjustStock, fetchInventory, stockBadge } from './admin';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  setRedirect(null);
+  sessionStorage.removeItem(TOKEN_KEY);
+});
 
 test('stockBadge: 0 hết hàng, ≤ LOW_STOCK sắp hết, còn lại bình thường', () => {
   expect(stockBadge(0)).toEqual({ label: 'Hết hàng', tone: 'out' });
@@ -53,5 +59,39 @@ describe('adjustStock', () => {
   test('400 body không phải JSON → báo không hợp lệ', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(new Response('<html>bad</html>', { status: 400 })));
     await expect(adjustStock('tok', 'p1', { mode: 'set', value: 1, version: 1 })).rejects.toThrow(/không hợp lệ/);
+  });
+});
+
+// 401 giữa phiên ở màn tồn kho: xóa token và về /login (handleUnauthorized) trước khi ném lỗi như cũ.
+describe('màn tồn kho: hết phiên (401)', () => {
+  const redirect = vi.fn();
+  beforeEach(() => {
+    redirect.mockClear();
+    saveToken('h.p.s');
+    setRedirect(redirect);
+  });
+
+  test.each([
+    ['fetchInventory', () => fetchInventory('tok')],
+    ['adjustStock', () => adjustStock('tok', 'p1', { mode: 'set', value: 1, version: 1 })],
+  ])('%s: 401 → xóa token, redirect /login một lần, vẫn ném đúng câu cũ', async (_name, call) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(401, {})));
+    const err = await call().catch((e) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toBe('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+    expect(redirect).toHaveBeenCalledTimes(1);
+    expect(redirect).toHaveBeenCalledWith('/login');
+    expect(getToken()).toBeNull();
+  });
+
+  test('403, 409, 400, 500 và mất mạng giữ token, không chuyển trang', async () => {
+    for (const status of [403, 409, 400, 500]) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(status, {})));
+      await fetchInventory('tok').catch(() => undefined);
+    }
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('fetch failed')));
+    await fetchInventory('tok').catch(() => undefined);
+    expect(getToken()).toBe('h.p.s');
+    expect(redirect).not.toHaveBeenCalled();
   });
 });

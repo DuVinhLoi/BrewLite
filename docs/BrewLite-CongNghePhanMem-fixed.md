@@ -364,9 +364,9 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 > | Endpoint | Chức năng | Lý do |
 > |---|---|---|
 > | `PATCH /orders/:id` | Khách: hủy đơn của mình; BARISTA/ADMIN: tiến đơn (`PREPARING`, `READY`, `COMPLETED`) + hủy đơn `PAID` | Phục vụ Order State Machine §9.1 (Task 10): hủy đơn và các chuyển tiếp sau `PAID`; khách không tự tiến đơn (403) |
-> | `GET /orders/:id` | Chi tiết một đơn, chỉ chủ đơn (404 đơn lạ, 403 đơn người khác) | Xem trạng thái một đơn qua API; giao diện hiện chưa gọi, lịch sử dùng `GET /orders/me` |
+> | `GET /orders/:id` | Chi tiết một đơn, chỉ chủ đơn (404 đơn lạ, 403 đơn người khác) | Xem trạng thái một đơn qua API; màn biên lai (sau khi thanh toán) gọi lặp lại mỗi 3 giây để tự cập nhật trạng thái đến `COMPLETED` / `CANCELLED`, lịch sử vẫn dùng `GET /orders/me` (cũng tự làm mới mỗi 3 giây) |
 > | `GET /orders?status=` | Hàng đợi quầy (UC08), mặc định `PAID,PREPARING,READY`; JWT + BARISTA/ADMIN | Barista xem đơn cần pha; mở rộng ngoài phạm vi MVP §3.2 |
-> | `GET /users/me` | Hồ sơ người đang đăng nhập `{ id, email, role, loyaltyPoints }`; chỉ cần JWT (404 khi user đã bị xoá) | Hiển thị tổng điểm tích lũy: `POST /auth/login` và JWT không mang điểm, `POST /payments` chỉ trả điểm cộng thêm của lần đó. Giao diện: trang `/profile`. Chưa là UC riêng |
+> | `GET /users/me` | Hồ sơ người đang đăng nhập `{ id, email, role, loyaltyPoints }`; chỉ cần JWT (404 khi user đã bị xoá) | Hiển thị tổng điểm tích lũy: `POST /auth/login` và JWT không mang điểm, `POST /payments` chỉ trả điểm cộng thêm của lần đó (biên lai hiện "+N điểm" từ đó). Giao diện: trang `/profile`. Chưa là UC riêng |
 > | `GET /admin/products` | Mọi món kể cả hết hàng (UC14); chỉ ADMIN | Admin kiểm tồn kho; mở rộng ngoài phạm vi MVP §3.2 |
 > | `PATCH /admin/products/:id/stock` | Đặt số / cộng trừ tồn kho `{ mode: set\|delta, value, version }` (UC14); chỉ ADMIN, 409 khi `version` lệch, 400 khi âm | Điều chỉnh kho theo cùng cơ chế optimistic lock của §9 ý 3 |
 

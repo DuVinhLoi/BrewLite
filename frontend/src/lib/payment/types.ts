@@ -35,10 +35,16 @@ export interface PaymentRequest {
 
 export interface PaymentResult {
   orderCode: string; // dạng #1042 (wireframe màn 5)
+  /** Mã đơn đầy đủ để biên lai poll GET /orders/:id. Chỉ cổng API có (đơn thật); cổng mock không có nên biên lai không poll. */
+  orderId?: string;
   status: 'PAID';
   amount: number;
   method: PaymentMethod;
   idempotencyKey: string;
+  /** Số tiền đã giảm nhờ voucher (đ), 0 khi không giảm. */
+  discount: number;
+  /** Điểm thưởng nhận được từ đơn này, 0 khi chưa đủ một điểm. */
+  loyaltyPointsEarned: number;
 }
 
 /**

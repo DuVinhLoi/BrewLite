@@ -2,6 +2,7 @@
 // FEATURE: Màn tồn kho (UC14, mở rộng ngoài MVP §3.2). Chỉ Product.stock, không CRUD món.
 // ============================================================
 import { API_BASE } from './api';
+import { handleUnauthorized } from './session';
 
 export interface InventoryItem {
   id: string;
@@ -31,7 +32,10 @@ async function call<T>(token: string, path: string, init: RequestInit = {}): Pro
   } catch {
     throw new Error('Không kết nối được máy chủ (tồn kho).');
   }
-  if (res.status === 401) throw new Error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+  if (res.status === 401) {
+    handleUnauthorized(); // xóa token, về /login?next= (lib/session.ts) trước khi ném
+    throw new Error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+  }
   if (res.status === 403) throw new Error('Trang này cần tài khoản quản trị (Admin).');
   if (res.status === 409) throw new Error('Tồn kho vừa thay đổi (có đơn mới hoặc người khác sửa). Đã tải lại, hãy thử lại.');
   if (res.status === 400) {

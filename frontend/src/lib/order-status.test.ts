@@ -7,6 +7,7 @@ import {
   STATUS_LABEL,
   TRANSITIONS,
   canCancel,
+  isTerminal,
   nextStatus,
   statusTrack,
 } from './order-status';
@@ -81,6 +82,23 @@ describe('canCancel', () => {
   });
   test('không hủy được: từ PREPARING trở đi, đơn đã hủy, trạng thái lạ', () => {
     for (const s of ['PREPARING', 'READY', 'COMPLETED', 'CANCELLED', 'XYZ', '']) expect(canCancel(s)).toBe(false);
+  });
+});
+
+// Biên lai và lịch sử tự cập nhật (lib/use-order-poll.ts) dừng poll khi đơn đã ở trạng thái cuối.
+describe('isTerminal', () => {
+  test('COMPLETED và CANCELLED là trạng thái cuối', () => {
+    expect(isTerminal('COMPLETED')).toBe(true);
+    expect(isTerminal('CANCELLED')).toBe(true);
+  });
+  test('các trạng thái còn đi tiếp được thì chưa cuối, kể cả PAYMENT_FAILED (thử lại được)', () => {
+    for (const s of ['PENDING', 'PAID', 'PREPARING', 'READY', 'PAYMENT_FAILED']) expect(isTerminal(s)).toBe(false);
+  });
+  test('trạng thái lạ hoặc rỗng: chưa cuối (cứ poll tiếp)', () => {
+    for (const s of ['XYZ', '', 'completed']) expect(isTerminal(s)).toBe(false);
+  });
+  test('khớp bảng TRANSITIONS: cuối khi không còn mũi tên đi ra', () => {
+    for (const s of ORDER_STATUSES) expect(isTerminal(s)).toBe(TRANSITIONS[s].length === 0);
   });
 });
 

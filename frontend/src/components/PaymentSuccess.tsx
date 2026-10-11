@@ -3,14 +3,36 @@
 import type { CSSProperties } from 'react';
 import { formatVND } from '@/lib/pricing';
 import { PAYMENT_METHODS, type PaymentResult } from '@/lib/payment';
+import type { OrderDetail } from '@/lib/types';
+import { useOrderPoll } from '@/lib/use-order-poll';
 import OrderStatusTrack from './OrderStatusTrack';
 
-// FEATURE: Payment success (wireframe màn 5) — mã đơn PAID + nút về trang chủ.
+/** Trạng thái biên lai hiện: của đơn vừa poll được; chưa có phản hồi đầu tiên (hoặc không poll: cổng mock) thì của kết quả thanh toán. */
+export function receiptStatus(result: PaymentResult, polled: OrderDetail | undefined): string {
+  return polled?.status ?? result.status;
+}
+
+// FEATURE: Payment success (wireframe màn 5) — mã đơn + trạng thái đơn tự cập nhật (poll GET /orders/:id mỗi 3 giây
+// đến COMPLETED / CANCELLED) + nút về trang chủ. Khi poll lỗi thì giữ trạng thái cuối đã biết.
 export default function PaymentSuccess({
   result,
   onHome,
 }: {
   result: PaymentResult;
+  onHome: () => void;
+}) {
+  const { order } = useOrderPoll(result.orderId);
+  return <PaymentReceipt result={result} status={receiptStatus(result, order)} onHome={onHome} />;
+}
+
+// Phần hiển thị thuần (render HTML test được, không cần effect).
+export function PaymentReceipt({
+  result,
+  status,
+  onHome,
+}: {
+  result: PaymentResult;
+  status: string;
   onHome: () => void;
 }) {
   const methodLabel = PAYMENT_METHODS.find((m) => m.value === result.method)?.label ?? result.method;
@@ -24,10 +46,23 @@ export default function PaymentSuccess({
           Mã đơn: <strong>{result.orderCode}</strong>
         </p>
         <p style={{ marginBottom: 0 }}>Trạng thái:</p>
-        <OrderStatusTrack status={result.status} />
+        {/* MỘT vùng live cho cả biên lai: trình đọc màn hình báo khi bước trạng thái đổi sau mỗi lần poll */}
+        <div aria-live="polite">
+          <OrderStatusTrack status={status} />
+        </div>
         <p>
           Đã trả: <strong>{formatVND(result.amount)}</strong> ({methodLabel})
         </p>
+        {result.discount > 0 && (
+          <p>
+            Đã giảm: <strong>{formatVND(result.discount)}</strong>
+          </p>
+        )}
+        {result.loyaltyPointsEarned > 0 && (
+          <p>
+            <strong>+{result.loyaltyPointsEarned.toLocaleString('vi-VN')} điểm</strong>
+          </p>
+        )}
       </div>
       <p style={styles.note}>Mời tới quầy lấy nước</p>
       <button onClick={onHome} style={styles.homeBtn}>

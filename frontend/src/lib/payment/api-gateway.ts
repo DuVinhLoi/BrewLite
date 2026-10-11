@@ -82,12 +82,16 @@ export class ApiPaymentGateway implements PaymentGateway {
       throw new PaymentError(paymentErrorMessage(res.status, detail), orderId, res.status, detail);
     }
     const json = await res.json();
+    const paidOrderId = String(json.orderId ?? orderId);
     return {
-      orderCode: `#${String(json.orderId ?? orderId).slice(0, 8)}`,
+      orderCode: `#${paidOrderId.slice(0, 8)}`,
+      orderId: paidOrderId,
       status: 'PAID',
       amount: Number(json.amount ?? req.amount),
       method: req.method,
       idempotencyKey: req.idempotencyKey,
+      discount: Number(json.discount ?? 0),
+      loyaltyPointsEarned: Number(json.loyaltyPointsEarned ?? 0),
     };
   }
 }

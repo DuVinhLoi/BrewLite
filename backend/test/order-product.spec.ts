@@ -149,4 +149,108 @@ describe('products + orders (task 2,6)', () => {
     const mine = await svc.listMine('u1');
     expect(mine.map((o) => o.id)).toEqual([b.id, a.id]);
   });
+
+  // GET /orders/me: mỗi dòng món kèm productName (cùng cách listQueue), để lịch sử hiện tên món thay vì mã
+  describe('listMine kèm productName', () => {
+    async function setup() {
+      const pr = new InMemoryProductRepo();
+      await pr.save({ id: 'p1', name: 'Latte', price: 35000, stock: 10, version: 1 });
+      await pr.save({ id: 'p2', name: 'Cold Brew', price: 40000, stock: 10, version: 1 });
+      const or = new InMemoryOrderRepo();
+      return { or, svc: new OrderService(or, pr) };
+    }
+
+    it('đơn một món: items[0].productName là tên món', async () => {
+      const { svc } = await setup();
+      await svc.create('u1', { items: [{ productId: 'p1', quantity: 2 }] });
+      const [o] = await svc.listMine('u1');
+      expect(o.items).toHaveLength(1);
+      expect(o.items[0].productName).toBe('Latte');
+      expect(o.items[0].productId).toBe('p1');
+    });
+
+    it('đơn nhiều món: mỗi dòng có tên đúng món của nó, thứ tự dòng giữ nguyên', async () => {
+      const { svc } = await setup();
+      await svc.create('u1', {
+        items: [
+          { productId: 'p2', quantity: 1 },
+          { productId: 'p1', quantity: 3 },
+          { productId: 'p2', quantity: 1, size: 'L' },
+        ],
+      });
+      const [o] = await svc.listMine('u1');
+      expect(o.items.map((i) => i.productName)).toEqual(['Cold Brew', 'Latte', 'Cold Brew']);
+    });
+
+    it('món không còn trong DB: productName rơi về productId, không ném lỗi', async () => {
+      const { or, svc } = await setup();
+      await or.save({
+        id: 'o-gone',
+        userId: 'u1',
+        status: OrderStatus.PAID,
+        total: 10000,
+        items: [
+          { productId: 'p1', quantity: 1, unitPrice: 35000, size: 'M', toppings: [] },
+          { productId: 'p-deleted', quantity: 1, unitPrice: 10000, size: 'M', toppings: [] },
+        ],
+        createdAt: new Date(),
+      });
+      const [o] = await svc.listMine('u1');
+      expect(o.items.map((i) => i.productName)).toEqual(['Latte', 'p-deleted']);
+    });
+
+    it('vẫn chỉ đơn của chính user, mới nhất trước; không đổi các trường khác của đơn', async () => {
+      const { or, svc } = await setup();
+      const a = await svc.create('u1', { items: [{ productId: 'p1', quantity: 1 }] });
+      await svc.create('u2', { items: [{ productId: 'p2', quantity: 1 }] });
+      const mine = await svc.listMine('u1');
+      expect(mine.map((o) => o.id)).toEqual([a.id]);
+      const { items: _items, ...rest } = mine[0];
+      const { items: _raw, ...stored } = (await or.findByUserId('u1'))[0];
+      expect(rest).toEqual(stored);
+    });
+
+    it('tra tên các món song song, mỗi productId phân biệt đúng một lần (không N+1 tuần tự)', async () => {
+      const { or, svc } = await setup();
+      const pr = new InMemoryProductRepo();
+      for (const [id, name] of [['p1', 'Latte'], ['p2', 'Cold Brew'], ['p3', 'Matcha']]) {
+        await pr.save({ id, name, price: 30000, stock: 10, version: 1 });
+      }
+      // findById trễ một nhịp: đếm số lời gọi đang chạy cùng lúc và số lần gọi theo từng productId
+      let inFlight = 0;
+      let maxInFlight = 0;
+      const calls: string[] = [];
+      const realFind = pr.findById.bind(pr);
+      pr.findById = async (id, tx) => {
+        calls.push(id);
+        maxInFlight = Math.max(maxInFlight, ++inFlight);
+        await new Promise((r) => setTimeout(r, 5));
+        inFlight--;
+        return realFind(id, tx);
+      };
+      const svc2 = new OrderService(or, pr);
+      const line = (productId: string) => ({ productId, quantity: 1, unitPrice: 30000, size: 'M', toppings: [] });
+      await or.save({
+        id: 'o-many',
+        userId: 'u9',
+        status: OrderStatus.PAID,
+        total: 30000 * 5,
+        items: [line('p1'), line('p2'), line('p1'), line('p3'), line('p2')],
+        createdAt: new Date(),
+      });
+
+      const [o] = await svc2.listMine('u9');
+
+      expect(o.items.map((i) => i.productName)).toEqual(['Latte', 'Cold Brew', 'Latte', 'Matcha', 'Cold Brew']);
+      expect([...calls].sort()).toEqual(['p1', 'p2', 'p3']);
+      expect(maxInFlight).toBe(3);
+    });
+
+    it('GET /orders/:id không đổi: items vẫn không có productName', async () => {
+      const { svc } = await setup();
+      const a = await svc.create('u1', { items: [{ productId: 'p1', quantity: 1 }] });
+      const got = await svc.getById('u1', a.id);
+      expect(got.items[0]).not.toHaveProperty('productName');
+    });
+  });
 });

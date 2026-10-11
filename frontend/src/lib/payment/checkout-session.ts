@@ -1,9 +1,11 @@
+import { getToken, userIdFromToken } from '../auth';
 import { PaymentError, newIdempotencyKey, type CartLine } from './types';
 
 // ============================================================
 // FEATURE: Phiên thanh toán của tab (UC06 KB1 + phương án A): mã đơn + key tạo đơn + key trả tiền,
-// gắn với đúng nội dung giỏ. Lưu sessionStorage nên reload, hoặc "Quay lại giỏ" rồi vào lại, vẫn trả tiếp
-// đúng đơn đó với đúng key (không tạo đơn mới, không trừ tiền 2 lần). Giỏ đổi thì bỏ, tạo phiên mới.
+// gắn với đúng nội dung giỏ và đúng tài khoản. Lưu sessionStorage nên reload, hoặc "Quay lại giỏ" rồi vào lại,
+// vẫn trả tiếp đúng đơn đó với đúng key (không tạo đơn mới, không trừ tiền 2 lần). Giỏ đổi thì bỏ, tạo phiên mới.
+// Hết phiên đăng nhập giữa lúc trả tiền: đăng nhập lại cùng tài khoản thì giữ phiên (clearCheckoutIfOtherUser).
 // ============================================================
 
 export const CHECKOUT_KEY = 'brewlite-checkout';
@@ -14,6 +16,8 @@ export interface CheckoutState {
   orderKey: string;
   payKey: string;
   orderId?: string;
+  /** Tài khoản (sub của JWT) lúc tạo phiên; phiên lưu trước khi có trường này, hoặc tạo khi chưa đăng nhập, thì không có. */
+  userId?: string;
 }
 
 const tabStore = (): Storage | null => (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
@@ -33,12 +37,13 @@ function read(): CheckoutState | null {
   }
 }
 
-/** Phiên thanh toán cho giỏ này: dùng lại phiên đã lưu nếu cùng giỏ, không thì tạo phiên mới (2 key mới) và lưu. */
+/** Phiên thanh toán cho giỏ này: dùng lại phiên đã lưu nếu cùng giỏ, không thì tạo phiên mới (2 key mới, userId của token hiện tại) và lưu. */
 export function loadCheckout(items: CartLine[]): CheckoutState {
   const cart = cartFingerprint(items);
   const saved = read();
   if (saved && saved.cart === cart) return saved;
-  const fresh: CheckoutState = { cart, orderKey: newIdempotencyKey(), payKey: newIdempotencyKey() };
+  const userId = userIdFromToken(getToken());
+  const fresh: CheckoutState = { cart, orderKey: newIdempotencyKey(), payKey: newIdempotencyKey(), ...(userId ? { userId } : {}) };
   tabStore()?.setItem(CHECKOUT_KEY, JSON.stringify(fresh));
   return fresh;
 }
@@ -51,6 +56,19 @@ export function rememberOrder(orderId: string): void {
 
 export function clearCheckout(): void {
   tabStore()?.removeItem(CHECKOUT_KEY);
+}
+
+/**
+ * Sau đăng nhập: giữ phiên khi đúng tài khoản đã tạo nó (hết phiên giữa lúc trả tiền, đăng nhập lại là trả tiếp
+ * đúng đơn với đúng key); tài khoản khác, phiên cũ không có userId, userId null hoặc dữ liệu hỏng thì xóa.
+ */
+export function clearCheckoutIfOtherUser(userId: string | null): void {
+  if (!userId || read()?.userId !== userId) clearCheckout();
+}
+
+/** Lỗi 401 của POST /orders hoặc POST /payments: PaymentForm gọi handleUnauthorized() (lib/session.ts). */
+export function isUnauthorizedPayment(e: unknown): boolean {
+  return e instanceof PaymentError && e.status === 401;
 }
 
 /**

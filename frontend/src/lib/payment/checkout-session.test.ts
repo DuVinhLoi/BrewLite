@@ -1,6 +1,19 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { CHECKOUT_KEY, cartFingerprint, clearCheckout, dropsCheckout, loadCheckout, rememberOrder } from './checkout-session';
+import { saveToken } from '../auth';
+import {
+  CHECKOUT_KEY,
+  cartFingerprint,
+  clearCheckout,
+  clearCheckoutIfOtherUser,
+  dropsCheckout,
+  isUnauthorizedPayment,
+  loadCheckout,
+  rememberOrder,
+} from './checkout-session';
 import { PaymentError } from './types';
+
+// JWT giả: chỉ payload (frontend không kiểm chữ ký)
+const tokenOf = (sub: string) => `h.${Buffer.from(JSON.stringify({ sub })).toString('base64url')}.s`;
 
 const cart = [
   { productId: 'p1', quantity: 2, size: 'L', toppings: ['Trân châu', 'Kem cheese'] },
@@ -60,5 +73,94 @@ describe('dropsCheckout (bỏ đơn đang giữ khi chắc chắn không trả t
     ['lỗi không phải PaymentError', new Error('x'), false],
   ])('%s → %s', (_name, e, expected) => {
     expect(dropsCheckout(e)).toBe(expected);
+  });
+});
+
+describe('phiên thanh toán gắn với tài khoản (userId = sub của JWT)', () => {
+  test('phiên mới ghi userId của token đang đăng nhập; rememberOrder và tải lại vẫn giữ userId', () => {
+    saveToken(tokenOf('u1'));
+    expect(loadCheckout(cart).userId).toBe('u1');
+    rememberOrder('order-1');
+    expect(loadCheckout(cart)).toMatchObject({ userId: 'u1', orderId: 'order-1' });
+  });
+
+  test('không có token (hoặc token hỏng) → phiên không có userId', () => {
+    expect(loadCheckout(cart).userId).toBeUndefined();
+    sessionStorage.clear();
+    saveToken('abc');
+    expect(loadCheckout(cart).userId).toBeUndefined();
+  });
+});
+
+describe('clearCheckoutIfOtherUser (sau đăng nhập: chỉ bỏ phiên của tài khoản khác)', () => {
+  test('cùng tài khoản đăng nhập lại (hết phiên giữa lúc trả tiền) → giữ nguyên mã đơn và 2 key', () => {
+    saveToken(tokenOf('u1'));
+    const a = loadCheckout(cart);
+    rememberOrder('order-1');
+
+    clearCheckoutIfOtherUser('u1');
+
+    expect(loadCheckout(cart)).toEqual({ ...a, orderId: 'order-1' });
+  });
+
+  test('tài khoản khác → xóa: không còn mã đơn, key mới', () => {
+    saveToken(tokenOf('u1'));
+    const a = loadCheckout(cart);
+    rememberOrder('order-1');
+
+    clearCheckoutIfOtherUser('u2');
+
+    expect(sessionStorage.getItem(CHECKOUT_KEY)).toBeNull();
+    const b = loadCheckout(cart);
+    expect(b.orderId).toBeUndefined();
+    expect(b.payKey).not.toBe(a.payKey);
+    expect(b.orderKey).not.toBe(a.orderKey);
+  });
+
+  test('phiên cũ không có userId (lưu trước khi có trường này) → vẫn đọc được, nhưng sau đăng nhập bị xóa', () => {
+    const legacy = { cart: cartFingerprint(cart), orderKey: 'ok-1', payKey: 'pk-1', orderId: 'order-0' };
+    sessionStorage.setItem(CHECKOUT_KEY, JSON.stringify(legacy));
+    expect(loadCheckout(cart)).toEqual(legacy);
+
+    clearCheckoutIfOtherUser('u1');
+
+    expect(sessionStorage.getItem(CHECKOUT_KEY)).toBeNull();
+  });
+
+  test('đăng nhập mà token không có sub (userId null) → xóa cho chắc', () => {
+    saveToken(tokenOf('u1'));
+    loadCheckout(cart);
+    clearCheckoutIfOtherUser(null);
+    expect(sessionStorage.getItem(CHECKOUT_KEY)).toBeNull();
+  });
+
+  test('dữ liệu hỏng hoặc chưa có phiên → không ném lỗi, kho không còn mục hỏng', () => {
+    expect(() => clearCheckoutIfOtherUser('u1')).not.toThrow();
+    for (const raw of ['{oops', 'null', '"chuỗi"', '42']) {
+      sessionStorage.setItem(CHECKOUT_KEY, raw);
+      expect(() => clearCheckoutIfOtherUser('u1')).not.toThrow();
+      expect(sessionStorage.getItem(CHECKOUT_KEY)).toBeNull();
+    }
+  });
+});
+
+describe('isUnauthorizedPayment (PaymentForm gọi handleUnauthorized khi true)', () => {
+  test('PaymentError 401 (từ POST /orders hoặc POST /payments, có hoặc không có orderId) → true', () => {
+    expect(isUnauthorizedPayment(new PaymentError('x', undefined, 401))).toBe(true);
+    expect(isUnauthorizedPayment(new PaymentError('x', 'o1', 401, 'Unauthorized'))).toBe(true);
+  });
+
+  test.each([
+    ['PaymentError mã khác', new PaymentError('x', 'o1', 403)],
+    ['PaymentError 500', new PaymentError('x', 'o1', 500)],
+    ['PaymentError mất kết nối (không có status)', new PaymentError('x', 'o1')],
+    ['Error thường có status 401', Object.assign(new Error('x'), { status: 401 })],
+    ['Error thường', new Error('x')],
+    ['không phải Error', { status: 401 }],
+    ['undefined', undefined],
+    ['null', null],
+    ['chuỗi', 'Unauthorized'],
+  ])('%s → false', (_name, e) => {
+    expect(isUnauthorizedPayment(e)).toBe(false);
   });
 });

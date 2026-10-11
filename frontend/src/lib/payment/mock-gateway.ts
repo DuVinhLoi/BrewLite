@@ -1,3 +1,4 @@
+import { LOYALTY_RATE, VND_PER_POINT } from '../promo';
 import type { PaymentGateway } from './gateway';
 import type { PaymentRequest, PaymentResult } from './types';
 
@@ -6,6 +7,7 @@ function generateOrderCode(): string {
 }
 
 // FEATURE: Mock payment gateway — delay ngắn rồi luôn PAID, giữ nguyên amount từ giỏ.
+// req.amount đã là số tiền sau giảm nên mock không biết tổng gốc: discount luôn 0. Điểm tính như backend.
 export class MockPaymentGateway implements PaymentGateway {
   readonly name = 'mock';
 
@@ -17,6 +19,8 @@ export class MockPaymentGateway implements PaymentGateway {
       amount: req.amount,
       method: req.method,
       idempotencyKey: req.idempotencyKey,
+      discount: 0,
+      loyaltyPointsEarned: Math.floor((req.amount * LOYALTY_RATE) / VND_PER_POINT),
     };
   }
 }

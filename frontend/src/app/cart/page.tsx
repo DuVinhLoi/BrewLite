@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { MAX_LINES } from '@/lib/cart-limits';
 import { useCart } from '@/store/cart';
 import { formatVND } from '@/lib/pricing';
 import type { PaymentResult } from '@/lib/payment';
@@ -68,6 +69,11 @@ export default function CartPage() {
   return (
     <section>
       <h1>Giỏ hàng ({count} món)</h1>
+      {items.length >= MAX_LINES && (
+        <p role="status" style={{ fontSize: 13, color: '#6b7280' }}>
+          Giỏ đã đủ {MAX_LINES} dòng.
+        </p>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {items.map((item) => (
           <div

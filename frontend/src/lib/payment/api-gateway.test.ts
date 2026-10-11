@@ -31,6 +31,7 @@ describe('ApiPaymentGateway retry', () => {
 
     const r = await gw.pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'k2', orderId: err.orderId, items });
     expect(r.status).toBe('PAID');
+    expect(r.orderId).toBe('order-1'); // mã đầy đủ để biên lai poll GET /orders/:id
     expect(fetchMock).toHaveBeenCalledTimes(3);
     const [url, init] = fetchMock.mock.calls[2];
     expect(url).toMatch(/\/payments$/);
@@ -211,6 +212,19 @@ describe('ApiPaymentGateway retry', () => {
     expect(err.orderId).toBe('order-1');
   });
 
+  // Biên lai tự cập nhật trạng thái (PaymentSuccess poll GET /orders/:id): kết quả phải mang mã đơn ĐẦY ĐỦ, không chỉ orderCode "#abcd1234"
+  test('PaymentResult.orderId là mã đơn đầy đủ: ưu tiên orderId backend trả, không có thì mã đơn đã gửi', async () => {
+    const full = '3f2a9c1e-7b44-4d7e-9a10-aaaaaaaaaaaa';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(201, { orderId: full, amount: 40000 })));
+    const a = await new ApiPaymentGateway().pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'k', orderId: 'khac' });
+    expect(a.orderId).toBe(full);
+    expect(a.orderCode).toBe('#3f2a9c1e');
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(201, { amount: 40000 })));
+    const b = await new ApiPaymentGateway().pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'k', orderId: full });
+    expect(b.orderId).toBe(full);
+  });
+
   test('tạo đơn lỗi → PaymentError không có orderId (lần sau tạo đơn lại)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(500, {})));
     const err = await new ApiPaymentGateway()
@@ -218,5 +232,30 @@ describe('ApiPaymentGateway retry', () => {
       .catch((e) => e);
     expect(err).toBeInstanceOf(PaymentError);
     expect(err.orderId).toBeUndefined();
+  });
+
+  // Biên lai hiện "Đã giảm" và "+N điểm": POST /payments trả discount và loyaltyPointsEarned (kể cả bản cache khi trùng key)
+  test('PaymentResult mang discount và loyaltyPointsEarned từ POST /payments', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 36000, discount: 4000, loyaltyPointsEarned: 3 })));
+    const r = await new ApiPaymentGateway().pay({ amount: 36000, method: 'WALLET', idempotencyKey: 'k', orderId: 'order-1', voucherCode: 'BREWLITE10' });
+    expect(r).toMatchObject({ amount: 36000, discount: 4000, loyaltyPointsEarned: 3 });
+  });
+
+  test('bản cache (200, trùng Idempotency-Key) cũng map đủ hai trường', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(200, { isCached: true, orderId: 'order-1', amount: 36000, discount: 4000, loyaltyPointsEarned: 3 })));
+    const r = await new ApiPaymentGateway().pay({ amount: 36000, method: 'WALLET', idempotencyKey: 'k', orderId: 'order-1' });
+    expect(r).toMatchObject({ discount: 4000, loyaltyPointsEarned: 3 });
+  });
+
+  test('backend không trả hai trường (hoặc trả null) → mặc định 0', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 40000 })));
+    const a = await new ApiPaymentGateway().pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'k', orderId: 'order-1' });
+    expect(a.discount).toBe(0);
+    expect(a.loyaltyPointsEarned).toBe(0);
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(201, { orderId: 'order-1', amount: 40000, discount: null, loyaltyPointsEarned: null })));
+    const b = await new ApiPaymentGateway().pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'k', orderId: 'order-1' });
+    expect(b.discount).toBe(0);
+    expect(b.loyaltyPointsEarned).toBe(0);
   });
 });

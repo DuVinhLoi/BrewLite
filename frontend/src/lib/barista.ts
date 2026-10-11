@@ -2,6 +2,7 @@
 // FEATURE: Màn quầy (UC08–UC12, mở rộng ngoài MVP §3.2): hàng đợi 3 cột theo sơ đồ §9.1.
 // ============================================================
 import { API_BASE } from './api';
+import { handleUnauthorized } from './session';
 
 export interface QueueItem {
   productId: string;
@@ -41,6 +42,7 @@ export function groupQueue(orders: QueueOrder[]): Record<QueueColumn, QueueOrder
 }
 
 // 401/403: phiên hết hạn hoặc sai vai trò — thử lại cũng vô ích nên màn quầy ngừng tự tải lại khi gặp lỗi này.
+// 401 còn xóa token và về /login?next= (handleUnauthorized, lib/session.ts) trước khi ném.
 export class QueueAuthError extends Error {}
 
 export async function fetchQueue(token: string): Promise<QueueOrder[]> {
@@ -50,7 +52,10 @@ export async function fetchQueue(token: string): Promise<QueueOrder[]> {
   } catch {
     throw new Error('Không kết nối được máy chủ (hàng đợi quầy).');
   }
-  if (res.status === 401) throw new QueueAuthError('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+  if (res.status === 401) {
+    handleUnauthorized();
+    throw new QueueAuthError('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.');
+  }
   if (res.status === 403) throw new QueueAuthError('Trang này cần tài khoản quầy (Barista) hoặc quản trị.');
   if (!res.ok) throw new Error(`Không tải được hàng đợi (mã ${res.status}).`);
   return res.json();

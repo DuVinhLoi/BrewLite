@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
 import { formatVND } from '@/lib/pricing';
+import { VOUCHER_CODE, VOUCHER_RATE } from '@/lib/promo';
 import { PAYMENT_METHODS, PaymentError, getPaymentGateway } from '@/lib/payment';
 import type { PaymentMethod, PaymentResult } from '@/lib/payment';
-import { clearCheckout, dropsCheckout, loadCheckout, rememberOrder } from '@/lib/payment/checkout-session';
+import { clearCheckout, dropsCheckout, isUnauthorizedPayment, loadCheckout, rememberOrder } from '@/lib/payment/checkout-session';
+import { handleUnauthorized } from '@/lib/session';
 import type { CartLine } from '@/lib/payment/types';
 
 // ============================================================
@@ -33,7 +35,7 @@ export default function PaymentForm({
   const [checkout, setCheckout] = useState(() => loadCheckout(items));
   const [orderId, setOrderId] = useState<string | undefined>(checkout.orderId);
 
-  const discount = applied === 'BREWLITE10' ? Math.floor(total * 0.1) : 0;
+  const discount = applied === VOUCHER_CODE ? Math.floor(total * VOUCHER_RATE) : 0;
   const final = total - discount;
 
   const handleConfirm = async () => {
@@ -60,6 +62,9 @@ export default function PaymentForm({
         rememberOrder(e.orderId);
         setOrderId(e.orderId);
       }
+      // hết phiên (401): xóa token, về /login?next=…; handleUnauthorized không đụng tới giỏ và phiên thanh toán của tab,
+      // và đăng nhập lại cùng tài khoản cũng giữ phiên đó (login chỉ bỏ khi là tài khoản khác: clearCheckoutIfOtherUser)
+      if (isUnauthorizedPayment(e)) handleUnauthorized();
       setError(e instanceof Error ? e.message : 'Thanh toán thất bại, vui lòng thử lại.');
     } finally {
       setProcessing(false);
@@ -75,7 +80,7 @@ export default function PaymentForm({
         </p>
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <input
-            placeholder="Mã giảm giá (VD: BREWLITE10)"
+            placeholder={`Mã giảm giá (VD: ${VOUCHER_CODE})`}
             value={voucher}
             onChange={(e) => setVoucher(e.target.value)}
             disabled={processing}
@@ -90,7 +95,7 @@ export default function PaymentForm({
           </button>
         </div>
         {applied &&
-          (applied === 'BREWLITE10' ? (
+          (applied === VOUCHER_CODE ? (
             <p style={{ fontSize: 13, color: '#065f46' }}>Đã áp {applied}: −{formatVND(discount)}</p>
           ) : (
             <p style={{ fontSize: 13, color: '#b91c1c' }}>Mã {applied} không hợp lệ, tính giá gốc</p>

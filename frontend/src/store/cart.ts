@@ -15,9 +15,10 @@ import {
   DEFAULT_SIZE,
   DEFAULT_TOPPINGS,
 } from '@/lib/pricing';
+import { MAX_LINES, MAX_QTY, type AddItemResult } from '@/lib/cart-limits';
 
-// Khớp @Max(99) của quantity ở POST /orders (CreateOrderDto): vượt thì backend trả 400 lúc trả tiền
-const MAX_LINE_QTY = 99;
+// Hằng giới hạn định nghĩa ở lib/cart-limits (khớp CreateOrderDto); re-export để chỗ import cũ từ store vẫn dùng được.
+export { MAX_LINES, MAX_QTY };
 
 interface CartState {
   items: CartItem[];
@@ -25,7 +26,8 @@ interface CartState {
   count: number;
   /** Tổng tiền giỏ (VND) = sum(lineTotal). */
   total: number;
-  addItem: (product: Product, opts?: { size?: Size; toppings?: string[]; quantity?: number }) => void;
+  /** Từ chối (không đổi giỏ) khi vượt 20 dòng / 99 ly hoặc hết hàng (OUT_OF_STOCK), hoặc dòng đã giữ hết số còn lại (AT_STOCK_LIMIT); tồn kho thấp hơn số xin thì vẫn cắt xuống tồn kho. */
+  addItem: (product: Product, opts?: { size?: Size; toppings?: string[]; quantity?: number }) => AddItemResult;
   updateQty: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
   clear: () => void;
@@ -40,55 +42,61 @@ function summarize(items: CartItem[]): { count: number; total: number } {
 
 export const useCart = create<CartState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       items: [],
       count: 0,
       total: 0,
 
-      addItem: (product, opts) =>
-        set((state) => {
-          const size = opts?.size ?? DEFAULT_SIZE;
-          const toppings = opts?.toppings ?? DEFAULT_TOPPINGS;
-          const qty = Math.max(1, Math.floor(opts?.quantity ?? 1));
-          // Không cho vượt tồn kho (backend Task 10 kiểm tra lại).
-          const cappedQty = Math.min(qty, MAX_LINE_QTY, Math.max(0, product.stock));
-          if (cappedQty <= 0) return state;
+      addItem: (product, opts) => {
+        const size = opts?.size ?? DEFAULT_SIZE;
+        const toppings = opts?.toppings ?? DEFAULT_TOPPINGS;
+        const qty = Math.max(1, Math.floor(opts?.quantity ?? 1));
+        const stock = Math.max(0, product.stock);
+        if (stock <= 0) return { ok: false, reason: 'OUT_OF_STOCK' };
+        // Số xin vượt 99 là từ chối, không âm thầm cắt về 99.
+        if (qty > MAX_QTY) return { ok: false, reason: 'MAX_QTY' };
 
-          const key = buildCartKey(product.id, size, toppings);
+        const state = get();
+        const key = buildCartKey(product.id, size, toppings);
+        const existing = state.items.find((i) => i.key === key);
+        if (!existing && state.items.length >= MAX_LINES) return { ok: false, reason: 'MAX_LINES' };
+        if (existing && existing.quantity + qty > MAX_QTY) return { ok: false, reason: 'MAX_QTY' };
+
+        // Không cho vượt tồn kho (backend Task 10 kiểm tra lại).
+        const nextQty = Math.min((existing?.quantity ?? 0) + qty, stock);
+        // Dòng đã giữ hết số còn lại (stock > 0 nhưng không thêm được gì): AT_STOCK_LIMIT, không phải OUT_OF_STOCK.
+        if (existing && nextQty <= existing.quantity) return { ok: false, reason: 'AT_STOCK_LIMIT' };
+
+        let items: CartItem[];
+        if (existing) {
+          items = state.items.map((i) =>
+            i.key === key ? { ...i, quantity: nextQty, lineTotal: calcLineTotal(i.unitPrice, nextQty) } : i,
+          );
+        } else {
           const unitPrice = calcUnitPrice(product.price, size, toppings);
-          const existing = state.items.find((i) => i.key === key);
-
-          let items: CartItem[];
-          if (existing) {
-            const nextQty = Math.min(existing.quantity + cappedQty, MAX_LINE_QTY, Math.max(0, product.stock));
-            items = state.items.map((i) =>
-              i.key === key
-                ? { ...i, quantity: nextQty, lineTotal: calcLineTotal(i.unitPrice, nextQty) }
-                : i,
-            );
-          } else {
-            items = [
-              ...state.items,
-              {
-                key,
-                productId: product.id,
-                name: product.name,
-                imageUrl: product.imageUrl,
-                size,
-                toppings: [...toppings].sort(),
-                quantity: cappedQty,
-                unitPrice,
-                lineTotal: calcLineTotal(unitPrice, cappedQty),
-              },
-            ];
-          }
-          return { items, ...summarize(items) };
-        }),
+          items = [
+            ...state.items,
+            {
+              key,
+              productId: product.id,
+              name: product.name,
+              imageUrl: product.imageUrl,
+              size,
+              toppings: [...toppings].sort(),
+              quantity: nextQty,
+              unitPrice,
+              lineTotal: calcLineTotal(unitPrice, nextQty),
+            },
+          ];
+        }
+        set({ items, ...summarize(items) });
+        return { ok: true };
+      },
 
       updateQty: (key, quantity) =>
         set((state) => {
           // Số lượng tối thiểu >= 1 (xóa món dùng nút Xóa riêng).
-          const qty = Math.min(MAX_LINE_QTY, Math.max(1, Math.floor(quantity)));
+          const qty = Math.min(MAX_QTY, Math.max(1, Math.floor(quantity)));
           const items = state.items.map((i) =>
             i.key === key ? { ...i, quantity: qty, lineTotal: calcLineTotal(i.unitPrice, qty) } : i,
           );

@@ -125,7 +125,7 @@ DB --> BE : Trả về thông tin các món (Tên, giá, hình ảnh)
 deactivate DB
 
 BE --> FE : Gửi danh sách đồ uống về giao diện
-note right of FE : Đang tải: skeleton loading.\nLỗi mạng / HTTP lỗi: hiện lỗi + nút "Thử lại";\ndanh sách rỗng: hiện "Chưa có món nào".\nChỉ khi chưa cấu hình NEXT_PUBLIC_API_URL\nmới dùng menu mẫu + banner
+note right of FE : Đang tải: 4 thẻ skeleton cùng dáng thẻ món.\nLỗi mạng / HTTP lỗi: hiện "Không tải được menu."\n+ chi tiết lỗi + nút "Thử lại";\ndanh sách rỗng: hiện "Chưa có món nào.";\nchỉ khi chưa cấu hình NEXT_PUBLIC_API_URL\nmới dùng menu mẫu + banner
 deactivate BE
 
 FE --> User : Hiển thị danh sách đồ uống lên màn hình
@@ -141,8 +141,8 @@ deactivate FE
 * **Ảnh món (đề §8 Task 2: JSON gồm id, tên, giá, ảnh):** `Product.imageUrl` là đường dẫn tương đối tới SVG tĩnh trong `frontend/public/images/` (`latte.svg`, `americano.svg`, `cappuccino.svg`, `tra-dao.svg`), trình duyệt tải từ chính frontend (`:3001`). `backend/prisma/seed.ts` đặt `imageUrl` cho p1–p4 ở cả `create` lẫn `update` nên DB cũ có ảnh sau khi backend khởi động lại. `ProductCard` hiện ảnh khi `imageUrl` khác rỗng, ngược lại hiện ☕. Menu mẫu (`frontend/src/lib/mock-products.ts`) dùng cùng bộ ảnh. Giai đoạn UI sau sẽ thay bằng ảnh thật. Test: `backend/test/seed-images.spec.ts`, `frontend/src/lib/mock-products.test.ts`.
 * **Controller / Service:** `ProductController.list()` / `detail()` $\rightarrow$ `ProductService.listAvailable()` / `getById()`
 * **Thực thể CSDL:** Bảng `Product` (lọc điều kiện `stock > 0`)
-* **Xử lý Frontend:** Quản lý state hiển thị bằng React State (`useState` + `fetch`), không dùng React Query.
-* **Lỗi / rỗng / menu mẫu:** `getProducts()` (`frontend/src/lib/api.ts`) đọc `NEXT_PUBLIC_API_URL` lúc gọi. **Chưa cấu hình** → trả `MOCK_PRODUCTS` kèm `fromMock: true` (không gọi mạng, `ProductGrid` hiện banner "menu mẫu"; dùng để demo UI không cần backend). **Đã cấu hình** (compose luôn set) → lỗi mạng / HTTP lỗi **ném `Error`** (`MenuPage` bắt, `ProductGrid` hiện thông báo lỗi + nút "Thử lại"), danh sách rỗng trả `[]` (hiện "Chưa có món nào"); không còn rơi về menu mẫu vì khách sẽ thêm được món có id không có trong DB. Test: `frontend/src/lib/api.test.ts`.
+* **Xử lý Frontend:** `MenuPage` (`frontend/src/app/page.tsx`) gọi `getProducts()` qua hook `useAsync` (`frontend/src/lib/use-async.ts`, trả `{ data, error, loading, retry }`; phần lõi `createAsyncRunner` không phụ thuộc React và bỏ kết quả của lần gọi cũ về muộn), không dùng React Query. `ProductGrid` vẽ 3 trạng thái bằng `Skeleton` / `ErrorState` / `EmptyState` (`frontend/src/components/ui/`): đang tải = 4 thẻ skeleton (ảnh, 2 dòng chữ, nút) trong vùng `aria-busy`; lỗi = hình cốc nghiêng + "Không tải được menu." + chi tiết lỗi (prop `detail` của `ErrorState`, nằm trong cùng khối `role="alert"`, dưới câu tiêu đề) + nút "Thử lại" (gọi lại `retry`); rỗng = hình túi hạt + "Chưa có món nào." + "Menu đang trống. Quay lại sau nhé!". Test: `frontend/src/lib/use-async.test.ts`, `frontend/src/components/ProductGrid.test.ts`.
+* **Lỗi / rỗng / menu mẫu:** `getProducts()` (`frontend/src/lib/api.ts`) đọc `NEXT_PUBLIC_API_URL` lúc gọi. **Chưa cấu hình** → trả `MOCK_PRODUCTS` kèm `fromMock: true` (không gọi mạng, `ProductGrid` hiện banner "menu mẫu"; dùng để demo UI không cần backend). **Đã cấu hình** (compose luôn set) → lỗi mạng / HTTP lỗi **ném `ApiError`** (`Error` có thêm `status`: mã HTTP, 0 khi không tới được máy chủ; câu `message` giữ như cũ; `useAsync` bắt, `ProductGrid` hiện "Không tải được menu." + chi tiết lỗi + nút "Thử lại"), danh sách rỗng trả `[]` (hiện "Chưa có món nào."); không còn rơi về menu mẫu vì khách sẽ thêm được món có id không có trong DB. Test: `frontend/src/lib/api.test.ts`.
 * **Size / Topping:** `ProductDto` (`id, name, price, imageUrl, stock, version`) **không** chứa size/topping. Bảng giá cố định nằm ở `frontend/src/lib/pricing.ts` (tính tạm trên máy khách) và bản sao `backend/src/order/pricing.ts` (server tính lại khi `POST /orders`): S +0, M +5.000 (mặc định), L +10.000; Trân châu 5.000, Kem cheese 8.000, Thạch cà phê 6.000. Sửa bảng giá phải sửa cả 2 file.
 
 ---
@@ -172,17 +172,23 @@ activate UI
 UI -> Cart : Lưu món đã chọn (kèm size, topping, số lượng)
 activate Cart
 
-Cart -> Cart : Gộp dòng cùng khóa productId|size|topping,\nchặn số lượng vượt tồn kho, tính lại tổng tiền
+Cart -> Cart : Kiểm theo thứ tự: món hết hàng, số lượng xin > 99,\ndòng mới khi giỏ đã đủ 20 dòng, dòng cũ cộng thêm quá 99,\ndòng cũ đã giữ hết số còn lại (không thêm được gì)
+alt Bị từ chối (giỏ không đổi)
+Cart --> UI : Trả lý do OUT_OF_STOCK / MAX_QTY / MAX_LINES / AT_STOCK_LIMIT
+deactivate Cart
+UI --> User : Hiện "Món đã hết hàng." / "Mỗi dòng tối đa 99 ly." / "Giỏ đã đủ 20 dòng." / "Bạn đã thêm hết số lượng còn lại."\n(không hiện "Đã thêm ✓"; thêm từ modal thì modal vẫn mở)
+else Hợp lệ
+Cart -> Cart : Gộp dòng cùng khóa productId|size|topping,\ncắt số lượng xuống tồn kho nếu xin nhiều hơn, tính lại tổng tiền
 Cart --> UI : Cập nhật số lượng trên biểu tượng Giỏ hàng
 deactivate Cart
-
 UI --> User : Nút đổi thành "Đã thêm ✓" trong 1,2 giây\n(thêm từ modal thì modal đóng lại)
+end
 deactivate UI
 
 == SỬA SỐ LƯỢNG ==
 User -> UI : Mở giỏ hàng và bấm tăng/giảm (+ / -) số lượng
 activate UI
-UI -> Cart : Cập nhật số lượng mới cho món đó (tối thiểu 1, nút - mờ khi còn 1)
+UI -> Cart : Cập nhật số lượng mới cho món đó (tối thiểu 1, tối đa 99; nút - mờ khi còn 1, nút + mờ khi đạt 99)
 activate Cart
 Cart -> Cart : Tính lại tổng tiền giỏ hàng tức thời
 Cart --> UI : Trả về tổng tiền mới
@@ -207,7 +213,8 @@ deactivate UI
 * **Công nghệ Frontend:** Zustand store `useCart` (`frontend/src/store/cart.ts`), bảng giá ở `frontend/src/lib/pricing.ts`. Test: `frontend/src/store/cart.test.ts`.
 * **Cơ chế lưu trữ:** middleware `persist` ghi vào `window.localStorage` key `brewlite-cart` để F5 không bị mất giỏ hàng.
 * **Cấu trúc dữ liệu:** `CartItem { key, productId, name, imageUrl?, size, toppings: [], quantity, unitPrice, lineTotal }`, với `key = productId|size|topping (đã sắp xếp)`: cùng key thì gộp số lượng, khác size/topping thì tách dòng.
-* **Tồn kho:** `addItem` chặn số lượng vượt `product.stock` và bỏ qua món hết hàng; tăng số lượng trong giỏ (`updateQty`) chỉ giữ trong khoảng 1 đến 99, không chặn theo tồn kho, nên vượt kho thì đến lúc thanh toán backend trả 409 (§2.4). Trần 99 mỗi dòng (`MAX_LINE_QTY`, áp cho cả `addItem` và `updateQty`) khớp `@Max(99)` của `quantity` ở `POST /orders`, để giỏ không gửi được đơn bị backend từ chối 400.
+* **Tồn kho:** `addItem` cắt số lượng xuống `product.stock` khi xin nhiều hơn tồn kho (vẫn tính là thêm được); món hết hàng (`stock <= 0`) bị từ chối với lý do `OUT_OF_STOCK`; còn hàng nhưng dòng đã giữ hết số còn lại nên không thêm được gì thì bị từ chối với lý do `AT_STOCK_LIMIT` (thẻ vẫn ghi "Còn N", nên câu báo không nói "hết hàng"). Tăng số lượng trong giỏ (`updateQty`) chỉ giữ trong khoảng 1 đến 99, không chặn theo tồn kho, nên vượt kho thì đến lúc thanh toán backend trả 409 (§2.4).
+* **Giới hạn 20 dòng và 99 ly:** `MAX_LINES = 20` và `MAX_QTY = 99` (định nghĩa ở `lib/cart-limits.ts`, `store/cart.ts` re-export) khớp `@ArrayMaxSize(20)` và `@Max(99)` của `CreateOrderDto` ở `POST /orders`, để giỏ không gửi được đơn bị backend từ chối 400. `addItem` trả `{ ok: true }` hoặc `{ ok: false, reason }`, tính ngoài callback `set` của zustand và không đổi giỏ khi từ chối: dòng mới khi giỏ đã đủ 20 dòng là `MAX_LINES`; số lượng xin lớn hơn 99, hoặc dòng cũ cộng thêm quá 99 (ví dụ 98 + 5), là `MAX_QTY` (từ chối hẳn, không cắt về 99). Khác size hoặc topping của cùng món là dòng mới. Câu hiển thị ở `lib/cart-limits.ts` (`addItemMessage`): "Giỏ đã đủ 20 dòng.", "Mỗi dòng tối đa 99 ly.", "Món đã hết hàng.", "Bạn đã thêm hết số lượng còn lại." (dựng từ hai hằng trên, không viết cứng số); `ProductCard` và `ProductDetailModal` hiện câu này trong phần tử `role="status"` thay cho "Đã thêm ✓". bộ chọn số lượng trong `ProductDetailModal` dừng ở `maxModalQty(stock)` = min(tồn kho, 99) (nút + mờ kèm title) và thông báo trong modal tự xóa khi đổi số lượng, size hoặc topping; `updateQty` vẫn kẹp 1 đến 99; `QtyStepper` làm mờ nút + ở 99 (title "Tối đa 99 ly mỗi dòng"); trang giỏ hiện "Giỏ đã đủ 20 dòng." khi giỏ có 20 dòng.
 
 ---
 
@@ -281,8 +288,8 @@ else Mật khẩu chính xác (Kịch bản thành công)
     BE -> BE : Tạo mã phiên đăng nhập an toàn (Token JWT { sub, email, role }, hạn 7 ngày)
     BE --> FE : 200 { accessToken, user: { id, email, role } }
     FE -> FE : Lưu mã Token vào sessionStorage của tab (key "brewlite-token"):\nmỗi tab một phiên, tab khác không bị ghi đè
-    FE -> FE : Bỏ đơn đang thanh toán dở của tab (clearCheckout)
-    FE --> User : Điều hướng theo role trong JWT: CUSTOMER -> / (Thực đơn),\nBARISTA -> /barista, ADMIN -> /admin
+    FE -> FE : Đơn đang thanh toán dở của tab (clearCheckoutIfOtherUser):\ngiữ nếu đúng tài khoản đã tạo nó (sub của JWT), bỏ nếu là tài khoản khác
+    FE --> User : Nếu URL có ?next= hợp lệ (đường dẫn tương đối trong site, ví dụ /cart)\nthì về đúng trang đó; không thì điều hướng theo role trong JWT:\nCUSTOMER -> / (Thực đơn), BARISTA -> /barista, ADMIN -> /admin
 end
 deactivate BE
 deactivate FE
@@ -292,6 +299,17 @@ User -> FE : Bấm "Đăng xuất" trên header
 activate FE
 FE -> FE : Xóa token và đơn đang thanh toán dở của tab (sessionStorage)
 FE --> User : Về trang Đăng nhập (tab khác giữ nguyên phiên)
+deactivate FE
+
+== LUỒNG 4: HẾT PHIÊN GIỮA CHỪNG (API có xác thực trả 401) ==
+User -> FE : Thao tác cần đăng nhập (Hủy đơn, xem Lịch sử, hàng đợi và thao tác ở quầy, tồn kho, xem Hồ sơ, Xác nhận trả)
+activate FE
+FE -> BE : Gọi API kèm Bearer JWT đã hết hạn hoặc sai
+activate BE
+BE --> FE : 401 Unauthorized
+deactivate BE
+FE -> FE : handleUnauthorized(): xóa token của tab,\ngiữ nguyên giỏ hàng và đơn đang thanh toán dở
+FE --> User : Chuyển về /login?next=<trang đang xem>\n(đang ở /login thì không kèm next); đăng nhập xong quay lại đúng trang;\nđang trả tiền dở thì đăng nhập lại cùng tài khoản là trả tiếp đúng đơn đó (cùng mã đơn, cùng key)
 deactivate FE
 @enduml
 ```
@@ -304,6 +322,7 @@ deactivate FE
 * **Mã phiên JWT:** Cấp chuỗi Bearer Token chứa `{ sub: user.id, email: user.email, role }` có thời hạn hết hạn (`expiresIn`); đăng nhập trả `{ accessToken, user: { id, email, role } }`.
 * **Vai trò (`User.role`):** `CUSTOMER` (mặc định) / `BARISTA` / `ADMIN`. Đăng ký công khai luôn tạo `CUSTOMER`; tài khoản quầy và quản trị chỉ có từ seed (`barista@brewlite.vn`, `admin@brewlite.vn`). `JwtAuthGuard` đưa `role` vào `req.user` (token cũ thiếu `role` coi là `CUSTOMER`), `RolesGuard` + `@Roles(...)` chặn theo vai trò (403). Giao diện chỉ đọc `role` từ JWT để điều hướng (`/` khách, `/barista`, `/admin`), quyền thật do backend chặn.
 * **Phiên đăng nhập theo tab:** token lưu ở `sessionStorage` (`saveToken()` / `getToken()` / `clearToken()` trong `frontend/src/lib/auth.ts`): đăng nhập barista ở tab này không đổi phiên khách ở tab khác, reload vẫn giữ, tab mở mới bằng URL phải đăng nhập lại. Test: `frontend/src/lib/auth.test.ts`.
+* **Hết phiên giữa chừng (401) và `?next=`:** `handleUnauthorized()` (`frontend/src/lib/session.ts`) xóa token của tab (`clearToken()`) rồi chuyển hẳn (`window.location.replace`) về `/login?next=<đường dẫn + query đang xem, đã mã hóa>`; đang ở `/login` thì về `/login` không kèm `next`; giỏ hàng và phiên thanh toán của tab không bị xóa. Gọi từ `cancelOrder()`, `advanceOrder()` (chung `patchOrderStatus`), `getProfile()` (cả khi 404: tài khoản của token không còn) và `getMyOrders()` (lịch sử, UC07) trong `frontend/src/lib/api.ts`, từ `fetchQueue()` (`frontend/src/lib/barista.ts`, màn quầy) và `call()` (`frontend/src/lib/admin.ts`, màn tồn kho) khi nhận 401, luôn trước khi ném lỗi với câu tiếng Việt như cũ (`ApiError` 401, `QueueAuthError`, `Error`), và từ `PaymentForm` khi `isUnauthorizedPayment(e)` (`PaymentError.status === 401`: lỗi 401 của `POST /orders` hoặc `POST /payments`; hàm nằm ở `frontend/src/lib/payment/checkout-session.ts`). Hàm chuyển trang đổi được bằng `setRedirect()` để test. Sau đăng nhập, trang `/login` gọi `postLoginTarget(window.location.search, role)` (cùng file `session.ts`), đọc `next` qua `safeNext()`: chỉ nhận đường dẫn tương đối bắt đầu bằng đúng một `/`; `//host`, `/\host`, URL tuyệt đối (`://`), `javascript:`, ký tự điều khiển bị bỏ (chống open redirect) và khi đó về trang theo role. Phiên thanh toán dở của tab gắn với tài khoản: `loadCheckout()` ghi `userId` (claim `sub` của JWT, đọc bằng `userIdFromToken()` trong `auth.ts`) vào `CheckoutState`; sau đăng nhập `/login` gọi `clearCheckoutIfOtherUser(userId)`: đăng nhập lại **cùng tài khoản** (hết phiên giữa lúc trả tiền) thì giữ phiên, lần trả sau dùng lại đúng mã đơn và 2 key (không tạo đơn thứ hai), còn **tài khoản khác**, phiên lưu trước khi có `userId` hoặc dữ liệu hỏng thì bỏ phiên (giỏ còn). Đăng xuất vẫn `clearCheckout()` (luồng 3). Test: `frontend/src/lib/session.test.ts` (kể cả `postLoginTarget`), `frontend/src/lib/api.test.ts` (nhóm "401 ở hàm có xác thực"), `frontend/src/lib/barista.test.ts`, `frontend/src/lib/admin.test.ts`, `frontend/src/lib/auth.test.ts` (`userIdFromToken`), `frontend/src/lib/payment/checkout-session.test.ts` (`clearCheckoutIfOtherUser`, `isUnauthorizedPayment`).
 * **Header và Đăng xuất:** `frontend/src/components/Header.tsx` hiện email + nhãn vai trò (`ROLE_LABEL`: Khách / Quầy / Quản trị) của tab, đọc lại mỗi lần đổi trang; "Đăng xuất" gọi `clearToken()` + `clearCheckout()` rồi về `/login`, chỉ tab đó bị đăng xuất. JWT không bị thu hồi ở backend (stateless, hết hạn sau 7 ngày).
 
 ---
@@ -316,7 +335,8 @@ deactivate FE
 2. **Bước 2 (UC04 + UC05 - bấm "Xác nhận trả"):** Một lần bấm chạy **liền 2 lời gọi**: `POST /orders` rồi ngay sau đó `POST /payments`. Nghĩa là đơn chỉ được tạo **sau** bước áp voucher, không có bước tạo đơn riêng trước màn thanh toán.
    - **`POST /orders` (UC04):** Gửi giỏ (`productId, quantity, size, toppings`) kèm token JWT; thiếu/sai token → 401. **Máy chủ tự tính giá**: `unitPrice = product.price + phụ thu size + tổng giá topping` theo `backend/src/order/pricing.ts`, giá client gửi lên bị bỏ qua. Thiếu size → mặc định `M`; topping lạ (kể cả tên trùng khóa prototype như `constructor`) → 400; sản phẩm lạ → 404. Giới hạn đầu vào: tối đa 20 dòng, mỗi dòng `quantity` từ 1 đến 99 (DTO, 400); tổng đơn vượt Int32 (2147483647, cột `total` là `Int`) → 400 `Order total too large`. Đơn lưu ở `PENDING`. Header `Idempotency-Key` (tùy chọn, giao diện luôn gửi; đề §9 tiêu chí b): key đã dùng bởi cùng người → trả lại đúng đơn cũ với **200**, không tạo đơn mới; key của người khác → 422; không gửi key → luôn tạo đơn mới (201). Hai request song song cùng key vẫn chỉ ra 1 đơn nhờ chỉ số unique `Order.idempotencyKey`.
    - **`POST /payments` (UC05):** Khách chọn Ví/Thẻ. Giao diện giữ **một Idempotency-Key trả tiền cho cả phiên màn Thanh toán** (rời màn thì sinh lại) và dùng lại khi thử lại, nên bấm lại sau khi mất phản hồi nhận lại biên lai cũ (200), không bị 400. Voucher và số tiền tính lại trên `order.total` của server.
-   - **Thử lại sau khi lỗi:** giao diện giữ `orderId` của đơn vừa tạo cùng 2 key (`orderKey`, `payKey`) trong `sessionStorage` của tab, gắn với nội dung giỏ, nên lần bấm tiếp theo **chỉ gọi `POST /payments`** với `orderId` cũ và **cùng key trả tiền** (UC06 KB1), không tạo đơn mới, kể cả sau khi reload hoặc quay lại giỏ rồi vào lại (giỏ không đổi). Dùng lại key an toàn vì lần trả lỗi không lưu key (xem mục C). Giỏ đổi, hoặc backend báo đơn không trả tiếp được (400 sai trạng thái, 403, 404, 422), thì bỏ phiên đó và tạo đơn mới.
+   - **Kết quả hiện trên biên lai:** `POST /payments` trả `{ orderId, amount, discount, loyaltyPointsEarned, ... }` (bản cache 200 trả đúng giá trị đã lưu). `ApiPaymentGateway` chuẩn hóa vào `PaymentResult` (`discount: Number(json.discount ?? 0)`, `loyaltyPointsEarned: Number(json.loyaltyPointsEarned ?? 0)`); `PaymentSuccess` hiện "Đã giảm: <số tiền>" khi `discount > 0` và "+N điểm" khi `loyaltyPointsEarned > 0`. Cổng mock trả `discount: 0` (`req.amount` đã là số tiền sau giảm, mock không biết tổng gốc) và `loyaltyPointsEarned = floor(amount * LOYALTY_RATE / VND_PER_POINT)`. Hằng số `VOUCHER_CODE`, `VOUCHER_RATE`, `LOYALTY_RATE`, `VND_PER_POINT` nằm ở `frontend/src/lib/promo.ts`, copy từ `backend/src/payment/payment.service.ts`; `promo.test.ts` đọc file backend và so từng giá trị nên lệch là test đỏ. Tổng điểm tích lũy xem ở `/profile` (`GET /users/me`).
+  - **Thử lại sau khi lỗi:** giao diện giữ `orderId` của đơn vừa tạo cùng 2 key (`orderKey`, `payKey`) trong `sessionStorage` của tab, gắn với nội dung giỏ, nên lần bấm tiếp theo **chỉ gọi `POST /payments`** với `orderId` cũ và **cùng key trả tiền** (UC06 KB1), không tạo đơn mới, kể cả sau khi reload hoặc quay lại giỏ rồi vào lại (giỏ không đổi). Dùng lại key an toàn vì lần trả lỗi không lưu key (xem mục C). Giỏ đổi, hoặc backend báo đơn không trả tiếp được (400 sai trạng thái, 403, 404, 422), thì bỏ phiên đó và tạo đơn mới.
 3. **Xử lý trong `POST /payments`** (thứ tự cố định: **guard → validate → khóa → chủ đơn → cache → kiểm trạng thái → charge**):
    - **Validate (trước khóa):** body sai `CreatePaymentDto` (`orderId` phải là chuỗi, `paymentMethod` thuộc `WALLET` | `CARD`) → 400 (ValidationPipe); thiếu header `Idempotency-Key` → 400 `Missing Idempotency-Key`; key dài hơn 255 ký tự → 400 `Idempotency-Key too long` (chỉ số unique của Postgres từ chối key quá dài bằng lỗi 500, nên chặn ở biên API). Giao diện luôn gửi key hợp lệ nên các lỗi này chỉ gặp khi gọi API tay.
    - **Xác thực & phân quyền (chạy trước mọi nhánh):** `JwtAuthGuard` — thiếu/sai token → 401, dừng ngay. Sau khi vào khóa, `processPayment()` **đọc đơn trước khi xét trùng lặp**: đơn không có → 404, `order.userId !== req.user.id` → 403. Bước này chạy **trước** nhánh Cache Hit nên người lạ không thanh toán hộ được và không đọc được biên lai của người khác bằng key; nếu key trỏ tới biên lai của đơn khác (`dto.orderId`) thì đơn đó cũng phải là của người gọi, nếu không → 403. Đúng chủ nhưng key đã dùng cho đơn khác → 422 `Idempotency-Key already used for another order`: không trả biên lai đơn cũ, không charge, đơn đang thanh toán giữ nguyên (không dùng 409 vì giao diện gán 409 cho "hết hàng, đã hoàn tiền").
@@ -362,7 +382,7 @@ User -> FE : Tôi chọn trả bằng ví, bấm "Xác nhận trả"
 activate FE
 opt Chưa có đơn (lần bấm đầu; lần thử lại đã giữ orderId thì bỏ qua)
     FE -> BE : POST /orders (giỏ hàng: món, số lượng, size, topping)\nkèm Idempotency-Key của đơn
-    note right of FE #fef3c7 : Gửi kèm token đăng nhập.\nKey tạo đơn giữ nguyên tới khi rời màn Thanh toán\n(khác key của POST /payments).\nLỗi ở bước này (thiếu/sai token 401, 400, 404, 422) thì dừng:\nkhông gọi POST /payments, lần bấm sau tạo đơn lại
+    note right of FE #fef3c7 : Gửi kèm token đăng nhập.\nKey tạo đơn giữ nguyên tới khi rời màn Thanh toán\n(khác key của POST /payments).\nLỗi ở bước này (thiếu/sai token 401, 400, 404, 422) thì dừng:\nkhông gọi POST /payments, lần bấm sau tạo đơn lại.\n401 còn xóa token và chuyển về /login?next=/cart (giỏ và đơn đang trả dở giữ nguyên;\nđăng nhập lại cùng tài khoản thì trả tiếp đúng đơn đó)
     activate BE
     BE -> DB : Kiểm xem Idempotency-Key này đã tạo đơn chưa
     activate DB
@@ -396,7 +416,7 @@ activate BE
 
 alt Thiếu/sai token (JwtAuthGuard)
     BE --> FE : 401 Chưa đăng nhập / token sai hoặc hết hạn
-    note right of BE #fef3c7 : Trả lỗi và DỪNG tại đây,\ngiỏ hàng giữ nguyên
+    note right of BE #fef3c7 : Trả lỗi và DỪNG tại đây,\ngiỏ hàng và đơn #1042 giữ nguyên.\nFE xóa token, chuyển về /login?next=/cart;\nđăng nhập lại cùng tài khoản thì trả tiếp đơn #1042
 else Token hợp lệ
     note right of BE #fef3c7 : Body sai DTO / thiếu hoặc quá dài (> 255 ký tự)\nheader Idempotency-Key -> 400, dừng trước khi vào khóa
     BE -> BE : Xếp hàng theo khóa trong tiến trình\n(theo Idempotency-Key, rồi theo orderId)
@@ -463,7 +483,7 @@ else Token hợp lệ
                     FE -> FE : Lưu orderId #1042 + 2 key vào sessionStorage để thử lại
                     FE --> User : 409: "Món đã hết hàng, tiền đã được hoàn lại";\nmã khác: "Thanh toán thất bại (mã ...)" (giỏ vẫn còn)
                 else Transaction thành công
-                    BE --> FE : Thanh toán xong rồi nhé, đơn #1042 đã được trả tiền
+                    BE --> FE : Thanh toán xong rồi nhé, đơn #1042 đã được trả tiền\n(kèm orderId, amount, discount, loyaltyPointsEarned)
                     note right of BE #fef3c7 : Trả HTTP 201 cho lần thanh toán đầu tiên
                     FE --> User : Xong rồi, mời bạn xem biên lai đơn #1042 nhé
                 end
@@ -481,8 +501,9 @@ deactivate FE
 * **Backend Endpoints:**
   - Tạo đơn: `POST /orders` (Body: `items[] { productId, quantity, size?, toppings? }`, Header: `Bearer JWT`, `Idempotency-Key` tùy chọn, tối đa 255 ký tự)
   - Thanh toán: `POST /payments` (Body: `{ orderId, paymentMethod, voucherCode? }`, Header: `Idempotency-Key: <UUID>`, `Bearer JWT`)
-* **Thứ tự gọi ở Frontend:** `PaymentForm` → `ApiPaymentGateway.pay()` gọi `POST /orders` rồi `POST /payments` trong cùng một lần bấm "Xác nhận trả". Lỗi ném `PaymentError` mang `orderId` (khi đơn đã tạo), mã HTTP (`status`, không có khi mất kết nối) và message backend (`detail`). Phiên thanh toán của tab nằm ở `frontend/src/lib/payment/checkout-session.ts`: `loadCheckout(items)` trả `{ orderKey, payKey, orderId? }` lưu `sessionStorage` (key `brewlite-checkout`) theo dấu vân tay giỏ (`cartFingerprint`), nên reload hoặc quay lại giỏ rồi vào lại mà giỏ không đổi vẫn trả tiếp đúng đơn với đúng `payKey`; `rememberOrder()` ghi `orderId`; trả xong, đăng nhập hoặc đăng xuất thì `clearCheckout()`. `dropsCheckout(e)` bỏ phiên khi đơn đang giữ không trả tiếp được (400 khác "Payment failed", 403, 404, 422), giữ phiên khi mất kết nối, 5xx, 400 "Payment failed", 401, 409. Test: `frontend/src/lib/payment/checkout-session.test.ts`, `frontend/src/lib/payment/api-gateway.test.ts`.
-* Tạo đơn yêu cầu Bearer JWT, thiếu token trả 401 (khớp Task 7). `POST /payments` cũng gắn `@UseGuards(JwtAuthGuard)` (thiếu/sai token → 401) và `PaymentController.pay()` truyền `req.user.id` vào `PaymentService.processPayment(userId, dto, key)`. FE (`ApiPaymentGateway`) gửi `Authorization: Bearer <brewlite-token>` cho cả `/orders` lẫn `/payments`; 401/403 ném `PaymentError` mang `orderId`. Lỗi khác cũng ném `PaymentError` mang `orderId` với câu tiếng Việt lấy từ `message` của body JSON (không hiện JSON thô): 400 "Thanh toán thất bại…" (message dạng mảng của validate thì nối lại), 409 "Món đã hết hàng, tiền đã được hoàn lại", mã khác kèm mã và thông điệp backend; body không phải JSON thì chỉ báo mã. Giỏ hàng luôn được giữ nguyên.
+* **Thứ tự gọi ở Frontend:** `PaymentForm` → `ApiPaymentGateway.pay()` gọi `POST /orders` rồi `POST /payments` trong cùng một lần bấm "Xác nhận trả". Lỗi ném `PaymentError` mang `orderId` (khi đơn đã tạo), mã HTTP (`status`, không có khi mất kết nối) và message backend (`detail`). Phiên thanh toán của tab nằm ở `frontend/src/lib/payment/checkout-session.ts`: `loadCheckout(items)` trả `{ orderKey, payKey, orderId?, userId? }` lưu `sessionStorage` (key `brewlite-checkout`) theo dấu vân tay giỏ (`cartFingerprint`) và theo tài khoản đang đăng nhập (`userId` = `sub` của JWT), nên reload hoặc quay lại giỏ rồi vào lại mà giỏ không đổi vẫn trả tiếp đúng đơn với đúng `payKey`; `rememberOrder()` ghi `orderId`; trả xong hoặc đăng xuất thì `clearCheckout()`; đăng nhập thì `clearCheckoutIfOtherUser(userId)` (giữ phiên khi đăng nhập lại cùng tài khoản sau khi hết phiên, bỏ khi là tài khoản khác hoặc phiên không có `userId`, xem §2.3 mục C). `dropsCheckout(e)` bỏ phiên khi đơn đang giữ không trả tiếp được (400 khác "Payment failed", 403, 404, 422), giữ phiên khi mất kết nối, 5xx, 400 "Payment failed", 401, 409. Test: `frontend/src/lib/payment/checkout-session.test.ts`, `frontend/src/lib/payment/api-gateway.test.ts`.
+* **Giảm giá và điểm thưởng trên biên lai:** `PaymentResult` có `discount` và `loyaltyPointsEarned` (số, mặc định 0). `ApiPaymentGateway.pay()` lấy hai trường từ body `POST /payments` (cả bản 201 lẫn bản cache 200; thiếu hoặc `null` thì 0); cổng mock trả `discount: 0` và `loyaltyPointsEarned = floor(amount * LOYALTY_RATE / VND_PER_POINT)`. `PaymentSuccess` (`PaymentReceipt`) hiện "Đã giảm: <số tiền>" khi `discount > 0` và "+N điểm" (`toLocaleString('vi-VN')`) khi `loyaltyPointsEarned > 0`. `PaymentForm` dùng `VOUCHER_CODE` / `VOUCHER_RATE` từ `frontend/src/lib/promo.ts` (cùng tên, cùng giá trị với `payment.service.ts`: `BREWLITE10`, 0.1, `LOYALTY_RATE` 0.1, `VND_PER_POINT` 1000, nên 1 điểm = 10.000 đ). Test: `frontend/src/lib/promo.test.ts` (đọc `backend/src/payment/payment.service.ts` và so 4 giá trị), `frontend/src/lib/payment/api-gateway.test.ts`, `frontend/src/lib/payment/mock-gateway.test.ts`, `frontend/src/components/PaymentSuccess.test.ts`.
+* Tạo đơn yêu cầu Bearer JWT, thiếu token trả 401 (khớp Task 7). `POST /payments` cũng gắn `@UseGuards(JwtAuthGuard)` (thiếu/sai token → 401) và `PaymentController.pay()` truyền `req.user.id` vào `PaymentService.processPayment(userId, dto, key)`. FE (`ApiPaymentGateway`) gửi `Authorization: Bearer <brewlite-token>` cho cả `/orders` lẫn `/payments`; 401/403 ném `PaymentError` mang `orderId`. `PaymentForm` bắt `PaymentError` có `status === 401` (`isUnauthorizedPayment()`) thì gọi `handleUnauthorized()` (xóa token, chuyển về `/login?next=/cart`, xem §2.3 mục C); giỏ hàng và phiên thanh toán dở giữ nguyên, đăng nhập lại cùng tài khoản thì trả tiếp đúng đơn đó (không tạo đơn thứ hai). Lỗi khác cũng ném `PaymentError` mang `orderId` với câu tiếng Việt lấy từ `message` của body JSON (không hiện JSON thô): 400 "Thanh toán thất bại…" (message dạng mảng của validate thì nối lại), 409 "Món đã hết hàng, tiền đã được hoàn lại", mã khác kèm mã và thông điệp backend; body không phải JSON thì chỉ báo mã. Giỏ hàng luôn được giữ nguyên.
 * **Idempotency-Key cho `POST /orders` (đề §9 tiêu chí b):** `OrderController.create()` đọc header `idempotency-key` và đặt 200 (trả lại đơn cũ) / 201 (đơn mới) như `PaymentController.pay()`. `OrderService.create()` tra `IOrderRepository.findByIdempotencyKey()` trước khi tính giá: có đơn cùng người → trả lại (`isCached: true`), khác người → 422 `Idempotency-Key already used by another user`. Hai request song song: bên thua vi phạm chỉ số unique `Order.idempotencyKey` (Prisma `P2002`; bản In-Memory giả lập bằng lỗi trùng key) nên service đọc lại theo key và trả đơn của bên thắng. Cột `Order.idempotencyKey String? @unique` (migration `20261009120000_order_idempotency_key`), vẫn 5 thực thể. Key dài hơn 255 ký tự → 400 `Idempotency-Key too long` (helper `backend/src/common/idempotency-key.ts`, dùng chung với `POST /payments`; key ngẫu nhiên dài vài nghìn ký tự làm chỉ số unique của Postgres trả 500). Không so sánh nội dung giỏ giữa hai lần gửi cùng key (giao diện giữ 1 key cho 1 giỏ: `PaymentForm` sinh key bằng `useState(newIdempotencyKey)` và gửi qua `PaymentRequest.orderIdempotencyKey`, `ApiPaymentGateway.createOrderId()` đặt vào header; key này khác key của `POST /payments`). Test: `backend/test/order-product.spec.ts`, `backend/test/pg-payment.integration.spec.ts`, `frontend/src/lib/payment/api-gateway.test.ts`.
 * **Chỉ chủ đơn mới thanh toán được:** trong khóa `order:<orderId>`, `processPayment()` đọc đơn trước: không có → 404, `order.userId !== userId` → 403 (`ForbiddenException`, giống `cancelOrderAs()` khi khách hủy đơn của người khác). Bước này chạy **trước** nhánh cache `Idempotency-Key` nên người lạ không đọc được biên lai của người khác bằng key; nếu key trỏ tới biên lai của đơn khác `dto.orderId` thì đơn đó cũng phải là của người gọi, nếu không trả 403; đúng chủ nhưng khác đơn thì trả 422 `Idempotency-Key already used for another order` (theo bản nháp IETF `Idempotency-Key`: dùng lại key cho payload khác là lỗi), không charge và không trả biên lai đơn cũ.
 * **Giá do server tính (`OrderService.create()`):** `unitPrice = product.price + SIZE_UPCHARGE[size] + Σ TOPPING_PRICES` (`backend/src/order/pricing.ts`), `total = Σ quantity × unitPrice`. DTO không có trường `unitPrice`; FE (`ApiPaymentGateway.createOrderId()`) chỉ gửi `{ productId, quantity, size, toppings }` cho mỗi dòng, không gửi `unitPrice` / `name` / `key` / `lineTotal` (có test); `ValidationPipe({ whitelist: true })` vẫn là lớp chặn thứ hai. Thiếu `size` → `M`; topping ngoài bảng → 400 (so bằng `hasOwnProperty`, nên tên trùng khóa prototype như `constructor` cũng bị chặn, không ra `unitPrice` NaN); `productId` lạ → 404. DTO giới hạn tối đa 20 dòng (`@ArrayMaxSize`) và `quantity` 1–99 (`@Max(99)`); tổng đơn vượt Int32 → 400 `Order total too large` (nếu không, Postgres ném 500).
@@ -506,9 +527,9 @@ Phục vụ máy trạng thái **Order State Machine** tại Mục 9.1 tài li�
   - **Kịch bản 2 (Khách hủy đơn chưa trả):** Khi đơn hàng chưa thanh toán, khách có quyền hủy đơn (`PENDING` $\rightarrow$ `CANCELLED`; `PAYMENT_FAILED` $\rightarrow$ `CANCELLED` cũng hợp lệ).
   - **Kịch bản 3 (Hủy đơn đã thanh toán - Hoàn tiền):** Khi đơn đã trả tiền (`PAID`) và khách yêu cầu hủy kịp thời, hệ thống hủy đơn kèm hoàn tiền + hoàn kho (`PAID` $\rightarrow$ `CANCELLED`, mũi tên "hủy" từ `PAID` của đề §9.1).
 * **Hiện trạng code cho KB2/KB3:**
-  - **Frontend có nút "Hủy đơn" ở `/history`** cho đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (helper `cancelOrder()` trong `frontend/src/lib/api.ts`): gọi `PATCH /orders/:id { status: 'CANCELLED' }` kèm Bearer JWT, đơn `PAID` hỏi xác nhận (có hoàn tiền) trước khi gọi, lỗi 400/403 hiện ngay dưới thẻ đơn, thành công thì tải lại danh sách. Màn biên lai không có nút này.
+  - **Frontend có nút "Hủy đơn" ở `/history`** cho đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (helper `cancelOrder()` trong `frontend/src/lib/api.ts`): gọi `PATCH /orders/:id { status: 'CANCELLED' }` kèm Bearer JWT, đơn `PAID` hỏi xác nhận (có hoàn tiền) trước khi gọi, lỗi 400/403 hiện ngay dưới thẻ đơn, 401 thì xóa token và chuyển về `/login?next=/history` (`handleUnauthorized()`, §2.3 mục C), thành công thì làm mới danh sách ngay (hỏi lại `GET /orders/me` không chờ chu kỳ 3 giây, xem §2.6). Màn biên lai không có nút này.
   - **Khách chỉ hủy được đơn CỦA MÌNH:** `PaymentService.cancelOrderAs(actor, id)` so `order.userId` với user trong token khi `actor.role = CUSTOMER`; khác chủ → 403, đơn không tồn tại → 404. Khách **không** tự tiến đơn: `PREPARING` / `READY` / `COMPLETED` chỉ BARISTA/ADMIN (khách 403, xem §2.7).
-  - **Thanh tiến trình:** `/history` và màn biên lai hiện **thanh 5 bước** `Chờ thanh toán → Đã thanh toán → Đang pha → Sẵn sàng → Hoàn tất` (component `OrderStatusTrack`; `Thanh toán lỗi` đỏ, `Đã hủy` xám). Khách chỉ xem; các bước `Đang pha → Sẵn sàng → Hoàn tất` do Barista bấm ở `/barista` (UC09–UC11, §2.7).
+  - **Thanh tiến trình:** `/history` và màn biên lai hiện **thanh 5 bước** `Chờ thanh toán → Đã thanh toán → Đang pha → Sẵn sàng → Hoàn tất` (component `OrderStatusTrack`; `Thanh toán lỗi` đỏ, `Đã hủy` xám). Khách chỉ xem; các bước `Đang pha → Sẵn sàng → Hoàn tất` do Barista bấm ở `/barista` (UC09–UC11, §2.7). Hai màn **tự cập nhật** thanh này mỗi 3 giây (biên lai poll `GET /orders/:id` đến khi đơn `COMPLETED` / `CANCELLED`; `/history` poll `GET /orders/me` đến khi không còn đơn `PAID` / `PREPARING` / `READY`), khách không cần tải lại trang (§2.6).
   - Barista hủy đơn hết nguyên liệu: UC12, xem §2.7.
 
 #### B. Sơ đồ tuần tự (PlantUML)
@@ -555,7 +576,7 @@ else Kịch bản 2: Chủ đơn hủy đơn chưa thanh toán (PENDING / PAYMEN
     BE --> FE : Xác nhận hủy đơn thành công (200 OK)
     deactivate BE
     FE --> User : Tải lại danh sách, đơn hiện trạng thái CANCELLED
-    note right of FE : Lỗi 400/403 từ backend\nhiện ngay dưới thẻ đơn
+    note right of FE : Lỗi 400/403 từ backend\nhiện ngay dưới thẻ đơn.\n401 (token hết hạn): xóa token,\nchuyển về /login?next=/history
     deactivate FE
 
 else Kịch bản 3: Chủ đơn hủy đơn đã thanh toán (PAID -> CANCELLED / Hoàn tiền)
@@ -641,7 +662,7 @@ end note
   - `POST /payments` (gửi lại yêu cầu thanh toán khi thử lại)
   - `PATCH /orders/:id` (Bearer JWT; khách chỉ gửi `{ status: 'CANCELLED' }` để hủy đơn của mình; `PREPARING` / `READY` / `COMPLETED` chỉ BARISTA/ADMIN, khách bị 403, xem §2.7; có thể gọi qua màn `/barista` hoặc `scripts/demo-state-machine.sh`)
 * **Controller / Service:** `PaymentController.update()` (route `PATCH /orders/:id` đang nằm ở `PaymentController`) $\rightarrow$ `PaymentService.cancelOrderAs(actor, id)` khi `status = CANCELLED`, ngược lại `PaymentService.advanceOrder(actor, id, status)` (`actor = { id, role }` lấy từ JWT). `cancelOrderAs` kiểm tra chủ đơn với khách (403/404); `advanceOrder` từ chối khách (403, chỉ BARISTA/ADMIN, xem §2.7). Cả hai chạy dưới khóa `order:<orderId>`.
-* **Frontend:** nút "Hủy đơn" ở `frontend/src/app/history/page.tsx` (hiện khi `canCancel(status)` trong `lib/order-status.ts`: `PENDING` / `PAYMENT_FAILED` / `PAID`) → `cancelOrder(orderId, token)` trong `frontend/src/lib/api.ts` (test `api.test.ts`). 401/403/404 ánh xạ thành thông báo tiếng Việt; 400 "Invalid transition A -> B" dịch thành câu tiếng Việt theo nhãn trạng thái, thông điệp 400 khác giữ nguyên. `advanceOrder(orderId, status, token)` (cùng `patchOrderStatus`, cùng `PATCH /orders/:id`) chỉ do màn `/barista` gọi (§2.7), `/history` không có nút tiến đơn. Bảng chuyển trạng thái FE (`TRANSITIONS`), nhãn, `nextStatus`, `statusTrack` nằm ở `frontend/src/lib/order-status.ts`; test `order-status.test.ts` ghim đúng 9 mũi tên §9.1 và đọc thẳng `ALLOWED` của backend để 2 bên không lệch.
+* **Frontend:** nút "Hủy đơn" ở `frontend/src/app/history/page.tsx` (hiện khi `canCancel(status)` trong `lib/order-status.ts`: `PENDING` / `PAYMENT_FAILED` / `PAID`) → `cancelOrder(orderId, token)` trong `frontend/src/lib/api.ts` (test `api.test.ts`). Lỗi ném `ApiError` (có `status`). 401/403/404 ánh xạ thành thông báo tiếng Việt, riêng 401 còn gọi `handleUnauthorized()` (xóa token, về `/login?next=...`, §2.3 mục C); 400 "Invalid transition A -> B" dịch thành câu tiếng Việt theo nhãn trạng thái, thông điệp 400 khác giữ nguyên. `advanceOrder(orderId, status, token)` (cùng `patchOrderStatus`, cùng `PATCH /orders/:id`) chỉ do màn `/barista` gọi (§2.7), `/history` không có nút tiến đơn. Bảng chuyển trạng thái FE (`TRANSITIONS`), nhãn, `nextStatus`, `statusTrack` nằm ở `frontend/src/lib/order-status.ts`; test `order-status.test.ts` ghim đúng 9 mũi tên §9.1 và đọc thẳng `ALLOWED` của backend để 2 bên không lệch.
 * **Quy tắc State Machine (Task 10):**
   - `assertTransition('PAYMENT_FAILED' -> 'PENDING')`: Hợp lệ.
   - `assertTransition('PENDING' -> 'CANCELLED')`, `assertTransition('PAYMENT_FAILED' -> 'CANCELLED')`: Hợp lệ.
@@ -656,8 +677,8 @@ end note
 
 #### A. Bối cảnh nghiệp vụ
 Tương ứng Task 9 trong đề tài:
-1. **Phần 1 (Biên lai ngay sau khi đặt):** Được kích hoạt **ngay lập tức khi `POST /payments` ở UC05 trả về thành công (HTTP 201)**, không gọi thêm API. Giỏ hàng được xóa rỗng, màn `PaymentSuccess` hiện "Đặt hàng thành công", mã đơn (`#` + 8 ký tự đầu của mã đơn), thanh 5 bước đang ở "Đã thanh toán", số tiền đã trả + phương thức, lời nhắn "Mời tới quầy lấy nước" và nút "Về trang chủ" (khớp Wireframe 5).
-2. **Phần 2 (Xem lại lịch sử):** Khi khách bấm "Lịch sử" trên thanh điều hướng, trang `/history` gọi `GET /orders/me` để hiển thị toàn bộ các đơn, ngày đặt, món và trạng thái hiện tại (đủ 7 trạng thái: thanh 5 bước cho `PENDING` → `COMPLETED`, nhãn đỏ `PAYMENT_FAILED`, nhãn xám `CANCELLED`) kèm nút "Hủy đơn" của UC06. Chưa đăng nhập thì trang chỉ báo "Bạn chưa đăng nhập", không gọi API.
+1. **Phần 1 (Biên lai ngay sau khi đặt, tự cập nhật trạng thái):** Được kích hoạt **ngay lập tức khi `POST /payments` ở UC05 trả về thành công (HTTP 201)**: màn hình vẽ ngay từ kết quả thanh toán, không chờ thêm lời gọi nào. Giỏ hàng được xóa rỗng, màn `PaymentSuccess` hiện "Đặt hàng thành công", mã đơn (`#` + 8 ký tự đầu của mã đơn), thanh 5 bước đang ở "Đã thanh toán", số tiền đã trả + phương thức, dòng "Đã giảm: <số tiền>" (chỉ khi `discount > 0`), dòng "+N điểm" (chỉ khi `loyaltyPointsEarned > 0`, N định dạng `vi-VN`), lời nhắn "Mời tới quầy lấy nước" và nút "Về trang chủ" (khớp Wireframe 5). Sau đó, khi kết quả thanh toán có mã đơn đầy đủ (`PaymentResult.orderId`, chỉ cổng API thật có) và tab còn token, biên lai **tự cập nhật**: gọi `GET /orders/:id` ngay rồi lặp lại **mỗi 3 giây** (lần sau chỉ hẹn khi lần trước đã xong, không bao giờ có 2 request chồng nhau), nên khi Barista bấm ở `/barista` (UC09–UC11) hoặc đơn bị hủy (UC12) thì thanh 5 bước đổi theo trong vòng khoảng 3 giây mà khách không cần tải lại. Dừng khi đơn `COMPLETED` / `CANCELLED`, khi khách rời màn, hoặc khi gặp 401 / 403 / 404; mất kết nối hoặc 5xx thì giữ trạng thái cuối đã thấy và thử lại sau 3 giây. Cổng mock (không có backend, không có `orderId`) thì không poll.
+2. **Phần 2 (Xem lại lịch sử, tự cập nhật):** Khi khách bấm "Lịch sử" trên thanh điều hướng, trang `/history` gọi `GET /orders/me` để hiển thị toàn bộ các đơn, ngày đặt, món (mỗi dòng món hiện **tên món** do backend gắn vào `productName`, không còn hiện mã món) và trạng thái hiện tại (đủ 7 trạng thái: thanh 5 bước cho `PENDING` → `COMPLETED`, nhãn đỏ `PAYMENT_FAILED`, nhãn xám `CANCELLED`) kèm nút "Hủy đơn" của UC06. Chưa đăng nhập thì trang chỉ báo "Bạn chưa đăng nhập", không gọi API. Trang **tự làm mới**: hỏi `GET /orders/me` ngay khi mở rồi lặp lại mỗi 3 giây (cùng quy tắc không chồng request) đến khi **không còn đơn nào ở `PAID` / `PREPARING` / `READY`** (ba trạng thái do quầy đẩy; đơn `PENDING` / `PAYMENT_FAILED` hoặc trạng thái lạ không giữ vòng làm mới, chưa có đơn nào cũng dừng ngay sau lần tải đầu); trong lúc làm mới danh sách cũ vẫn ở trên màn, không nháy "Đang tải…". Lỗi tải hiện khối lỗi "Không tải được lịch sử: …" kèm nút "Thử lại" (hỏi lại ngay, khởi động lại vòng làm mới); lỗi xảy ra khi đã có danh sách thì giữ danh sách và khối lỗi nằm phía trên. 401 / 403 / 404 dừng vòng làm mới, mất kết nối hoặc 5xx thì vẫn thử lại sau 3 giây.
 
 #### B. Sơ đồ tuần tự (PlantUML)
 ```plantuml
@@ -675,9 +696,40 @@ participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
 
 == PHẦN 1: MÀN HÌNH XÁC NHẬN (LIÊN KẾT TRỰC TIẾP SAU KHI THANH TOÁN UC05) ==
-BE --> FE : 201 thanh toán thành công (orderId, amount)
+BE --> FE : 201 thanh toán thành công (orderId, amount, discount, loyaltyPointsEarned)
 FE -> FE : Xóa rỗng giỏ hàng
-FE --> User : Hiển thị màn hình biên lai xác nhận:\n- Mã đơn: #1042 (8 ký tự đầu của mã đơn)\n- Trạng thái: thanh 5 bước, đang ở "Đã thanh toán"\n- Đã trả: số tiền + phương thức\n- Lời nhắn: "Mời tới quầy lấy nước"
+FE --> User : Hiển thị màn hình biên lai xác nhận:\n- Mã đơn: #1042 (8 ký tự đầu của mã đơn)\n- Trạng thái: thanh 5 bước, đang ở "Đã thanh toán" (lấy từ kết quả thanh toán)\n- Đã trả: số tiền + phương thức\n- Đã giảm: số tiền (chỉ khi discount > 0)\n- +N điểm (chỉ khi loyaltyPointsEarned > 0)\n- Lời nhắn: "Mời tới quầy lấy nước"
+
+opt Kết quả thanh toán có mã đơn đầy đủ (cổng API thật) và tab còn token
+    loop Mỗi 3 giây, đến khi đơn COMPLETED / CANCELLED hoặc khách rời màn
+        note over FE : Hỏi ngay lần đầu; lần sau chỉ hẹn khi lần trước đã xong (không gọi chồng)
+        FE -> BE : GET /orders/:id + Bearer JWT
+        activate BE
+        alt Token sai / hết hạn
+            BE --> FE : 401 Unauthorized
+            FE -> FE : handleUnauthorized(): xóa token của tab,\nchuyển về /login?next=/cart
+            note over FE : Dừng poll
+        else Không có đơn
+            BE --> FE : 404 Not Found
+            note over FE : Dừng poll, giữ trạng thái cuối đã thấy
+        else Đơn của tài khoản khác
+            BE --> FE : 403 Forbidden
+            note over FE : Dừng poll, giữ trạng thái cuối đã thấy
+        else Lỗi máy chủ (5xx) hoặc mất kết nối
+            BE --> FE : 5xx / không có phản hồi
+            note over FE : Giữ trạng thái cuối đã thấy, thử lại sau 3 giây
+        else Đơn của chính khách
+            BE -> DB : Tra đơn theo mã đơn (kèm món)
+            activate DB
+            DB --> BE : Đơn
+            deactivate DB
+            BE --> FE : 200 đơn với status hiện tại
+            FE --> User : Thanh 5 bước đổi theo status\n(Đang pha, Sẵn sàng, Hoàn tất; hoặc nhãn xám "Đã hủy")
+            note over FE : status là COMPLETED / CANCELLED thì dừng poll
+        end
+        deactivate BE
+    end
+end
 
 == PHẦN 2: XEM LỊCH SỬ CÁC ĐƠN HÀNG ĐÃ MUA ==
 User -> FE : Bấm vào mục "Lịch sử"
@@ -685,30 +737,47 @@ activate FE
 alt Chưa đăng nhập trong tab này (sessionStorage không có "brewlite-token")
     FE --> User : "Bạn chưa đăng nhập" + link Đăng nhập (không gọi API)
 else Có token
-    FE -> BE : GET /orders/me + Bearer JWT
-    activate BE
-    alt Token sai / hết hạn
-        BE --> FE : 401 Unauthorized
-        FE --> User : "Không tải được lịch sử: ..."
-    else Token hợp lệ
-        BE -> DB : Tra cứu toàn bộ các đơn của userId kèm món (mới nhất lên đầu)
-        activate DB
-        DB --> BE : Danh sách đơn ở mọi trạng thái
-        deactivate DB
-        BE --> FE : 200 danh sách lịch sử đơn
-        FE --> User : Danh sách đơn + thanh tiến trình (rỗng thì "Chưa có đơn hàng nào")
+    loop Mỗi 3 giây, đến khi không còn đơn PAID / PREPARING / READY hoặc khách rời trang
+        note over FE : Hỏi ngay khi mở trang; lần sau chỉ hẹn khi lần trước đã xong (không gọi chồng);\nnút "Hủy đơn" thành công hoặc "Thử lại" thì hỏi lại ngay
+        FE -> BE : GET /orders/me + Bearer JWT
+        activate BE
+        alt Token sai / hết hạn
+            BE --> FE : 401 Unauthorized
+            FE -> FE : handleUnauthorized(): xóa token của tab,\nchuyển về /login?next=/history
+            FE --> User : "Không tải được lịch sử: Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại."\n(thoáng qua, trang đang chuyển về /login)
+            note over FE : Dừng vòng làm mới
+        else Lỗi máy chủ (5xx) hoặc mất kết nối
+            BE --> FE : 5xx / không có phản hồi
+            FE --> User : Khối lỗi "Không tải được lịch sử: ..." (thông điệp của backend,\nhoặc "Không kết nối được máy chủ.") + nút "Thử lại";\nđã có danh sách thì giữ danh sách bên dưới khối lỗi
+            note over FE : Giữ danh sách cũ, thử lại sau 3 giây
+        else Token hợp lệ
+            BE -> DB : Tra cứu toàn bộ các đơn của userId kèm món (mới nhất lên đầu)
+            activate DB
+            DB --> BE : Danh sách đơn ở mọi trạng thái
+            deactivate DB
+            BE -> DB : Tra tên món theo từng productId khác nhau của các dòng món\n(chạy song song; món không còn trong CSDL thì dùng chính productId làm tên)
+            activate DB
+            DB --> BE : Tên món
+            deactivate DB
+            BE --> FE : 200 danh sách lịch sử đơn, mỗi dòng món kèm productName
+            FE --> User : Danh sách đơn + thanh tiến trình + dòng món "2× Latte (M + Trân châu) — 45.000đ"\n(rỗng thì "Chưa có đơn hàng nào"); thanh tiến trình đổi khi trạng thái đơn đổi
+            note over FE : Mọi đơn đã COMPLETED / CANCELLED (hoặc chưa có đơn nào) thì dừng vòng làm mới
+        end
+        deactivate BE
     end
-    deactivate BE
 end
 deactivate FE
 @enduml
 ```
 
 #### C. Bảng đối chiếu kỹ thuật cho AI Agent
-* **Backend Endpoint:** `GET /orders/me` (Được bảo vệ bởi `@UseGuards(JwtAuthGuard)`)
-* **Controller / Service:** `OrderController.mine()` $\rightarrow$ `OrderService.listMine()` $\rightarrow$ `findByUserId()` (mới-nhất-trước)
-* **Truy vấn CSDL:** `SELECT * FROM "Order" WHERE "userId" = :userId ORDER BY "createdAt" DESC`, kèm `OrderItem` của từng đơn (Prisma `include: { items: true }`). Frontend sắp lại mới-nhất-trước một lần nữa.
-* **Frontend:** biên lai `frontend/src/components/PaymentSuccess.tsx` (gọi từ `frontend/src/app/cart/page.tsx`), lịch sử `frontend/src/app/history/page.tsx`, thanh tiến trình `OrderStatusTrack` (test `OrderStatusTrack.test.ts`, `order-status.test.ts`). Test backend: `backend/test/order-product.spec.ts` (`listMine returns newest-first`).
+* **Backend Endpoint:** `GET /orders/me` (lịch sử) và `GET /orders/:id` (biên lai tự cập nhật trạng thái); cả hai được bảo vệ bởi `@UseGuards(JwtAuthGuard)`.
+* **Controller / Service:** `OrderController.mine()` $\rightarrow$ `OrderService.listMine()` $\rightarrow$ `findByUserId()` (mới-nhất-trước) $\rightarrow$ `withProductNames()` (cùng hàm `listQueue()` dùng ở §2.7: gắn `productName` cho từng dòng món). `OrderController.byId()` $\rightarrow$ `OrderService.getById(userId, id)`: `findById` (không có đơn → 404 `Order not found`), rồi so `order.userId` với user trong token (khác chủ → 403 `Not your order`); khách chỉ đọc được đơn của mình. Backend không đổi cho việc tự cập nhật: giao diện chỉ gọi hai endpoint có sẵn lặp lại.
+* **Truy vấn CSDL:** `SELECT * FROM "Order" WHERE "userId" = :userId ORDER BY "createdAt" DESC`, kèm `OrderItem` của từng đơn (Prisma `include: { items: true }`). Frontend sắp lại mới-nhất-trước một lần nữa. Tên món: `ProductRepo.findById(productId)` mỗi `productId` khác nhau đúng một lần, các lần tra chạy song song bằng `Promise.all` (như hàng đợi quầy), nên số vòng chờ CSDL không tăng theo số món.
+* **Dạng response:** mảng đơn `{ id, status, total, createdAt, items: [{ productId, productName, quantity, unitPrice, size, toppings }] }`. `productName` ở **từng dòng món** (không nối tên ở cấp đơn); món không còn trong CSDL thì `productName` bằng `productId`. `GET /orders/:id` trả một đơn `{ id, userId, status, total, items: [{ productId, quantity, unitPrice, size, toppings }], createdAt }`, dòng món không có `productName` (giao diện chỉ cần `status`; kiểu `OrderDetail` ở `frontend/src/lib/types.ts`).
+* **Frontend (tự cập nhật):** lõi `startPolling()` trong `frontend/src/lib/use-order-poll.ts`, không phụ thuộc React: hỏi ngay lần đầu rồi hẹn lần sau `POLL_INTERVAL_MS = 3000` **sau khi lần trước xong** (không gọi chồng); tự dừng khi `isDone(data)`, hoặc khi lỗi 401 / 403 / 404 (sau khi báo lỗi); mất kết nối (`ApiError.status = 0`), 5xx hoặc lỗi khác thì báo lỗi, giữ data cuối và hỏi tiếp; `stop()` bỏ cả kết quả của request đang bay. Hook `usePolling()` (cùng file) chỉ nối lõi vào `useState` / `useEffect` (rời màn thì dừng, `refresh()` xóa lỗi và hỏi lại ngay, data cũ vẫn hiện). Biên lai: `PaymentSuccess` gọi `useOrderPoll(result.orderId)` $\rightarrow$ `getOrder(orderId, token)` (`frontend/src/lib/api.ts`, `GET /orders/:id`, ném `ApiError`: 401 xóa token và gọi `handleUnauthorized()` như §2.3 mục C, 403 "Đây không phải đơn của bạn.", 404 "Không tìm thấy đơn."), dừng khi `isTerminal(status)` (`frontend/src/lib/order-status.ts`: `COMPLETED`, `CANCELLED`; trạng thái lạ thì chưa cuối); hiện trạng thái đã poll, trước phản hồi đầu tiên (hoặc khi không có `orderId`: cổng mock, hoặc chưa đăng nhập) hiện `PaymentResult.status` (`receiptStatus()`). `PaymentResult.orderId` do `ApiPaymentGateway` điền bằng mã đơn đầy đủ (`frontend/src/lib/payment/api-gateway.ts`); cổng mock để trống. Vùng `aria-live="polite"` để trình đọc màn hình báo khi bước đổi chỉ đặt MỘT chỗ, ở biên lai (`PaymentReceipt` bọc `OrderStatusTrack`); `OrderStatusTrack` và `/history` (nhiều thẻ đơn cùng poll) không có vùng live.
+* **Frontend (hiển thị):** biên lai `frontend/src/components/PaymentSuccess.tsx` (phần hiển thị `PaymentReceipt`; gọi từ `frontend/src/app/cart/page.tsx`), lịch sử `frontend/src/app/history/page.tsx` dùng `usePolling()` với `getMyOrders(token)` (`frontend/src/lib/api.ts`, ném `ApiError`; 401 xóa token và gọi `handleUnauthorized()`, §2.3 mục C) và `needsPolling()` (`frontend/src/lib/history.ts`; trang dùng `isDone = !needsPolling`: còn ít nhất một đơn `PAID` / `PREPARING` / `READY` thì poll tiếp, ngược lại dừng; danh sách rỗng cũng dừng); danh sách là state của vòng poll nên lúc làm mới (sau khi hủy đơn thành công gọi `refresh()`, hoặc bấm "Thử lại") danh sách cũ vẫn ở trên màn đến khi có danh sách mới. Phần vẽ nằm ở `frontend/src/components/HistoryView.tsx` (đang tải, chưa đăng nhập, rỗng, danh sách, khối lỗi `ErrorState` "Không tải được lịch sử: …" kèm "Thử lại"); khối lỗi, "Chưa có đơn hàng nào." và danh sách đều nằm trong cùng một `<section>` có tiêu đề "Lịch sử đơn hàng". Dòng món do `itemLine()` (dùng `productName` khi là chuỗi không rỗng, thiếu hoặc rỗng thì rơi về 8 ký tự đầu của `productId`, không in "undefined") và thứ tự mới-nhất-trước do `sortNewestFirst()` (`frontend/src/lib/history.ts`); kiểu `HistoryOrder` / `HistoryItem` ở `frontend/src/lib/types.ts`; thanh tiến trình `OrderStatusTrack` (test `OrderStatusTrack.test.ts`, `order-status.test.ts`). Test backend: `backend/test/order-product.spec.ts` (`listMine returns newest-first`; nhóm `listMine kèm productName`: đơn một món, nhiều món, món không còn trong CSDL, tra tên song song mỗi `productId` một lần, `GET /orders/:id` không đổi). Test frontend: `api.test.ts` (nhóm `getOrder`, `getMyOrders`, 401), `history.test.ts` (`itemLine`, `sortNewestFirst`, `needsPolling`), `use-order-poll.test.ts` (nhịp 3 giây, không gọi chồng, dừng khi xong / `stop()` / 401 403 404, tiếp tục khi mất mạng hoặc 5xx, không poll khi thiếu `orderId` hoặc token), `order-status.test.ts` (`isTerminal`), `payment/api-gateway.test.ts` (`orderId`, `discount`, `loyaltyPointsEarned`), `payment/mock-gateway.test.ts`, `PaymentSuccess.test.ts` (kể cả "Đã giảm" và "+N điểm"), `HistoryView.test.ts`.
+* **Giới hạn:** tên món lấy theo tên **hiện tại** của sản phẩm, không lưu cố định lúc đặt (`OrderItem` không có cột tên): đổi tên món thì lịch sử các đơn cũ hiện tên mới. Tự cập nhật bằng hỏi lại theo chu kỳ cố định 3 giây (comment `ponytail:` trong `use-order-poll.ts`): vẫn hỏi khi tab bị ẩn và không có đẩy từ server (WebSocket / SSE), nên mỗi tab đang mở biên lai gây 1 request mỗi 3 giây đến khi đơn xong, còn tab lịch sử gây 1 request mỗi 3 giây trong lúc có đơn `PAID` / `PREPARING` / `READY` (Ruling R14: đơn `PENDING` / `PAYMENT_FAILED` không giữ vòng làm mới, nên đơn `PENDING` được thanh toán ở tab khác chỉ hiện sau khi tải lại `/history`); đủ cho demo.
 * **Giao diện Wireframe:** Khớp với Wireframe (5) Xác nhận tại Mục 7 tài liệu môn học.
 
 ---
@@ -747,7 +816,7 @@ loop Mỗi 5 giây (POLL_MS), dừng khi gặp 401/403
     activate BE
     alt Thiếu/sai token (401) hoặc không phải BARISTA/ADMIN (403, RolesGuard)
         BE --> FE : 401 / 403
-        FE --> User : Báo đăng nhập lại / cần tài khoản quầy, ngừng tự tải lại
+        FE --> User : 401: xóa token, chuyển về /login?next=/barista (§2.3), ngừng tự tải lại\n403: báo cần tài khoản quầy, ngừng tự tải lại
     else BARISTA / ADMIN
         BE -> DB : Đơn PAID / PREPARING / READY, cũ trước + tên món
         activate DB
@@ -765,7 +834,10 @@ User -> FE : Bấm "Nhận pha" (rồi "Pha xong", "Đã giao")
 activate FE
 FE -> BE : PATCH /orders/:id { status: PREPARING | READY | COMPLETED }
 activate BE
-alt Không phải BARISTA/ADMIN
+alt Thiếu/sai token hoặc hết hạn (JwtAuthGuard)
+    BE --> FE : 401 Unauthorized
+    FE --> User : Xóa token, chuyển về /login?next=/barista (§2.3)
+else Không phải BARISTA/ADMIN
     BE --> FE : 403 Only staff can advance orders
 else Không có đơn
     BE --> FE : 404 Order not found
@@ -786,7 +858,10 @@ User -> FE : Bấm "Hủy (hết nguyên liệu)" và xác nhận
 activate FE
 FE -> BE : PATCH /orders/:id { status: CANCELLED }
 activate BE
-alt Không có đơn
+alt Thiếu/sai token hoặc hết hạn (JwtAuthGuard)
+    BE --> FE : 401 Unauthorized
+    FE --> User : Xóa token, chuyển về /login?next=/barista (§2.3)
+else Không có đơn
     BE --> FE : 404 Order not found
 else Đơn chưa trả (PENDING / PAYMENT_FAILED)
     BE --> FE : 403 Staff can only cancel paid orders
@@ -820,7 +895,7 @@ deactivate FE
 * **Phân quyền:** `JwtAuthGuard` đưa `role` trong JWT vào `req.user`; `RolesGuard` + `@Roles(BARISTA, ADMIN)` chặn khách ở `GET /orders` (403 `Insufficient role`). `PATCH /orders/:id` kiểm vai trò trong service: `advanceOrder` ném 403 `Only staff can advance orders` cho khách; `cancelOrderAs` cho khách chỉ hủy đơn của mình, còn BARISTA/ADMIN chỉ hủy được đơn `PAID` (`PENDING` / `PAYMENT_FAILED` → 403 `Staff can only cancel paid orders`).
 * **State Machine:** mọi lần đổi trạng thái đi qua `assertTransition()`: nhảy cóc, đi lùi hoặc hủy từ `PREPARING` trở đi đều 400. `advanceOrder` và `cancelOrder` chạy dưới khóa `order:<orderId>`.
 * **Hủy hết nguyên liệu (UC12):** `cancelOrderAs()` $\rightarrow$ `cancelOrder()`: `gateway.refund` đúng số thực thu (cộng mọi biên lai `SUCCESS` của đơn; không có biên lai thì không gọi hoàn tiền), rồi 1 `runInTransaction` { hoàn kho mọi món + `CANCELLED` }. Giới hạn như UC06 KB3: refund nằm ngoài transaction.
-* **Frontend:** `frontend/src/app/barista/page.tsx` (3 cột bằng `groupQueue()`, nhãn nút `ACTION_LABEL`, polling `POLL_MS = 5000`); `fetchQueue()` trong `frontend/src/lib/barista.ts`; `advanceOrder()` / `cancelOrder()` trong `frontend/src/lib/api.ts`. Sau đăng nhập, `roleFromToken()` / `homeFor()` (`frontend/src/lib/auth.ts`) điều hướng `CUSTOMER` → `/`, `BARISTA` → `/barista`, `ADMIN` → `/admin`; giao diện chỉ ẩn/hiện, quyền thật do backend chặn.
+* **Frontend:** `frontend/src/app/barista/page.tsx` (3 cột bằng `groupQueue()`, nhãn nút `ACTION_LABEL`, polling `POLL_MS = 5000`); `fetchQueue()` trong `frontend/src/lib/barista.ts`; `advanceOrder()` / `cancelOrder()` trong `frontend/src/lib/api.ts` (cả ba nhận 401 thì gọi `handleUnauthorized()`: xóa token, về `/login?next=/barista`, §2.3 mục C; riêng `fetchQueue()` vẫn ném `QueueAuthError` như cũ nên vòng tự tải lại tự dừng và báo lỗi tại chỗ, 403 chỉ báo lỗi, không xóa token). Test: `frontend/src/lib/barista.test.ts`. Sau đăng nhập, `roleFromToken()` / `homeFor()` (`frontend/src/lib/auth.ts`) điều hướng `CUSTOMER` → `/`, `BARISTA` → `/barista`, `ADMIN` → `/admin`; giao diện chỉ ẩn/hiện, quyền thật do backend chặn.
 * **Test:** `backend/test/barista-queue.spec.ts`, `backend/test/roles.spec.ts`, `backend/test/order-advance.spec.ts`; `frontend/src/lib/barista.test.ts`, `frontend/src/lib/auth.test.ts`, `frontend/src/lib/api.test.ts` (`advanceOrder` / `cancelOrder`).
 
 ---
@@ -856,7 +931,7 @@ FE -> BE : GET /admin/products + Bearer JWT
 activate BE
 alt Thiếu/sai token (401) hoặc không phải ADMIN (403, RolesGuard)
   BE --> FE : 401 / 403
-  FE --> User : Báo đăng nhập lại / cần tài khoản quản trị
+  FE --> User : 401: xóa token, chuyển về /login?next=/admin (§2.3)\n403: báo cần tài khoản quản trị
 else ADMIN
   BE -> DB : Mọi món, kể cả stock = 0, sắp theo tên
   DB --> BE : Danh sách món (stock, version)
@@ -870,6 +945,7 @@ User -> FE : Bấm "+10" (hoặc nhập số rồi "Lưu")
 activate FE
 FE -> BE : PATCH /admin/products/:id/stock { mode, value, version }
 activate BE
+note right of BE : Thiếu/sai token -> 401, không phải ADMIN -> 403 (guard, trước mọi bước dưới);\nFE gặp 401 thì xóa token, chuyển về /login?next=/admin (§2.3)
 note right of BE : Body sai AdjustStockDto (mode lạ, value lẻ / ngoài Int32,\nversion < 1) -> 400 (ValidationPipe) trước mọi bước dưới
 BE -> DB : Đọc món theo id
 alt Món không tồn tại
@@ -904,7 +980,7 @@ deactivate FE
 * **Controller / Service:** `AdminProductController.list()` / `adjust()` (`@Controller('admin/products')`, `@UseGuards(JwtAuthGuard, RolesGuard)`, `@Roles(ADMIN)`; barista/khách → 403 `Insufficient role`, thiếu token → 401) $\rightarrow$ `ProductService.listAll()` / `adjustStock()`. Món lạ → 404.
 * **Validate đầu vào:** `AdjustStockDto`: `mode` thuộc `set` | `delta` (`@IsIn`), `value` số nguyên (`@IsInt`, âm khi `delta` nghĩa là trừ), `version` số nguyên ≥ 1 (`@IsInt @Min(1)`).
 * **Optimistic lock:** `ProductService.adjustStock()` so `dto.version` với `version` hiện tại (lệch → 409 `Stock changed, reload`), tính `next` (`set`: `value`; `delta`: `stock + value`), `next < 0` → 400 `Stock cannot be negative`, `next` vượt `2147483647` (cộng dồn `delta`) → 400 `Stock too large`, rồi gọi `setStockWithOptimisticLock(id, next, version)`: `updateMany` kèm điều kiện `version` khớp và `version + 1`; trả `false` (có người chen vào giữa chừng) → cũng 409. Dùng chung cơ chế `version` với trừ kho lúc thanh toán (§9 ý 3 của đề), nên một đơn vừa trả tiền cũng làm Admin nhận 409.
-* **Frontend:** `frontend/src/app/admin/page.tsx` và `frontend/src/lib/admin.ts` (`fetchInventory()`, `adjustStock()`, `stockBadge()`, `LOW_STOCK = 3`). Khi gọi lỗi (409, 400 hoặc lỗi khác), trang tải lại bảng trước rồi mới hiện thông báo lỗi.
+* **Frontend:** `frontend/src/app/admin/page.tsx` và `frontend/src/lib/admin.ts` (`fetchInventory()`, `adjustStock()`, `stockBadge()`, `LOW_STOCK = 3`). Cả hai hàm đi qua `call()`: gặp 401 thì gọi `handleUnauthorized()` (xóa token, về `/login?next=/admin`, §2.3 mục C) rồi ném cùng câu "Phiên đăng nhập hết hạn…"; 403 chỉ báo lỗi. Khi gọi lỗi (409, 400 hoặc lỗi khác), trang tải lại bảng trước rồi mới hiện thông báo lỗi.
 * **Không thêm bảng:** vẫn đúng 5 thực thể; `User.role` chỉ là một cột của `User`.
 * **Test:** `backend/test/admin-inventory.spec.ts`, `frontend/src/lib/admin.test.ts`.
 
@@ -912,23 +988,23 @@ deactivate FE
 
 # PHẦN III: MA TRẬN NGỮ CẢNH KỸ THUẬT DÀNH CHO AI AGENTS & DEVELOPERS
 
-Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 100% (Full Traceability)** với **7 API Endpoint tối thiểu** (Mục 12.1 đề gốc) + 6 endpoint mở rộng của nhóm (`PATCH /orders/:id`, `GET /orders/:id`, `GET /orders?status=`, `GET /admin/products`, `PATCH /admin/products/:id/stock`, `GET /users/me` — hồ sơ + điểm tích lũy, chưa là UC riêng nên không có sơ đồ) và **5 Thực thể CSDL tối thiểu** (Mục 12.2; `User.role` chỉ là một cột) trong tài liệu gốc `BrewLite-CongNghePhanMem-fixed.md`:
+Bảng ma trận dưới đây đảm bảo **Tính truy vết tuyệt đối 100% (Full Traceability)** với **7 API Endpoint tối thiểu** (Mục 12.1 đề gốc) + 6 endpoint mở rộng của nhóm (`PATCH /orders/:id`, `GET /orders/:id`, `GET /orders?status=`, `GET /admin/products`, `PATCH /admin/products/:id/stock`, `GET /users/me` — hồ sơ + điểm tích lũy, chưa là UC riêng nên không có sơ đồ; FE `getProfile()` nhận 401 hoặc 404 thì gọi `handleUnauthorized()`, xem §2.3 mục C) và **5 Thực thể CSDL tối thiểu** (Mục 12.2; `User.role` chỉ là một cột) trong tài liệu gốc `BrewLite-CongNghePhanMem-fixed.md`:
 
 | Mã UC | Tên Ca Sử Dụng | Endpoint REST Chuẩn | Controller / Service (NestJS) | Bảng CSDL (5 Thực thể tối thiểu) | Cơ Chế Bảo Vệ / Logic Cốt Lõi (Task 10) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **UC01** | Xem menu & Tùy chọn món (Size, Topping) | `GET /products`<br>`GET /products/:id` | `ProductController.list()` / `detail()`<br>`ProductService.listAvailable()` / `getById()` | `Product` | Lọc `stock > 0`; `ProductDto` (`id, name, price, imageUrl, stock, version`) **không** có size/topping — bảng giá size/topping nằm ở `frontend/src/lib/pricing.ts` + `backend/src/order/pricing.ts` |
-| **UC02** | Quản lý giỏ hàng (Thêm/Sửa/Xóa) | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal` |
-| **UC03** | Đăng ký / Đăng nhập (JWT) | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService.login()` / `register()` | `User` | `bcrypt.compare`, cấp JWT Access Token |
+| **UC01** | Xem menu & Tùy chọn món (Size, Topping) | `GET /products`<br>`GET /products/:id` | `ProductController.list()` / `detail()`<br>`ProductService.listAvailable()` / `getById()` | `Product` | Lọc `stock > 0`; `ProductDto` (`id, name, price, imageUrl, stock, version`) **không** có size/topping — bảng giá size/topping nằm ở `frontend/src/lib/pricing.ts` + `backend/src/order/pricing.ts`; FE `useAsync` + `ProductGrid` hiện 3 trạng thái: 4 thẻ skeleton / "Không tải được menu." + "Thử lại" (lỗi là `ApiError` có `status`) / "Chưa có món nào." |
+| **UC02** | Quản lý giỏ hàng (Thêm/Sửa/Xóa) | *(Client-side)* | *(Không gọi API)* | *(LocalStorage)* | Zustand Store, tự tính toán `lineTotal` và `cartTotal`; `addItem` từ chối khi vượt 20 dòng / 99 ly / hết hàng / dòng đã giữ hết số còn lại (khớp `CreateOrderDto`) |
+| **UC03** | Đăng ký / Đăng nhập (JWT) | `POST /auth/register`<br>`POST /auth/login` | `AuthController`<br>`AuthService.login()` / `register()` | `User` | `bcrypt.compare`, cấp JWT Access Token; FE: 401 giữa phiên → `handleUnauthorized()` xóa token + về `/login?next=...`, đăng nhập xong về `next` nếu qua `postLoginTarget()` / `safeNext()` (chỉ đường dẫn tương đối trong site); đơn đang thanh toán dở giữ khi đăng nhập lại cùng tài khoản (`userId` = `sub` của JWT), bỏ khi tài khoản khác (`clearCheckoutIfOtherUser()`) |
 | **UC04** | Tạo đơn hàng (PENDING) | `POST /orders` | `OrderController`<br>`OrderService` | `Order`, `OrderItem` | Khởi tạo đơn `PENDING`, validate dữ liệu giỏ qua `class-validator`, Bearer JWT (401 nếu thiếu); **server tự tính giá** từ `product.price` + `order/pricing.ts` (bỏ qua giá client, thiếu size → M, topping lạ → 400; tối đa 20 dòng, `quantity` 1–99, tổng vượt Int32 → 400); header `Idempotency-Key` tùy chọn, tối đa 255 ký tự (quá dài → 400): cùng key chỉ tạo 1 đơn (cùng người → 200 trả lại đơn cũ, người khác → 422; song song nhờ unique `Order.idempotencyKey`) |
-| **UC05 / UC05a** | Thanh toán không tiền mặt (Ví / Thẻ) / Áp mã giảm giá | `POST /payments` | `PaymentController`<br>`PaymentService` (+ `PrismaPaymentRepo` / `PrismaProductRepo`; chạy thật bắt buộc có `DATABASE_URL`) | `Payment`, `Order`, `Product`, `User` | `@UseGuards(JwtAuthGuard)` (thiếu JWT → 401), kiểm tra chủ đơn trước cache (đơn không có → 404, khác chủ → 403, kể cả khi trúng cache Idempotency-Key; cùng chủ nhưng key đã dùng cho đơn khác → 422), header `Idempotency-Key` (alt hit/miss), khóa trong tiến trình theo key + `orderId` (request song song chỉ charge 1 lần), validate voucher `BREWLITE10` nội bộ (Task 10), ghi sau charge trong 1 `runInTransaction` (trừ kho `updateMany` kèm `version` retry 3, `PAID`, điểm, biên lai); mọi lỗi trong transaction → rollback + hoàn tiền + `PAYMENT_FAILED` + ném lại lỗi gốc (kẹt kho 409, món mất 404, lỗi DB 500); thiếu hoặc quá dài (> 255 ký tự) `Idempotency-Key`, hoặc đơn không ở `PENDING` / `PAYMENT_FAILED` → 400, không charge; FE dùng lại cùng key khi thử lại (lần lỗi không lưu key, lần đã trả trúng cache) |
-| **UC06** | Hủy đơn / Thử lại thanh toán | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `PaymentController.update()`<br>`PaymentService.cancelOrderAs()` (route `PATCH` hiện nằm ở PaymentController) | `Order`, `Payment` | Khách chỉ hủy đơn của mình (403/404) và không tự tiến đơn (`advanceOrder` → 403); hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho, hoàn kho + `CANCELLED` trong 1 transaction); FE có nút Hủy ở `/history` (`cancelOrder()` trong `lib/api.ts`); thanh tiến trình 5 bước chỉ để xem (tiến đơn là việc của Barista, UC09–UC11) |
-| **UC07** | Xem xác nhận & Lịch sử đơn | `GET /orders/me` | `OrderController.mine()`<br>`OrderService.listMine()` | `Order`, `OrderItem` | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày |
-| **UC08** | Xem hàng đợi đơn (PAID / PREPARING / READY) | `GET /orders?status=PAID,PREPARING,READY` | `OrderController.queue()`<br>`OrderService.listQueue()` | `Order`, `OrderItem`, `Product` (lấy `productName`) | `JwtAuthGuard` + `RolesGuard` (`@Roles(BARISTA, ADMIN)`, khách 403); cũ trước (FIFO); `/barista` tự tải lại mỗi 5 giây |
-| **UC09** | Tiếp nhận pha chế (PAID -> PREPARING) | `PATCH /orders/:id` `{ status: 'PREPARING' }` | `PaymentController.update()`<br>`PaymentService.advanceOrder(actor…)` | `Order` | Khách 403 (chỉ BARISTA/ADMIN); `assertTransition(PAID → PREPARING)`; khóa `order:<orderId>`; nút Nhận pha |
+| **UC05 / UC05a** | Thanh toán không tiền mặt (Ví / Thẻ) / Áp mã giảm giá | `POST /payments` | `PaymentController`<br>`PaymentService` (+ `PrismaPaymentRepo` / `PrismaProductRepo`; chạy thật bắt buộc có `DATABASE_URL`) | `Payment`, `Order`, `Product`, `User` | `@UseGuards(JwtAuthGuard)` (thiếu JWT → 401), kiểm tra chủ đơn trước cache (đơn không có → 404, khác chủ → 403, kể cả khi trúng cache Idempotency-Key; cùng chủ nhưng key đã dùng cho đơn khác → 422), header `Idempotency-Key` (alt hit/miss), khóa trong tiến trình theo key + `orderId` (request song song chỉ charge 1 lần), validate voucher `BREWLITE10` nội bộ (Task 10), ghi sau charge trong 1 `runInTransaction` (trừ kho `updateMany` kèm `version` retry 3, `PAID`, điểm, biên lai); mọi lỗi trong transaction → rollback + hoàn tiền + `PAYMENT_FAILED` + ném lại lỗi gốc (kẹt kho 409, món mất 404, lỗi DB 500); thiếu hoặc quá dài (> 255 ký tự) `Idempotency-Key`, hoặc đơn không ở `PENDING` / `PAYMENT_FAILED` → 400, không charge; FE dùng lại cùng key khi thử lại (lần lỗi không lưu key, lần đã trả trúng cache); FE nhận 401 (`PaymentError.status`, `isUnauthorizedPayment()`) → `handleUnauthorized()`, giỏ và phiên thanh toán dở giữ nguyên (đăng nhập lại cùng tài khoản thì trả tiếp đúng đơn, không tạo đơn thứ hai); FE đưa `discount` và `loyaltyPointsEarned` của response vào `PaymentResult` (thiếu → 0) để biên lai hiện "Đã giảm: <số tiền>" (khi `discount > 0`) và "+N điểm" (khi `loyaltyPointsEarned > 0`); hằng số voucher / điểm của FE (`frontend/src/lib/promo.ts`) được `promo.test.ts` so với `payment.service.ts` |
+| **UC06** | Hủy đơn / Thử lại thanh toán | `PATCH /orders/:id`<br>*(hoặc `POST /payments`)* | `PaymentController.update()`<br>`PaymentService.cancelOrderAs()` (route `PATCH` hiện nằm ở PaymentController) | `Order`, `Payment` | Khách chỉ hủy đơn của mình (403/404) và không tự tiến đơn (`advanceOrder` → 403); hàm `assertTransition()` cưỡng chế State Machine: `PENDING->CANCELLED`, `PAYMENT_FAILED->PENDING`, `PAID->CANCELLED` (hoàn đúng số thực thu + hoàn kho, hoàn kho + `CANCELLED` trong 1 transaction); FE có nút Hủy ở `/history` (`cancelOrder()` trong `lib/api.ts`, 401 → `handleUnauthorized()`); thanh tiến trình 5 bước chỉ để xem (tiến đơn là việc của Barista, UC09–UC11) |
+| **UC07** | Xem xác nhận & Lịch sử đơn | `GET /orders/me`<br>`GET /orders/:id` (biên lai) | `OrderController.mine()` / `byId()`<br>`OrderService.listMine()` / `getById()` | `Order`, `OrderItem`, `Product` (lấy `productName`) | `JwtAuthGuard` trích xuất `userId` từ token, sắp xếp giảm dần theo ngày; mỗi dòng món kèm `productName` (cùng cách `listQueue()`: tra song song mỗi `productId` một lần, món không còn thì rơi về `productId`); `GET /orders/:id` chỉ chủ đơn (không có đơn → 404, khác chủ → 403), dòng món không có `productName`; FE `getMyOrders()` / `getOrder()` nhận 401 thì gọi `handleUnauthorized()`; `itemLine()` thiếu hoặc rỗng `productName` thì dùng 8 ký tự đầu của `productId`; biên lai hiện thêm "Đã giảm: <số tiền>" (khi `PaymentResult.discount > 0`) và "+N điểm" (khi `loyaltyPointsEarned > 0`) lấy từ response `POST /payments`; **tự cập nhật trạng thái** (`startPolling()`, `frontend/src/lib/use-order-poll.ts`): biên lai poll `GET /orders/:id` (khi `PaymentResult.orderId` có, tức cổng API thật), `/history` poll `GET /orders/me`, mỗi 3 giây sau khi request trước xong (không gọi chồng), dừng khi `isTerminal` (`COMPLETED` / `CANCELLED`; `/history` khi không còn đơn `PAID` / `PREPARING` / `READY`, `needsPolling()`), khi rời màn, hoặc khi 401 / 403 / 404; mất kết nối và 5xx giữ dữ liệu cuối và thử lại; hỏi cả khi tab ẩn, không có đẩy từ server (`ponytail:`) |
+| **UC08** | Xem hàng đợi đơn (PAID / PREPARING / READY) | `GET /orders?status=PAID,PREPARING,READY` | `OrderController.queue()`<br>`OrderService.listQueue()` | `Order`, `OrderItem`, `Product` (lấy `productName`) | `JwtAuthGuard` + `RolesGuard` (`@Roles(BARISTA, ADMIN)`, khách 403); cũ trước (FIFO); `/barista` tự tải lại mỗi 5 giây; FE `fetchQueue()` nhận 401 → `handleUnauthorized()` (xóa token, về `/login?next=/barista`), 403 chỉ báo lỗi |
+| **UC09** | Tiếp nhận pha chế (PAID -> PREPARING) | `PATCH /orders/:id` `{ status: 'PREPARING' }` | `PaymentController.update()`<br>`PaymentService.advanceOrder(actor…)` | `Order` | Khách 403 (chỉ BARISTA/ADMIN); `assertTransition(PAID → PREPARING)`; khóa `order:<orderId>`; nút Nhận pha; FE `advanceOrder()` nhận 401 → `handleUnauthorized()` (xóa token, về `/login?next=/barista`) |
 | **UC10** | Báo xong pha chế (PREPARING -> READY) | `PATCH /orders/:id` `{ status: 'READY' }` | `PaymentController.update()`<br>`PaymentService.advanceOrder(actor…)` | `Order` | Như UC09; `assertTransition(PREPARING → READY)`; nút Pha xong |
 | **UC11** | Xác nhận giao nước (READY -> COMPLETED) | `PATCH /orders/:id` `{ status: 'COMPLETED' }` | `PaymentController.update()`<br>`PaymentService.advanceOrder(actor…)` | `Order` | Như UC09; `assertTransition(READY → COMPLETED)`; nút Đã giao |
-| **UC12** | Hủy đơn do hết nguyên liệu (PAID -> CANCELLED) | `PATCH /orders/:id` `{ status: 'CANCELLED' }` | `PaymentController.update()`<br>`PaymentService.cancelOrderAs(actor…)` | `Order`, `Payment`, `Product` | BARISTA/ADMIN chỉ hủy đơn `PAID` (`PENDING` / `PAYMENT_FAILED` → 403, từ `PREPARING` `assertTransition` chặn 400); hoàn đúng số thực thu qua Gateway trước (ngoài transaction), rồi hoàn kho + `CANCELLED` trong 1 transaction (như UC06 KB3) |
-| **UC14** | Kiểm & điều chỉnh tồn kho món | `GET /admin/products`<br>`PATCH /admin/products/:id/stock` | `AdminProductController.list()` / `adjust()`<br>`ProductService.listAll()` / `adjustStock()` | `Product` | `RolesGuard` `@Roles(ADMIN)` (barista/khách 403); `AdjustStockDto`; optimistic lock theo `version` qua `setStockWithOptimisticLock` (lệch → 409, kết quả âm hoặc vượt Int32 → 400, món lạ → 404) |
+| **UC12** | Hủy đơn do hết nguyên liệu (PAID -> CANCELLED) | `PATCH /orders/:id` `{ status: 'CANCELLED' }` | `PaymentController.update()`<br>`PaymentService.cancelOrderAs(actor…)` | `Order`, `Payment`, `Product` | BARISTA/ADMIN chỉ hủy đơn `PAID` (`PENDING` / `PAYMENT_FAILED` → 403, từ `PREPARING` `assertTransition` chặn 400); hoàn đúng số thực thu qua Gateway trước (ngoài transaction), rồi hoàn kho + `CANCELLED` trong 1 transaction (như UC06 KB3); FE 401 → `handleUnauthorized()` như UC09 |
+| **UC14** | Kiểm & điều chỉnh tồn kho món | `GET /admin/products`<br>`PATCH /admin/products/:id/stock` | `AdminProductController.list()` / `adjust()`<br>`ProductService.listAll()` / `adjustStock()` | `Product` | `RolesGuard` `@Roles(ADMIN)` (barista/khách 403); `AdjustStockDto`; optimistic lock theo `version` qua `setStockWithOptimisticLock` (lệch → 409, kết quả âm hoặc vượt Int32 → 400, món lạ → 404); FE `fetchInventory()` / `adjustStock()` nhận 401 → `handleUnauthorized()` (xóa token, về `/login?next=/admin`) |
 
 UC13, UC15: chưa hiện thực (backlog) nên chưa có sơ đồ tuần tự và chưa có dòng trong ma trận (xem `docs/use-case-specifications.md` mục 1).
 

@@ -7,7 +7,9 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { DEFAULT_SIZE, SIZE_UPCHARGE, TOPPING_PRICES } from './pricing';
 
 export const QUEUE_STATUSES = [OrderStatus.PAID, OrderStatus.PREPARING, OrderStatus.READY];
-export type QueueOrderDto = OrderDto & { items: Array<OrderItemDto & { productName: string }> };
+// Đơn kèm tên món trên từng dòng: dùng cho hàng đợi quầy (GET /orders) và lịch sử (GET /orders/me).
+// Omit để items là một kiểu duy nhất (giao với OrderDto.items thì .map chọn nhầm chữ ký, mất productName).
+export type NamedOrderDto = Omit<OrderDto, 'items'> & { items: Array<OrderItemDto & { productName: string }> };
 
 @Injectable()
 export class OrderService {
@@ -64,8 +66,9 @@ export class OrderService {
     return { ...hit, isCached: true };
   }
 
-  listMine(userId: string) {
-    return this.orders.findByUserId(userId);
+  // GET /orders/me: mới nhất trước, mỗi dòng món kèm productName (cùng cách listQueue) để lịch sử hiện tên món thay vì mã
+  async listMine(userId: string): Promise<NamedOrderDto[]> {
+    return this.withProductNames(await this.orders.findByUserId(userId));
   }
 
   // Gap 1: receipt poll trạng thái; 404 đơn lạ, 403 đơn của người khác
@@ -77,14 +80,18 @@ export class OrderService {
   }
 
   // UC08 (mở rộng ngoài MVP §3.2): hàng đợi quầy, kèm tên món để barista đọc được
-  async listQueue(statuses: OrderStatus[] = QUEUE_STATUSES): Promise<QueueOrderDto[]> {
+  async listQueue(statuses: OrderStatus[] = QUEUE_STATUSES): Promise<NamedOrderDto[]> {
     const bad = statuses.find((s) => !QUEUE_STATUSES.includes(s));
     if (bad) throw new BadRequestException(`Status ${bad} is not in the counter queue`);
-    const orders = await this.orders.findByStatuses(statuses);
-    const names = new Map<string, string>();
-    for (const o of orders) for (const i of o.items) {
-      if (!names.has(i.productId)) names.set(i.productId, (await this.products.findById(i.productId))?.name ?? i.productId);
-    }
+    return this.withProductNames(await this.orders.findByStatuses(statuses));
+  }
+
+  // Mỗi productId phân biệt tra đúng một lần, các lần tra chạy song song; món không còn trong DB rơi về chính productId
+  private async withProductNames(orders: OrderDto[]): Promise<NamedOrderDto[]> {
+    const ids = new Set(orders.flatMap((o) => o.items.map((i) => i.productId)));
+    const names = new Map(
+      await Promise.all([...ids].map(async (id) => [id, (await this.products.findById(id))?.name ?? id] as const)),
+    );
     return orders.map((o) => ({ ...o, items: o.items.map((i) => ({ ...i, productName: names.get(i.productId)! })) }));
   }
 }

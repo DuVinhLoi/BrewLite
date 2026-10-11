@@ -1,6 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import { MAX_QTY } from '@/lib/cart-limits';
 
 interface Props {
   quantity: number;
@@ -8,9 +9,10 @@ interface Props {
   onRemove: () => void;
 }
 
-// FEATURE: Qty stepper — trừ dừng ở 1, xóa món bằng nút Xóa riêng.
+// FEATURE: Qty stepper — trừ dừng ở 1, cộng dừng ở MAX_QTY (99, khớp backend), xóa món bằng nút Xóa riêng.
 export default function QtyStepper({ quantity, onChange, onRemove }: Props) {
   const atMin = quantity <= 1;
+  const atMax = quantity >= MAX_QTY;
   return (
     <div style={styles.row}>
       <button
@@ -25,7 +27,13 @@ export default function QtyStepper({ quantity, onChange, onRemove }: Props) {
       <span style={styles.qty} aria-live="polite">
         {quantity}
       </span>
-      <button onClick={() => onChange(quantity + 1)} style={styles.step} aria-label="Tăng số lượng">
+      <button
+        onClick={() => onChange(quantity + 1)}
+        disabled={atMax}
+        style={atMax ? { ...styles.step, ...styles.stepDisabled } : styles.step}
+        aria-label="Tăng số lượng"
+        title={atMax ? `Tối đa ${MAX_QTY} ly mỗi dòng` : 'Tăng số lượng'}
+      >
         +
       </button>
       <button onClick={onRemove} style={styles.remove} aria-label="Xóa món">

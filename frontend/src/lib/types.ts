@@ -16,6 +16,34 @@ export interface Product {
   version?: number;
 }
 
+/** Một dòng món của GET /orders/me; productName do backend gắn (món đã bị xóa thì bằng productId). */
+export interface HistoryItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  size?: string;
+  toppings?: string[];
+}
+
+/** Một đơn trong lịch sử (GET /orders/me, backend trả mới nhất trước). */
+export interface HistoryOrder {
+  id: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  items: HistoryItem[];
+}
+
+/** Một đơn của GET /orders/:id (chủ đơn xem; biên lai poll trạng thái). Khác HistoryOrder: dòng món không có productName. */
+export interface OrderDetail {
+  id: string;
+  status: string;
+  total: number;
+  createdAt: string;
+  items: Omit<HistoryItem, 'productName'>[];
+}
+
 export interface CartItem {
   /** Khóa dòng giỏ = productId|size|toppings(sort): option khác nhau không gộp nhầm. */
   key: string;

@@ -3,6 +3,7 @@ import { statusTrack } from '@/lib/order-status';
 
 // FEATURE: Thanh tiến trình trạng thái đơn (sơ đồ §9.1): Chờ thanh toán → Đã thanh toán → Đang pha → Sẵn sàng → Hoàn tất.
 // Bước đã qua tô xanh, bước hiện tại tô đậm; PAYMENT_FAILED (đỏ) và CANCELLED (xám) hiện nhãn riêng thay thanh tiến trình.
+// Không đặt aria-live ở đây: /history có nhiều thanh cùng poll. Biên lai (PaymentSuccess) bọc thanh trong MỘT vùng aria-live="polite".
 export default function OrderStatusTrack({ status }: { status: string }) {
   const track = statusTrack(status);
 

@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { homeFor, roleFromToken, saveToken } from '@/lib/auth';
-import { clearCheckout } from '@/lib/payment/checkout-session';
+import { roleFromToken, saveToken, userIdFromToken } from '@/lib/auth';
+import { clearCheckoutIfOtherUser } from '@/lib/payment/checkout-session';
+import { postLoginTarget } from '@/lib/session';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
@@ -32,8 +33,10 @@ export default function LoginPage() {
         setError(null);
       } else {
         saveToken(data.accessToken);
-        clearCheckout(); // tài khoản mới trong tab: bỏ đơn đang trả dở của phiên trước
-        router.push(homeFor(roleFromToken(data.accessToken) ?? 'CUSTOMER'));
+        // đơn đang trả dở: giữ khi đăng nhập lại đúng tài khoản đã tạo nó (hết phiên giữa lúc trả tiền), bỏ khi là tài khoản khác
+        clearCheckoutIfOtherUser(userIdFromToken(data.accessToken));
+        // ?next= (từ handleUnauthorized) đưa về trang đang xem lúc hết phiên; chỉ nhận đường dẫn tương đối trong site
+        router.push(postLoginTarget(window.location.search, roleFromToken(data.accessToken) ?? 'CUSTOMER'));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Lỗi không xác định');

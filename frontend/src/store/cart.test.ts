@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { useCart } from './cart';
+import { MAX_LINES, MAX_QTY, useCart } from './cart';
 import type { Product } from '@/lib/types';
 
 const latte: Product = { id: 'p1', name: 'Latte', price: 30000, stock: 10 };
@@ -74,10 +74,10 @@ describe('updateQty / removeItem / total', () => {
   // POST /orders giới hạn quantity 1..99 mỗi dòng (DTO @Max(99)); giỏ không được vượt để khỏi gặp lỗi 400 lúc trả tiền
   test('qty tối đa 99 mỗi dòng, cả khi thêm lẫn khi bấm +', () => {
     const big: Product = { ...latte, stock: 500 };
-    state().addItem(big, { quantity: 150 });
+    expect(state().addItem(big, { quantity: 99 })).toEqual({ ok: true });
     const key = state().items[0].key;
     expect(state().items[0].quantity).toBe(99);
-    state().addItem(big, { quantity: 5 });
+    expect(state().addItem(big, { quantity: 5 })).toEqual({ ok: false, reason: 'MAX_QTY' });
     expect(state().items[0].quantity).toBe(99);
     state().updateQty(key, 50);
     state().updateQty(key, 150);
@@ -115,5 +115,87 @@ describe('persist key', () => {
     const raw = localStorage.getItem('brewlite-cart');
     expect(raw).not.toBeNull();
     expect(raw!).toContain('p1');
+  });
+});
+
+// Khớp @ArrayMaxSize(20) và @Max(99) của CreateOrderDto: giỏ từ chối thay vì để backend trả 400 lúc trả tiền
+describe('addItem: giới hạn 20 dòng và 99 ly', () => {
+  const big: Product = { ...latte, stock: 500 };
+  const distinct = (n: number): Product[] =>
+    Array.from({ length: n }, (_, i) => ({ ...big, id: `d${i}`, name: `Món ${i}` }));
+
+  test('hằng số khớp backend', () => {
+    expect(MAX_LINES).toBe(20);
+    expect(MAX_QTY).toBe(99);
+  });
+
+  test('đường ok trả { ok: true } và cập nhật count/total như trước', () => {
+    expect(state().addItem(latte, { quantity: 2 })).toEqual({ ok: true });
+    expect(state().count).toBe(2);
+    expect(state().total).toBe(70000);
+  });
+
+  test('dòng thứ 20 được nhận, dòng thứ 21 bị MAX_LINES và giỏ không đổi', () => {
+    const ps = distinct(21);
+    for (let i = 0; i < 20; i++) expect(state().addItem(ps[i])).toEqual({ ok: true });
+    expect(state().items).toHaveLength(20);
+    const before = { items: state().items, count: state().count, total: state().total };
+    expect(state().addItem(ps[20])).toEqual({ ok: false, reason: 'MAX_LINES' });
+    expect(state().items).toBe(before.items);
+    expect(state().count).toBe(before.count);
+    expect(state().total).toBe(before.total);
+  });
+
+  test('đủ 20 dòng vẫn gộp được vào dòng có sẵn', () => {
+    const ps = distinct(20);
+    for (const p of ps) state().addItem(p);
+    expect(state().addItem(ps[3], { quantity: 2 })).toEqual({ ok: true });
+    expect(state().items).toHaveLength(20);
+    expect(state().items[3].quantity).toBe(3);
+  });
+
+  test('khác size hoặc topping của cùng món là dòng mới, tính vào 20 dòng', () => {
+    const ps = distinct(19);
+    for (const p of ps) state().addItem(p);
+    expect(state().addItem(ps[0], { size: 'L' })).toEqual({ ok: true });
+    expect(state().items).toHaveLength(20);
+    expect(state().addItem(ps[0], { toppings: ['Trân châu'] })).toEqual({ ok: false, reason: 'MAX_LINES' });
+    expect(state().items).toHaveLength(20);
+  });
+
+  test('số lượng 100 cho dòng mới bị MAX_QTY, không cắt về 99', () => {
+    expect(state().addItem(big, { quantity: 100 })).toEqual({ ok: false, reason: 'MAX_QTY' });
+    expect(state().items).toHaveLength(0);
+    expect(state().addItem(big, { quantity: 99 })).toEqual({ ok: true });
+    expect(state().items[0].quantity).toBe(99);
+  });
+
+  test('thêm vào dòng đã 99 bị MAX_QTY, giỏ không đổi', () => {
+    state().addItem(big, { quantity: 99 });
+    const before = state().items;
+    expect(state().addItem(big)).toEqual({ ok: false, reason: 'MAX_QTY' });
+    expect(state().items).toBe(before);
+  });
+
+  test('98 + 5 bị MAX_QTY, không cắt về 99', () => {
+    state().addItem(big, { quantity: 98 });
+    expect(state().addItem(big, { quantity: 5 })).toEqual({ ok: false, reason: 'MAX_QTY' });
+    expect(state().items[0].quantity).toBe(98);
+    expect(state().addItem(big, { quantity: 1 })).toEqual({ ok: true });
+    expect(state().items[0].quantity).toBe(99);
+  });
+
+  test('hết hàng trả OUT_OF_STOCK, giỏ không đổi', () => {
+    const empty: Product = { ...latte, id: 'p3', stock: 0 };
+    expect(state().addItem(empty)).toEqual({ ok: false, reason: 'OUT_OF_STOCK' });
+    expect(state().items).toHaveLength(0);
+  });
+
+  test('tồn kho thấp vẫn cắt như cũ; dòng đã bằng tồn kho thì AT_STOCK_LIMIT (còn hàng nhưng không thêm được gì)', () => {
+    const low: Product = { ...latte, id: 'p2', stock: 2 };
+    expect(state().addItem(low, { quantity: 5 })).toEqual({ ok: true });
+    expect(state().items[0].quantity).toBe(2);
+    expect(state().addItem(low, { quantity: 5 })).toEqual({ ok: false, reason: 'AT_STOCK_LIMIT' });
+    expect(state().items[0].quantity).toBe(2);
   });
 });

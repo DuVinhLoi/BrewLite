@@ -99,11 +99,11 @@ Cổng thanh toán là bản giả nên mặc định luôn thành công. Muốn
 
 ## Demo State Machine (đề §9 + §9.1, tiêu chí a)
 
-Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua tô xanh, bước hiện tại đậm; `Thanh toán lỗi` đỏ, `Đã hủy` xám). Khách chỉ xem và hủy đơn của mình (nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy, `PREPARING` trở đi backend chặn 400); khách không tự tiến đơn (403). Tiến đơn là việc của Barista (UC09–UC11), mở rộng ngoài MVP theo đề §3.2:
+Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua tô xanh, bước hiện tại đậm; `Thanh toán lỗi` đỏ, `Đã hủy` xám) và **tự cập nhật mỗi 3 giây** (biên lai gọi `GET /orders/:id` đến khi đơn `COMPLETED` / `CANCELLED`; `/history` gọi `GET /orders/me` đến khi không còn đơn `PAID` / `PREPARING` / `READY`). Khách chỉ xem và hủy đơn của mình (nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy, `PREPARING` trở đi backend chặn 400); khách không tự tiến đơn (403). Tiến đơn là việc của Barista (UC09–UC11), mở rộng ngoài MVP theo đề §3.2:
 
 1. Khách `demo@brewlite.vn` đặt và trả một đơn (đơn sang `PAID`), mở `/history` xem thanh tiến trình.
 2. Đăng nhập `barista@brewlite.vn` / `barista1234` thì vào thẳng `/barista`: đơn nằm ở cột **Chờ pha**. Bấm **Nhận pha** → **Pha xong** → **Đã giao** (trang tự tải lại mỗi 5 giây). Hoặc bấm **Hủy (hết nguyên liệu)** để hủy đơn `PAID` (UC12: hoàn tiền + hoàn kho).
-3. Quay lại `/history` của khách (tải lại trang) thấy thanh tiến trình đã chuyển.
+3. Quay lại `/history` của khách (mở sẵn từ trước cũng được): trong khoảng 3 giây thanh tiến trình tự chuyển, không cần tải lại trang. Màn biên lai ngay sau khi trả tiền cũng tự cập nhật như vậy.
 
 Dự phòng nếu giao diện trục trặc (cần compose đang chạy, đã seed tài khoản khách và quầy):
 

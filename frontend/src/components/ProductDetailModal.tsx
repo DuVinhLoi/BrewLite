@@ -5,6 +5,7 @@ import type { CSSProperties } from 'react';
 import type { Product, Size } from '@/lib/types';
 import { calcLineTotal, calcUnitPrice, formatVND, SIZE_UPCHARGE, TOPPING_PRICES, DEFAULT_SIZE } from '@/lib/pricing';
 import { useCart } from '@/store/cart';
+import { addItemMessage, MAX_QTY, maxModalQty } from '@/lib/cart-limits';
 
 const SIZES: Size[] = ['S', 'M', 'L'];
 const TOPPINGS = Object.keys(TOPPING_PRICES);
@@ -15,16 +16,33 @@ export default function ProductDetailModal({ product, onClose }: { product: Prod
   const [size, setSize] = useState<Size>(DEFAULT_SIZE);
   const [toppings, setToppings] = useState<string[]>([]);
   const [qty, setQty] = useState(1);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const unit = calcUnitPrice(product.price, size, toppings);
-  const maxQty = Math.max(1, product.stock);
+  // Trần theo tồn kho và MAX_QTY: addItem từ chối (không cắt) khi xin quá 99, nên bộ chọn không được đi quá đó.
+  const maxQty = maxModalQty(product.stock);
+  const atMax = qty >= maxQty;
+  const plusTitle = !atMax ? 'Tăng' : product.stock < MAX_QTY ? 'Đã chọn hết số lượng còn lại' : `Tối đa ${MAX_QTY} ly mỗi dòng`;
 
-  const toggleTopping = (t: string) =>
+  // Đổi số lượng / size / topping thì thông báo từ lần thêm trước không còn đúng: xóa.
+  const toggleTopping = (t: string) => {
+    setNotice(null);
     setToppings((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
+  };
+  const pickSize = (s: Size) => {
+    setNotice(null);
+    setSize(s);
+  };
+  const changeQty = (delta: number) => {
+    setNotice(null);
+    setQty((q) => Math.min(maxQty, Math.max(1, q + delta)));
+  };
 
   const handleAdd = () => {
-    addItem(product, { size, toppings, quantity: Math.min(Math.max(1, qty), maxQty) });
-    onClose();
+    const result = addItem(product, { size, toppings, quantity: Math.min(Math.max(1, qty), maxQty) });
+    // Bị từ chối thì giữ modal mở và báo lý do, không đóng như đã thêm.
+    if (result.ok) onClose();
+    else setNotice(addItemMessage(result.reason));
   };
 
   return (
@@ -36,7 +54,7 @@ export default function ProductDetailModal({ product, onClose }: { product: Prod
         <p style={styles.label}>Size</p>
         {SIZES.map((s) => (
           <label key={s} style={styles.row}>
-            <input type="radio" name="size" checked={size === s} onChange={() => setSize(s)} />
+            <input type="radio" name="size" checked={size === s} onChange={() => pickSize(s)} />
             {s} (+{formatVND(SIZE_UPCHARGE[s])})
           </label>
         ))}
@@ -51,12 +69,21 @@ export default function ProductDetailModal({ product, onClose }: { product: Prod
 
         <p style={styles.label}>Số lượng</p>
         <div style={styles.qtyRow}>
-          <button style={styles.qtyBtn} onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Giảm">−</button>
+          <button style={styles.qtyBtn} onClick={() => changeQty(-1)} aria-label="Giảm">−</button>
           <strong>{qty}</strong>
-          <button style={styles.qtyBtn} onClick={() => setQty((q) => Math.min(maxQty, q + 1))} aria-label="Tăng">+</button>
+          <button
+            style={atMax ? { ...styles.qtyBtn, opacity: 0.35, cursor: 'not-allowed' } : styles.qtyBtn}
+            onClick={() => changeQty(1)}
+            disabled={atMax}
+            aria-label="Tăng"
+            title={plusTitle}
+          >
+            +
+          </button>
         </div>
 
         <p style={styles.total}>Tạm tính: <strong>{formatVND(calcLineTotal(unit, qty))}</strong></p>
+        {notice && <p role="status" style={styles.base}>{notice}</p>}
         <div style={styles.actions}>
           <button style={styles.backBtn} onClick={onClose}>Đóng</button>
           <button style={styles.addBtn} onClick={handleAdd}>Thêm vào giỏ • {formatVND(calcLineTotal(unit, qty))}</button>

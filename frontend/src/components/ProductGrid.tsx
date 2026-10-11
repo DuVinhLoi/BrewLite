@@ -1,8 +1,11 @@
 'use client';
 
-import type { CSSProperties } from 'react';
 import type { Product } from '@/lib/types';
+import EmptyState from './ui/EmptyState';
+import ErrorState from './ui/ErrorState';
+import Skeleton from './ui/Skeleton';
 import ProductCard from './ProductCard';
+import styles from './ProductGrid.module.css';
 
 interface Props {
   products: Product[];
@@ -16,12 +19,13 @@ interface Props {
 export default function ProductGrid({ products, loading, error, fromMock, onRetry }: Props) {
   if (loading) {
     return (
-      <div style={gridStyle} aria-busy="true" aria-label="Đang tải menu">
+      <div className={styles.grid} aria-busy="true" aria-label="Đang tải menu">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} style={skeletonStyle}>
-            <div style={{ height: 120, background: '#e5e7eb', borderRadius: 8 }} />
-            <div style={{ height: 16, background: '#e5e7eb', borderRadius: 4 }} />
-            <div style={{ height: 16, width: '50%', background: '#e5e7eb', borderRadius: 4 }} />
+          <div key={i} className={styles.skeletonCard}>
+            <Skeleton height={120} />
+            <Skeleton height={16} />
+            <Skeleton height={16} width="50%" />
+            <Skeleton height={40} />
           </div>
         ))}
       </div>
@@ -30,21 +34,16 @@ export default function ProductGrid({ products, loading, error, fromMock, onRetr
 
   if (error) {
     return (
-      <div style={emptyStyle} role="alert">
-        <p style={{ fontSize: 18, fontWeight: 700 }}>Không tải được menu 😢</p>
-        <p style={{ color: '#6b7280' }}>{error}</p>
-        <button onClick={onRetry} style={retryStyle}>
-          Thử lại
-        </button>
+      <div className={styles.state}>
+        <ErrorState doodle="/doodles/mug.svg" message="Không tải được menu." detail={error} onRetry={onRetry} />
       </div>
     );
   }
 
   if (products.length === 0) {
     return (
-      <div style={emptyStyle}>
-        <p style={{ fontSize: 18, fontWeight: 700 }}>Chưa có món nào</p>
-        <p style={{ color: '#6b7280' }}>Menu đang trống. Quay lại sau nhé!</p>
+      <div className={styles.state}>
+        <EmptyState doodle="/doodles/bag.svg" title="Chưa có món nào." hint="Menu đang trống. Quay lại sau nhé!" />
       </div>
     );
   }
@@ -56,7 +55,7 @@ export default function ProductGrid({ products, loading, error, fromMock, onRetr
           Đang hiển thị menu mẫu vì chưa cấu hình NEXT_PUBLIC_API_URL. Đặt biến này (xem .env.example) để dùng API thật.
         </p>
       )}
-      <div style={gridStyle}>
+      <div className={styles.grid}>
         {products.map((p) => (
           <ProductCard key={p.id} product={p} />
         ))}
@@ -64,38 +63,3 @@ export default function ProductGrid({ products, loading, error, fromMock, onRetr
     </div>
   );
 }
-
-const gridStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-  gap: 16,
-  marginTop: 16,
-};
-
-const skeletonStyle: CSSProperties = {
-  border: '1px solid #e5e7eb',
-  borderRadius: 12,
-  padding: 16,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-};
-
-const emptyStyle: CSSProperties = {
-  textAlign: 'center',
-  padding: '48px 16px',
-  border: '1px dashed #d1d5db',
-  borderRadius: 12,
-  marginTop: 16,
-  background: '#fff',
-};
-
-const retryStyle: CSSProperties = {
-  background: '#065f46',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 8,
-  padding: '10px 18px',
-  fontWeight: 700,
-  cursor: 'pointer',
-};

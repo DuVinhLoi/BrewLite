@@ -30,20 +30,32 @@ export interface SessionInfo {
   role: Role;
 }
 
-export function sessionFromToken(token: string | null): SessionInfo | null {
+// Payload (phần giữa) của JWT; token thiếu, hỏng hoặc payload không phải JSON → null. Không kiểm chữ ký.
+function payloadOf(token: string | null): Record<string, unknown> | null {
   const part = token?.split('.')[1];
   if (!part) return null;
   try {
     const b64 = part.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(part.length / 4) * 4, '=');
-    const payload = JSON.parse(atob(b64));
-    const role: Role = payload.role === 'BARISTA' || payload.role === 'ADMIN' ? payload.role : 'CUSTOMER';
-    return { email: typeof payload.email === 'string' ? payload.email : '', role };
+    return JSON.parse(atob(b64));
   } catch {
     return null;
   }
 }
 
+export function sessionFromToken(token: string | null): SessionInfo | null {
+  const payload = payloadOf(token);
+  if (!payload) return null;
+  const role: Role = payload.role === 'BARISTA' || payload.role === 'ADMIN' ? payload.role : 'CUSTOMER';
+  return { email: typeof payload.email === 'string' ? payload.email : '', role };
+}
+
 export const roleFromToken = (token: string | null): Role | null => sessionFromToken(token)?.role ?? null;
+
+/** Mã tài khoản (claim `sub`) của token; token thiếu, hỏng hoặc không có sub → null, không ném lỗi. */
+export function userIdFromToken(token: string | null): string | null {
+  const sub = payloadOf(token)?.sub;
+  return typeof sub === 'string' && sub ? sub : null;
+}
 
 const HOME: Record<Role, string> = { CUSTOMER: '/', BARISTA: '/barista', ADMIN: '/admin' };
 export const homeFor = (role: Role): string => HOME[role];

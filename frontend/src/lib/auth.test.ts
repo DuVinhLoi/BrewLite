@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { ROLE_LABEL, TOKEN_KEY, clearToken, getToken, homeFor, roleFromToken, saveToken, sessionFromToken } from './auth';
+import { ROLE_LABEL, TOKEN_KEY, clearToken, getToken, homeFor, roleFromToken, saveToken, sessionFromToken, userIdFromToken } from './auth';
 
 // JWT giả: chỉ phần payload quan trọng (frontend không kiểm chữ ký, server mới là nơi chặn quyền)
-const fakeJwt = (payload: object) =>
+const fakeJwt = (payload: object | null) =>
   `h.${Buffer.from(JSON.stringify(payload)).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}.s`;
 
 describe('roleFromToken', () => {
@@ -15,6 +15,24 @@ describe('roleFromToken', () => {
   test('không có token / token hỏng → null', () => {
     expect(roleFromToken(null)).toBeNull();
     expect(roleFromToken('abc')).toBeNull();
+  });
+});
+
+describe('userIdFromToken (sub của JWT, dùng để biết phiên thanh toán dở thuộc tài khoản nào)', () => {
+  test('đọc sub', () => {
+    expect(userIdFromToken(fakeJwt({ sub: 'u-123', role: 'CUSTOMER' }))).toBe('u-123');
+  });
+  test.each([
+    ['không có token', null],
+    ['token hỏng', 'abc'],
+    ['payload không phải JSON', 'h.!!!.s'],
+    ['payload là null', fakeJwt(null)],
+    ['thiếu sub', fakeJwt({ role: 'CUSTOMER' })],
+    ['sub rỗng', fakeJwt({ sub: '' })],
+    ['sub không phải chuỗi', fakeJwt({ sub: 42 })],
+  ])('%s → null, không ném lỗi', (_name, token) => {
+    expect(() => userIdFromToken(token)).not.toThrow();
+    expect(userIdFromToken(token)).toBeNull();
   });
 });
 

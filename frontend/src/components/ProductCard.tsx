@@ -1,24 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Product } from '@/lib/types';
 import { formatVND } from '@/lib/pricing';
 import { useCart } from '@/store/cart';
+import { addItemMessage } from '@/lib/cart-limits';
+import { createTimeoutSlot } from '@/lib/timeout-slot';
 import ProductDetailModal from './ProductDetailModal';
 
 // FEATURE: Product card — nút "Thêm" dùng size M mặc định (tùy chọn size/topping ở ProductDetailModal).
 export default function ProductCard({ product }: { product: Product }) {
   const addItem = useCart((s) => s.addItem);
   const [added, setAdded] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [customizing, setCustomizing] = useState(false);
   const outOfStock = product.stock <= 0;
+  // Một timer "Đã thêm ✓" duy nhất: lần bấm sau đặt lại hoặc hủy nó, rời màn thì dọn (không setAdded sau unmount).
+  const addedTimer = useRef(createTimeoutSlot());
+  useEffect(() => {
+    const slot = addedTimer.current;
+    return () => slot.clear();
+  }, []);
 
   const handleAdd = () => {
     if (outOfStock) return;
-    addItem(product);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1200);
+    const result = addItem(product);
+    if (result.ok) {
+      setNotice(null);
+      setAdded(true);
+      addedTimer.current.set(() => setAdded(false), 1200);
+    } else {
+      // Bị từ chối thì không bao giờ hiện "Đã thêm ✓".
+      addedTimer.current.clear();
+      setAdded(false);
+      setNotice(addItemMessage(result.reason));
+    }
   };
 
   return (
@@ -37,6 +54,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <button onClick={handleAdd} disabled={outOfStock} style={outOfStock ? styles.btnDisabled : styles.btn}>
         {outOfStock ? 'Hết hàng' : added ? 'Đã thêm ✓' : 'Thêm vào giỏ'}
       </button>
+      {notice && <p role="status" style={styles.stock}>{notice}</p>}
       <button onClick={() => setCustomizing(true)} disabled={outOfStock} style={outOfStock ? styles.btnDisabled : styles.btn}>
         Tùy chọn size / topping
       </button>
