@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 132" role="img" aria-labelledby="t">
+  <title id="t">Cành lá</title>
+  <g stroke="#171513" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 120 C70 106 140 78 230 24" fill="none"/>
+    <path d="M52 110 C30 98 26 74 40 62 C58 72 62 94 52 110 Z" fill="#A9C9A0"/>
+    <path d="M52 110 C46 92 44 78 40 64" fill="none" stroke-width="2"/>
+    <path d="M92 98 C112 100 126 114 124 130 C104 128 92 116 92 98 Z" fill="#A9C9A0"/>
+    <path d="M92 98 C104 108 114 118 122 128" fill="none" stroke-width="2"/>
+    <path d="M130 82 C112 66 112 42 128 30 C142 44 142 66 130 82 Z" fill="#A9C9A0"/>
+    <path d="M130 82 C128 64 128 48 128 32" fill="none" stroke-width="2"/>
+    <path d="M170 64 C190 64 204 78 204 96 C186 94 172 82 170 64 Z" fill="#A9C9A0"/>
+    <path d="M170 64 C182 74 194 84 202 94" fill="none" stroke-width="2"/>
+    <path d="M206 42 C192 30 192 12 206 4 C218 16 216 32 206 42 Z" fill="#A9C9A0"/>
+    <path d="M206 42 C206 30 206 18 206 6" fill="none" stroke-width="2"/>
+  </g>
+</svg>

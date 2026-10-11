@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
@@ -34,5 +34,12 @@ export class AuthService {
     const role = toRole(user.role);
     const accessToken = await this.jwt.signAsync({ sub: user.id, email: user.email, role });
     return { accessToken, user: { id: user.id, email: user.email, role } };
+  }
+
+  /** Hồ sơ của chính người gọi: không trả passwordHash. Token còn hạn nhưng user đã bị xoá → 404. */
+  async profile(id: string) {
+    const user = await this.users.findById(id);
+    if (!user) throw new NotFoundException('User not found');
+    return { id: user.id, email: user.email, role: toRole(user.role), loyaltyPoints: user.loyaltyPoints };
   }
 }

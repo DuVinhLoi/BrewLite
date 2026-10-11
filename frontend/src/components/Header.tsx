@@ -51,9 +51,9 @@ export default function Header() {
         </Link>
         {session ? (
           <>
-            <span style={styles.who} title={session.email}>
+            <Link href="/profile" style={styles.who} title={session.email}>
               {session.email || 'Đã đăng nhập'} · {ROLE_LABEL[session.role]}
-            </span>
+            </Link>
             <button type="button" onClick={logout} style={styles.logout}>
               Đăng xuất
             </button>
@@ -89,7 +89,7 @@ const styles: Record<string, CSSProperties> = {
   brand: { fontWeight: 800, fontSize: 20, textDecoration: 'none', color: '#065f46' },
   nav: { display: 'flex', gap: 16, alignItems: 'center' },
   link: { textDecoration: 'none', color: '#111827', fontWeight: 600 },
-  who: { fontSize: 13, color: '#374151' },
+  who: { fontSize: 13, color: '#374151', textDecoration: 'underline' },
   logout: { background: 'transparent', border: '1px solid #d1d5db', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 },
   cartLink: {
     position: 'relative',

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { advanceOrder, cancelOrder, getProducts } from './api';
+import { advanceOrder, cancelOrder, getProducts, getProfile } from './api';
 import { MOCK_PRODUCTS } from './mock-products';
 
 // UC06 KB2/KB3: nút "Hủy đơn" gọi PATCH /orders/:id { status: 'CANCELLED' } kèm Bearer JWT.
@@ -146,5 +146,26 @@ describe('advanceOrder', () => {
   test('mất kết nối → ném lỗi tiếng Việt', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('fetch failed')));
     await expect(advanceOrder('o1', 'PREPARING', 't')).rejects.toThrow(/kết nối/);
+  });
+});
+
+describe('getProfile', () => {
+  test('GET /users/me kèm Bearer, trả đúng hồ sơ', async () => {
+    const me = { id: 'u1', email: 'a@b.co', role: 'CUSTOMER', loyaltyPoints: 30 };
+    const fetchMock = vi.fn().mockResolvedValueOnce(json(200, me));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(getProfile('tok-1')).resolves.toEqual(me);
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/users\/me$/);
+    expect(init.headers.Authorization).toBe('Bearer tok-1');
+  });
+
+  test('401 → báo đăng nhập lại; lỗi mạng → báo không kết nối', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(401, { message: 'Unauthorized' })));
+    await expect(getProfile('t')).rejects.toThrow(/đăng nhập lại/);
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('fail')));
+    await expect(getProfile('t')).rejects.toThrow(/Không kết nối/);
   });
 });

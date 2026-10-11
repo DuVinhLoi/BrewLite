@@ -99,4 +99,16 @@ describe('auth', () => {
     await new JwtAuthGuard(jwt).canActivate({ switchToHttp: () => ({ getRequest: () => req }) } as any);
     expect(req.user.role).toBe('CUSTOMER');
   });
+
+  it('profile: trả {id,email,role,loyaltyPoints} đúng điểm hiện có, không lộ passwordHash', async () => {
+    const reg = await svc.register({ email: 'p@b.co', password: 'secret1' });
+    await repo.addLoyaltyPoints(reg.id, 42);
+    const p = await svc.profile(reg.id);
+    expect(p).toEqual({ id: reg.id, email: 'p@b.co', role: 'CUSTOMER', loyaltyPoints: 42 });
+    expect((p as any).passwordHash).toBeUndefined();
+  });
+
+  it('profile: user không còn trong DB → 404', async () => {
+    await expect(svc.profile('ghost')).rejects.toMatchObject({ status: 404 });
+  });
 });

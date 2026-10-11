@@ -69,6 +69,26 @@ export const cancelOrder = (orderId: string, token: string): Promise<void> =>
 export const advanceOrder = (orderId: string, status: string, token: string): Promise<void> =>
   patchOrderStatus(orderId, status, token, 'chuyển trạng thái đơn');
 
+// GET /users/me (mở rộng ngoài đề §12.1): hồ sơ người đang đăng nhập, gồm tổng điểm tích lũy mà JWT không mang.
+export interface Profile {
+  id: string;
+  email: string;
+  role: 'CUSTOMER' | 'BARISTA' | 'ADMIN';
+  loyaltyPoints: number;
+}
+
+export async function getProfile(token: string): Promise<Profile> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+  } catch {
+    throw new Error('Không kết nối được máy chủ để tải hồ sơ.');
+  }
+  if (res.status === 401 || res.status === 404) throw new Error('Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại.');
+  if (!res.ok) throw new Error(`Không tải được hồ sơ (mã ${res.status}).`);
+  return (await res.json()) as Profile;
+}
+
 // Chưa cấu hình NEXT_PUBLIC_API_URL → menu mẫu (demo UI không cần backend, ProductGrid hiện banner).
 // Đã cấu hình → lỗi/rỗng là thật: ném lỗi để ProductGrid hiện error + retry, trả [] để hiện empty
 // (rơi về menu mẫu lúc này sẽ cho khách thêm món có id không tồn tại trong DB → 404 khi đặt đơn).
