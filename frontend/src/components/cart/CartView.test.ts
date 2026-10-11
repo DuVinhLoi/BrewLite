@@ -96,8 +96,13 @@ describe('CartView: giỏ có món', () => {
     expect(out.match(/↗/g)).toHaveLength(1);
   });
 
-  test('dưới 20 dòng: không có câu "Giỏ đã đủ 20 dòng."', () => {
+  test('dưới 20 dòng: không có câu "Giỏ đã đủ 20 dòng." nhưng vùng role="status" vẫn có mặt, rỗng và visually-hidden', () => {
     expect(out).not.toContain('Giỏ đã đủ');
+    const regions = out.match(/<[^>]*role="status"[^>]*>[^<]*<\/[a-z]+>/g) ?? [];
+    expect(regions).toHaveLength(1);
+    expect(regions[0]).toMatch(/class="[^"]*visually-hidden/);
+    expect(text(regions[0] ?? '')).toBe('');
+    expect(out).not.toMatch(/class="[^"]*limit/);
   });
 
   test('mọi nút type="button"; không href="#"; không em-dash', () => {
@@ -119,6 +124,15 @@ describe('CartView: đủ 20 dòng', () => {
     const items = Array.from({ length: MAX_LINES }, (_, i) => ({ ...latte, key: `p${i}|L|`, productId: `p${i}` }));
     const out = view(items);
     expect(out).toMatch(new RegExp(`<p[^>]*role="status"[^>]*>Giỏ đã đủ ${MAX_LINES} dòng\\.</p>`));
+    expect(out.match(/role="status"/g)).toHaveLength(1);
+    expect(out).toMatch(/<p[^>]*class="[^"]*limit[^"]*"[^>]*role="status"|<p[^>]*role="status"[^>]*class="[^"]*limit/);
+    expect(out).not.toContain('visually-hidden');
+  });
+
+  test('nguồn: câu đi qua LiveNotice luôn được vẽ (không còn {items.length >= MAX_LINES && ...})', () => {
+    const src = readFileSync(path.resolve(__dirname, 'CartView.tsx'), 'utf8');
+    expect(src).toMatch(/<LiveNotice\s+message=\{items\.length >= MAX_LINES \? [^\n]*: null\}\s+className=\{styles\.limit\}\s*\/>/);
+    expect(src).not.toMatch(/MAX_LINES\s*&&/);
   });
 });
 

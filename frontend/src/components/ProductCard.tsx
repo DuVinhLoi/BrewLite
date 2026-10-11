@@ -9,6 +9,7 @@ import { addItemMessage } from '@/lib/cart-limits';
 import { createTimeoutSlot } from '@/lib/timeout-slot';
 import Badge from './ui/Badge';
 import Button from './ui/Button';
+import LiveNotice from './ui/LiveNotice';
 import ProductDetailModal from './ProductDetailModal';
 import styles from './ProductCard.module.css';
 
@@ -75,11 +76,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <span role="status" className="visually-hidden">
           {added ? 'Đã thêm ✓' : ''}
         </span>
-        {notice && (
-          <p role="status" className={styles.notice}>
-            {notice}
-          </p>
-        )}
+        <LiveNotice message={notice} className={styles.notice} />
         <Button variant="link" onClick={() => setCustomizing(true)} disabled={outOfStock} className={styles.options}>
           Tùy chọn size / topping
         </Button>

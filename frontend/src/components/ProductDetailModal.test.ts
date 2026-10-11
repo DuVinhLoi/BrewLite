@@ -112,8 +112,18 @@ describe('ProductDetailModal: nội dung', () => {
     expect(out).toMatch(/<button[^>]*aria-label="Tăng"/);
   });
 
-  test('chưa thêm thì chưa có thông báo role="status"', () => {
-    expect(out).not.toContain('role="status"');
+  test('chưa có thông báo: vùng role="status" vẫn có mặt nhưng rỗng và visually-hidden (không dùng class notice)', () => {
+    const regions = out.match(/<[^>]*role="status"[^>]*>[^<]*<\/[a-z]+>/g) ?? [];
+    expect(regions).toHaveLength(1);
+    expect(regions[0]).toMatch(/class="[^"]*visually-hidden/);
+    expect(text(regions[0] ?? '')).toBe('');
+    expect(out).not.toMatch(/class="[^"]*notice/);
+  });
+
+  test('nguồn: thông báo đi qua LiveNotice luôn được vẽ (không còn {notice && ...})', () => {
+    const src = readFileSync(path.resolve(__dirname, 'ProductDetailModal.tsx'), 'utf8');
+    expect(src).toMatch(/<LiveNotice\s+message=\{notice\}\s+className=\{styles\.notice\}\s*\/>/);
+    expect(src).not.toMatch(/\{notice\s*&&/);
   });
 
   test('có ảnh: ảnh món alt là tên món; hình trang trí alt="" aria-hidden', () => {

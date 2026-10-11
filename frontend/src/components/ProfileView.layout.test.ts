@@ -77,7 +77,7 @@ describe('ProfileView: chưa đăng nhập (§6 mục 11)', () => {
     expect(out).toMatch(/<img[^>]*src="\/doodles\/bean\.svg"[^>]*alt=""[^>]*aria-hidden="true"/);
     expect(out).toMatch(/<h2[^>]*class="[^"]*display[^"]*"[^>]*>Bạn chưa đăng nhập\.<\/h2>/);
     expect(text(out)).toContain('Đăng nhập để xem điểm tích lũy và lịch sử đơn.');
-    expect(out).toMatch(/<a[^>]*href="\/login"[^>]*class="[^"]*cta[^"]*"[^>]*>Đăng nhập<\/a>|<a[^>]*class="[^"]*cta[^"]*"[^>]*href="\/login"[^>]*>Đăng nhập<\/a>/);
+    expect(out).toMatch(/<a[^>]*href="\/login\?next=%2Fprofile"[^>]*class="[^"]*cta[^"]*"[^>]*>Đăng nhập<\/a>|<a[^>]*class="[^"]*cta[^"]*"[^>]*href="\/login\?next=%2Fprofile"[^>]*>Đăng nhập<\/a>/);
     expect(out).not.toContain('↗');
   });
 });

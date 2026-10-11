@@ -158,15 +158,15 @@ Quy tắc chung:
 | 2 | `ApiError`, `useAsync`, xử lý 401 chung (`handleUnauthorized`, `?next=` qua `safeNext`); Menu có đủ trạng thái tải / lỗi / rỗng; `GET /orders/me` trả `items[].productName` | `d334a79`, `2fc3227`; sửa `8bb5535`, `2835698`, `8605364` |
 | 3 (chức năng) | Biên lai và Lịch sử tự cập nhật trạng thái (`startPolling`, `useOrderPoll`, 3 giây, dừng ở `COMPLETED` / `CANCELLED`); hiện giảm giá và điểm thưởng sau thanh toán; giỏ chặn 20 dòng và 99 ly | `54e36e9`, `49b88c1`, `1ff396a`; sửa `940e41c`, `f5a4388`, `9ca71b4` |
 | 3 (hình thức) | 11 màn theo canvas "nét mực": Header, Menu, Chi tiết món, Giỏ hàng, Thanh toán, Đặt hàng thành công, Đăng nhập / Đăng ký, Hồ sơ, Lịch sử, Quầy, Kho | `35c409b` đến `7e7d582`; sửa `a471b2b`, `fce6975`, `a05908d` |
-| 4 | Đối chiếu wireframe đề §7 (29 dòng: 10 khớp, 19 lệch có chủ đích, 0 lệch không chủ đích; `docs/checkpoints/2026-10-11-ui-wireframe-diff.md`); Dockerfile production và ESLint `next/core-web-vitals`; kiểm thử cuối (mục này) | `c35ee57`, `e4bdbaf`, `1f2ce02`, `733f315` |
+| 4 | Đối chiếu wireframe đề §7 (29 dòng: 10 khớp, 19 lệch có chủ đích, 0 lệch không chủ đích; `docs/checkpoints/2026-10-11-ui-wireframe-diff.md`); Dockerfile production và ESLint `next/core-web-vitals`; kiểm thử cuối (mục này) | `c35ee57`, `e4bdbaf`, `e50f870`, `e50f870` |
 
-Toàn bộ khoảng `5faeafd..HEAD` là 40 commit (`git log --oneline 5faeafd..HEAD`).
+Toàn bộ khoảng `5faeafd..e50f870` là 40 commit (`git rev-list --count 5faeafd..e50f870`).
 
 **Backend đổi (chỉ hai chỗ, đều có test và đã sửa sơ đồ UC cùng commit):** `GET /users/me` trả `{ id, email, role, loyaltyPoints }` (`f41c0a8`); `GET /orders/me` trả thêm `productName` ở **từng dòng** `items[]`, không phải ở cấp đơn (`2fc3227`, `8bb5535`).
 
-**Frontend trong compose nay là bản production:** `frontend/Dockerfile` chạy `next build` rồi `npm run start` (`1f2ce02`); `NEXT_PUBLIC_API_URL` được nhúng lúc build. Sửa mã frontend thì `docker compose up -d --build frontend`. Lint: `npm run lint` trong `frontend/`.
+**Frontend trong compose nay là bản production:** `frontend/Dockerfile` chạy `next build` rồi `npm run start` (`e50f870`); `NEXT_PUBLIC_API_URL` được nhúng lúc build. Sửa mã frontend thì `docker compose up -d --build frontend`. Lint: `npm run lint` trong `frontend/`.
 
-**Số liệu đo ngày 2026-10-11 (HEAD `733f315`, chạy lại trong Task 11)**
+**Số liệu đo ngày 2026-10-11 (đo tại `e50f870`, chạy lại trong Task 11)**
 
 | Lệnh | Kết quả |
 |---|---|
@@ -176,6 +176,8 @@ Toàn bộ khoảng `5faeafd..HEAD` là 40 commit (`git log --oneline 5faeafd..H
 | `cd frontend && npx tsc --noEmit` | sạch |
 | `cd frontend && npm run lint` | exit 0, 0 lỗi, 47 cảnh báo `@next/next/no-img-element` (cảnh báo, không phải lỗi) |
 | `docker image inspect bl-uiplan-frontend:latest` | có, tạo 2026-10-11 03:57 UTC; việc build chạy trong Docker (không chạy thêm `next build` trên máy) |
+
+**Build image sau đợt sửa review Giai đoạn 4 (build đo tại `e006556`):** `docker compose -p bl-uiplan build --no-cache frontend` thành công (exit 0): `Compiled successfully`, `Linting and checking validity of types` qua, `Generating static pages (10/10)`, image `bl-uiplan-frontend:latest` tạo `2026-10-11T04:12:41Z`. Route (đều tĩnh): `/`, `/_not-found`, `/admin`, `/barista`, `/cart`, `/history`, `/login`, `/profile`. Chạy thử `docker run --rm -d -p 3101:3001`: `/`, `/login`, `/cart`, `/history`, `/profile` đều 200, `/` chứa "Cà phê mỗi ngày"; container thử đã dừng và xóa. Số đo bảng trên vẫn là tại `e50f870`; từ đó chỉ đổi `docker-compose.yml` (bỏ `environment:` của frontend), một dòng chú thích trong `frontend/Dockerfile` và tài liệu, không đổi mã ứng dụng.
 
 So với mục 7: backend 122 pass / 3 skip thành **130 pass / 3 skip**; frontend 117 thành **796 pass**.
 
@@ -190,7 +192,7 @@ So với mục 7: backend 122 pass / 3 skip thành **130 pass / 3 skip**; fronte
 - Khách thứ hai đọc đơn của khách đầu: 403 `Not your order`; không token: 401; khách gọi hàng đợi quầy: 403 `Insufficient role`.
 - `POST /orders` 21 dòng 400 (`items must contain no more than 20 elements`); `quantity` 100 400 (`must not be greater than 99`); 20 dòng, 1 dòng x 99 và 20 dòng x 99 đều 201.
 - Frontend production trên `:3001`: `/`, `/login`, `/cart`, `/history`, `/profile` đều 200; `/` chứa "Cà phê mỗi ngày".
-- Dọn: `smoke:clean` xóa 4 tài khoản `@smoke.test` và 4 đơn; kho `p1` và `p3` về 10 (`version` đã tăng), không còn tài khoản `@smoke.test`. Dừng stack bằng `docker compose -p bl-uiplan stop` (không `down -v`).
+- Dọn: `smoke:clean` xóa 4 tài khoản `@smoke.test` và 4 đơn; kho `p1` và `p3` về 10 (`version` đã tăng), không còn tài khoản `@smoke.test`. Dừng stack bằng `docker compose -p bl-uiplan stop` (không `down -v`). Container backend hiện "Exited (1)" sau `docker compose stop` là mã thoát do SIGTERM đi qua npm, không phải lỗi ứng dụng.
 
 Chi tiết từng lệnh và dòng kết quả nằm ở `.superpowers/sdd/2026-10-09-frontend-ui-plan/task-11-report.md` (thư mục làm việc, không commit).
 
@@ -208,8 +210,9 @@ Chi tiết từng lệnh và dòng kết quả nằm ở `.superpowers/sdd/2026-
 
 - **Mọi thứ về hình ảnh:** chưa ai nhìn 11 màn bằng mắt ở 1280, 1024, 760 và 360px, kèm "reduce motion" bật và tắt. Chưa chụp ảnh nào (xem README, mục "Giao diện"). Danh sách điểm cần xem theo thứ tự quan trọng: `docs/checkpoints/2026-10-11-ui-checkpoint-4.md` và `2026-10-10-ui-checkpoint-3a.md`.
 - Bốn thao tác ở bảng trên chỉ trình duyệt làm được: chuyển `/login` khi 401, F5 giữa thanh toán, màn lỗi và thử lại của Menu, biên lai tự đổi khi barista đổi trạng thái (hai tab).
+- Bố cục hero và cảnh bình moka (Menu), và header của ADMIN ở khoảng 1024px: chưa ai nhìn bằng mắt.
 - Vai trò BARISTA / ADMIN của smoke đặt bằng SQL, không qua giao diện (không có màn quản lý người dùng, ngoài phạm vi).
 
-**Câu hỏi mở:** có đổi tên món "Latte" trong seed thành "Cà phê sữa" cho khớp wireframe đề §7 không (xem cuối `docs/checkpoints/2026-10-11-ui-wireframe-diff.md`)? Đổi `backend/prisma/seed.ts:31` kéo theo DB đã seed, test backend và frontend, tài liệu và các artboard gọi món này là "Latte". Hiện giữ "Latte".
+**Đã quyết (2026-10-11):** không đổi tên món "Latte" trong seed (giữ khác wireframe đề §7, xem `docs/checkpoints/2026-10-11-ui-wireframe-diff.md`); giữ ký hiệu tiền `đ` của `formatVND`; commit `733f315` đã squash vào `1f2ce02` (bảng hash: `docs/checkpoints/2026-10-11-squash-hash-map.md`).
 
 **Việc nhỏ còn nợ (không chặn):** danh sách đầy đủ ở cuối `docs/checkpoints/2026-10-11-ui-checkpoint-4.md`, `2026-10-10-ui-checkpoint-3a.md` và `2026-10-09-ui-checkpoint-3.md`. Nổi bật: catch cuối của `app/login/page.tsx` che lỗi hiếm (thân JSON `null`); bốn wrapper `Page` gần giống nhau ở `HistoryView`, `BaristaView`, `InventoryView`, `ProfileView`; thanh 5 bước ở 320 đến 360px; nút -/+ giỏ 40px (dưới 44px); lưới Quầy ép 3 cột từ 761px; docs §2.8 chưa nhắc hai trạng thái mới của Kho.

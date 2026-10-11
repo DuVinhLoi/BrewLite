@@ -90,7 +90,7 @@ export default function HistoryView({ token, orders, error, busyId, actionError,
   if (!token)
     return (
       <Page>
-        <GuestState />
+        <GuestState nextPath="/history" />
       </Page>
     );
 

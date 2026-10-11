@@ -39,7 +39,7 @@ describe('HistoryView: trước khi có danh sách', () => {
   test('token=null: "Bạn chưa đăng nhập" và link /login', () => {
     const out = html({ token: null });
     expect(out).toContain('Bạn chưa đăng nhập');
-    expect(out).toContain('href="/login"');
+    expect(out).toContain('href="/login?next=%2Fhistory"'); // đăng nhập xong quay lại /history (safeNext)
   });
 
   test('có token, chưa có dữ liệu, chưa lỗi: "Đang tải…"', () => {

@@ -7,6 +7,7 @@ import { useCart } from '@/store/cart';
 import { addItemMessage, MAX_QTY, maxModalQty } from '@/lib/cart-limits';
 import { FOCUSABLE_SELECTOR, isCloseEscape, isTrapTab, nextFocusIndex } from '@/lib/focus-trap';
 import Button from './ui/Button';
+import LiveNotice from './ui/LiveNotice';
 import styles from './ProductDetailModal.module.css';
 
 const SIZES: Size[] = ['S', 'M', 'L'];
@@ -171,11 +172,7 @@ export default function ProductDetailModal({ product, onClose }: { product: Prod
             </p>
           </div>
 
-          {notice && (
-            <p role="status" className={styles.notice}>
-              {notice}
-            </p>
-          )}
+          <LiveNotice message={notice} className={styles.notice} />
 
           <div className={styles.actions}>
             <Button variant="ghost" onClick={onClose} className={styles.close}>

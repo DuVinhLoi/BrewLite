@@ -4,6 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import GuestState from './GuestState';
+import { safeNext } from '@/lib/session';
 import { blocks, missingClasses, motionOutsideNoPreference, readCss } from '@/test-utils/css';
 
 // Trạng thái "chưa đăng nhập" dùng chung cho Hồ sơ và Lịch sử: ui-visual-plan.md §6 mục 11, artboard StatesDoodle dòng 88 đến 92.
@@ -22,6 +23,27 @@ describe('GuestState (render HTML)', () => {
     expect(out).not.toContain('<button');
     expect(out).not.toContain('href="#"');
     expect(out).not.toContain('↗');
+  });
+
+  test('có nextPath: href = /login?next=<encodeURIComponent>, và giá trị next qua safeNext trả lại đúng đường dẫn', () => {
+    for (const p of ['/history', '/profile']) {
+      const withNext = renderToStaticMarkup(createElement(GuestState, { nextPath: p }));
+      const href = /<a[^>]*href="([^"]*)"[^>]*>Đăng nhập<\/a>/.exec(withNext)?.[1];
+      expect(href).toBe(`/login?next=${encodeURIComponent(p)}`);
+      const next = new URLSearchParams((href ?? '').split('?')[1]).get('next');
+      expect(safeNext(next)).toBe(p);
+    }
+  });
+
+  test('có nextPath lạ (//host, https://...): vẫn encode, và safeNext từ chối ở đầu nhận', () => {
+    const bad = renderToStaticMarkup(createElement(GuestState, { nextPath: '//evil.example' }));
+    const href = /href="([^"]*)"/.exec(bad.replace(/<img[^>]*>/, ''))?.[1];
+    expect(safeNext(new URLSearchParams((href ?? '').split('?')[1]).get('next'))).toBeNull();
+  });
+
+  test('không có nextPath: giữ nguyên href="/login", không ?next=', () => {
+    expect(out).toContain('href="/login"');
+    expect(out).not.toContain('next=');
   });
 
   test('không có h1 (trang bọc ngoài tự đặt tiêu đề), không style inline, không em-dash', () => {

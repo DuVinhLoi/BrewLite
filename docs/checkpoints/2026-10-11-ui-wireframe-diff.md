@@ -14,7 +14,7 @@ Ngày 2026-10-11, nhánh `worktree-ui-plan-checkpoint`.
 | Wireframe nói | Màn hiện tại làm (file:dòng) | Verdict |
 |---|---|---|
 | Đầu màn: "BrewLite ≡" | Logo `bean.svg` + chữ "BrewLite" (`components/HeaderView.tsx:22-23`) và nav dạng viên (`HeaderView.tsx:26`) thay cho nút ≡. Dưới 760px các nhóm xuống dòng | lệch có chủ đích: VP §6 mục 1 (header ở mọi màn, nav viên). VP không nhắc nút ≡; việc không còn menu ẩn là suy luận của người làm, không phải câu của VP |
-| 4 dòng món, mỗi dòng "tên + giá" ("Cà phê sữa 35k") | Lưới thẻ: ảnh, tên (`components/ProductCard.tsx:56`), rồi giá `formatVND` "35.000 ₫" (`ProductCard.tsx:58`). Thứ tự tên rồi giá giữ nguyên | khớp về thứ tự và nội dung. Cách ghi giá "35k" là cách viết tắt của hình; `formatVND` là nguồn duy nhất cho mọi số tiền (`lib/pricing.ts`) |
+| 4 dòng món, mỗi dòng "tên + giá" ("Cà phê sữa 35k") | Lưới thẻ: ảnh, tên (`components/ProductCard.tsx:56`), rồi giá `formatVND` "35.000đ" (`ProductCard.tsx:58`). Thứ tự tên rồi giá giữ nguyên | khớp về thứ tự và nội dung. Cách ghi giá "35k" là cách viết tắt của hình; `formatVND` là nguồn duy nhất cho mọi số tiền (`lib/pricing.ts`) |
 | Tên món "Cà phê sữa" | Tên lấy từ `GET /products`; seed backend đặt "Latte" (`backend/prisma/seed.ts:31`). Menu mẫu khi chưa có API vẫn là "Cà phê sữa" (`lib/mock-products.ts:7`) | lệch có chủ đích. Lý do: tên món là dữ liệu của backend (`backend/prisma/seed.ts:31` đặt `name: 'Latte'`, có từ trước khi làm giao diện), không phải bố cục. Nguồn khác gọi món này là "Latte": `docs/planning/2026-10-09-ui-visual-plan.md:79` (§3.1, màu ô món) và các artboard canvas (MenuDoodle, CartDoodle, PayDoodle...). Chỉ menu mẫu `lib/mock-products.ts:7` còn theo wireframe. Chưa có ruling nào chốt tên món; đổi tên trong seed (đụng backend, DB đã seed, test và tài liệu) chưa làm trong task này, xem "Câu hỏi mở" cuối file |
 | Cuối màn: nút "Xem giỏ hàng (0)" | Pill "Xem giỏ hàng" kèm số trên nền cam, nằm ở header, mọi màn đều có (`HeaderView.tsx:43-49`). Nhãn giữ nguyên, số hiện thành huy hiệu thay vì dấu ngoặc | lệch có chủ đích: VP §6 mục 1 ("giữ đúng nhãn hiện có, kèm số trên nền cam") và VP §9 (chữ giữ nguyên "Xem giỏ hàng"). Test `components/HeaderView.test.ts:80` |
 | (không có) | Hero trên đầu lưới (`app/page.tsx:21`, `components/menu/MenuHero.tsx`), tiêu đề "Menu hôm nay", nút "Thêm vào giỏ" và liên kết "Tùy chọn size / topping" trong thẻ (`ProductCard.tsx:72`, `ProductCard.tsx:84`) | lệch có chủ đích: VP §6 mục 2 và 3 (artboard MenuDoodle). Phần thêm, không bỏ phần tử nào của wireframe |
@@ -24,7 +24,7 @@ Ngày 2026-10-11, nhánh `worktree-ui-plan-checkpoint`.
 | Wireframe nói | Màn hiện tại làm (file:dòng) | Verdict |
 |---|---|---|
 | Đầu màn: "← Cappuccino" (nút lùi + tên món) như một trang riêng | Hộp thoại có `role="dialog"` (`components/ProductDetailModal.tsx:87`), tiêu đề tên món `h2` (`ProductDetailModal.tsx:108`), không có mũi tên; đóng bằng nút "Đóng" (`ProductDetailModal.tsx:182`) hoặc Esc (bắt ở `document`, `ProductDetailModal.tsx:40`, hàm `isCloseEscape` của `lib/focus-trap`) | lệch có chủ đích: VP §6 mục 4 (modal 2 cột, nút "Đóng") và quyết định Q4 ngày 2026-10-09, ghi ở `docs/user-sequence-specifications.md` §2.1 mục C (modal tính là "màn hình chi tiết", wireframe chỉ tham khảo) |
-| "Giá: 45.000đ" | "Giá gốc: 45.000 ₫ • Còn N" ngay dưới tên, trước Size (`ProductDetailModal.tsx:111`) | lệch có chủ đích: VP §6 mục 4 ("giữ chữ hiện có"). Vị trí khớp (giá ngay sau đầu màn, trước Size) |
+| "Giá: 45.000đ" | "Giá gốc: 45.000đ • Còn N" ngay dưới tên, trước Size (`ProductDetailModal.tsx:111`) | lệch có chủ đích: VP §6 mục 4 ("giữ chữ hiện có"). Vị trí khớp (giá ngay sau đầu màn, trước Size) |
 | "Size: S · M · L" | Nhãn "Size", 3 chip S, M, L kèm phụ phí (`ProductDetailModal.tsx:117`, `:122`) | khớp (đủ 3 size; phụ phí là phần thêm theo VP §6 mục 4) |
 | "Topping: Trân châu / Kem" | Nhãn "Topping", chip theo `TOPPING_PRICES`: Trân châu, Kem cheese, Thạch cà phê (`ProductDetailModal.tsx:130`, `:141`; `lib/pricing.ts:18-20`) | lệch có chủ đích: danh sách và tên topping lấy từ `lib/pricing.ts` (nguồn duy nhất, trùng bản sao backend `backend/src/order/pricing.ts`); wireframe chỉ nêu ví dụ |
 | Thứ tự: Giá, Size, Topping, nút "Thêm vào giỏ" | Giá, Size, Topping, Số lượng + Tạm tính, rồi "Đóng" và "Thêm vào giỏ • …" (`ProductDetailModal.tsx:111`, `:117`, `:130`, `:150`, `:170`, `:182`, `:185`) | khớp về thứ tự. "Số lượng" và "Tạm tính" là phần thêm (VP §6 mục 4) |
@@ -77,6 +77,7 @@ Hai chữ phải giữ nguyên trong app đều còn nguyên và có test: "Mờ
 
 Thay đổi tài liệu cùng commit: `docs/user-sequence-specifications.md` §2.6 mục C, dòng "Giao diện Wireframe" trước đây chỉ ghi "Khớp với Wireframe (5)"; nay nêu rõ hai chỗ lệch có chủ đích (✓ thay bằng cốc, "PAID" thay bằng thanh 5 bước) và dẫn tới bảng này. Không đổi sơ đồ PlantUML nào vì không có chữ nào của sơ đồ bị đổi.
 
-## Câu hỏi mở cho người dùng
+## Đã quyết (2026-10-11)
 
-- Có đổi tên món "Latte" trong seed thành "Cà phê sữa" cho khớp wireframe đề không? (Đổi `backend/prisma/seed.ts:31` kéo theo DB đã seed, test backend và frontend, tài liệu và các artboard gọi món này là "Latte".)
+- Tên món: **không đổi** `Latte` trong seed thành `Cà phê sữa` (quyết định của người dùng). Dòng "Tên món" ở Màn 1 vẫn là "lệch có chủ đích".
+- Ký hiệu tiền: **giữ** `đ` của `formatVND`.

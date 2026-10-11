@@ -28,15 +28,19 @@ Kế hoạch gốc (ngoài git): `E:/CNPM/BrewLite/docs/superpowers/requests/202
 | 3b, 9 màn | `6bea1f3`, `7aac17a`, `f71055e`, `3121ddc`, `5818022`, `f3dcc06`, `0f1562c`, `d53e8e2`, `c2bc385`, `7e7d582` | Chi tiết món, Giỏ, Thanh toán, Đặt hàng thành công, Đăng nhập/Đăng ký, Hồ sơ, GuestState, Lịch sử, Quầy, Kho |
 | 3b, fix wave | `a471b2b`, `fce6975`, `a05908d` | sau `/code-review` (5 mục), re-review sạch; tài liệu `2026-10-11-ui-checkpoint-4.md` |
 
+## Giai đoạn 4 và cuối (2026-10-11)
+
+Quyết định của người dùng 2026-10-11: không đổi tên `Latte`; giữ `đ`; đã squash `733f315` vào `1f2ce02` (hash đổi, xem `2026-10-11-squash-hash-map.md`, nhánh sao lưu `backup/ui-plan-before-squash`); giữ hai devDependency eslint.
+
+Giai đoạn 4 (Task 9, 10, 11), `/code-review`, fix wave, review toàn nhánh và fix wave cuối đều xong. Toàn bộ ở `docs/checkpoints/2026-10-09-ui-checkpoint-5.md`: số liệu tại HEAD `5239872`, mục "Chưa kiểm", "Câu hỏi mở", và toàn bộ ruling.
+
 ## Đang dở / còn lại
 
-- **DỪNG 4 là điểm kế tiếp của người dùng**: duyệt 11 màn trên trình duyệt (xem `docs/checkpoints/2026-10-11-ui-checkpoint-4.md`, mục "Bạn cần xem bằng mắt"). Cũng còn việc tay của Checkpoint 3: hai tab hai phiên cho biên lai tự cập nhật; 401 thật ở màn Thanh toán; trần 99 ly và 20 dòng.
-- Giai đoạn 4 (Task 9 đến 11; DỪNG ở Checkpoint 5): Task 9 đối chiếu wireframe đề §7, Task 10 Dockerfile production + ESLint (kiểm `next/font/google` tải được trong Docker build), Task 11 kiểm thử cuối và bàn giao. Không push, không merge.
-- Nợ nhỏ: cuối `ui-checkpoint-4.md`, `ui-checkpoint-3a.md`, `ui-checkpoint-3.md`.
+- **Không còn task nào của plan.** Việc kế tiếp là của người dùng: xem 11 màn trên trình duyệt (danh sách ở `ui-checkpoint-5.md`), trả lời các câu hỏi mở, rồi ra lệnh push hoặc merge. Không tự push, không tự merge.
 
 ## Số liệu mới nhất đo được
 
-Mốc HEAD `a05908d`: backend `npx jest` 130 pass, 3 skip; frontend `npx vitest run` 796 pass (47 file); `tsc --noEmit` sạch cả hai; `next build` 8 route (chạy trên bản sao). `tsc --noEmit` sạch cả hai. `frontend/.next` đang bị một dev server `next dev` cổng 3001 giữ (không phải của phiên này), nên build chạy trên bản sao. Xóa `frontend/.next` và khởi động lại dev server trước khi build hay xem tay.
+Mốc HEAD `5239872`: backend `npx jest` 130 pass, 3 skip; frontend `npx vitest run` 806 pass (48 file); `tsc --noEmit` sạch cả hai; `next build` 8 route (chạy trên bản sao). `tsc --noEmit` sạch cả hai. `frontend/.next` đang bị một dev server `next dev` cổng 3001 giữ (không phải của phiên này), nên build chạy trên bản sao. Xóa `frontend/.next` và khởi động lại dev server trước khi build hay xem tay.
 
 ## Ruling đã chốt (đầy đủ trong ledger, tóm tắt ở đây)
 

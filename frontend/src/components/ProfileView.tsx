@@ -34,7 +34,7 @@ export default function ProfileView({ token, profile, error }: Props) {
   if (!token)
     return (
       <Page>
-        <GuestState />
+        <GuestState nextPath="/profile" />
       </Page>
     );
   if (error)

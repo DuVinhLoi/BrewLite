@@ -5,6 +5,7 @@ import { MAX_LINES } from '@/lib/cart-limits';
 import QtyStepper from '../QtyStepper';
 import Button from '../ui/Button';
 import EmptyState from '../ui/EmptyState';
+import LiveNotice from '../ui/LiveNotice';
 import styles from './CartView.module.css';
 
 // Phần hiển thị của /cart ở bước "cart", tách khỏi page.tsx để render HTML test được (page dùng useRouter).
@@ -49,11 +50,7 @@ export default function CartView({ items, count, total, onQtyChange, onRemove, o
         </h1>
         <img src="/doodles/sparkle.svg" alt="" aria-hidden="true" width={30} height={30} className={styles.sparkle} />
       </div>
-      {items.length >= MAX_LINES && (
-        <p role="status" className={styles.limit}>
-          Giỏ đã đủ {MAX_LINES} dòng.
-        </p>
-      )}
+      <LiveNotice message={items.length >= MAX_LINES ? `Giỏ đã đủ ${MAX_LINES} dòng.` : null} className={styles.limit} />
 
       <div className={styles.grid}>
         <div className={styles.lines}>

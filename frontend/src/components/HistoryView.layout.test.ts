@@ -136,7 +136,7 @@ describe('HistoryView: rỗng, chưa đăng nhập, lỗi (§6 mục 11)', () =>
     const out = html({ token: null });
     expect(out).toMatch(/<h2[^>]*class="[^"]*display[^"]*"[^>]*>Bạn chưa đăng nhập\.<\/h2>/);
     expect(out).toMatch(/<img[^>]*src="\/doodles\/bean\.svg"/);
-    expect(out).toMatch(/<a[^>]*href="\/login"[^>]*>Đăng nhập<\/a>/);
+    expect(out).toMatch(/<a[^>]*href="\/login\?next=%2Fhistory"[^>]*>Đăng nhập<\/a>/);
   });
 
   test('lỗi: ErrorState có cốc trang trí, câu "Không tải được lịch sử: …" và "Thử lại"', () => {

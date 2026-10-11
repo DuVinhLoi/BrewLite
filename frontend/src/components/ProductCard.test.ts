@@ -58,15 +58,23 @@ describe('ProductCard: còn hàng', () => {
     expect(add).not.toContain('aria-live');
   });
 
-  test('đúng MỘT vùng live riêng (visually-hidden, role="status") cạnh nút, rỗng khi chưa thêm; không aria-live nào', () => {
+  test('đúng HAI vùng live luôn có mặt (role="status"): "Đã thêm" và thông báo từ chối, cả hai rỗng + visually-hidden khi chưa có gì; không aria-live nào', () => {
     const regions = out.match(/<[^>]*role="status"[^>]*>[^<]*<\/[a-z]+>/g) ?? [];
-    expect(regions).toHaveLength(1);
-    expect(regions[0]).toMatch(/class="[^"]*visually-hidden/);
-    expect(text(regions[0] ?? '')).toBe('');
+    expect(regions).toHaveLength(2);
+    for (const r of regions) {
+      expect(r).toMatch(/class="[^"]*visually-hidden/);
+      expect(text(r)).toBe('');
+    }
     expect(out).not.toContain('aria-live');
     // nằm sau nút "Thêm vào giỏ", ngoài nút
     expect(out.indexOf('role="status"')).toBeGreaterThan(out.indexOf('Thêm vào giỏ'));
     expect(buttons(out).some((b) => b.includes('role="status"'))).toBe(false);
+  });
+
+  test('nguồn: thông báo từ chối đi qua LiveNotice luôn được vẽ (không còn {notice && ...})', () => {
+    const src = readFileSync(path.resolve(__dirname, 'ProductCard.tsx'), 'utf8');
+    expect(src).toMatch(/<LiveNotice\s+message=\{notice\}\s+className=\{styles\.notice\}\s*\/>/);
+    expect(src).not.toMatch(/\{notice\s*&&/);
   });
 
   test('nguồn: "Đã thêm ✓" vào vùng live chỉ khi added, rỗng khi không', () => {

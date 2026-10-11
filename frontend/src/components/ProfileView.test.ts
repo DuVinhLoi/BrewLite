@@ -13,7 +13,7 @@ describe('ProfileView (render HTML)', () => {
   test('token=null (đã đọc, chưa đăng nhập): hiện "Bạn chưa đăng nhập" và link /login, không trắng trang', () => {
     const out = html({ token: null, profile: null, error: null });
     expect(out).toContain('Bạn chưa đăng nhập');
-    expect(out).toContain('href="/login"');
+    expect(out).toContain('href="/login?next=%2Fprofile"'); // đăng nhập xong quay lại /profile (safeNext)
   });
 
   test('token=undefined (chưa đọc localStorage): chưa vẽ gì, tránh nháy "chưa đăng nhập"', () => {
