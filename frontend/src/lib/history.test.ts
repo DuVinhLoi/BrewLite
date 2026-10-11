@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { itemLine, needsPolling, sortNewestFirst } from './history';
+import { isFaded, itemLine, needsPolling, sortNewestFirst, statusBadge } from './history';
 import { formatVND } from './pricing';
 import type { HistoryItem, HistoryOrder } from './types';
 
@@ -14,21 +14,22 @@ const item = (over: Partial<HistoryItem> = {}): HistoryItem => ({
 });
 
 // UC07: dòng món trong lịch sử hiện tên món do backend gắn, không còn 8 ký tự đầu của mã món.
+// Nét mực (ui-visual-plan.md §6 mục 10): bỏ em-dash; đơn giá nằm ở phần tử riêng của HistoryView, itemLine chỉ còn phần chữ.
 describe('itemLine', () => {
-  test('hiện số lượng, tên món, size và giá; không lộ mã món', () => {
+  test('hiện số lượng, tên món, size; không lộ mã món, không có giá và em-dash', () => {
     const line = itemLine(item());
-    expect(line).toBe(`2× Latte (M) — ${formatVND(40000)}`);
+    expect(line).toBe('2× Latte (M)');
     expect(line).not.toContain('3f2a9c1e');
+    expect(line).not.toContain('—');
+    expect(line).not.toContain(formatVND(40000));
   });
 
   test('có topping: nối sau dấu cộng, cách nhau dấu phẩy', () => {
-    expect(itemLine(item({ size: 'L', toppings: ['Trân châu', 'Kem cheese'] }))).toBe(
-      `2× Latte (L + Trân châu, Kem cheese) — ${formatVND(40000)}`,
-    );
+    expect(itemLine(item({ size: 'L', toppings: ['Trân châu', 'Kem cheese'] }))).toBe('2× Latte (L + Trân châu, Kem cheese)');
   });
 
   test('thiếu size → M; thiếu toppings → như không có topping', () => {
-    expect(itemLine(item({ size: undefined, toppings: undefined }))).toBe(`2× Latte (M) — ${formatVND(40000)}`);
+    expect(itemLine(item({ size: undefined, toppings: undefined }))).toBe('2× Latte (M)');
   });
 
   test('món đã bị xóa: backend gửi productId làm productName, dòng vẫn hiện được', () => {
@@ -42,8 +43,31 @@ describe('itemLine', () => {
     ['productName không phải chuỗi', 42],
   ])('%s → 8 ký tự đầu của productId', (_name, productName) => {
     const line = itemLine(item({ productName: productName as unknown as string }));
-    expect(line).toBe(`2× 3f2a9c1e (M) — ${formatVND(40000)}`);
+    expect(line).toBe('2× 3f2a9c1e (M)');
     expect(line).not.toContain('undefined');
+  });
+});
+
+// Đầu thẻ đơn (§6 mục 10, artboard HistoryDoodle dòng 56, 98 đến 101): nhãn STATUS_LABEL tiếng Việt, màu theo bước.
+describe('statusBadge', () => {
+  test('5 bước của luồng chính: nhãn tiếng Việt và màu theo artboard', () => {
+    expect(statusBadge('PENDING')).toEqual({ label: 'Chờ thanh toán', tone: 'neutral' });
+    expect(statusBadge('PAID')).toEqual({ label: 'Đã thanh toán', tone: 'neutral' });
+    expect(statusBadge('PREPARING')).toEqual({ label: 'Đang pha', tone: 'warn' });
+    expect(statusBadge('READY')).toEqual({ label: 'Sẵn sàng', tone: 'ok' });
+    expect(statusBadge('COMPLETED')).toEqual({ label: 'Hoàn tất', tone: 'ink' });
+  });
+
+  test('không có thanh 5 bước (Thanh toán lỗi, Đã hủy, trạng thái lạ) → null: OrderStatusTrack tự hiện nhãn riêng', () => {
+    for (const s of ['PAYMENT_FAILED', 'CANCELLED', 'XYZ', 'constructor', '']) expect(statusBadge(s)).toBeNull();
+  });
+});
+
+describe('isFaded', () => {
+  test('đơn đã hủy hoặc thanh toán lỗi thì mờ; còn lại (kể cả trạng thái lạ) không', () => {
+    expect(isFaded('CANCELLED')).toBe(true);
+    expect(isFaded('PAYMENT_FAILED')).toBe(true);
+    for (const s of ['PENDING', 'PAID', 'PREPARING', 'READY', 'COMPLETED', 'XYZ']) expect(isFaded(s)).toBe(false);
   });
 });
 

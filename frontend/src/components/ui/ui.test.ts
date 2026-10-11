@@ -54,6 +54,15 @@ describe('EmptyState', () => {
     expect(out).toContain('Về Menu');
   });
 
+  test('titleAs: tiêu đề là thẻ được chọn (mặc định <p>); size "lg" thêm lớp lg', () => {
+    const asH1 = html(createElement(EmptyState, { title: 'Giỏ hàng trống', titleAs: 'h1', size: 'lg' }));
+    expect(asH1).toMatch(/<h1 class="[^"]*display[^"]*">Giỏ hàng trống<\/h1>/);
+    expect(asH1).toMatch(/<div class="[^"]*empty[^"]* [^"]*lg/);
+    const plain = html(createElement(EmptyState, { title: 'Chưa có món nào.' }));
+    expect(plain).toMatch(/<p class="[^"]*display[^"]*">Chưa có món nào\.<\/p>/);
+    expect(plain).not.toMatch(/class="[^"]*lg/);
+  });
+
   test('truyền doodle: có <img alt=""> trỏ đúng đường dẫn; không truyền thì không có img', () => {
     const withImg = html(createElement(EmptyState, { title: 'Giỏ trống', doodle: '/doodles/bag.svg' }));
     expect(withImg).toMatch(/<img[^>]*src="\/doodles\/bag\.svg"[^>]*>/);

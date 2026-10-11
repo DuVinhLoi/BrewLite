@@ -1,4 +1,4 @@
-import type { Role } from '@/lib/auth';
+import { isStaff, type Role } from '@/lib/auth';
 
 // Nav của header: chỉ ẩn/hiện theo vai trò (server mới chặn quyền). Thứ tự hiển thị: Menu, Quầy, Kho, Lịch sử.
 export interface NavLink {
@@ -8,7 +8,7 @@ export interface NavLink {
 
 export function navLinks(role: Role | null): NavLink[] {
   const links: NavLink[] = [{ href: '/', label: 'Menu' }];
-  if (role === 'BARISTA' || role === 'ADMIN') links.push({ href: '/barista', label: 'Quầy' });
+  if (isStaff(role)) links.push({ href: '/barista', label: 'Quầy' });
   if (role === 'ADMIN') links.push({ href: '/admin', label: 'Kho' });
   links.push({ href: '/history', label: 'Lịch sử' });
   return links;

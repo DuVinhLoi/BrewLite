@@ -2,24 +2,23 @@
 // FEATURE: Màn quầy (UC08–UC12, mở rộng ngoài MVP §3.2): hàng đợi 3 cột theo sơ đồ §9.1.
 // ============================================================
 import { API_BASE } from './api';
+import { isStaff } from './auth';
+import { nextStatus, type OrderStatus } from './order-status';
 import { handleUnauthorized } from './session';
+import type { HistoryItem, HistoryOrder } from './types';
 
-export interface QueueItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  unitPrice: number;
-  size?: string;
-  toppings?: string[];
-}
+// GET /orders?status= trả đơn cùng hình với GET /orders/me (dòng món có productName): dùng chung kiểu, tên cũ giữ cho import cũ.
+export type QueueItem = HistoryItem;
+export type QueueOrder = HistoryOrder;
 
-export interface QueueOrder {
-  id: string;
-  status: string;
-  total: number;
-  createdAt: string;
-  items: QueueItem[];
-}
+// Tự tải lại hàng đợi mỗi 5 giây (UC08).
+export const POLL_MS = 5000;
+
+/** Dòng nhắc dưới tiêu đề màn quầy, tính từ POLL_MS: "Tự tải lại mỗi 5 giây." */
+export const pollNote = (ms: number = POLL_MS): string => `Tự tải lại mỗi ${ms / 1000} giây.`;
+
+// Quầy chỉ dành cho nhân viên; isStaff định nghĩa ở lib/auth, re-export để import cũ vẫn chạy.
+export { isStaff };
 
 export type QueueColumn = 'PAID' | 'PREPARING' | 'READY';
 
@@ -31,6 +30,17 @@ export const QUEUE_COLUMNS: { status: QueueColumn; title: string }[] = [
 
 // UC09 / UC10 / UC11
 export const ACTION_LABEL: Record<QueueColumn, string> = { PAID: 'Nhận pha', PREPARING: 'Pha xong', READY: 'Đã giao' };
+
+/**
+ * Nút trên thẻ đơn của một cột: nút tiến đơn (trạng thái kế theo nextStatus, chữ theo ACTION_LABEL, đang chuyển thì
+ * "Đang chuyển…") và nút "Hủy (hết nguyên liệu)" chỉ ở cột Chờ pha (UC12). Mỗi cột hàng đợi luôn có bước kế.
+ */
+export function cardActions(column: QueueColumn, busy: boolean): { advance: { to: OrderStatus; label: string }; cancel: boolean } {
+  return {
+    advance: { to: nextStatus(column) as OrderStatus, label: busy ? 'Đang chuyển…' : ACTION_LABEL[column] },
+    cancel: column === 'PAID',
+  };
+}
 
 export function groupQueue(orders: QueueOrder[]): Record<QueueColumn, QueueOrder[]> {
   const sorted = [...orders].sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { TOKEN_KEY, getToken, saveToken } from './auth';
 import { setRedirect } from './session';
-import { ACTION_LABEL, QUEUE_COLUMNS, QueueAuthError, fetchQueue, groupQueue, type QueueOrder } from './barista';
+import { ACTION_LABEL, POLL_MS, QUEUE_COLUMNS, QueueAuthError, cardActions, fetchQueue, groupQueue, isStaff, pollNote, type QueueOrder } from './barista';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -92,5 +92,32 @@ describe('fetchQueue: hết phiên (401)', () => {
     await fetchQueue('tok').catch(() => undefined);
     expect(getToken()).toBe('h.p.s');
     expect(redirect).not.toHaveBeenCalled();
+  });
+});
+
+// Màn quầy nét mực (ui-visual-plan.md §6 mục 12): phần quyết định tách khỏi BaristaView để test không cần trình duyệt.
+describe('màn quầy: hằng và hàm thuần', () => {
+  test('POLL_MS = 5000; dòng nhắc tính từ POLL_MS', () => {
+    expect(POLL_MS).toBe(5000);
+    expect(pollNote()).toBe('Tự tải lại mỗi 5 giây.');
+    expect(pollNote(3000)).toBe('Tự tải lại mỗi 3 giây.');
+  });
+
+  test('isStaff: chỉ BARISTA và ADMIN vào được quầy', () => {
+    expect(isStaff('BARISTA')).toBe(true);
+    expect(isStaff('ADMIN')).toBe(true);
+    expect(isStaff('CUSTOMER')).toBe(false);
+    expect(isStaff(null)).toBe(false);
+  });
+
+  test('cardActions: nút tiến đơn theo ACTION_LABEL và nextStatus; chỉ cột Chờ pha có nút hủy', () => {
+    expect(cardActions('PAID', false)).toEqual({ advance: { to: 'PREPARING', label: 'Nhận pha' }, cancel: true });
+    expect(cardActions('PREPARING', false)).toEqual({ advance: { to: 'READY', label: 'Pha xong' }, cancel: false });
+    expect(cardActions('READY', false)).toEqual({ advance: { to: 'COMPLETED', label: 'Đã giao' }, cancel: false });
+  });
+
+  test('cardActions: đơn đang chuyển thì nút tiến đơn đổi chữ "Đang chuyển…"', () => {
+    expect(cardActions('PAID', true).advance.label).toBe('Đang chuyển…');
+    expect(cardActions('PAID', true).cancel).toBe(true);
   });
 });

@@ -3,6 +3,7 @@
 // ============================================================
 import { API_BASE } from './api';
 import { handleUnauthorized } from './session';
+import { stockBadge } from './stock';
 
 export interface InventoryItem {
   id: string;
@@ -15,6 +16,39 @@ export interface InventoryItem {
 
 // Định nghĩa ở lib/stock.ts (menu khách cũng dùng, không kéo theo client API admin); re-export để import cũ giữ nguyên.
 export { LOW_STOCK, stockBadge } from './stock';
+
+/**
+ * Dòng tóm tắt dưới tiêu đề màn Kho, đếm theo stockBadge: "4 món. 1 món sắp hết, 1 món hết hàng."
+ * Chỉ nêu nhóm có món; không món nào sắp hết hay hết thì "N món, tất cả còn hàng."; danh sách rỗng thì "Chưa có món nào."
+ */
+export function inventorySummary(items: { stock: number }[]): string {
+  if (items.length === 0) return 'Chưa có món nào.';
+  let low = 0;
+  let out = 0;
+  for (const p of items) {
+    const tone = stockBadge(p.stock).tone;
+    if (tone === 'low') low++;
+    else if (tone === 'out') out++;
+  }
+  const parts = [low && `${low} món sắp hết`, out && `${out} món hết hàng`].filter(Boolean);
+  return parts.length ? `${items.length} món. ${parts.join(', ')}.` : `${items.length} món, tất cả còn hàng.`;
+}
+
+/** Ô "Đặt số": số nguyên ≥ 0 thì trả số đó, còn lại (trống, âm, lẻ, chữ) trả null và nút "Lưu" bị khóa. */
+export function parseStockDraft(draft: string | undefined): number | null {
+  if (draft === undefined || draft === '') return null;
+  const n = Number(draft);
+  return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+/** Nút "Điều chỉnh nhanh" (mode delta): −1 khóa khi đã hết hàng; đang gửi thì khóa cả ba. aria-label nêu tên món. */
+export function quickSteps(name: string, stock: number, busy: boolean): { delta: number; text: string; label: string; disabled: boolean }[] {
+  return [
+    { delta: -1, text: '−1', label: `Giảm 1 ${name}`, disabled: busy || stock <= 0 },
+    { delta: 1, text: '+1', label: `Tăng 1 ${name}`, disabled: busy },
+    { delta: 10, text: '+10', label: `Tăng 10 ${name}`, disabled: busy },
+  ];
+}
 
 async function call<T>(token: string, path: string, init: RequestInit = {}): Promise<T> {
   let res: Response;

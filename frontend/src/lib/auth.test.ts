@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { ROLE_LABEL, TOKEN_KEY, clearToken, getToken, homeFor, roleFromToken, saveToken, sessionFromToken, userIdFromToken } from './auth';
+import { ROLE_LABEL, TOKEN_KEY, clearToken, getToken, homeFor, isStaff, roleFromToken, saveToken, sessionFromToken, userIdFromToken } from './auth';
 
 // JWT giả: chỉ phần payload quan trọng (frontend không kiểm chữ ký, server mới là nơi chặn quyền)
 const fakeJwt = (payload: object | null) =>
@@ -120,5 +120,14 @@ describe('sessionFromToken', () => {
 
   test('nhãn vai trò tiếng Việt cho header', () => {
     expect(ROLE_LABEL).toEqual({ CUSTOMER: 'Khách', BARISTA: 'Quầy', ADMIN: 'Quản trị' });
+  });
+});
+
+describe('isStaff (một nơi định nghĩa: BARISTA và ADMIN là nhân viên)', () => {
+  test('BARISTA và ADMIN là nhân viên; CUSTOMER và chưa đăng nhập thì không', () => {
+    expect(isStaff('BARISTA')).toBe(true);
+    expect(isStaff('ADMIN')).toBe(true);
+    expect(isStaff('CUSTOMER')).toBe(false);
+    expect(isStaff(null)).toBe(false);
   });
 });

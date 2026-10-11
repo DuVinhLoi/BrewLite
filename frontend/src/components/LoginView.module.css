@@ -1,0 +1,274 @@
+/* Đăng nhập / Đăng ký: ui-visual-plan.md §6 mục 8, đối chiếu artboard LoginDoodle (dòng 26 đến 85).
+   <main> của layout đã có padding 24 trên và dưới: cộng 40 dưới ra 64 như artboard. */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: stretch;
+  padding-bottom: 40px;
+}
+
+/* Panel trái: nền mist bo 32, hình trang trí nằm tuyệt đối và bị cắt ở mép */
+.art {
+  position: relative;
+  overflow: hidden;
+  min-height: 600px;
+  padding: 40px;
+  border-radius: var(--radius-block-lg);
+  background: var(--mist);
+}
+
+.heading {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  max-width: 12ch;
+  font-size: clamp(36px, 4.2vw, 52px);
+  line-height: 1.12;
+  transform: rotate(-2deg);
+}
+
+.lead {
+  position: relative;
+  z-index: 1;
+  margin: 18px 0 0;
+  max-width: 30ch;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.doodle {
+  position: absolute;
+  height: auto;
+}
+
+.mug {
+  right: 70px;
+  bottom: 70px;
+  width: 200px;
+  transform: rotate(-6deg);
+}
+
+.leaf {
+  left: 24px;
+  bottom: 40px;
+  width: 240px;
+  transform: rotate(-4deg);
+}
+
+.bean {
+  right: 40px;
+  bottom: 36px;
+  width: 58px;
+  transform: rotate(-18deg);
+}
+
+.sparkle {
+  right: 36px;
+  top: 160px;
+  width: 40px;
+}
+
+.burst {
+  right: 300px;
+  bottom: 220px;
+  width: 30px;
+}
+
+/* Thẻ form: viền mực bo 28. Khoảng cách 20 giữa các khối bằng margin (không dùng gap)
+   để vùng role="status" rỗng không chiếm thêm chỗ. */
+.card {
+  align-self: center;
+  min-width: 0;
+  padding: 36px;
+  border: var(--stroke);
+  border-radius: var(--radius-block);
+  background: var(--paper);
+}
+
+.card > * + * {
+  margin-top: 20px;
+}
+
+.card > .status:empty {
+  margin-top: 0;
+}
+
+.formTitle {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.15;
+}
+
+/* Tab dạng viên: 2 nút có aria-pressed trên nền mist */
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--mist);
+}
+
+.tab {
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Đăng ký thành công: nền ok (§3.1) */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.noticeIcon {
+  flex: none;
+  width: 18px;
+  height: auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  min-height: 50px;
+  padding: 0 14px;
+  border: var(--stroke);
+  border-radius: var(--radius-input);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Nút mực bo 14 (Button cta), cao 52, chữ 16 như artboard; hai lớp để thắng .btn / .cta của Button.module.css */
+.form .submit {
+  min-height: 52px;
+  font-size: 16px;
+}
+
+/* Một cột: panel lên trên, thấp lại; hình nhỏ lại và dồn xuống đáy để không đè chữ */
+@media (max-width: 860px) {
+  .page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .art {
+    min-height: 0;
+    padding: 28px 28px 170px;
+  }
+
+  .card {
+    align-self: stretch;
+    padding: 28px 24px;
+  }
+
+  .mug {
+    right: 48px;
+    bottom: 20px;
+    width: 130px;
+  }
+
+  .leaf {
+    left: 8px;
+    bottom: 12px;
+    width: 150px;
+  }
+
+  .bean {
+    right: 16px;
+    bottom: 16px;
+    width: 44px;
+  }
+
+  .sparkle {
+    top: auto;
+    right: 24px;
+    bottom: 130px;
+    width: 28px;
+  }
+
+  .burst {
+    right: auto;
+    left: 170px;
+    bottom: 120px;
+    width: 24px;
+  }
+}
+
+/* §5: cốc nổi lên xuống 8px, chu kỳ 6s (giữ góc xoay -6deg); nút và tab :active scale 0,98 */
+@media (prefers-reduced-motion: no-preference) {
+  .float {
+    animation: login-float 6s ease-in-out infinite;
+  }
+
+  @keyframes login-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-6deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(-6deg);
+    }
+  }
+
+  .tab {
+    transition: transform 120ms ease;
+  }
+
+  .tab:active {
+    transform: scale(0.98);
+  }
+}

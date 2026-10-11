@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import LoginView from '@/components/LoginView';
 import { roleFromToken, saveToken, userIdFromToken } from '@/lib/auth';
+import { INITIAL_LOGIN_FORM, afterRegister, authErrorMessage, switchMode, type LoginFormState } from '@/lib/login';
 import { clearCheckoutIfOtherUser } from '@/lib/payment/checkout-session';
 import { postLoginTarget } from '@/lib/session';
 
@@ -10,27 +12,29 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState<LoginFormState>(INITIAL_LOGIN_FORM);
   const [loading, setLoading] = useState(false);
+  const { mode, email, password } = form;
+  const showError = (error: string) => setForm((f) => ({ ...f, error }));
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setForm((f) => ({ ...f, error: null, notice: null }));
     setLoading(true);
     try {
+      // fetch chỉ ném khi không có phản hồi (mất kết nối, máy chủ tắt)
       const res = await fetch(`${API}/auth/${mode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
-      });
+      }).catch(() => null);
+      if (!res) return showError(authErrorMessage(null, undefined, mode));
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(Array.isArray(data.message) ? data.message.join(', ') : data.message ?? 'Request failed');
+      // câu tiếng Việt thay câu tiếng Anh của backend (409 trùng email, 401 sai thông tin, 400 ValidationPipe)
+      if (!res.ok) return showError(authErrorMessage(res.status, data.message, mode));
       if (mode === 'register') {
-        setMode('login');
-        setError(null);
+        // 201 không cấp token: về tab Đăng nhập, giữ email, xóa mật khẩu, báo "Đăng ký thành công..."
+        setForm(afterRegister);
       } else {
         saveToken(data.accessToken);
         // đơn đang trả dở: giữ khi đăng nhập lại đúng tài khoản đã tạo nó (hết phiên giữa lúc trả tiền), bỏ khi là tài khoản khác
@@ -38,39 +42,25 @@ export default function LoginPage() {
         // ?next= (từ handleUnauthorized) đưa về trang đang xem lúc hết phiên; chỉ nhận đường dẫn tương đối trong site
         router.push(postLoginTarget(window.location.search, roleFromToken(data.accessToken) ?? 'CUSTOMER'));
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Lỗi không xác định');
+    } catch {
+      showError('Lỗi không xác định');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <section style={{ maxWidth: 400, margin: '40px auto' }}>
-      <h1>{mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}</h1>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <button type="button" onClick={() => setMode('login')} disabled={mode === 'login'}>
-          Đăng nhập
-        </button>
-        <button type="button" onClick={() => setMode('register')} disabled={mode === 'register'}>
-          Đăng ký
-        </button>
-      </div>
-      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input
-          type="password"
-          required
-          minLength={6}
-          placeholder="Mật khẩu (≥6 ký tự)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? '...' : mode === 'login' ? 'Đăng nhập' : 'Đăng ký'}
-        </button>
-      </form>
-    </section>
+    <LoginView
+      mode={mode}
+      email={email}
+      password={password}
+      error={form.error}
+      notice={form.notice}
+      loading={loading}
+      onModeChange={(m) => setForm((f) => switchMode(f, m))}
+      onEmailChange={(v) => setForm((f) => ({ ...f, email: v }))}
+      onPasswordChange={(v) => setForm((f) => ({ ...f, password: v }))}
+      onSubmit={submit}
+    />
   );
 }

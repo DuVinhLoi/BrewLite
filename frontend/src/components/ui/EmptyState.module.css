@@ -22,3 +22,19 @@
   max-width: 40ch;
   color: var(--muted);
 }
+
+/* Trạng thái chiếm cả trang (giỏ trống): artboard CartDoodle dòng 91 đến 95.
+   Cộng padding 24 của <main> thì ra 48 trên, 96 dưới như artboard. */
+.lg {
+  gap: var(--space-4);
+  padding: 24px var(--space-4) 72px;
+}
+
+.lg .doodle {
+  width: 160px;
+}
+
+.lg .title {
+  font-size: 48px;
+  line-height: 1.12;
+}

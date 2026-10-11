@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { TOKEN_KEY, getToken, saveToken } from './auth';
 import { setRedirect } from './session';
-import { LOW_STOCK, adjustStock, fetchInventory, stockBadge } from './admin';
+import { LOW_STOCK, adjustStock, fetchInventory, inventorySummary, parseStockDraft, quickSteps, stockBadge } from './admin';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -93,5 +93,41 @@ describe('màn tồn kho: hết phiên (401)', () => {
     await fetchInventory('tok').catch(() => undefined);
     expect(getToken()).toBe('h.p.s');
     expect(redirect).not.toHaveBeenCalled();
+  });
+});
+
+// Màn Kho nét mực (ui-visual-plan.md §6 mục 13): phần quyết định tách khỏi AdminView để test không cần trình duyệt.
+describe('màn tồn kho: hàm thuần', () => {
+  const s = (...stocks: number[]) => stocks.map((stock) => ({ stock }));
+
+  test('inventorySummary: đếm theo stockBadge, chỉ nêu nhóm có món', () => {
+    expect(inventorySummary(s(24, 3, 12, 0))).toBe('4 món. 1 món sắp hết, 1 món hết hàng.');
+    expect(inventorySummary(s(24, 2, 1, 0, 0))).toBe('5 món. 2 món sắp hết, 2 món hết hàng.');
+    expect(inventorySummary(s(24, LOW_STOCK))).toBe('2 món. 1 món sắp hết.');
+    expect(inventorySummary(s(0, 0))).toBe('2 món. 2 món hết hàng.');
+    expect(inventorySummary(s(LOW_STOCK + 1, 50))).toBe('2 món, tất cả còn hàng.');
+    expect(inventorySummary([])).toBe('Chưa có món nào.');
+  });
+
+  test('inventorySummary: một món (mỗi nhóm một ca)', () => {
+    expect(inventorySummary(s(0))).toBe('1 món. 1 món hết hàng.');
+    expect(inventorySummary(s(LOW_STOCK))).toBe('1 món. 1 món sắp hết.');
+    expect(inventorySummary(s(50))).toBe('1 món, tất cả còn hàng.');
+  });
+
+  test('parseStockDraft: chỉ nhận số nguyên ≥ 0 (giữ đúng điều kiện nút "Lưu" cũ)', () => {
+    expect(parseStockDraft('0')).toBe(0);
+    expect(parseStockDraft('25')).toBe(25);
+    for (const bad of [undefined, '', '-1', '2.5', 'abc']) expect(parseStockDraft(bad)).toBeNull();
+  });
+
+  test('quickSteps: −1 / +1 / +10 kèm aria-label theo tên món; −1 khóa khi hết hàng; mọi nút khóa khi đang gửi', () => {
+    expect(quickSteps('Latte', 5, false)).toEqual([
+      { delta: -1, text: '−1', label: 'Giảm 1 Latte', disabled: false },
+      { delta: 1, text: '+1', label: 'Tăng 1 Latte', disabled: false },
+      { delta: 10, text: '+10', label: 'Tăng 10 Latte', disabled: false },
+    ]);
+    expect(quickSteps('Latte', 0, false).map((q) => q.disabled)).toEqual([true, false, false]);
+    expect(quickSteps('Latte', 5, true).map((q) => q.disabled)).toEqual([true, true, true]);
   });
 });

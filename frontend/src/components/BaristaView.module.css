@@ -1,0 +1,226 @@
+/* Quầy pha chế: ui-visual-plan.md §6 mục 12, đối chiếu artboard BaristaDoodle (dòng 27 đến 29, 43 đến 81, 101 đến 103).
+   Màn làm việc (VARIANCE 2, MOTION 1, DENSITY 7): KHÔNG có transition, animation hay :active scale nào. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 40px;
+}
+
+.page > * {
+  min-width: 0;
+}
+
+/* Tiêu đề và dòng nhắc cùng hàng, canh baseline, xuống dòng khi hẹp (artboard dòng 44 đến 46) */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(36px, 4.4vw, 50px);
+  line-height: 1.12;
+}
+
+.note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.gate {
+  margin: 0;
+}
+
+.gate a {
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.error {
+  margin: 0;
+  padding: 12px 16px;
+  border: 2px solid var(--danger-ink);
+  border-radius: var(--radius-cta);
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* 3 cột bằng nhau; dưới 760px xếp chồng */
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 520px;
+  padding: 14px;
+  border-radius: var(--radius-card);
+  background: var(--mist);
+}
+
+.colHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 6px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.toneInk {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.toneWarn {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.toneOk {
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 0;
+}
+
+.emptyMug {
+  width: 64px;
+  height: auto;
+  opacity: 0.6;
+}
+
+.emptyText {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* Thẻ đơn: nền trắng, viền mực, bo 18, padding 14/16 (artboard dòng 62) */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: var(--stroke);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
+.code {
+  font-size: 17px;
+}
+
+.total {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.when {
+  margin: -4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.items {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Nút mực và nút hủy viền đỏ trên nền trắng, cao 44 (artboard dòng 27, 28) */
+.advance {
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  padding: 0 20px;
+  border: var(--stroke);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 15px;
+}
+
+.cancel {
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  padding: 0 16px;
+  border: 2px solid var(--danger-ink);
+  background: var(--paper);
+  color: var(--danger-ink);
+  font-size: 14px;
+}
+
+.advance:disabled,
+.cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .col {
+    min-height: 0;
+  }
+}

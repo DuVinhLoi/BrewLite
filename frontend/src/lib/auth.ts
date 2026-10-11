@@ -49,6 +49,9 @@ export function sessionFromToken(token: string | null): SessionInfo | null {
   return { email: typeof payload.email === 'string' ? payload.email : '', role };
 }
 
+/** BARISTA và ADMIN là nhân viên (vào được Quầy); giao diện chỉ ẩn/hiện, quyền thật do backend chặn. */
+export const isStaff = (role: Role | null): boolean => role === 'BARISTA' || role === 'ADMIN';
+
 export const roleFromToken = (token: string | null): Role | null => sessionFromToken(token)?.role ?? null;
 
 /** Mã tài khoản (claim `sub`) của token; token thiếu, hỏng hoặc không có sub → null, không ném lỗi. */

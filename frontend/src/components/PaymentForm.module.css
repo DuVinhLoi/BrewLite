@@ -1,0 +1,323 @@
+/* Màn Thanh toán: ui-visual-plan.md §6 mục 6, đối chiếu artboard PayDoodle (dòng 26 đến 104).
+   <main> của layout đã có padding 24 trên và dưới: cộng 48 dưới ra 72 như artboard. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 48px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(40px, 5vw, 56px);
+  line-height: 1.12;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* Thẻ form bên trái */
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 28px;
+  border: var(--stroke);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+}
+
+.total {
+  margin: 0;
+  font-size: 17px;
+}
+
+.totalValue {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nhóm mã giảm giá: bố cục khối (không dùng gap) để vùng role="status" rỗng không chiếm khoảng trống */
+.fieldLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.voucherRow {
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 14px;
+  border: var(--stroke);
+  border-radius: var(--radius-input);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.input:disabled {
+  opacity: 0.5;
+}
+
+/* Hai lớp để thắng .btn / .ghost / .cta của Button.module.css bất kể thứ tự nạp CSS */
+.voucherRow .apply {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: var(--radius-input);
+  font-size: 15px;
+}
+
+.hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.result {
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-tile-sm);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.resultOk {
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+
+.resultBad {
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+}
+
+/* "Thực trả": gạch đứt mực phía trên; số rất lớn ở màn 360px thì xuống dòng thay vì tràn ngang */
+.final {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 2px dashed var(--ink);
+}
+
+.finalLabel {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.finalValue {
+  min-width: 0;
+  font-size: 44px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* fieldset mặc định min-width: min-content, đặt 0 để không đẩy thẻ rộng hơn màn hẹp */
+.methods {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 0 16px;
+  border: var(--stroke);
+  border-radius: var(--radius-tile);
+  background: var(--paper);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Phương thức đang chọn: nền warn (§3.1) */
+.methodOn {
+  background: var(--warn-bg);
+}
+
+.radio {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--ink);
+  cursor: inherit;
+}
+
+.radio:disabled {
+  cursor: not-allowed;
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-tile-sm);
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions .back {
+  min-height: 52px;
+  padding: 0 20px;
+  border-radius: var(--radius-cta);
+  font-size: 15px;
+}
+
+.actions .confirm {
+  flex: 1 1 auto;
+  min-height: 52px;
+  padding: 0 26px;
+  font-size: 16px;
+}
+
+/* Khối "Đơn của bạn": nền mist; moka, sao, lá nằm ở đáy khối. Padding dưới chừa chỗ cho hình
+   để danh sách dài (tới 20 dòng) không chạy xuống dưới hình; với 1 đến 2 dòng khối vẫn cao 420 như artboard. */
+.summary {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 420px;
+  padding: 28px 28px 180px;
+  border-radius: var(--radius-block);
+  background: var(--mist);
+}
+
+.moka {
+  position: absolute;
+  right: 18px;
+  bottom: -28px;
+  width: 150px;
+  height: auto;
+  transform: rotate(-6deg);
+}
+
+.sparkle {
+  position: absolute;
+  right: 168px;
+  bottom: 96px;
+  width: 28px;
+  height: auto;
+}
+
+.leaf {
+  position: absolute;
+  left: -20px;
+  bottom: 18px;
+  width: 170px;
+  height: auto;
+  transform: rotate(-8deg);
+}
+
+.summaryTitle {
+  position: relative;
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.lines {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Ô ảnh 56px: SVG món 240×180 đã có nền màu theo món, phủ kín ô (như ô ảnh của giỏ) */
+.thumb {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border: var(--stroke);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.thumbImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lineName {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.lineOpts {
+  color: var(--muted);
+}
+
+.lineTotal {
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
