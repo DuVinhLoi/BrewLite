@@ -137,7 +137,7 @@ Burndown thực tế **phẳng ở 10 từ 09-30 đến 10-06 rồi rơi về 0 
 
 | Gợi ý (nháp) | Bằng chứng trong repo | Nhóm xác nhận / sửa |
 |---|---|---|
-| Có test cho nghiệp vụ khó: idempotent, state machine, tồn kho đồng thời, voucher/điểm, thanh toán song song, quyền chủ đơn | `backend/test/*` (132 pass / 3 skip), `frontend/src/**/*.test.ts` (810 pass); `c9454dc`, `a209b88`, `b6a2f76` | **[nhóm điền]** |
+| Có test cho nghiệp vụ khó: idempotent, state machine, tồn kho đồng thời, voucher/điểm, thanh toán song song, quyền chủ đơn, quyền theo vai trò | `backend/test/*` (152 pass / 3 skip), `frontend/src/**/*.test.ts` (836 pass); `c9454dc`, `a209b88`, `b6a2f76` | **[nhóm điền]** |
 | Đợt rà soát tài liệu ↔ mã tìm ra lỗi thật trước khi nộp và sửa cùng đợt | `b6a2f76` / `b290706` (CORS, giá server, khóa song song, auth `POST /payments`) | **[nhóm điền]** |
 | Tách việc theo nhánh rồi merge vào `develop` | merge `a92dc00`, `c26455e`, `61602da`, `685f1be`; PR #1–#3 | **[nhóm điền]** |
 | Sơ đồ tuần tự/use case viết bằng PlantUML, render sạch cả 12 khối | `docs/user-sequence-specifications.md`, `docs/use-case-specifications.md` | **[nhóm điền]** |
