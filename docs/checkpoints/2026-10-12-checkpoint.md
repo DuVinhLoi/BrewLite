@@ -32,6 +32,8 @@
 
 ## 4. Việc còn mở
 
+Nguồn ghi dạng `<tên file>.md:dòng` mà không còn trong `docs/checkpoints/` là checkpoint cũ; xem bằng `git show 253bee1:docs/checkpoints/<tên file>`.
+
 ### Kiểm bằng mắt (trình duyệt)
 
 - F4 thử tay và demo checklist: khách đặt và trả đơn; `/history` không còn nút "Quầy (demo)"; `/barista` tiến đơn; `/admin` +10 món rồi bớt lại. Plan F4 và checklist order state machine chưa tick (`docs/planning/2026-10-09-doc-code-sync-plan.md:76`; `docs/planning/2026-10-09-order-state-machine-visible-plan.md:7`; `2026-10-09-backend-checkpoint.md:65`; `2026-10-09-checkpoint.md:38-41`).
@@ -39,7 +41,7 @@
 - 401 thật ở màn Thanh toán, đăng nhập lại thì trả tiếp. Code có nhánh 401 (`frontend/src/components/PaymentForm.tsx`, `session.ts`; `2026-10-09-ui-checkpoint-2.md:40`; `2026-10-09-ui-checkpoint-3.md:53`).
 - F5 giữa lúc trả (reload). Code: `frontend/src/lib/payment/checkout-session.ts` (`2026-10-09-ui-checkpoint-5.md:24`).
 - Trần 99 ly và 20 dòng trên giao diện chưa kiểm. Logic có: `frontend/src/lib/cart-limits.ts:7,10` (`2026-10-09-ui-checkpoint-3.md:53`).
-- Trạng thái tải, lỗi, rỗng: Skeleton, ErrorState, EmptyState, Menu khi backend tắt hoặc menu rỗng chưa nhìn bằng mắt. Skeleton thấp hơn thẻ thật, có giật khi tải xong, chưa đo (`2026-10-09-ui-checkpoint-2.md:39,41`; `2026-10-09-ui-checkpoint-1.md:39`; `2026-10-10-ui-checkpoint-3a.md:53`).
+- Trạng thái tải, lỗi, rỗng: Skeleton, ErrorState, EmptyState, Menu khi backend tắt hoặc menu rỗng chưa nhìn bằng mắt, chưa kiểm đồng bộ loading/lỗi/rỗng giữa các trang. Skeleton thấp hơn thẻ thật, có giật khi tải xong, chưa đo (`2026-10-09-ui-checkpoint-2.md:39,41`; `2026-10-09-ui-checkpoint-1.md:39`; `2026-10-10-ui-checkpoint-3a.md:53`).
 - Kiểm trình duyệt đa chiều rộng 1280, 1024, 760, 360px, chưa kiểm mục nào: (a) 11 màn; (b) header ADMIN ~1024px không vỡ thành hai dòng (đổi ở `50e8f45`); (c) hero Menu: cảnh moka ở 1280, 1081–1167px, 360px, tiêu đề xoay -4° (lệch đã biết: artboard 1152px so với vùng 1072px); (d) 5 màn đối chiếu wireframe đề §7 (`docs/checkpoints/2026-10-11-ui-wireframe-diff.md:6`: "Chưa xem trên trình duyệt"); thanh 5 bước ở 320–360px (`2026-10-11-ui-checkpoint-4.md:44,65`); hiển thị trên điện thoại (`2026-10-09-backend-checkpoint.md:81`); reduce motion bật/tắt, modal (Esc, Safari), trình đọc màn hình (`2026-10-11-ui-checkpoint-4.md:38-49`; `2026-10-10-ui-checkpoint-3a.md:30-34`; `2026-10-09-ui-checkpoint-5.md:24`; brief:17).
 - Offset neo `#menu` cố định 88px và 196px (ruling R23), chưa xác minh bằng trình duyệt (`frontend/src/components/menu/MenuSection.module.css:8,64`; `2026-10-10-ui-checkpoint-3a.md:34`; `2026-10-11-ui-checkpoint-4.md:65`).
 - Lưới Quầy ép 3 cột, chỉ có breakpoint `max-width: 760px`; hiển thị 761–850px chưa xem (`frontend/src/components/BaristaView.module.css:65,223`; `2026-10-11-ui-checkpoint-4.md:42,65`).
@@ -81,7 +83,7 @@
 
 ### Hạ tầng demo
 
-- Trạng thái Docker: container `brewlite-{frontend,backend,db}-1` của checkout chính đều `Exited` (backend `Exited (1)`). Còn volume `bl-uiplan_pgdata`, `brewlite-wt-order-advance_pgdata`, `brewlite_pgdata`. Dọn là tùy chọn, không chặn (`docker ps -a`; `docker volume ls`; `2026-10-09-checkpoint.md:30-34,41`).
+- Trạng thái Docker (snapshot tại 2026-10-12): container `brewlite-{frontend,backend,db}-1` của checkout chính đều `Exited` (backend `Exited (1)`). Còn volume `bl-uiplan_pgdata`, `brewlite-wt-order-advance_pgdata`, `brewlite_pgdata`. Dọn là tùy chọn, không chặn (`docker ps -a`; `docker volume ls`; `2026-10-09-checkpoint.md:30-34,41`).
 - Demo end-to-end và slide: không có bằng chứng trong repo (`2026-10-09-backend-checkpoint.md:83`).
 - Merge `develop` vào `main`: 151 commit, cần người dùng duyệt. Chưa làm (`git rev-list --count main..develop` = 151; `2026-10-09-backend-checkpoint.md:68`; `2026-10-09-ui-handoff.md:39`).
 - Xóa nhánh local đã merge (tùy chọn): chưa kiểm nhánh nào đã merge (`git branch`; `2026-10-09-backend-checkpoint.md:69`).
@@ -92,6 +94,8 @@
 - `alt` ảnh thẻ món bằng tên món, trình đọc màn hình đọc tên hai lần. Theo đặc tả §4 (ruling R22) (`2026-10-10-ui-checkpoint-3a.md:44`; `2026-10-11-ui-checkpoint-4.md:53`).
 
 ## 5. Quyết định đã chốt (vẫn hiệu lực)
+
+Nguồn ghi dạng `<tên file>.md:dòng` mà không còn trong `docs/checkpoints/` là checkpoint cũ; xem bằng `git show 253bee1:docs/checkpoints/<tên file>`.
 
 - Giữ tên món `Latte`, không đổi thành "Cà phê sữa". Quyết định người dùng 2026-10-11 (`backend/prisma/seed.ts:31`; `2026-10-09-ui-checkpoint-5.md:28`).
 - Giữ ký hiệu tiền `đ` của `formatVND`, không đổi `₫` (`frontend/src/lib/pricing.ts:44`; `2026-10-09-ui-checkpoint-5.md:29`).
