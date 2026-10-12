@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { isActive, navLinks } from './nav';
+import { isActive, navLinks, staffRedirect } from './nav';
 
 // Nav của header: chỉ ẩn/hiện theo vai trò (server mới chặn quyền), route giữ nguyên.
 const hrefs = (role: Parameters<typeof navLinks>[0]) => navLinks(role).map((l) => l.href);
@@ -13,14 +13,40 @@ describe('navLinks', () => {
     }
   });
 
-  test('BARISTA: thêm Quầy (/barista), không có Kho', () => {
-    expect(labels('BARISTA')).toEqual(['Menu', 'Quầy', 'Lịch sử']);
-    expect(hrefs('BARISTA')).toEqual(['/', '/barista', '/history']);
+  test('BARISTA: chỉ Quầy (/barista)', () => {
+    expect(labels('BARISTA')).toEqual(['Quầy']);
+    expect(hrefs('BARISTA')).toEqual(['/barista']);
   });
 
-  test('ADMIN: thêm Quầy và Kho (/admin)', () => {
-    expect(labels('ADMIN')).toEqual(['Menu', 'Quầy', 'Kho', 'Lịch sử']);
-    expect(hrefs('ADMIN')).toEqual(['/', '/barista', '/admin', '/history']);
+  test('ADMIN: Quầy và Kho (/admin), không có Menu, Lịch sử', () => {
+    expect(labels('ADMIN')).toEqual(['Quầy', 'Kho']);
+    expect(hrefs('ADMIN')).toEqual(['/barista', '/admin']);
+  });
+});
+
+describe('staffRedirect', () => {
+  test.each(['/', '/cart', '/history', '/profile'])('BARISTA ở %s → /barista', (p) => {
+    expect(staffRedirect(p, 'BARISTA')).toBe('/barista');
+  });
+
+  test.each(['/', '/cart', '/history', '/profile'])('ADMIN ở %s → /admin', (p) => {
+    expect(staffRedirect(p, 'ADMIN')).toBe('/admin');
+  });
+
+  test.each(['/barista', '/admin', '/login'])('nhân viên ở %s → null', (p) => {
+    expect(staffRedirect(p, 'BARISTA')).toBeNull();
+    expect(staffRedirect(p, 'ADMIN')).toBeNull();
+  });
+
+  test('CUSTOMER hoặc null luôn null', () => {
+    for (const p of ['/', '/cart', '/history', '/profile']) {
+      expect(staffRedirect(p, 'CUSTOMER')).toBeNull();
+      expect(staffRedirect(p, null)).toBeNull();
+    }
+  });
+
+  test('pathname null → null', () => {
+    expect(staffRedirect(null, 'BARISTA')).toBeNull();
   });
 });
 

@@ -36,7 +36,7 @@ Backend không tự đọc file `.env` và **bắt buộc có `DATABASE_URL`**: 
 
 ## Tiến độ 10 task (đã merge vào develop)
 
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 132 pass / 3 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 810 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine, và đợt làm lại giao diện, xem mục Giao diện); số đo ngày 2026-10-11. Bằng chứng từng task: `docs/develop-status-report.md`.
+Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 152 pass / 3 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 836 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine, và đợt làm lại giao diện, xem mục Giao diện); số đo ngày 2026-10-12. Bằng chứng từng task: `docs/develop-status-report.md`.
 
 | Task | Hiện thực chính |
 |---|---|
@@ -53,8 +53,8 @@ Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 132 pass
 
 ## API (7 endpoint tối thiểu + 6 mở rộng) và Entity (5)
 
-Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`.
-Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn), `GET /users/me` (hồ sơ + tổng điểm tích lũy, trang `/profile`). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2): `GET /orders?status=PAID,PREPARING,READY` (UC08, BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (UC14, chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
+Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`. Cả ba, cùng `GET /orders/:id` và `GET /users/me` bên dưới, chỉ dành cho CUSTOMER (`@Roles(CUSTOMER)`): token BARISTA/ADMIN nhận 403 `Insufficient role`, và giao diện chuyển nhân viên mở trang khách về `/barista` hoặc `/admin`.
+Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn, chỉ CUSTOMER), `GET /users/me` (hồ sơ + tổng điểm tích lũy, trang `/profile`, chỉ CUSTOMER). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2): `GET /orders?status=PAID,PREPARING,READY` (UC08, BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (UC14, chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
 `Product(stock,version)`, `User(loyaltyPoints, role)`, `Order(idempotencyKey unique)`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
 Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
 

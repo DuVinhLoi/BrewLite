@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { clearToken, getToken, sessionFromToken, type SessionInfo } from '@/lib/auth';
+import { staffRedirect } from '@/lib/nav';
 import { clearCheckout } from '@/lib/payment/checkout-session';
 import { useCart } from '@/store/cart';
 import HeaderView from './HeaderView';
@@ -16,7 +17,13 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<SessionInfo | null>(null);
-  useEffect(() => setSession(sessionFromToken(getToken())), [pathname]);
+  useEffect(() => {
+    const next = sessionFromToken(getToken());
+    setSession(next);
+    // Nhân viên mở trang khách thì về trang nhà (chuyển phía client; backend vẫn chặn API khách bằng 403)
+    const to = staffRedirect(pathname, next?.role ?? null);
+    if (to) router.replace(to);
+  }, [pathname, router]);
 
   // Chỉ đăng xuất tab này; bỏ luôn đơn đang thanh toán dở của tab
   function logout() {

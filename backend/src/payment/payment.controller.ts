@@ -4,13 +4,17 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStatus } from '../contracts/order.contract';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Role } from '../contracts/user.contract';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Controller()
 export class PaymentController {
   constructor(private payments: PaymentService) {}
 
   @Post('payments')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER)
   async pay(@Body() dto: CreatePaymentDto, @Headers('idempotency-key') key: string, @Req() req: any, @Res({ passthrough: true }) res: any) {
     const r = await this.payments.processPayment(req.user.id, dto, key);
     res.status(r.isCached ? 200 : 201);

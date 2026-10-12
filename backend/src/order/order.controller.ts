@@ -12,7 +12,8 @@ export class OrderController {
   constructor(private orders: OrderService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER)
   async create(@Body() dto: CreateOrderDto, @Headers('idempotency-key') key: string | undefined, @Req() req: any, @Res({ passthrough: true }) res: any) {
     const r = await this.orders.create(req.user.id, dto, key);
     res.status(r.isCached ? 200 : 201);
@@ -34,14 +35,16 @@ export class OrderController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER)
   mine(@Req() req: any) {
     return this.orders.listMine(req.user.id);
   }
 
   // Gap 1: đặt sau 'me' để GET /orders/me không rơi vào :id
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CUSTOMER)
   byId(@Param('id') id: string, @Req() req: any) {
     return this.orders.getById(req.user.id, id);
   }

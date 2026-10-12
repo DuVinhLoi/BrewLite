@@ -43,30 +43,65 @@ describe('HeaderView: nav theo vai trò', () => {
     expect(hasLink(out, '/history')).toBe(true);
   });
 
-  test('BARISTA: có Quầy, không có Kho', () => {
+  test('BARISTA: có Quầy, không có Kho, Menu, Lịch sử', () => {
     const out = html({ session: session('BARISTA') });
     expect(out).toContain('>Quầy</a>');
     expect(hasLink(out, '/barista')).toBe(true);
     expect(hasLink(out, '/admin')).toBe(false);
+    expect(hasLink(out, '/history')).toBe(false);
+    expect(out).not.toContain('>Menu</a>');
   });
 
-  test('ADMIN: có Quầy và Kho', () => {
+  test('ADMIN: có Quầy và Kho, không có Menu, Lịch sử', () => {
     const out = html({ session: session('ADMIN') });
     expect(hasLink(out, '/barista')).toBe(true);
     expect(hasLink(out, '/admin')).toBe(true);
     expect(out).toContain('>Kho</a>');
+    expect(hasLink(out, '/history')).toBe(false);
+  });
+});
+
+describe('HeaderView: nhân viên', () => {
+  test.each(['BARISTA', 'ADMIN'] as const)('%s: không link /cart, không href="/profile", không "Xem giỏ hàng"', (role) => {
+    const out = html({ session: session(role) });
+    expect(hasLink(out, '/cart')).toBe(false);
+    expect(hasLink(out, '/profile')).toBe(false);
+    expect(out).not.toContain('Xem giỏ hàng');
+  });
+
+  test.each([
+    ['BARISTA', '/barista'],
+    ['ADMIN', '/admin'],
+  ] as const)('%s: logo trỏ về %s', (role, home) => {
+    const out = html({ session: session(role) });
+    expect(out).toMatch(new RegExp(`<a[^>]*href="${home}"[^>]*>(?:(?!</a>).)*BrewLite</span>`));
+    expect(out).not.toMatch(/<a[^>]*href="\/"[^>]*>(?:(?!<\/a>).)*BrewLite<\/span>/);
+  });
+
+  test('viên vai trò là <span> pill có title là email, không phải link', () => {
+    const out = html({ session: session('BARISTA', 'b@b.test') });
+    expect(out).toMatch(/<span[^>]*class="[^"]*pill[^"]*"[^>]*title="b@b.test"[^>]*>(?:(?!<\/span>).)*Quầy<\/span>/);
+    expect(out).toContain('>Đăng xuất</button>');
+  });
+
+  test('khách và CUSTOMER giữ giỏ hàng, logo về "/"', () => {
+    for (const s of [null, session('CUSTOMER')]) {
+      const out = html({ session: s });
+      expect(hasLink(out, '/cart')).toBe(true);
+      expect(out).toMatch(/<a[^>]*href="\/"[^>]*>(?:(?!<\/a>).)*BrewLite<\/span>/);
+    }
   });
 });
 
 describe('HeaderView: aria-current', () => {
   test.each([
-    ['/', 'Menu'],
-    ['/history', 'Lịch sử'],
-    ['/history/x', 'Lịch sử'],
-    ['/barista', 'Quầy'],
-    ['/admin', 'Kho'],
-  ])('pathname %s: đúng một mục "%s" có aria-current="page"', (pathname, label) => {
-    const out = html({ session: session('ADMIN'), pathname });
+    ['/', 'Menu', 'CUSTOMER'],
+    ['/history', 'Lịch sử', 'CUSTOMER'],
+    ['/history/x', 'Lịch sử', 'CUSTOMER'],
+    ['/barista', 'Quầy', 'ADMIN'],
+    ['/admin', 'Kho', 'ADMIN'],
+  ] as const)('pathname %s: đúng một mục "%s" có aria-current="page"', (pathname, label, role) => {
+    const out = html({ session: session(role), pathname });
     expect(ariaCurrent(out)).toHaveLength(1);
     expect(out).toMatch(new RegExp(`<a[^>]*aria-current="page"[^>]*>${label}</a>`));
   });
@@ -92,14 +127,14 @@ describe('HeaderView: pill giỏ hàng', () => {
 
 describe('HeaderView: tài khoản', () => {
   test.each([
-    ['CUSTOMER', 'Khách'],
-    ['BARISTA', 'Quầy'],
-    ['ADMIN', 'Quản trị'],
-  ] as const)('%s: pill vai trò hiện "%s", link /profile, email ở title, không in email ra chữ', (role, label) => {
+    ['CUSTOMER', 'Khách', /<a[^>]*href="\/profile"[^>]*>(?:(?!<\/a>).)*<\/a>/, '</a>'],
+    ['BARISTA', 'Quầy', /<span[^>]*title="a@b\.test"[^>]*>(?:(?!<\/span>).)*<\/span>/, '</span>'],
+    ['ADMIN', 'Quản trị', /<span[^>]*title="a@b\.test"[^>]*>(?:(?!<\/span>).)*<\/span>/, '</span>'],
+  ] as const)('%s: pill vai trò hiện "%s", email ở title, không in email ra chữ', (role, label, re, close) => {
     const out = html({ session: session(role, 'a@b.test') });
-    const pill = out.match(/<a[^>]*href="\/profile"[^>]*>(?:(?!<\/a>).)*<\/a>/)?.[0] ?? '';
+    const pill = out.match(re)?.[0] ?? '';
     expect(pill).toContain('title="a@b.test"');
-    expect(pill.endsWith(`${label}</a>`)).toBe(true);
+    expect(pill.endsWith(`${label}${close}`)).toBe(true);
     expect(out).not.toContain('>a@b.test<');
     expect(out).toContain('>Đăng xuất</button>');
     expect(out).not.toContain('Đăng nhập');
@@ -109,6 +144,7 @@ describe('HeaderView: tài khoản', () => {
     const out = html({ session: session('CUSTOMER') });
     expect(out.match(/<svg/g)).toHaveLength(2);
     expect(out.match(/<svg[^>]*aria-hidden="true"/g)).toHaveLength(2);
+    expect(html({ session: session('BARISTA') }).match(/<svg/g)).toHaveLength(1); // nhân viên: không có icon giỏ
   });
 
   test('email rỗng: title rơi về "Đã đăng nhập"', () => {
