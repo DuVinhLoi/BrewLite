@@ -2,3 +2,4 @@
 # are tooling, not BrewLite product code. Keep the graph focused on
 # backend/ + frontend/ + docs/.
 .agents/
+.claude/
