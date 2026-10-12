@@ -5,7 +5,7 @@
 > Lưu ý: commit `b6a2f76` gồm cả thay đổi FE đang dở trong working tree lúc commit (nút Hủy ở `/history` + `cancelOrder()`, `getProducts()` bỏ fallback menu mẫu, test `api.test.ts` và `pricing-table.spec.ts`) — chúng nằm trong scope `frontend/src/**` + `backend/test/**` của kế hoạch và test xanh nên đi kèm. Kế hoạch 5 task P1 (đã xong hết) trước nằm ở `docs/planning/2026-10-08-p1-must-do-plan.md`, đã xóa khỏi thư mục khi tick hết (xem `git show da047b6:docs/planning/2026-10-08-p1-must-do-plan.md`). Thư mục `docs/planning/` trước nằm ở `docs/superpowers/` (bị `.gitignore`), đã chuyển sang và commit ở `259f9ff`.
 > Lưu ý demo (cập nhật sau plan `docs/planning/2026-10-09-barista-admin-plan.md` (đã xóa sau merge `4974abd`; bản đầy đủ: `git show 4974abd:docs/planning/2026-10-09-barista-admin-plan.md`)): nút "Quầy (demo)" trên `/history` đã **gỡ**; tiến đơn do Barista làm ở `/barista` (mục 5). Ô chưa tick ở `2026-10-09-order-state-machine-visible-plan.md` trước ghi bấm "Quầy (demo)" 3 lần đến `COMPLETED`; nay đã đổi thành checklist `/barista` (khách đặt và trả, `barista@…` bấm Nhận pha → Pha xong → Đã giao, chụp `/barista` và thanh tiến trình ở `/history`), vẫn cần người làm.
 > Dọn `docs/planning/` (2026-10-09, commit `b5fe9db`): xóa 2 plan đã tick hết (`p1-must-do`, `review-3-bugs`), rút gọn 2 plan còn ô chưa tick (`p2-tech-debt` chỉ còn Task 7; `order-state-machine-visible` chỉ còn mục kiểm chứng cuối). Bản đầy đủ trước khi rút gọn: `git show da047b6:docs/planning/<tên file>`.
-> Cập nhật 2026-10-11: thêm mục 8 (đợt UI, nhánh `worktree-ui-plan-checkpoint`, chưa push, chưa merge); đã sửa hai chỗ không còn đúng (giỏ hàng chặn 20 dòng ở mục 6, "UI component chỉ có build + smoke tay" ở mục 2).
+> Cập nhật 2026-10-11: thêm mục 8 (đợt UI, nhánh `worktree-ui-plan-checkpoint`, chưa push, chưa merge) và mục 9 (đồng bộ Use Case ↔ Sequence); đã sửa hai chỗ không còn đúng (giỏ hàng chặn 20 dòng ở mục 6, "UI component chỉ có build + smoke tay" ở mục 2).
 > Nguồn chuẩn duy nhất cho yêu cầu là `docs/BrewLite-CongNghePhanMem-fixed.md`; file này chỉ ghi trạng thái + bằng chứng, không chép lại code.
 
 ## 1. Đã đạt (đủ điều kiện tính điểm cả 10 task)
@@ -216,3 +216,23 @@ Chi tiết từng lệnh và dòng kết quả nằm ở `.superpowers/sdd/2026-
 **Đã quyết (2026-10-11):** không đổi tên món "Latte" trong seed (giữ khác wireframe đề §7, xem `docs/checkpoints/2026-10-11-ui-wireframe-diff.md`); giữ ký hiệu tiền `đ` của `formatVND`; commit `733f315` đã squash vào `1f2ce02` (bảng hash: `docs/checkpoints/2026-10-11-squash-hash-map.md`).
 
 **Việc nhỏ còn nợ (không chặn):** danh sách đầy đủ ở cuối `docs/checkpoints/2026-10-11-ui-checkpoint-4.md`, `2026-10-10-ui-checkpoint-3a.md` và `2026-10-09-ui-checkpoint-3.md`. Nổi bật: catch cuối của `app/login/page.tsx` che lỗi hiếm (thân JSON `null`); bốn wrapper `Page` gần giống nhau ở `HistoryView`, `BaristaView`, `InventoryView`, `ProfileView`; thanh 5 bước ở 320 đến 360px; nút -/+ giỏ 40px (dưới 44px); lưới Quầy ép 3 cột từ 761px; docs §2.8 chưa nhắc hai trạng thái mới của Kho.
+
+## 9. Đồng bộ Use Case ↔ Sequence (2026-10-11, nhánh `sync/uc-sequence`)
+
+Plan: `docs/planning/2026-10-11-uc-sequence-sync-plan.md`.
+
+- Thêm UC16 (Xem hồ sơ & điểm tích lũy, `GET /users/me`) vào bảng §4 và sơ đồ §2.9; biểu đồ Use Case vẽ `Admin --|> Barista` (Admin kế thừa quyền quầy).
+- Sửa sơ đồ cho đúng code: §2.4 thứ tự lỗi 422 (key đã dùng cho đơn khác), §2.5 khóa khi hủy đơn, response `GET /orders`, `GET /orders/me`, `PATCH /orders/:id` có `userId` và `idempotencyKey`.
+- Tên món lấy bằng một truy vấn `findAll`; quầy hiện "Đang tải…" khi chưa có dữ liệu; `getProfile` / `getMyOrders` / `getOrder` gửi `cache: 'no-store'`; xóa component `ui/Card` không màn nào dùng.
+- Sửa nhỏ cuối đợt: thoát `|` trong bảng tác nhân, câu đếm UC và phạm vi UC16, anchor mục lục Phần III, comment `sessionStorage` ở `ProfileView`.
+
+**Số liệu đo ngày 2026-10-11 (đo tại commit gộp UC/sequence-sync; trước khi gộp là `3438185`)**
+
+| Lệnh | Kết quả |
+|---|---|
+| `cd backend && npx jest` | `Test Suites: 2 skipped, 13 passed, 13 of 15 total`; `Tests: 3 skipped, 132 passed, 135 total` (không có `DATABASE_URL` nên bỏ qua các test Postgres) |
+| `cd backend && npx tsc --noEmit` | sạch (exit 0) |
+| `cd frontend && npx vitest run` | `Test Files 48 passed (48)`; `Tests 810 passed (810)` |
+| `cd frontend && npx tsc --noEmit` | sạch (exit 0) |
+| `cd frontend && npm run lint` | exit 0, 0 lỗi, 47 cảnh báo `@next/next/no-img-element` |
+| Render từng khối mã `plantuml` của 2 file UC / sequence bằng PlantUML jar (`java -jar plantuml.jar -charset UTF-8 -tpng`) | `12 khối, 12 sạch, 0 lỗi` |

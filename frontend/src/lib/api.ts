@@ -104,7 +104,7 @@ export interface Profile {
 export async function getProfile(token: string): Promise<Profile> {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+    res = await fetch(`${API_BASE}/users/me`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
   } catch {
     throw new ApiError('Không kết nối được máy chủ để tải hồ sơ.', 0);
   }
@@ -123,7 +123,7 @@ export async function getProfile(token: string): Promise<Profile> {
 export async function getMyOrders(token: string): Promise<HistoryOrder[]> {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/orders/me`, { headers: { Authorization: `Bearer ${token}` } });
+    res = await fetch(`${API_BASE}/orders/me`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
   } catch {
     throw new ApiError('Không kết nối được máy chủ.', 0);
   }
@@ -141,7 +141,7 @@ export async function getMyOrders(token: string): Promise<HistoryOrder[]> {
 export async function getOrder(orderId: string, token: string): Promise<OrderDetail> {
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}`, { headers: { Authorization: `Bearer ${token}` } });
+    res = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
   } catch {
     throw new ApiError('Không kết nối được máy chủ.', 0);
   }

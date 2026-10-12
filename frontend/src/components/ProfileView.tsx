@@ -8,7 +8,7 @@ import GuestState from './GuestState';
 import styles from './ProfileView.module.css';
 
 // Phần hiển thị của /profile, tách khỏi page.tsx vì Next 14 không cho file trang export thêm tên khác.
-// token: undefined = chưa đọc localStorage, null = đã đọc và chưa đăng nhập, chuỗi = đã đăng nhập.
+// token: undefined = chưa đọc sessionStorage, null = đã đọc và chưa đăng nhập, chuỗi = đã đăng nhập.
 // Giao diện nét mực: ui-visual-plan.md §6 mục 9 (artboard ProfileDoodle) và mục 11 (chưa đăng nhập: GuestState, dùng chung với /history).
 interface Props {
   token: string | null | undefined;

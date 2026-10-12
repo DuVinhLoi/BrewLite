@@ -14,7 +14,7 @@ import styles from './BaristaView.module.css';
 interface Props {
   token: string | null | undefined;
   staff: boolean;
-  orders: QueueOrder[];
+  orders: QueueOrder[] | undefined; // undefined = chưa tải xong lần đầu (theo mẫu InventoryView)
   error: string | null;
   busyId: string | null;
   onAdvance: (o: QueueOrder, to: OrderStatus) => void;
@@ -78,7 +78,7 @@ export default function BaristaView({ token, staff, orders, error, busyId, onAdv
       </Page>
     );
 
-  const cols = groupQueue(orders);
+  const cols = orders && groupQueue(orders);
   return (
     <Page note>
       {error && (
@@ -86,28 +86,31 @@ export default function BaristaView({ token, staff, orders, error, busyId, onAdv
           {error}
         </p>
       )}
-      <div className={styles.board}>
-        {QUEUE_COLUMNS.map((c) => (
-          <section key={c.status} className={styles.col}>
-            <h2 className={styles.colHead}>
-              {c.title}
-              <span className={`tabular ${styles.count} ${COUNT_TONE[c.status]}`}>
-                {cols[c.status].length}
-                <span className="visually-hidden"> đơn</span>
-              </span>
-            </h2>
-            {cols[c.status].length === 0 && (
-              <div className={styles.empty}>
-                <img src="/doodles/mug.svg" alt="" aria-hidden="true" width={64} height={64} className={styles.emptyMug} />
-                <p className={styles.emptyText}>Không có đơn</p>
-              </div>
-            )}
-            {cols[c.status].map((o) => (
-              <OrderCard key={o.id} o={o} column={c.status} busy={busyId === o.id} onAdvance={onAdvance} onCancel={onCancel} />
-            ))}
-          </section>
-        ))}
-      </div>
+      {!orders && !error && <p className={styles.loading}>Đang tải…</p>}
+      {cols && (
+        <div className={styles.board}>
+          {QUEUE_COLUMNS.map((c) => (
+            <section key={c.status} className={styles.col}>
+              <h2 className={styles.colHead}>
+                {c.title}
+                <span className={`tabular ${styles.count} ${COUNT_TONE[c.status]}`}>
+                  {cols[c.status].length}
+                  <span className="visually-hidden"> đơn</span>
+                </span>
+              </h2>
+              {cols[c.status].length === 0 && (
+                <div className={styles.empty}>
+                  <img src="/doodles/mug.svg" alt="" aria-hidden="true" width={64} height={64} className={styles.emptyMug} />
+                  <p className={styles.emptyText}>Không có đơn</p>
+                </div>
+              )}
+              {cols[c.status].map((o) => (
+                <OrderCard key={o.id} o={o} column={c.status} busy={busyId === o.id} onAdvance={onAdvance} onCancel={onCancel} />
+              ))}
+            </section>
+          ))}
+        </div>
+      )}
     </Page>
   );
 }

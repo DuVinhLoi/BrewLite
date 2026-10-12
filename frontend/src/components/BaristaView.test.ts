@@ -61,6 +61,25 @@ describe('BaristaView: chặn vai trò (giữ chữ cũ)', () => {
   });
 });
 
+describe('BaristaView: chưa tải xong hàng đợi (orders=undefined)', () => {
+  test('chưa có dữ liệu và chưa lỗi: "Đang tải…" dưới h1, chưa vẽ cột nào (không nháy "Không có đơn")', () => {
+    const out = html({ orders: undefined });
+    expect(out).toMatch(/<h1[^>]*>Quầy pha chế<\/h1>/);
+    expect(out).toMatch(/<p[^>]*class="[^"]*loading[^"]*"[^>]*>Đang tải…<\/p>/);
+    expect(out).not.toContain('Chờ pha');
+    expect(text(out)).not.toContain('Không có đơn');
+  });
+
+  test('đã lỗi: hiện lỗi, không còn "Đang tải…"; có danh sách rỗng thật thì vẽ 3 cột "Không có đơn"', () => {
+    const bad = html({ orders: undefined, error: 'Không kết nối được máy chủ.' });
+    expect(bad).toMatch(/role="alert"[^>]*>Không kết nối được máy chủ\.</);
+    expect(bad).not.toContain('Đang tải…');
+    const empty = html({ orders: [] });
+    expect(empty).not.toContain('Đang tải…');
+    expect(text(empty).match(/Không có đơn/g)).toHaveLength(3);
+  });
+});
+
 describe('BaristaView: hàng đợi (§6 mục 12)', () => {
   const out = html({ orders: queue });
   const cols = columns(out);

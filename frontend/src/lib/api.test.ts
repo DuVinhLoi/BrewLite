@@ -299,6 +299,21 @@ describe('getOrder', () => {
   });
 });
 
+// Next 14 cache fetch phía server mặc định; hồ sơ, lịch sử và trạng thái đơn đổi liên tục nên phải gửi cache: 'no-store'.
+describe("fetch GET có xác thực gửi cache: 'no-store'", () => {
+  test.each([
+    ['getProfile', () => getProfile('t'), {}],
+    ['getMyOrders', () => getMyOrders('t'), []],
+    ['getOrder', () => getOrder('o1', 't'), { id: 'o1' }],
+  ])('%s', async (_name, call, body) => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(json(200, body));
+    vi.stubGlobal('fetch', fetchMock);
+    await call();
+    expect(fetchMock.mock.calls[0][1].cache).toBe('no-store');
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe('Bearer t');
+  });
+});
+
 // Thân lỗi không phải object (null, số, chuỗi) hoặc message sai kiểu: coi như không có message, không văng TypeError.
 describe('thân lỗi lạ', () => {
   const nullBody = () => new Response('null', { status: 502, headers: { 'Content-Type': 'application/json' } });

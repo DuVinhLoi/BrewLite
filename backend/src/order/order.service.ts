@@ -86,12 +86,10 @@ export class OrderService {
     return this.withProductNames(await this.orders.findByStatuses(statuses));
   }
 
-  // Mỗi productId phân biệt tra đúng một lần, các lần tra chạy song song; món không còn trong DB rơi về chính productId
+  // ponytail: thực đơn nhỏ nên đọc cả bảng 1 lần, không tra từng productId; món không còn trong DB rơi về chính productId
   private async withProductNames(orders: OrderDto[]): Promise<NamedOrderDto[]> {
-    const ids = new Set(orders.flatMap((o) => o.items.map((i) => i.productId)));
-    const names = new Map(
-      await Promise.all([...ids].map(async (id) => [id, (await this.products.findById(id))?.name ?? id] as const)),
-    );
-    return orders.map((o) => ({ ...o, items: o.items.map((i) => ({ ...i, productName: names.get(i.productId)! })) }));
+    if (orders.length === 0) return []; // quầy poll 5 giây, hàng đợi thường rỗng: khỏi đọc bảng món
+    const names = new Map((await this.products.findAll()).map((p) => [p.id, p.name] as const));
+    return orders.map((o) => ({ ...o, items: o.items.map((i) => ({ ...i, productName: names.get(i.productId) ?? i.productId })) }));
   }
 }

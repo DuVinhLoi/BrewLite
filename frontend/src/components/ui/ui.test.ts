@@ -3,7 +3,6 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import Badge from './Badge';
 import Button from './Button';
-import Card from './Card';
 import EmptyState from './EmptyState';
 import ErrorState from './ErrorState';
 import Skeleton from './Skeleton';
@@ -27,14 +26,6 @@ describe('Button', () => {
 
   test('disabled được chuyển xuống nút', () => {
     expect(html(createElement(Button, { variant: 'ghost', disabled: true }, 'x'))).toContain('disabled=""');
-  });
-});
-
-describe('Card', () => {
-  test('bọc nội dung và nhận className thêm', () => {
-    const out = html(createElement(Card, { className: 'them' } as ComponentProps<typeof Card>, 'Nội dung'));
-    expect(out).toContain('Nội dung');
-    expect(out).toContain('them');
   });
 });
 

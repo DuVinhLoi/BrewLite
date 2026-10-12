@@ -210,40 +210,59 @@ describe('products + orders (task 2,6)', () => {
       expect(rest).toEqual(stored);
     });
 
-    it('tra tên các món song song, mỗi productId phân biệt đúng một lần (không N+1 tuần tự)', async () => {
-      const { or, svc } = await setup();
+    it('lấy tên món bằng đúng 1 lần findAll, không gọi findById; món bị xóa rơi về productId', async () => {
+      const { or } = await setup();
       const pr = new InMemoryProductRepo();
       for (const [id, name] of [['p1', 'Latte'], ['p2', 'Cold Brew'], ['p3', 'Matcha']]) {
         await pr.save({ id, name, price: 30000, stock: 10, version: 1 });
       }
-      // findById trễ một nhịp: đếm số lời gọi đang chạy cùng lúc và số lần gọi theo từng productId
-      let inFlight = 0;
-      let maxInFlight = 0;
-      const calls: string[] = [];
-      const realFind = pr.findById.bind(pr);
-      pr.findById = async (id, tx) => {
-        calls.push(id);
-        maxInFlight = Math.max(maxInFlight, ++inFlight);
-        await new Promise((r) => setTimeout(r, 5));
-        inFlight--;
-        return realFind(id, tx);
-      };
+      const findAll = jest.spyOn(pr, 'findAll');
+      const findById = jest.spyOn(pr, 'findById');
       const svc2 = new OrderService(or, pr);
       const line = (productId: string) => ({ productId, quantity: 1, unitPrice: 30000, size: 'M', toppings: [] });
       await or.save({
         id: 'o-many',
         userId: 'u9',
         status: OrderStatus.PAID,
-        total: 30000 * 5,
-        items: [line('p1'), line('p2'), line('p1'), line('p3'), line('p2')],
+        total: 30000 * 6,
+        items: [line('p1'), line('p2'), line('p1'), line('p3'), line('p2'), line('p-deleted')],
         createdAt: new Date(),
       });
 
       const [o] = await svc2.listMine('u9');
 
-      expect(o.items.map((i) => i.productName)).toEqual(['Latte', 'Cold Brew', 'Latte', 'Matcha', 'Cold Brew']);
-      expect([...calls].sort()).toEqual(['p1', 'p2', 'p3']);
-      expect(maxInFlight).toBe(3);
+      expect(o.items.map((i) => i.productName)).toEqual(['Latte', 'Cold Brew', 'Latte', 'Matcha', 'Cold Brew', 'p-deleted']);
+      expect(findAll).toHaveBeenCalledTimes(1);
+      expect(findById).not.toHaveBeenCalled();
+    });
+
+    it('listQueue cũng lấy tên bằng đúng 1 lần findAll, không gọi findById', async () => {
+      const { or } = await setup();
+      const pr = new InMemoryProductRepo();
+      await pr.save({ id: 'p1', name: 'Latte', price: 30000, stock: 10, version: 1 });
+      const findAll = jest.spyOn(pr, 'findAll');
+      const findById = jest.spyOn(pr, 'findById');
+      const line = { productId: 'p1', quantity: 1, unitPrice: 30000, size: 'M', toppings: [] };
+      for (const id of ['o1', 'o2']) {
+        await or.save({ id, userId: 'u9', status: OrderStatus.PAID, total: 30000, items: [line], createdAt: new Date() });
+      }
+
+      const queue = await new OrderService(or, pr).listQueue();
+
+      expect(queue.flatMap((o) => o.items.map((i) => i.productName))).toEqual(['Latte', 'Latte']);
+      expect(findAll).toHaveBeenCalledTimes(1);
+      expect(findById).not.toHaveBeenCalled();
+    });
+
+    it('hàng đợi rỗng: trả [] và không gọi findAll (quầy poll 5 giây)', async () => {
+      const { or } = await setup();
+      const pr = new InMemoryProductRepo();
+      const findAll = jest.spyOn(pr, 'findAll');
+
+      const queue = await new OrderService(or, pr).listQueue();
+
+      expect(queue).toEqual([]);
+      expect(findAll).toHaveBeenCalledTimes(0);
     });
 
     it('GET /orders/:id không đổi: items vẫn không có productName', async () => {

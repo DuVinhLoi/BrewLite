@@ -16,7 +16,7 @@ describe('ProfileView (render HTML)', () => {
     expect(out).toContain('href="/login?next=%2Fprofile"'); // đăng nhập xong quay lại /profile (safeNext)
   });
 
-  test('token=undefined (chưa đọc localStorage): chưa vẽ gì, tránh nháy "chưa đăng nhập"', () => {
+  test('token=undefined (chưa đọc sessionStorage): chưa vẽ gì, tránh nháy "chưa đăng nhập"', () => {
     expect(html({ token: undefined, profile: null, error: null })).toBe('');
   });
 

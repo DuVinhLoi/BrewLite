@@ -10,7 +10,7 @@ import BaristaView from '@/components/BaristaView';
 // Phần vẽ ở components/BaristaView.tsx; trang này giữ poll, PATCH và hộp xác nhận hủy.
 export default function BaristaPage() {
   const [token, setToken] = useState<string | null | undefined>(undefined);
-  const [orders, setOrders] = useState<QueueOrder[]>([]);
+  const [orders, setOrders] = useState<QueueOrder[] | undefined>(undefined); // undefined = chưa tải xong lần đầu
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [halted, setHalted] = useState(false); // gặp 401/403 thì ngừng tự tải lại
