@@ -147,7 +147,7 @@ Quy tắc chung:
 
 ## 8. Đợt UI (2026-10-09 đến 2026-10-11)
 
-> Nhánh `worktree-ui-plan-checkpoint`, **chưa push, chưa merge** vào `main` hay `develop`. Plan `docs/planning/2026-10-09-frontend-ui-plan.md` (chức năng nối backend) và `docs/planning/2026-10-09-ui-visual-plan.md` (hình thức "nét mực"). Số liệu từng giai đoạn nằm ở `docs/checkpoints/2026-10-09-ui-checkpoint-0.md` đến `2026-10-11-ui-checkpoint-4.md` (ảnh chụp tại thời điểm đó, không sửa). Quy trình: mỗi task có implementer và reviewer riêng; sau Giai đoạn 3 chạy `/code-review` rồi sửa các finding.
+> Nhánh `worktree-ui-plan-checkpoint`, **chưa push, chưa merge** vào `main` hay `develop`. Plan `docs/planning/2026-10-09-frontend-ui-plan.md` (chức năng nối backend) và `docs/planning/2026-10-09-ui-visual-plan.md` (hình thức "nét mực"). Số liệu từng giai đoạn nằm ở `git show 253bee1:docs/checkpoints/2026-10-09-ui-checkpoint-0.md` đến `git show 253bee1:docs/checkpoints/2026-10-11-ui-checkpoint-4.md` (ảnh chụp tại thời điểm đó, không sửa). Quy trình: mỗi task có implementer và reviewer riêng; sau Giai đoạn 3 chạy `/code-review` rồi sửa các finding.
 
 **Đã dựng**
 
@@ -208,14 +208,14 @@ Chi tiết từng lệnh và dòng kết quả nằm ở `.superpowers/sdd/2026-
 
 **Chưa kiểm, cần người làm**
 
-- **Mọi thứ về hình ảnh:** chưa ai nhìn 11 màn bằng mắt ở 1280, 1024, 760 và 360px, kèm "reduce motion" bật và tắt. Chưa chụp ảnh nào (xem README, mục "Giao diện"). Danh sách điểm cần xem theo thứ tự quan trọng: `docs/checkpoints/2026-10-11-ui-checkpoint-4.md` và `2026-10-10-ui-checkpoint-3a.md`.
+- **Mọi thứ về hình ảnh:** chưa ai nhìn 11 màn bằng mắt ở 1280, 1024, 760 và 360px, kèm "reduce motion" bật và tắt. Chưa chụp ảnh nào (xem README, mục "Giao diện"). Danh sách điểm cần xem theo thứ tự quan trọng: `docs/checkpoints/2026-10-12-checkpoint.md`, mục 4 (Kiểm bằng mắt).
 - Bốn thao tác ở bảng trên chỉ trình duyệt làm được: chuyển `/login` khi 401, F5 giữa thanh toán, màn lỗi và thử lại của Menu, biên lai tự đổi khi barista đổi trạng thái (hai tab).
 - Bố cục hero và cảnh bình moka (Menu), và header của ADMIN ở khoảng 1024px: chưa ai nhìn bằng mắt.
 - Vai trò BARISTA / ADMIN của smoke đặt bằng SQL, không qua giao diện (không có màn quản lý người dùng, ngoài phạm vi).
 
 **Đã quyết (2026-10-11):** không đổi tên món "Latte" trong seed (giữ khác wireframe đề §7, xem `docs/checkpoints/2026-10-11-ui-wireframe-diff.md`); giữ ký hiệu tiền `đ` của `formatVND`; commit `733f315` đã squash vào `1f2ce02` (bảng hash: `docs/checkpoints/2026-10-11-squash-hash-map.md`).
 
-**Việc nhỏ còn nợ (không chặn):** danh sách đầy đủ ở cuối `docs/checkpoints/2026-10-11-ui-checkpoint-4.md`, `2026-10-10-ui-checkpoint-3a.md` và `2026-10-09-ui-checkpoint-3.md`. Nổi bật: catch cuối của `app/login/page.tsx` che lỗi hiếm (thân JSON `null`); bốn wrapper `Page` gần giống nhau ở `HistoryView`, `BaristaView`, `InventoryView`, `ProfileView`; thanh 5 bước ở 320 đến 360px; nút -/+ giỏ 40px (dưới 44px); lưới Quầy ép 3 cột từ 761px; docs §2.8 chưa nhắc hai trạng thái mới của Kho.
+**Việc nhỏ còn nợ (không chặn):** danh sách đầy đủ ở `docs/checkpoints/2026-10-12-checkpoint.md`, mục 4 (Code, Tài liệu). Nổi bật: catch cuối của `app/login/page.tsx` che lỗi hiếm (thân JSON `null`); bốn wrapper `Page` gần giống nhau ở `HistoryView`, `BaristaView`, `InventoryView`, `ProfileView`; thanh 5 bước ở 320 đến 360px; nút -/+ giỏ 40px (dưới 44px); lưới Quầy ép 3 cột từ 761px; docs §2.8 chưa nhắc hai trạng thái mới của Kho.
 
 ## 9. Đồng bộ Use Case ↔ Sequence (2026-10-11, nhánh `sync/uc-sequence`)
 
