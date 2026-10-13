@@ -30,7 +30,7 @@ cd frontend && npm test                     # vitest
 cd frontend && npm run lint                 # ESLint next/core-web-vitals: 0 lỗi; cảnh báo no-img-element là có chủ đích (ảnh SVG tĩnh)
 ```
 
-Backend không tự đọc file `.env` và **bắt buộc có `DATABASE_URL`**: thiếu thì dừng ngay với lỗi `DATABASE_URL is required` (kho in-memory chỉ dành cho jest). Muốn chạy rời: bật DB (`docker compose up -d db`), đặt `DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite` trong shell (bash: `export`; PowerShell: `$env:DATABASE_URL=...`), chạy `npx prisma migrate deploy` và `npx ts-node prisma/seed.ts` một lần (như `CMD` của `backend/Dockerfile`; không seed thì menu rỗng và chưa có tài khoản demo) rồi `npm run start:dev`.
+Backend không tự đọc file `.env` và **bắt buộc có `DATABASE_URL` và `JWT_SECRET`**: thiếu `DATABASE_URL` thì dừng ngay với lỗi `DATABASE_URL is required` (kho in-memory chỉ dành cho jest), thiếu hoặc để rỗng `JWT_SECRET` thì dừng với lỗi `JWT_SECRET is required`. Muốn chạy rời: bật DB (`docker compose up -d db`), đặt `DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite` và một `JWT_SECRET` bất kỳ trong shell (bash: `export`; PowerShell: `$env:DATABASE_URL=...`), chạy `npx prisma migrate deploy` và `npx ts-node prisma/seed.ts` một lần (như `CMD` của `backend/Dockerfile`; không seed thì menu rỗng và chưa có tài khoản demo) rồi `npm run start:dev`.
 
 `NEXT_PUBLIC_PAYMENT_MODE=mock` demo UI không cần backend; `=api` cắm `POST /payments` thật.
 
@@ -103,7 +103,7 @@ Cổng thanh toán là bản giả nên mặc định luôn thành công. Muốn
 
 ### Lưu ý bảo mật (chỉ dành cho demo)
 
-- **Khóa JWT mặc định là công khai.** Giá trị mặc định (`dev-secret` trong `docker-compose.yml`, `brewlite-dev-secret` trong mã, `change-me-in-production` trong `.env.example`) nằm ngay trong repo này. Vì JWT nay mang `role`, ai biết khóa đều tự ký được token ADMIN. Với mọi thứ ngoài bản demo cục bộ, hãy đặt `JWT_SECRET` riêng và kín. Compose cũng công bố cổng 3000/3001/5432 trên mọi giao diện mạng của máy chạy, nên đừng để cấu hình mặc định chạy trên máy truy cập được từ ngoài.
+- **Khóa JWT mặc định là công khai.** Mã không còn khóa mặc định (thiếu `JWT_SECRET` thì backend không khởi động), nhưng các giá trị mẫu (`dev-secret` trong `docker-compose.yml`, `change-me-in-production` trong `.env.example`) nằm ngay trong repo này. Vì JWT nay mang `role`, ai biết khóa đều tự ký được token ADMIN. Với mọi thứ ngoài bản demo cục bộ, hãy đặt `JWT_SECRET` riêng và kín. Compose cũng công bố cổng 3000/3001/5432 trên mọi giao diện mạng của máy chạy, nên đừng để cấu hình mặc định chạy trên máy truy cập được từ ngoài.
 - **Seed chạy lại mỗi lần container backend khởi động.** Nó tạo lại `barista@brewlite.vn` / `admin@brewlite.vn` với đúng mật khẩu ghi ở bảng trên (mật khẩu đã đổi sẽ bị đặt lại khi khởi động lại). Seed chỉ tạo tài khoản và món còn thiếu: đơn, biên lai, điểm thưởng và tồn kho đã có được giữ qua các lần khởi động lại (làm lại từ đầu: xem mục "Dữ liệu demo"). Chỉ phù hợp cho demo.
 - **Giới hạn đã biết.** Vai trò được đọc từ JWT (hạn 7 ngày), nên đổi vai trò trong DB chỉ có hiệu lực sau khi token hết hạn hoặc đăng nhập lại. Quầy/Admin hủy đơn `PAID` thì hoàn tiền và hoàn kho nhưng không thu hồi điểm thưởng đã cộng (giống khi khách tự hủy).
 
