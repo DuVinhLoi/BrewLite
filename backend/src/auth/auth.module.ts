@@ -14,10 +14,12 @@ const UserRepo = useDb ? PrismaUserRepo : InMemoryUserRepo;
 
 @Module({
   imports: [
-    JwtModule.register({
-      // ponytail: khóa mặc định công khai (ai biết khóa tự ký được token ADMIN) — chỉ cho demo cục bộ, xem README "Lưu ý bảo mật"; chạy thật thì bắt buộc đặt JWT_SECRET riêng
-      secret: process.env.JWT_SECRET ?? 'brewlite-dev-secret',
-      signOptions: { expiresIn: '7d' },
+    JwtModule.registerAsync({
+      useFactory: () => {
+        const secret = process.env.JWT_SECRET;
+        if (!secret?.trim()) throw new Error('JWT_SECRET is required');
+        return { secret, signOptions: { expiresIn: '7d' } };
+      },
     }),
   ],
   controllers: [AuthController, UserController],

@@ -2,8 +2,8 @@ import { ConflictException, Injectable, NotFoundException, UnauthorizedException
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
-import { IUserRepository, Role, toRole } from '../contracts/user.contract';
-import { LoginDto, RegisterDto } from './dto';
+import { IUserRepository, Role, toRole, UserDto } from '../contracts/user.contract';
+import { LoginDto, RegisterDto, normalizeEmail } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -13,21 +13,32 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.users.findByEmail(dto.email);
+    const email = normalizeEmail(dto.email);
+    const existing = await this.users.findByEmail(email);
     if (existing) throw new ConflictException('Email already registered');
     const hash = await bcrypt.hash(dto.password, 10);
-    const user = await this.users.save({
-      id: randomUUID(),
-      email: dto.email,
-      passwordHash: hash,
-      loyaltyPoints: 0,
-      role: Role.CUSTOMER, // đăng ký công khai không bao giờ tạo nhân viên
-    });
+    let user: UserDto;
+    try {
+      user = await this.users.save({
+        id: randomUUID(),
+        email,
+        passwordHash: hash,
+        loyaltyPoints: 0,
+        role: Role.CUSTOMER, // đăng ký công khai không bao giờ tạo nhân viên
+      });
+    } catch (error) {
+      const failure = error as { code?: unknown; meta?: { target?: unknown } } | null;
+      const target = failure?.meta?.target;
+      if (failure?.code === 'P2002' && Array.isArray(target) && target.includes('email')) {
+        throw new ConflictException('Email already registered');
+      }
+      throw error;
+    }
     return { id: user.id, email: user.email };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.users.findByEmail(dto.email);
+    const user = await this.users.findByEmail(normalizeEmail(dto.email));
     if (!user || !(await bcrypt.compare(dto.password, user.passwordHash ?? ''))) {
       throw new UnauthorizedException('Invalid credentials');
     }

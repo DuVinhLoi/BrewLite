@@ -12,7 +12,10 @@ export class JwtAuthGuard implements CanActivate {
     const [scheme, token] = header.split(' ');
     if (scheme !== 'Bearer' || !token) throw new UnauthorizedException('Unauthorized');
     try {
-      const payload = await this.jwt.verifyAsync(token);
+      const payload = await this.jwt.verifyAsync<Record<string, unknown>>(token);
+      if (typeof payload.sub !== 'string' || !payload.sub.trim() || typeof payload.email !== 'string' || !payload.email.trim()) {
+        throw new UnauthorizedException('Unauthorized');
+      }
       // Token phát trước khi có role, hoặc role ngoài enum, coi là CUSTOMER
       req.user = { id: payload.sub, email: payload.email, role: toRole(payload.role) };
       return true;

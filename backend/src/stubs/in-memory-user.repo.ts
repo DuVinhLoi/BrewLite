@@ -24,7 +24,7 @@ export class InMemoryUserRepo implements IUserRepository {
   }
 
   async findByEmail(email: string, _tx?: TxContext): Promise<UserDto | null> {
-    for (const u of this.store.values()) if (u.email === email) return structuredClone(u);
+    for (const u of this.store.values()) if (u.email.toLowerCase() === email.toLowerCase()) return structuredClone(u);
     return null;
   }
 

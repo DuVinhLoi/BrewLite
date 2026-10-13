@@ -175,3 +175,16 @@ export async function getProducts(): Promise<{ data: Product[]; fromMock: boolea
   const list: RawProduct[] = Array.isArray(json) ? json : json.data ?? json.items ?? [];
   return { data: Array.isArray(list) ? list.map(normalize) : [], fromMock: false };
 }
+
+// Fresh detail data; failed requests never fall back to the demo menu.
+export async function getProduct(id: string): Promise<Product> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/products/${encodeURIComponent(id)}`, { cache: 'no-store' });
+  } catch {
+    throw new ApiError('Không kết nối được máy chủ để tải sản phẩm.', 0);
+  }
+  if (res.status === 404) throw new ApiError('Sản phẩm không tồn tại.', 404);
+  if (!res.ok) throw new ApiError(`Không tải được sản phẩm (mã ${res.status}).`, res.status);
+  return normalize(await res.json());
+}

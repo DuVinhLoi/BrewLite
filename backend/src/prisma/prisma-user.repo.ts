@@ -22,7 +22,7 @@ export class PrismaUserRepo implements IUserRepository {
   }
 
   async findByEmail(email: string, tx?: TxContext): Promise<UserDto | null> {
-    const u = await this.cx(tx).user.findUnique({ where: { email } });
+    const u = await this.cx(tx).user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
     return u && toUserDto(u);
   }
 

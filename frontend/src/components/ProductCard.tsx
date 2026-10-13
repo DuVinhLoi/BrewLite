@@ -83,7 +83,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </article>
       {/* Modal nằm ngoài <article>: rê chuột trên lớp phủ không kích hover của thẻ. Nếu nằm trong, transform khi hover
           làm thẻ thành khối chứa của lớp phủ position: fixed và modal bị co vào trong thẻ. */}
-      {customizing && <ProductDetailModal product={product} onClose={() => setCustomizing(false)} />}
+      {customizing && <ProductDetailModal product={product} loadFromApi={!!process.env.NEXT_PUBLIC_API_URL} onClose={() => setCustomizing(false)} />}
     </>
   );
 }
