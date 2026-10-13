@@ -1,0 +1,187 @@
+diff --git a/docs/planning/2026-10-09-barista-admin-plan.md b/docs/planning/2026-10-09-barista-admin-plan.md
+index 9455550..4b6e6fc 100644
+--- a/docs/planning/2026-10-09-barista-admin-plan.md
++++ b/docs/planning/2026-10-09-barista-admin-plan.md
+@@ -6,7 +6,7 @@
+ 
+ **Architecture:** Thêm cột `role` vào `User` (vẫn 5 thực thể), đưa `role` vào JWT, thêm `RolesGuard` + decorator `@Roles`. Backend thêm 3 endpoint (`GET /orders?status=`, `GET /admin/products`, `PATCH /admin/products/:id/stock`) và đổi luật `PATCH /orders/:id` theo vai trò; mọi đổi trạng thái vẫn qua `assertTransition`, mọi đổi tồn kho vẫn qua optimistic lock (`version`). Frontend thêm `lib/auth.ts` (đọc role từ JWT để điều hướng/ẩn hiện, server vẫn là nơi chặn quyền), 2 trang `/barista`, `/admin`, bỏ nút "Quầy (demo)".
+ 
+-**Tech Stack:** NestJS 10 + class-validator + @nestjs/jwt, Prisma 5 + PostgreSQL 16, Next.js 14 (app router, client components) + Zustand, Jest 29 (ts-jest), Vitest 3.
++**Tech Stack:** NestJS 10 + class-validator + @nestjs/jwt, Prisma 6 + PostgreSQL 16, Next.js 14 (app router, client components) + Zustand, Jest 29 (ts-jest), Vitest 3.
+ 
+ ## Quyết định đã chốt (grilling 2026-10-09)
+ 
+@@ -19,9 +19,12 @@
+ | Q5 | Biểu đồ Use Case gốc có Barista + Admin, gắn nhãn "mở rộng ngoài MVP (đề §3.2)", mỗi UC mới có sơ đồ tuần tự |
+ | Q6 | Làm trên nhánh riêng trước demo; chỉ merge khi test xanh + chạy được trên stack thật |
+ 
++**Sửa sau review plan (2026-10-09, đối chiếu code `96fbf9a`):** (1) Global Constraints: bỏ điều kiện chờ 2 file docs, thêm worktree + `npm ci`/`prisma generate`; (2) Task 1: số test mới là 8, không phải 7; (3) Task 3: quầy chỉ hủy được đơn `PAID` (đơn `PENDING`/`PAYMENT_FAILED` của khách → 403), để code khớp câu "UC12 chỉ từ `PAID`" ở Task 8; (4) Task 5: Header đọc lại role khi đổi trang (layout App Router không mount lại sau `router.push`), dọn import `demoCounterEnabled`/`vi`/`afterEach` trong `order-status.test.ts`; (5) Task 7: thông báo 409/400 ở `/admin` không bị `load()` xóa mất; (6) Task 9: code cụ thể cho script 2 tài khoản, cảnh báo cổng/compose project khi chạy từ worktree, bước demo "món hết hàng" phải tự đặt 0 trước (seed để mọi món stock 10 và đặt lại mỗi lần backend khởi động).
++
+ ## Global Constraints
+ 
+-- Nhánh: `feat/barista-admin` tạo từ `develop` **sau khi** 2 file docs người dùng đang sửa dở (`docs/use-case-specifications.md`, `docs/user-sequence-specifications.md`) đã được người dùng commit hoặc cho phép đưa vào commit Task 8. Bước đầu tiên: `git status --short` — còn thay đổi chưa commit thì DỪNG và hỏi người dùng.
++- Làm trong worktree `D:/CNPM/BrewLite-wt-barista-admin`, nhánh `feat/barista-admin` (tạo từ `develop` @ `96fbf9a`; 2 file docs trước đây còn sửa dở đã commit ở `a7a3f98`). KHÔNG sửa gì ở checkout chính `D:/CNPM/BrewLite` (session khác đang làm việc ở đó). Bước đầu tiên: `git status --short` trong worktree — ngoài chính file plan này mà còn thay đổi chưa commit thì DỪNG và hỏi người dùng.
++- Worktree có `node_modules` riêng: lần đầu chạy `npm ci` ở `backend/` và `frontend/`, rồi `npx prisma generate` ở `backend/` (thiếu bước này thì suite `pg-payment` báo lỗi kiểu thay vì skip).
+ - KHÔNG merge, KHÔNG push. Mỗi task 1 commit, message tiếng Việt không dấu hoặc có dấu như các commit trước, cuối message có dòng `Co-Authored-By` theo quy ước phiên đang chạy.
+ - Đúng 5 thực thể (`User, Product, Order, OrderItem, Payment`); chỉ thêm trường `User.role`, không thêm bảng.
+ - Mọi đổi trạng thái đơn đi qua `assertTransition` (`backend/src/state-machine/order-state.machine.ts`, KHÔNG sửa bảng `ALLOWED`). Mọi đổi `Product.stock` tăng `version`.
+@@ -276,7 +279,7 @@ và sửa dòng `console.log` thành `'seeded: u1 (CUSTOMER), staff-barista, sta
+ - [ ] **Step 6: Chạy test, xác nhận xanh**
+ 
+ Run: `cd backend && npx jest && npx tsc --noEmit -p .`
+-Expected: toàn bộ PASS (68 cũ + 7 mới), tsc exit 0.
++Expected: toàn bộ PASS (68 cũ + 8 mới = 76 pass / 1 skip: 3 test trong `auth.spec.ts` + 5 test trong `roles.spec.ts`, `test.each` tính 2), tsc exit 0.
+ 
+ - [ ] **Step 7: Commit**
+ 
+@@ -488,7 +491,7 @@ git commit -m "feat(order): hang doi quay GET /orders?status= cho BARISTA/ADMIN,
+ 
+ **Interfaces:**
+ - Consumes: `Actor`, `Role` (Task 1).
+-- Produces: `advanceOrder(actor: Actor, orderId: string, status: OrderStatus)`; `cancelOrderAs(actor: Actor, orderId: string)`. Luật: `PREPARING/READY/COMPLETED` chỉ BARISTA/ADMIN (CUSTOMER → 403 `Only staff can advance orders`); `CANCELLED`: CUSTOMER chỉ đơn của mình, BARISTA/ADMIN mọi đơn; `assertTransition` vẫn quyết định thứ tự.
++- Produces: `advanceOrder(actor: Actor, orderId: string, status: OrderStatus)`; `cancelOrderAs(actor: Actor, orderId: string)`. Luật: `PREPARING/READY/COMPLETED` chỉ BARISTA/ADMIN (CUSTOMER → 403 `Only staff can advance orders`); `CANCELLED`: CUSTOMER chỉ đơn của mình; BARISTA/ADMIN đơn của bất kỳ ai nhưng **chỉ khi đơn đang `PAID`** (UC12) — đơn `PENDING`/`PAYMENT_FAILED` là đơn khách đang thanh toán dở, quầy hủy → 403 `Staff can only cancel paid orders`; từ `PREPARING` trở đi `assertTransition` chặn 400 như cũ.
+ 
+ - [ ] **Step 1: Sửa test sang luật mới (đỏ)**
+ 
+@@ -539,6 +542,17 @@ Thêm test mới vào cuối `describe`:
+     await s.svc.advanceOrder(barista, 'o1', OrderStatus.PREPARING);
+     await expect(s.svc.cancelOrderAs(barista, 'o1')).rejects.toMatchObject({ status: 400 });
+   });
++
++  test('quầy KHÔNG hủy được đơn PENDING của khách (đang thanh toán dở) → 403, đơn giữ nguyên', async () => {
++    const s = setup();
++    await s.products.save({ id: 'p1', name: 'Latte', price: 20000, stock: 5, version: 1 });
++    await s.orders.save({
++      id: 'o1', userId: 'u1', status: OrderStatus.PENDING, total: 20000,
++      items: [{ productId: 'p1', quantity: 1, unitPrice: 20000 }], createdAt: new Date(),
++    });
++    await expect(s.svc.cancelOrderAs(barista, 'o1')).rejects.toBeInstanceOf(ForbiddenException);
++    expect((await s.orders.findById('o1'))!.status).toBe(OrderStatus.PENDING);
++  });
+ ```
+ 
+ - [ ] **Step 2: Chạy, xác nhận đỏ**
+@@ -568,6 +582,9 @@ Expected: FAIL (kiểu `Actor` không khớp `string`; test khách tự tiến 
+     const order = await this.orders.findById(orderId);
+     if (!order) throw new NotFoundException('Order not found');
+     if (actor.role === Role.CUSTOMER && order.userId !== actor.id) throw new ForbiddenException('Not your order');
++    // UC12: quầy chỉ hủy đơn đã trả (hết nguyên liệu); PREPARING trở đi để assertTransition trả 400 như cũ
++    if (actor.role !== Role.CUSTOMER && (order.status === OrderStatus.PENDING || order.status === OrderStatus.PAYMENT_FAILED))
++      throw new ForbiddenException('Staff can only cancel paid orders');
+     return this.cancelOrder(orderId);
+   }
+ ```
+@@ -855,7 +872,7 @@ test('homeFor: barista → /barista, admin → /admin, khách → /', () => {
+ });
+ ```
+ 
+-Trong `frontend/src/lib/order-status.test.ts`: xóa mọi test của `demoCounterEnabled` (tìm bằng `grep -n demoCounterEnabled`).
++Trong `frontend/src/lib/order-status.test.ts`: xóa cả khối `describe('demoCounterEnabled (NEXT_PUBLIC_DEMO_COUNTER)', …)` (kèm `afterEach(() => vi.unstubAllEnvs())` bên trong), bỏ `demoCounterEnabled,` khỏi danh sách import từ `./order-status`, và bỏ `afterEach`, `vi` khỏi dòng `import { … } from 'vitest'` (2 tên này chỉ khối đó dùng). Kiểm: `grep -n "demoCounterEnabled\|vi\.\|afterEach" frontend/src/lib/order-status.test.ts` ra rỗng.
+ 
+ - [ ] **Step 2: Chạy, xác nhận đỏ**
+ 
+@@ -904,11 +921,14 @@ export const homeFor = (role: Role): string => HOME[role];
+         router.push(homeFor(roleFromToken(data.accessToken) ?? 'CUSTOMER'));
+ ```
+ 
+-`frontend/src/components/Header.tsx`: import `useEffect, useState` và `{ getToken, roleFromToken, type Role }`; trong component:
++`frontend/src/components/Header.tsx`: import `useEffect, useState` từ `react`, `usePathname` từ `next/navigation` và `{ getToken, roleFromToken, type Role }` từ `@/lib/auth`; trong component:
+ 
+ ```ts
++  // Header nằm trong layout: App Router không mount lại layout sau router.push('/barista'),
++  // nên đọc lại role mỗi lần đổi trang (không thì phải F5 mới thấy link Quầy/Kho sau khi đăng nhập).
++  const pathname = usePathname();
+   const [role, setRole] = useState<Role | null>(null);
+-  useEffect(() => setRole(roleFromToken(getToken())), []);
++  useEffect(() => setRole(roleFromToken(getToken())), [pathname]);
+ ```
+ 
+ và trong `<nav>` trước link "Lịch sử":
+@@ -1371,8 +1391,9 @@ export default function AdminPage() {
+       setDraft((d) => ({ ...d, [p.id]: '' }));
+       setError(null);
+     } catch (e) {
+-      setError(e instanceof Error ? e.message : 'Lỗi không xác định');
++      // tải lại TRƯỚC rồi mới hiện lỗi: load() thành công gọi setError(null), làm sau sẽ xóa mất thông báo 409/400
+       await load();
++      setError(e instanceof Error ? e.message : 'Lỗi không xác định');
+     } finally {
+       setBusyId(null);
+     }
+@@ -1467,7 +1488,7 @@ Sửa đúng những chỗ đang lệch quyết định Q1–Q5 (người dùng
+    - UC06: "Hủy đơn `PENDING` / `PAYMENT_FAILED` / `PAID` (nút Hủy ở `/history`, `PAID` có hoàn tiền + hoàn kho) hoặc thanh toán lại đơn `PAYMENT_FAILED`. Khách **không** tự tiến đơn (403)."
+    - UC08: căn cứ `GET /orders?status=PAID,PREPARING,READY` (JWT + BARISTA/ADMIN), màn `/barista` 3 cột; sơ đồ `§2.7`.
+    - UC09/UC10/UC11: căn cứ `PATCH /orders/:id {PREPARING|READY|COMPLETED}` chỉ BARISTA/ADMIN, nút Nhận pha / Pha xong / Đã giao; sơ đồ `§2.7`.
+-   - UC12: tác nhân `Barista`, `Mock Gateway`; `PATCH /orders/:id {CANCELLED}` bởi BARISTA/ADMIN, chỉ từ `PAID` (state machine chặn từ `PREPARING`), hoàn đúng số thực thu + hoàn kho; sơ đồ `§2.7`.
++   - UC12: tác nhân `Barista`, `Mock Gateway`; `PATCH /orders/:id {CANCELLED}` bởi BARISTA/ADMIN, chỉ từ `PAID` (đơn chưa trả `PENDING`/`PAYMENT_FAILED` → 403, từ `PREPARING` state machine chặn 400), hoàn đúng số thực thu + hoàn kho; sơ đồ `§2.7`.
+    - UC13, UC15: cột căn cứ "**Chưa hiện thực** (backlog)"; cột sơ đồ "—".
+    - UC14: "Kiểm & điều chỉnh tồn kho món: `GET /admin/products` (kể cả món hết hàng), `PATCH /admin/products/:id/stock {mode: set|delta, value, version}` chỉ ADMIN, optimistic lock theo `version` (409 khi kho vừa đổi), không âm (400). Không có bảng nguyên liệu." ; sơ đồ `§2.8`.
+ 5. Bản 2: đổi câu mô tả "khớp 100% với các sơ đồ tuần tự" → "trích phân hệ Khách hàng từ Bản 1 (gốc), dùng khi thuyết trình MVP".
+@@ -1635,11 +1656,56 @@ git commit -m "docs: dong bo Barista/Admin - use case goc (UC08-UC12, UC14 hien
+ 
+ - [ ] **Step 1: Script dùng 2 tài khoản**
+ 
+-Trong `scripts/demo-state-machine.sh`: giữ đăng nhập `demo@brewlite.vn` (khách) để tạo đơn + thanh toán; thêm biến `STAFF_EMAIL="${STAFF_EMAIL:-barista@brewlite.vn}"`, `STAFF_PASSWORD="${STAFF_PASSWORD:-barista1234}"`, đăng nhập lấy `STAFF_TOKEN`; các bước `PATCH PREPARING/READY/COMPLETED` và bước cố tình sai `COMPLETED → CANCELLED` gửi bằng `STAFF_TOKEN`. Thêm 1 bước trước đó: khách tự `PATCH {PREPARING}` phải ra **403** (`expect "$code" 403 "khách tự tiến đơn"`). Đọc lại trạng thái (`GET /orders/:id`) bằng token khách.
++Trong `scripts/demo-state-machine.sh`: giữ đăng nhập `demo@brewlite.vn` (khách) để tạo đơn + thanh toán; `$TOKEN` vẫn là token khách suốt script vì `state()`/`step()` đọc lại trạng thái bằng `GET /orders/:id` (chỉ chủ đơn đọc được, quầy gọi sẽ 403). Lời gọi của quầy dùng tiền tố `TOKEN="$STAFF_TOKEN" call …` (bash chỉ đổi biến trong lần gọi hàm đó).
++
++Thêm dưới 2 dòng `EMAIL=`/`PASSWORD=` (và thêm `STAFF_EMAIL=... STAFF_PASSWORD=...` vào dòng chú thích "Biến:" ở đầu file):
++
++```bash
++STAFF_EMAIL="${STAFF_EMAIL:-barista@brewlite.vn}"
++STAFF_PASSWORD="${STAFF_PASSWORD:-barista1234}"
++```
++
++Thêm ngay sau khối "# 1. Đăng nhập" (sau dòng `echo "[0] Đăng nhập $EMAIL …"`):
++
++```bash
++code="$(call POST /auth/login "{\"email\":\"$STAFF_EMAIL\",\"password\":\"$STAFF_PASSWORD\"}")"
++expect "$code" 200 "Đăng nhập $STAFF_EMAIL"
++STAFF_TOKEN="$(json_get accessToken)"
++[ -n "$STAFF_TOKEN" ] || fail "Không lấy được accessToken quầy"
++echo "[0] Đăng nhập $STAFF_EMAIL             -> có JWT (BARISTA)"
++```
++
++Thay toàn bộ khối "# 5. Tiến đơn như "quầy"…" và "# 6. Chuyển sai có chủ đích…" (tới hết `step 7 …`) bằng:
++
++```bash
++# 5. Khách tự tiến đơn phải bị chặn: chỉ quầy/quản trị được tiến đơn (UC09–UC11)
++code="$(call PATCH "/orders/$ORDER_ID" '{"status":"PREPARING"}')"
++expect "$code" 403 "khách tự tiến đơn"
++echo "[3] Khách PATCH {PREPARING}             -> HTTP 403 (chặn đúng): $(json_get message)"
++
++# 6. Quầy tiến đơn: PAID → PREPARING → READY → COMPLETED
++n=4
++for next in PREPARING READY COMPLETED; do
++  code="$(TOKEN="$STAFF_TOKEN" call PATCH "/orders/$ORDER_ID" "{\"status\":\"$next\"}")"
++  expect "$code" 200 "Quầy PATCH $next"
++  step "$n" "Quầy PATCH /orders/:id {$next}" "$next"
++  n=$((n + 1))
++done
++
++# 7. Chuyển sai có chủ đích: COMPLETED là trạng thái cuối nên hủy phải bị chặn (kể cả quầy)
++code="$(TOKEN="$STAFF_TOKEN" call PATCH "/orders/$ORDER_ID" '{"status":"CANCELLED"}')"
++expect "$code" 400 "Quầy PATCH CANCELLED trên đơn COMPLETED"
++echo "[7] Quầy PATCH CANCELLED trên COMPLETED -> HTTP 400 (chặn đúng): $(json_get message)"
++step 8 "Trạng thái sau khi bị chặn" COMPLETED
++```
++
++và sửa dòng `echo "== Xong: …"` cuối file thành `echo "== Xong: PENDING → PAID, khách tự tiến đơn 403, quầy PREPARING → READY → COMPLETED, chuyển sai bị chặn 400 =="`.
+ 
+ - [ ] **Step 2: Build lại stack (migration + seed chạy khi container khởi động)**
+ 
+-Run: `docker compose up -d --build` rồi chờ `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/products` ra `200`.
++Chạy từ worktree thì compose đặt tên project theo thư mục (`brewlite-wt-barista-admin`), tức là DB mới, trống, và **cùng cổng 5432/3000/3001** với stack của checkout chính. Vì vậy trước tiên kiểm `docker ps`: nếu stack của checkout chính đang chạy thì hỏi người dùng trước khi dừng nó (`docker compose -p brewlite down` ở `D:/CNPM/BrewLite`, giữ volume).
++
++Run (trong worktree): `docker compose up -d --build` rồi chờ `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/products` ra `200`.
+ Kiểm: `docker compose exec -T db psql -U brewlite -d brewlite -c 'select email, role from "User" order by email;'` có `admin@brewlite.vn | ADMIN`, `barista@brewlite.vn | BARISTA`, `demo@brewlite.vn | CUSTOMER`.
+ 
+ - [ ] **Step 3: Chạy script**
+@@ -1661,7 +1727,7 @@ curl -s -o /dev/null -w "version cũ: %{http_code}\n" -X PATCH -H "Content-Type:
+ 
+ - [ ] **Step 5: Kiểm thử bằng mắt (người dùng)**
+ 
+-Trên `http://localhost:3001`: (1) khách đặt + trả 1 đơn → `/history` KHÔNG có nút "Quầy (demo)"; (2) đăng nhập barista → tự vào `/barista`, đơn ở cột "Chờ pha", bấm Nhận pha → Pha xong → Đã giao; `/history` của khách thấy thanh tiến trình đi tới "Hoàn tất"; (3) đăng nhập admin → `/admin`, +10 một món hết hàng → món hiện lại ở menu khách.
++Trên `http://localhost:3001`: (1) khách đặt + trả 1 đơn → `/history` KHÔNG có nút "Quầy (demo)"; (2) đăng nhập barista → tự vào `/barista`, đơn ở cột "Chờ pha", bấm Nhận pha → Pha xong → Đã giao; `/history` của khách thấy thanh tiến trình đi tới "Hoàn tất"; (3) đăng nhập admin → `/admin`; seed để mọi món stock 10 nên phải tạo món hết hàng trước: nhập `0` cho "Trà đào" → "Lưu" → menu khách không còn món này → bấm "+10" → món hiện lại ở menu khách. Lưu ý: seed chạy lại mỗi lần container backend khởi động và đặt lại `stock = 10, version = 1` cho `p1`–`p4`, nên số chỉnh tay mất sau khi restart (đúng thiết kế seed demo, không phải lỗi).
+ 
+ - [ ] **Step 6: Toàn bộ test + commit**
+ 

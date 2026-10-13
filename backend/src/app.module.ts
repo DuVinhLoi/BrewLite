@@ -1,0 +1,9 @@
+import { Module } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { PaymentModule } from './payment/payment.module';
+import { ProductModule } from './product/product.module';
+import { OrderModule } from './order/order.module';
+
+@Module({ imports: [PrismaModule, AuthModule, PaymentModule, ProductModule, OrderModule] })
+export class AppModule {}

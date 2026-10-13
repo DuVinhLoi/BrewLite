@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: brewlite
+      POSTGRES_PASSWORD: brewlite
+      POSTGRES_DB: brewlite
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brewlite -d brewlite"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      # Luôn nối service `db` trong mạng compose. KHÔNG đọc DATABASE_URL từ .env: biến đó trong .env.example là
+      # localhost (cho chạy rời npm run start:dev), compose thay ${VAR} từ .env nên dùng nó ở đây thì backend không tới được DB.
+      DATABASE_URL: postgresql://brewlite:brewlite@db:5432/brewlite
+      JWT_SECRET: ${JWT_SECRET:-dev-secret}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
+      # Demo nhánh thanh toán lỗi: CARD hoặc WALLET thì phương thức đó luôn bị cổng giả từ chối; rỗng = tắt
+      MOCK_GATEWAY_DECLINE_METHOD: ${MOCK_GATEWAY_DECLINE_METHOD:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+        NEXT_PUBLIC_PAYMENT_MODE: ${NEXT_PUBLIC_PAYMENT_MODE:-api}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
