@@ -1,6 +1,6 @@
 # BrewLite — đặt cà phê không tiền mặt (BTL Công nghệ Phần mềm, SGU)
 
-> Khách chọn món → giỏ hàng → thanh toán Ví/Thẻ → nhận mã đơn tại quầy. Spec đầy đủ: `docs/BrewLite-CongNghePhanMem-fixed.md`, sequence chi tiết: `docs/user-sequence-specifications.md`.
+> Khách chọn món → giỏ hàng → thanh toán Ví/Thẻ → nhận mã đơn tại quầy. Spec đầy đủ: `docs/BrewLite-CongNghePhanMem-fixed.md`, sequence chi tiết: `docs/user-sequence-specifications.md`, activity: `docs/activity-diagrams.md`, class diagram: `docs/class-diagrams.md`.
 
 | Thành phần | Công nghệ | Chạy local |
 |---|---|---|
