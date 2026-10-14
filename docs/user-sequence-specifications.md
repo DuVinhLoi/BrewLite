@@ -401,28 +401,28 @@ participant "Máy chủ xử lý\n(Backend)" as BE
 database "PostgreSQL\n(qua Prisma)" as DB
 participant "Cổng thanh toán\n(Mock Gateway)" as Gateway
 
-User -> FE : Tôi muốn thanh toán giỏ hàng này
+User -> FE : Bấm "Thanh toán" ở trang Giỏ hàng
 activate FE
-FE --> User : Mở màn Thanh toán (chưa tạo đơn)
+FE --> User : Hiện màn Thanh toán (chưa tạo đơn)
 deactivate FE
 
 == BƯỚC 1: ÁP MÃ GIẢM GIÁ (UC05a - TÙY CHỌN EXTEND) ==
 opt Khách hàng có mã khuyến mãi
-    User -> FE : Tôi có mã "BREWLITE10", áp giúp tôi nhé
+    User -> FE : Nhập mã "BREWLITE10", bấm "Áp dụng"
     activate FE
-    FE -> FE : Tự kiểm tra mã và tính lại tiền còn phải trả (tạm tính)
-    FE --> User : Trừ 10% rồi nhé, còn phải trả 110.700đ
+    FE -> FE : Kiểm mã và tính lại tiền phải trả (tạm tính)
+    FE --> User : Hiện "Đã áp BREWLITE10: −12.300đ", thực trả 110.700đ
     deactivate FE
 end
 
 == BƯỚC 2a: TẠO ĐƠN HÀNG (UC04) - CHẠY KHI BẤM "XÁC NHẬN TRẢ" ==
-User -> FE : Tôi chọn trả bằng ví, bấm "Xác nhận trả"
+User -> FE : Bấm "Xác nhận trả" (chọn Ví)
 activate FE
 opt Chưa có đơn (lần bấm đầu; lần thử lại đã giữ orderId thì bỏ qua)
     FE -> BE : POST /orders (giỏ hàng: món, số lượng, size, topping)\nkèm Idempotency-Key của đơn
     note right of FE #fef3c7 : Gửi kèm token đăng nhập.\nKey tạo đơn giữ nguyên tới khi rời màn Thanh toán\n(khác key của POST /payments).\nLỗi ở bước này (thiếu/sai token 401, token BARISTA / ADMIN 403 Insufficient role do RolesGuard chạy sau JwtAuthGuard và trước mọi bước nghiệp vụ, 400, 404, 422) thì dừng:\nkhông gọi POST /payments, lần bấm sau tạo đơn lại.\n401 còn xóa token và chuyển về /login?next=/cart (giỏ và đơn đang trả dở giữ nguyên;\nđăng nhập lại cùng tài khoản thì trả tiếp đúng đơn đó)
     activate BE
-    BE -> DB : Kiểm xem Idempotency-Key này đã tạo đơn chưa
+    BE -> DB : Tìm đơn đã tạo bằng Idempotency-Key này
     activate DB
     DB --> BE : Đơn đã tạo bằng key này (nếu có)
     deactivate DB
@@ -435,20 +435,20 @@ opt Chưa có đơn (lần bấm đầu; lần thử lại đã giữ orderId th
         activate DB
         DB --> BE : Giá gốc các món
         deactivate DB
-        BE -> BE : Tự tính giá: giá gốc + phụ thu size\n+ topping (bỏ qua giá client gửi)
+        BE -> BE : Tính giá từng dòng: giá gốc + phụ thu size + topping\n(bỏ qua giá client gửi)
         note right of BE #fef3c7 : Thiếu size -> M\nGiỏ rỗng hoặc > 20 dòng, quantity ngoài 1..99,\nsize ngoài S/M/L -> 400 (DTO)\nTopping lạ -> 400, món lạ -> 404\nTổng đơn > 2147483647 -> 400
-        BE -> DB : Lưu đơn mới, đơn đang chờ thanh toán (PENDING)
-        note right of DB #fef3c7 : Cột idempotencyKey là duy nhất:\n2 request song song cùng key -> bên thua\nvi phạm chỉ số, đọc lại đơn bên thắng -> 200
+        BE -> DB : Lưu đơn mới ở trạng thái Chờ thanh toán (PENDING)
         activate DB
-        DB --> BE : Xong rồi, đơn số #1042 đây nhé
+        note right of DB #fef3c7 : Cột idempotencyKey là duy nhất:\n2 request song song cùng key -> bên thua\nvi phạm chỉ số, đọc lại đơn bên thắng -> 200
+        DB --> BE : Đơn #1042 đã lưu
         deactivate DB
-        BE --> FE : 201 Tạo đơn thành công, mã đơn là #1042
+        BE --> FE : 201 Đã tạo đơn #1042 (PENDING)
     end
     deactivate BE
 end
 
 == BƯỚC 2b: THANH TOÁN KHÔNG TIỀN MẶT (UC05) - GỌI NGAY SAU 2a ==
-FE -> BE : POST /payments: thanh toán đơn #1042 bằng ví
+FE -> BE : POST /payments (đơn #1042, trả bằng Ví)
 note right of FE #fef3c7 : Gửi kèm Idempotency-Key trả tiền (1 key cho cả phiên\nmàn Thanh toán, dùng lại khi thử lại) và mã giảm giá (nếu có)
 activate BE
 
@@ -460,17 +460,17 @@ else Token hợp lệ nhưng là BARISTA / ADMIN (RolesGuard, @Roles(CUSTOMER))
     note right of BE #fef3c7 : Dừng trước mọi bước nghiệp vụ: không khóa, không đọc đơn,\nkhông gọi cổng thanh toán. Giao diện không cho nhân viên tới màn này\n(trang khách bị chuyển về trang nhà), nên chỉ gặp khi gọi API tay
 else Token hợp lệ, vai trò CUSTOMER
     note right of BE #fef3c7 : Body sai DTO / thiếu hoặc quá dài (> 255 ký tự)\nheader Idempotency-Key -> 400, dừng trước khi vào khóa
-    BE -> BE : Xếp hàng theo khóa trong tiến trình\n(theo Idempotency-Key, rồi theo orderId)
+    BE -> BE : Xếp hàng chờ theo khóa trong tiến trình\n(withLock: Idempotency-Key, rồi orderId)
     note right of BE #fef3c7 : Request song song cùng key\nhoặc cùng đơn phải chờ nhau,\nrequest sau đọc lại kết quả mới
 
     alt Không có đơn hoặc không phải chủ đơn (đọc đơn trước khi xét trùng lặp)
         BE --> FE : 404 Không có đơn / 403 Không phải đơn của bạn
         note right of BE #fef3c7 : Người lạ không thanh toán hộ, cũng không\nđọc được biên lai của người khác bằng key
     else Đúng chủ đơn
-        BE -> DB : Kiểm tra giúp xem mã giao dịch này đã dùng chưa
-        note right of DB #fef3c7 : Tìm đúng 1 biên lai theo mã,\nkhóa này là duy nhất trong bảng
+        BE -> DB : Tìm biên lai theo Idempotency-Key
         activate DB
-        DB --> BE : Đây là kết quả kiểm tra mã giao dịch
+        note right of DB #fef3c7 : Tìm đúng 1 biên lai theo mã,\nkhóa này là duy nhất trong bảng
+        DB --> BE : Biên lai theo key (nếu có)
         deactivate DB
 
         alt Key đã có biên lai, nhưng của đơn khác (không phải #1042)
@@ -481,62 +481,76 @@ else Token hợp lệ, vai trò CUSTOMER
             BE --> FE : 404 Không có đơn kia / 403 Đơn kia không phải của bạn\n/ 422 Key đã dùng cho đơn khác (cùng chủ)
             note right of BE #fef3c7 : Đơn kia cũng phải của người gọi, nếu không -> 403;\nđúng chủ nhưng khác đơn -> 422: không trả biên lai\nđơn cũ như thể đơn này đã trả, không charge
         else Đơn này đã thu tiền rồi (Yêu cầu trùng lặp - Idempotent Cache Hit)
-            BE --> FE : Đơn này trả rồi nhé, gửi lại kết quả cũ, không thu thêm
+            BE --> FE : 200 Trả lại biên lai cũ, không thu thêm tiền
             note right of BE #fef3c7 : Trả HTTP 200, tuyệt đối\nkhông gọi lại cổng thanh toán.\nBấm lại sau khi mất phản hồi (cùng key)\ncũng vào nhánh này, nhận lại biên lai
-            FE --> User : Đơn của bạn đã thanh toán rồi, đây là biên lai nhé
+            FE --> User : Hiện "Đặt hàng thành công" kèm biên lai đơn #1042
         else Đây là lần thanh toán đầu tiên (Cache Miss)
             note over BE #fef3c7
                 Tự kiểm tra mã "BREWLITE10" trong máy:
                 đúng mã thì trừ floor(10% x tổng đơn server), sai thì thôi
             end note
-            BE -> BE : Tự kiểm tra mã giảm giá và tính tiền còn lại
-            BE -> BE : Kiểm trạng thái đơn: chỉ PENDING / PAYMENT_FAILED được trả
+            BE -> BE : Kiểm mã giảm giá và tính số tiền phải thu
+            BE -> BE : Kiểm đơn đang ở Chờ thanh toán hoặc Thanh toán lỗi\n(PENDING / PAYMENT_FAILED)
             note right of BE #fef3c7 : Đơn đã PAID / PREPARING / ... mà gửi key mới\n-> assertTransition ném 400, không gọi cổng thanh toán
             opt Đơn đang PAYMENT_FAILED (thử lại, UC06 KB1)
-                BE -> DB : Đưa đơn về PENDING (assertTransition PAYMENT_FAILED -> PENDING)
+                BE -> DB : Đưa đơn về Chờ thanh toán\n(assertTransition PAYMENT_FAILED -> PENDING)
+                activate DB
+                deactivate DB
             end
 
-            BE -> Gateway : Nhờ trừ giúp tiền của khách qua ví nhé
+            BE -> Gateway : Trừ tiền qua Ví (charge)
             activate Gateway
 
             alt Trừ tiền thất bại
-                Gateway --> BE : Trừ tiền thất bại rồi nhé
-                BE -> BE : Tự chuyển đơn sang thanh toán lỗi
-                BE -> DB : Lưu giúp đơn sang trạng thái thanh toán lỗi nhé
-                BE --> FE : 400 Thanh toán lỗi rồi, giỏ hàng giữ nguyên nhé
-                FE -> FE : Lưu orderId #1042 + 2 key vào sessionStorage\n(theo giỏ): thử lại, kể cả sau reload,\nchỉ gọi POST /payments (cùng key)
-                FE --> User : Thẻ/ví lỗi rồi, bạn thử lại nhé (giỏ vẫn còn)
+                Gateway --> BE : Trừ tiền thất bại
+                deactivate Gateway
+                BE -> BE : Kiểm đơn được chuyển sang Thanh toán lỗi\n(assertTransition PENDING -> PAYMENT_FAILED)
+                BE -> DB : Lưu đơn sang Thanh toán lỗi (PAYMENT_FAILED)
+                activate DB
+                deactivate DB
+                BE --> FE : 400 Payment failed: cổng từ chối, giỏ hàng giữ nguyên
+                FE -> FE : Lưu mã đơn và 2 key vào sessionStorage để thử lại
+                note right of FE #fef3c7 : Theo giỏ (orderId #1042): thử lại, kể cả sau reload,\nchỉ gọi POST /payments (cùng key)
+                FE --> User : Hiện "Thanh toán thất bại. Giỏ hàng được giữ nguyên. Bạn có thể thử lại."
             else Trừ tiền thành công
-                Gateway --> BE : Trừ tiền thành công rồi nhé
-                BE -> BE : Tự kiểm tra xem đơn có được chuyển\ntừ chờ thanh toán sang đã thanh toán không
+                activate Gateway
+                Gateway --> BE : Trừ tiền thành công
+                deactivate Gateway
+                BE -> BE : Kiểm đơn được chuyển sang Đã thanh toán\n(assertTransition PENDING -> PAID)
 
                 group 1 DB transaction (runInTransaction): thiếu một là rollback hết
-                    BE -> DB : Trừ giúp tồn kho các món trong đơn nhé
+                    activate DB
+                    BE -> DB : Trừ tồn kho từng món trong đơn
                     note over BE, DB #fef3c7
                         Mỗi món trừ theo kiểu "đúng phiên bản mới trừ":
                         sai phiên bản hoặc hết hàng thì không trừ.
                         Kẹt thì thử lại 3 lần, vẫn kẹt thì ném 409
                         -> cả transaction rollback
                     end note
-                    BE -> DB : Đổi giúp đơn #1042 sang đã thanh toán nhé
-                    BE -> DB : Cộng giúp điểm tích lũy cho khách nhé
-                    BE -> DB : Lưu giúp biên lai thanh toán kèm mã chống thu trùng nhé
+                    BE -> DB : Chuyển đơn #1042 sang Đã thanh toán (PAID)
+                    BE -> DB : Cộng điểm tích lũy cho khách
+                    BE -> DB : Lưu biên lai thanh toán kèm Idempotency-Key
+                    deactivate DB
                 end
 
                 alt Lỗi trong transaction, đã rollback (kẹt kho 409 / món mất 404 / lỗi DB 500)
-                    BE -> Gateway : Hoàn lại đúng số vừa trừ (refund)
-                    BE -> DB : Lưu đơn sang thanh toán lỗi (PAYMENT_FAILED)
-                    BE --> FE : Ném lại lỗi gốc: 409 / 404 / 500
+                    BE -> Gateway : Hoàn lại đúng số vừa trừ (refund, ngoài transaction)
+                    activate Gateway
+                    deactivate Gateway
+                    BE -> DB : Lưu đơn sang Thanh toán lỗi (PAYMENT_FAILED)
+                    activate DB
+                    deactivate DB
+                    BE --> FE : Trả lại lỗi gốc: 409 / 404 / 500
                     note right of BE #fef3c7 : Nếu chính bước hoàn tiền hoặc ghi PAYMENT_FAILED lỗi\nthì bỏ qua (chưa có sổ đối soát)
-                    FE -> FE : Lưu orderId #1042 + 2 key vào sessionStorage để thử lại
-                    FE --> User : 409: "Món đã hết hàng, tiền đã được hoàn lại";\nmã khác: "Thanh toán thất bại (mã ...)" (giỏ vẫn còn)
+                    FE -> FE : Lưu mã đơn và 2 key vào sessionStorage để thử lại
+                    FE --> User : Hiện thông báo lỗi theo mã (giỏ vẫn còn)
+                    note right of FE #fef3c7 : 409: "Món đã hết hàng, tiền đã được hoàn lại";\nmã khác: "Thanh toán thất bại (mã ...)"
                 else Transaction thành công
-                    BE --> FE : Thanh toán xong rồi nhé, đơn #1042 đã được trả tiền\n(kèm orderId, amount, discount, loyaltyPointsEarned)
+                    BE --> FE : 201 Đã trả tiền đơn #1042 (PAID)\n(kèm orderId, amount, discount, loyaltyPointsEarned)
                     note right of BE #fef3c7 : Trả HTTP 201 cho lần thanh toán đầu tiên
-                    FE --> User : Xong rồi, mời bạn xem biên lai đơn #1042 nhé
+                    FE --> User : Hiện "Đặt hàng thành công" kèm biên lai đơn #1042
                 end
             end
-            deactivate Gateway
         end
     end
 end
