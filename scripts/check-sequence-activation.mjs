@@ -26,8 +26,14 @@ if (!file) {
 }
 
 const MSG = /^\s*(\w+)\s*(-{1,2}>{1,2})\s*(\w+)\s*:\s*(.*)$/;
-const DECL = /^\s*(actor|participant|database|boundary|control|entity|collections|queue)\s+(?:"[^"]*"|\S+)\s+as\s+(\w+)/;
+// Khai báo có alias (`participant "X" as Y`) hoặc tên trần (`actor User`, `participant FE`).
+const DECL = /^\s*(actor|participant|database|boundary|control|entity|collections|queue)\s+(?:(?:"[^"]*"|\S+)\s+as\s+(\w+)|(\w+))/;
 const SKIP = /^\s*(note|end note|'|skinparam|autonumber|title|$)/;
+// `note ...` không có dấu `:` trên cùng dòng là note nhiều dòng, kết thúc ở `end note`.
+const MULTI_NOTE = /^\s*(?:note|hnote|rnote)\b[^:]*$/i;
+const END_NOTE = /^\s*end\s*(?:note|hnote|rnote)\b/i;
+// \b của JS chỉ hiểu ASCII nên dùng ranh giới Unicode cho "nhé" / "giúp" / "Tôi".
+const TONE = /(?<![\p{L}\p{N}])(?:nhé|giúp)(?![\p{L}\p{N}])|^Tôi(?![\p{L}\p{N}])/u;
 const TOKENS = /"[^"\n]+"|\b[1-5]\d\d\b|\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b|\b(?:PENDING|PAID|PREPARING|READY|COMPLETED|CANCELLED|CUSTOMER|BARISTA|ADMIN|WALLET|CARD)\b/g;
 
 // Đọc một file: trả về danh sách vấn đề và, theo từng mục, tập token của các khối sequence.
@@ -37,6 +43,7 @@ function scan(path) {
   const tokens = new Map();
   let section = '';
   let inBlock = false;
+  let inNote = false;
   let actors, declared, active, blockStart, blockLines;
   const report = (i, msg) => {
     if (!only || only.has(section)) problems.push(`${path}:${i + 1} [§${section}] ${msg}`);
@@ -65,10 +72,19 @@ function scan(path) {
       continue;
     }
     blockLines.push(line);
+    if (inNote) {
+      if (END_NOTE.test(line)) inNote = false;
+      continue;
+    }
+    if (MULTI_NOTE.test(line)) {
+      inNote = true;
+      continue;
+    }
     const d = line.match(DECL);
     if (d) {
-      declared.add(d[2]);
-      if (d[1] === 'actor') actors.add(d[2]);
+      const alias = d[2] ?? d[3];
+      declared.add(alias);
+      if (d[1] === 'actor') actors.add(alias);
       continue;
     }
     const a = line.match(/^\s*(activate|deactivate)\s+(\w+)/);
@@ -87,7 +103,10 @@ function scan(path) {
     // request (->) tới lifeline chưa active: hợp lệ nếu dòng lệnh kế tiếp là `activate <to>`
     if (from !== to && !isActive(to)) {
       let j = i + 1;
-      while (j < lines.length && SKIP.test(lines[j])) j++;
+      while (j < lines.length && SKIP.test(lines[j])) {
+        if (MULTI_NOTE.test(lines[j])) while (j < lines.length && !END_NOTE.test(lines[j])) j++;
+        j++;
+      }
       const activatesNext = new RegExp(`^\\s*activate\\s+${to}\\b`).test(lines[j] ?? '');
       if (!(arrow.startsWith('->') && activatesNext)) report(i, `[activation] ${to} nhận khi không có activation: ${line.trim().slice(0, 80)}`);
     }
@@ -95,7 +114,7 @@ function scan(path) {
     if (parts.length > MAX_LINES || parts.some((p) => [...p].length > MAX_CHARS)) {
       report(i, `[dài] nhãn ${parts.length} dòng, dòng dài nhất ${Math.max(...parts.map((p) => [...p].length))} ký tự: ${label.slice(0, 60)}…`);
     }
-    if (/\bnhé\b|\bgiúp\b|^Tôi\b/u.test(label)) report(i, `[giọng] ${label.slice(0, 70)}`);
+    if (TONE.test(label)) report(i, `[giọng] ${label.slice(0, 70)}`);
   }
   return { problems, tokens };
 }
