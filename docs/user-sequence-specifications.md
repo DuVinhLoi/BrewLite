@@ -931,12 +931,12 @@ loop Mỗi 5 giây (POLL_MS), dừng khi gặp 401/403
         BE --> FE : 401 / 403
         FE --> User : 401: xóa token, chuyển về /login?next=/barista (§2.3), ngừng tự tải lại\n403: báo cần tài khoản quầy, ngừng tự tải lại
     else BARISTA / ADMIN
-        BE -> DB : Đơn PAID / PREPARING / READY, cũ trước + tên món
+        BE -> DB : Lấy đơn PAID / PREPARING / READY (cũ nhất trước) kèm tên món
         activate DB
         DB --> BE : Danh sách đơn
         deactivate DB
-        BE --> FE : 200 hàng đợi
-        FE --> User : 3 cột: Chờ pha | Đang pha | Sẵn sàng\n(số đơn ở đầu cột; cột rỗng ghi "Không có đơn")
+        BE --> FE : 200 Hàng đợi đơn
+        FE --> User : Hiện 3 cột: Chờ pha | Đang pha | Sẵn sàng\n(số đơn ở đầu cột; cột rỗng hiện "Không có đơn")
     end
     deactivate BE
 end
@@ -957,8 +957,10 @@ else Không có đơn
 else Sai thứ tự (assertTransition, ví dụ PAID -> READY)
     BE --> FE : 400 Invalid transition
 else Hợp lệ (dưới khóa order:<id>)
-    BE -> DB : Cập nhật trạng thái đơn
-    BE --> FE : 200 đơn mới
+    BE -> DB : Đổi đơn sang trạng thái mới
+    activate DB
+    deactivate DB
+    BE --> FE : 200 Đơn đã đổi trạng thái
     FE -> BE : GET /orders?status=PAID,PREPARING,READY (tải lại ngay)
     FE --> User : Đơn chuyển sang cột kế tiếp
 end
@@ -982,13 +984,17 @@ else Từ PREPARING trở đi, hoặc đơn đã kết thúc (assertTransition)
     BE --> FE : 400 Invalid transition
 else Đơn PAID (dưới khóa order:<id>)
     BE -> DB : Đọc mọi biên lai SUCCESS của đơn (số tiền thực thu)
+    activate DB
+    deactivate DB
     BE -> Gateway : Hoàn đúng số tiền thực thu, NGOÀI transaction
     activate Gateway
     Gateway --> BE : Hoàn tiền thành công
     deactivate Gateway
     group 1 DB transaction: lỗi giữa chừng thì rollback, đơn vẫn PAID
+        activate DB
         BE -> DB : Hoàn kho mọi món
         BE -> DB : Đổi đơn sang CANCELLED
+        deactivate DB
     end
     BE --> FE : 200 đơn đã hủy
     FE -> BE : GET /orders?status=PAID,PREPARING,READY (tải lại ngay)
@@ -1045,12 +1051,15 @@ FE -> BE : GET /admin/products + Bearer JWT
 activate BE
 alt Thiếu/sai token (401) hoặc không phải ADMIN (403, RolesGuard)
   BE --> FE : 401 / 403
-  FE --> User : 401: xóa token, chuyển về /login?next=/admin (§2.3)\n403: vẫn chỉ hiện "Trang này dành cho quản trị" (thông báo lỗi 403 của lib/admin.ts bị màn chặn che)
+  FE --> User : 401: xóa token, chuyển về /login?next=/admin (§2.3)\n403: vẫn chỉ hiện "Trang này dành cho quản trị"
+  note right of FE : (thông báo lỗi 403 của lib/admin.ts bị màn chặn che)
 else ADMIN
-  BE -> DB : Mọi món, kể cả stock = 0, sắp theo tên
+  BE -> DB : Lấy mọi món, kể cả hết hàng (stock = 0), sắp theo tên
+  activate DB
   DB --> BE : Danh sách món (stock, version)
-  BE --> FE : 200
-  FE --> User : Dòng tóm tắt ("4 món. 1 món sắp hết, 1 món hết hàng.")\n+ bảng tồn kho + nhãn Hết hàng / Sắp hết / Còn hàng
+  deactivate DB
+  BE --> FE : 200 Danh sách món
+  FE --> User : Hiện dòng tóm tắt ("4 món. 1 món sắp hết, 1 món hết hàng.")\n+ bảng tồn kho, nhãn Hết hàng / Sắp hết / Còn hàng
 end
 deactivate BE
 deactivate FE
@@ -1062,6 +1071,8 @@ activate BE
 note right of BE : Thiếu/sai token -> 401, không phải ADMIN -> 403 (guard, trước mọi bước dưới);\nFE gặp 401 thì xóa token, chuyển về /login?next=/admin (§2.3)
 note right of BE : Body sai AdjustStockDto (mode lạ, value lẻ / ngoài Int32,\nversion < 1) -> 400 (ValidationPipe) trước mọi bước dưới
 BE -> DB : Đọc món theo id
+activate DB
+deactivate DB
 alt Món không tồn tại
   BE --> FE : 404 Product not found
 else version gửi lên khác version hiện tại (vừa có đơn trừ kho / người khác sửa)
@@ -1069,18 +1080,22 @@ else version gửi lên khác version hiện tại (vừa có đơn trừ kho / 
 else version khớp nhưng kết quả âm, hoặc vượt Int32
   BE --> FE : 400 Stock cannot be negative / Stock too large
 else hợp lệ
-  BE -> DB : UPDATE stock, version + 1 WHERE id và version khớp
+  BE -> DB : Ghi tồn kho mới, tăng version\n(chỉ khi version vẫn khớp)
+  activate DB
+  deactivate DB
   alt Có người ghi chen vào giữa (0 dòng được cập nhật)
     BE --> FE : 409 Stock changed, reload
   else Cập nhật được
     BE -> DB : Đọc lại món
-    BE --> FE : 200 món đã cập nhật
+    activate DB
+    deactivate DB
+    BE --> FE : 200 Món đã cập nhật
     FE --> User : Cập nhật dòng trong bảng
   end
 end
 opt Có lỗi (404 / 409 / 400 / lỗi khác)
   FE -> BE : GET /admin/products (tải lại bảng TRƯỚC)
-  FE --> User : Rồi mới hiện lỗi: 409 "Tồn kho vừa thay đổi...",\n400 âm "Tồn kho không được âm", 400 khác "Giá trị tồn kho không hợp lệ"
+  FE --> User : Hiện lỗi sau khi tải lại: 409 "Tồn kho vừa thay đổi...",\n400 âm "Tồn kho không được âm", 400 khác "Giá trị tồn kho không hợp lệ"
 end
 deactivate BE
 deactivate FE
@@ -1125,37 +1140,42 @@ participant "Giao diện Web\n(Frontend /profile)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
 
-User -> FE : Bấm viên vai trò "Khách" trên thanh đầu trang (liên kết /profile; viên của nhân viên là nhãn tĩnh, không bấm được)
+User -> FE : Bấm nhãn vai trò "Khách" trên thanh đầu trang (liên kết /profile)
 activate FE
+note right of FE : Nhãn của nhân viên là chữ tĩnh, không bấm được
 FE -> FE : Đọc token trong sessionStorage của tab (getToken)
 note right of FE : Chưa đọc xong token (undefined): chưa vẽ gì, tránh nháy "chưa đăng nhập".\nTrang chỉ kiểm có token, không xét role: việc chặn nhân viên nằm ở Header.tsx (chuyển về trang nhà) và ở backend (403)
 alt Chưa có token (null)
-  FE --> User : "Hồ sơ" + "Bạn chưa đăng nhập."\n+ "Đăng nhập để xem điểm tích lũy và lịch sử đơn."\n+ liên kết "Đăng nhập" tới /login?next=%2Fprofile (không gọi API)
+  FE --> User : Hiện "Hồ sơ" + "Bạn chưa đăng nhập."\n+ liên kết "Đăng nhập" tới /login?next=%2Fprofile
+  note right of FE : Hiện "Đăng nhập để xem điểm tích lũy và lịch sử đơn." Không gọi API.
 else Có token
-  FE --> User : "Hồ sơ" + "Đang tải…"
+  FE --> User : Hiện "Hồ sơ" + "Đang tải…"
   FE -> BE : GET /users/me + Bearer JWT (getProfile, cache: 'no-store')
   activate BE
   alt Thiếu/sai/hết hạn token (401, JwtAuthGuard, trước mọi bước dưới)
     BE --> FE : 401 Unauthorized
-    FE -> FE : handleUnauthorized(): xóa token, chuyển trang cứng về /login?next=%2Fprofile (§2.3)
+    FE -> FE : Xóa token, chuyển trang cứng về /login?next=%2Fprofile (§2.3)\n(handleUnauthorized())
     note right of FE : getProfile vẫn ném ApiError 401 "Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại."\nnên khối role="alert" có thể hiện thoáng qua trước khi trình duyệt rời trang
   else Token hợp lệ nhưng là BARISTA / ADMIN (RolesGuard, @Roles(CUSTOMER))
     BE --> FE : 403 Insufficient role
-    FE --> User : Khối role="alert": "Không tải được hồ sơ (mã 403)."
+    FE --> User : Hiện khối role="alert": "Không tải được hồ sơ (mã 403)."
     note right of FE : Nhân viên thường không tới được đây: Header.tsx chuyển /profile về trang nhà\n(BARISTA /barista, ADMIN /admin) trước khi trang gọi API; nhánh này chỉ hiện trong\ntích tắc chuyển hướng hoặc khi gọi API tay (backend vẫn chặn)
   else Token hợp lệ, vai trò CUSTOMER
     BE -> DB : Tìm User theo id = sub của JWT
+    activate DB
     DB --> BE : User hoặc không có
+    deactivate DB
     alt Tài khoản của token không còn (404)
       BE --> FE : 404 User not found
-      FE -> FE : handleUnauthorized(): như nhánh 401 (hết phiên)
+      FE -> FE : Xóa token, chuyển trang như nhánh 401 (hết phiên)\n(handleUnauthorized())
     else Còn tài khoản
       BE --> FE : 200 { id, email, role, loyaltyPoints } (không có passwordHash)
-      FE --> User : "Hồ sơ" + "Điểm tích lũy": số điểm (định dạng vi-VN) + "điểm"\n+ "Mỗi 10.000đ thanh toán được 1 điểm."\n+ "Thông tin tài khoản": Email, Vai trò (Khách)\n+ liên kết "Xem lịch sử đơn hàng" tới /history
+      FE --> User : Hiện "Hồ sơ" + "Điểm tích lũy": số điểm (định dạng vi-VN) + "điểm"\n+ "Thông tin tài khoản": Email, Vai trò (Khách)
+      note right of FE : "Mỗi 10.000đ thanh toán được 1 điểm."\n+ liên kết "Xem lịch sử đơn hàng" tới /history
     end
   else Lỗi khác (5xx) hoặc không tới được máy chủ
     BE --> FE : 5xx / không có phản hồi
-    FE --> User : Khối role="alert": "Không tải được hồ sơ (mã 5xx)."\nhoặc "Không kết nối được máy chủ để tải hồ sơ." + liên kết "Đăng nhập" (/login)
+    FE --> User : Hiện khối role="alert": "Không tải được hồ sơ (mã 5xx)."\nhoặc "Không kết nối được máy chủ để tải hồ sơ." + liên kết "Đăng nhập" (/login)
   end
   deactivate BE
 end
