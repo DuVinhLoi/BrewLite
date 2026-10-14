@@ -62,7 +62,7 @@ repeat
   :Mở chi tiết món, tải giá và tồn kho mới;
   note right
     GET /products/:id
-    404: "Sản phẩm không tồn tại"
+    404 Product not found, FE báo "Sản phẩm không tồn tại."
   end note
   |Khách hàng|
   :Chọn size S/M/L, topping, số lượng;
@@ -92,17 +92,17 @@ if (Chưa đăng nhập hoặc token hết hạn?) then (có)
   :Quay lại giỏ theo ?next=, bấm Xác nhận trả;
 endif
 |Hệ thống BrewLite|
+:Tạo đơn PENDING, server tính lại giá;
+note right
+  POST /orders + Idempotency-Key
+  Thử lại dùng orderId đã nhớ, không tạo đơn mới
+end note
 repeat
-  :Tạo đơn PENDING, server tính lại giá;
-  note right
-    POST /orders + Idempotency-Key
-    Cùng khóa: 200 trả lại đơn cũ
-  end note
   :Tính giảm giá, gọi cổng trừ tiền;
   note right
     POST /payments + Idempotency-Key
     BREWLITE10 giảm 10%, mã khác giảm 0
-    Ngoài transaction
+    Thử lại: PAYMENT_FAILED về PENDING trước
   end note
   |Cổng thanh toán (mock)|
   :Trừ tiền bằng Ví hoặc Thẻ;
@@ -143,6 +143,7 @@ if (Đơn đã PAID?) then (chưa, khách bỏ)
   note right
     PATCH /orders/:id (CANCELLED): 200
     Đơn chưa PAID: không hoàn tiền, không hoàn kho
+    (đơn PAID hủy ở Lịch sử: có hoàn, xem bảng C)
   end note
   stop
 else (đã PAID)
@@ -162,7 +163,11 @@ if (Đơn COMPLETED?) then (có)
   :Nhận đồ uống tại quầy;
 else (CANCELLED)
   |Khách hàng|
-  :Biên lai báo "Đã hủy", tiền được hoàn;
+  :Biên lai hiện "Đã hủy";
+  note right
+    Đơn PAID bị hủy (Barista ở AD2, hoặc khách ở Lịch sử):
+    server đã hoàn tiền và hoàn kho
+  end note
 endif
 stop
 @enduml
@@ -173,7 +178,7 @@ stop
 | Nút / nhánh trên sơ đồ | Endpoint và mã HTTP | `file:hàm` trong code |
 | :--- | :--- | :--- |
 | Hiện menu các món còn hàng | `GET /products` 200 | `backend/src/product/product.controller.ts:list` → `ProductService.listAvailable` → `PrismaProductRepo.findAvailable` (`stock > 0`); FE `frontend/src/lib/api.ts:getProducts` |
-| Mở chi tiết món | `GET /products/:id` 200 / 404 `Product not found` | `product.controller.ts:detail` → `ProductService.getById`; FE `api.ts:getProduct`, `frontend/src/components/ProductDetailModal.tsx` |
+| Mở chi tiết món | `GET /products/:id` 200 / 404 `Product not found` (FE báo "Sản phẩm không tồn tại." ở `api.ts:getProduct`) | `product.controller.ts:detail` → `ProductService.getById`; FE `api.ts:getProduct`, `frontend/src/components/ProductDetailModal.tsx` |
 | Chọn size S/M/L, topping, số lượng | không gọi API (tính ở máy khách) | `ProductDetailModal.tsx`, `frontend/src/lib/pricing.ts:calcUnitPrice` |
 | Hết hàng, quá 20 dòng hoặc quá 99 ly (từ chối) | không gọi API | `frontend/src/store/cart.ts:addItem` (lý do `OUT_OF_STOCK`, `MAX_LINES`, `MAX_QTY`, `AT_STOCK_LIMIT`), `frontend/src/lib/cart-limits.ts` |
 | Thêm vào giỏ, hiện giỏ và tổng tiền | không gọi API (Zustand + localStorage) | `store/cart.ts:addItem`, `frontend/src/app/cart/page.tsx`, `frontend/src/components/cart/CartView.tsx` |
@@ -181,17 +186,19 @@ stop
 | Chọn Ví / Thẻ, nhập mã giảm giá (UC05a); và "Tính giảm giá" ở server | FE tạm tính (không gọi API); server tính lại trong `POST /payments`: `BREWLITE10` giảm 10% làm tròn xuống, mã khác giảm 0 (không báo lỗi) | `frontend/src/components/PaymentForm.tsx` (`discount`, `final`), `frontend/src/lib/promo.ts`; `backend/src/payment/payment.service.ts:pay` (`VOUCHER_CODE`, `VOUCHER_RATE`) |
 | Chưa đăng nhập hoặc token hết hạn (FE chỉ biết qua 401, không chặn trước) | `POST /orders` hoặc `POST /payments` 401 | `frontend/src/lib/payment/api-gateway.ts:pay` (ném `PaymentError` status 401), `checkout-session.ts:isUnauthorizedPayment`, `PaymentForm.tsx:handleConfirm` → `frontend/src/lib/session.ts:handleUnauthorized` (về `/login?next=...`) |
 | Đăng nhập hoặc đăng ký, quay lại `/cart` | `POST /auth/login` 200 (đăng nhập) / `POST /auth/register` 201; sai thông tin 401, trùng email 409 | `backend/src/auth/auth.controller.ts`; FE `frontend/src/app/login/page.tsx:submit`, `session.ts:postLoginTarget`, `safeNext`, `checkout-session.ts:clearCheckoutIfOtherUser` |
-| Tạo đơn PENDING, server tính lại giá | `POST /orders` 201 mới / 200 cùng khóa. Chỉ gặp khi gọi API tay: 404 món lạ, 400 topping lạ / quá 20 dòng / quá 99 ly / tổng quá lớn / khóa quá 255 ký tự, 403 tài khoản nhân viên, 422 khóa của người khác | `backend/src/order/order.controller.ts:create` → `OrderService.create`, `replay` (khóa người khác: 422); giá: `backend/src/order/pricing.ts`; DTO: `backend/src/order/dto/create-order.dto.ts`; vai trò: `@Roles(Role.CUSTOMER)` (nhân viên 403 `Insufficient role`) |
+| Tạo đơn PENDING, server tính lại giá (một lần cho mỗi giỏ; thử lại dùng `orderId` đã nhớ) | `POST /orders` 201 mới / 200 cùng khóa. Chỉ gặp khi gọi API tay: 404 món lạ, 400 topping lạ / quá 20 dòng / quá 99 ly / tổng quá lớn / khóa quá 255 ký tự, 403 tài khoản nhân viên, 422 khóa của người khác | `backend/src/order/order.controller.ts:create` → `OrderService.create`, `replay` (khóa người khác: 422); giá: `backend/src/order/pricing.ts`; DTO: `backend/src/order/dto/create-order.dto.ts`; vai trò: `@Roles(Role.CUSTOMER)` (nhân viên 403 `Insufficient role`) |
 | Tính giảm giá, gọi cổng trừ tiền (ngoài transaction) | `POST /payments` 201 / 200 (khóa đã có biên lai: trả biên lai cũ, không trừ lần 2); gọi tay: 403 đơn người khác, 422 khóa đã dùng cho đơn khác, 400 `Invalid transition` nếu đơn không ở PENDING / PAYMENT_FAILED | `backend/src/payment/payment.controller.ts:pay` → `PaymentService.processPayment` → `pay`; `MockPaymentGatewayService.charge` |
 | Trừ tiền bằng Ví hoặc Thẻ | gọi nội bộ, không có endpoint | `backend/src/payment/mock-payment-gateway.service.ts:charge`; từ chối khi `MOCK_GATEWAY_DECLINE_METHOD` trùng phương thức |
 | Cổng từ chối → `PAYMENT_FAILED` | 400 `Payment failed` | `payment.service.ts:pay` (`catch` quanh `gateway.charge`), `backend/src/state-machine/order-state.machine.ts:assertTransition` (`PENDING -> PAYMENT_FAILED`) |
-| Vòng "Đơn chưa PAID và khách thử lại?" (đơn về `PENDING` rồi trừ tiền lại) | `POST /payments`, cùng `Idempotency-Key` | `payment.service.ts:pay` (`PAYMENT_FAILED -> PENDING`); FE `PaymentForm.tsx:handleConfirm`, `checkout-session.ts:loadCheckout`, `dropsCheckout` |
-| Hủy đơn ở trang Lịch sử (khách bỏ, đơn chưa `PAID`) | `PATCH /orders/:id` `{ status: "CANCELLED" }` 200; đơn người khác 403; không có đơn 404 | `backend/src/payment/payment.controller.ts:update` → `PaymentService.cancelOrderAs` → `cancelOrder`; FE `api.ts:cancelOrder` (nút Hủy đơn ở `/history`) |
+| Vòng "Đơn chưa PAID và khách thử lại?" (đơn về `PENDING` rồi trừ tiền lại) | `POST /payments`, cùng `Idempotency-Key` | `payment.service.ts:pay` (`PAYMENT_FAILED -> PENDING` rồi `gateway.charge` lại); FE `PaymentForm.tsx:handleConfirm` (`...(orderId ? { orderId } : { items, orderIdempotencyKey })`) và `api-gateway.ts:pay` (`req.orderId ?? createOrderId`) nên thử lại không gọi `POST /orders`, `checkout-session.ts:loadCheckout`, `dropsCheckout` |
+| Hủy đơn ở trang Lịch sử (khách bỏ, đơn `PENDING` / `PAYMENT_FAILED`: không hoàn tiền, không hoàn kho) | `PATCH /orders/:id` `{ status: "CANCELLED" }` 200; đơn người khác 403; không có đơn 404 | `backend/src/payment/payment.controller.ts:update` → `PaymentService.cancelOrderAs` → `cancelOrder`; FE `api.ts:cancelOrder` (nút Hủy đơn ở `/history`) |
+| Hủy đơn đã `PAID` ở trang Lịch sử (không vẽ nhánh riêng, ghi ở note biên lai) | `PATCH /orders/:id` `{ status: "CANCELLED" }` 200, có hộp xác nhận hoàn tiền | `frontend/src/lib/order-status.ts:canCancel` (gồm `PAID`), `frontend/src/app/history/page.tsx`; `payment.service.ts:cancel` (cộng biên lai `SUCCESS`, `gateway.refund` ngoài transaction, rồi `restoreStock` + `CANCELLED` trong 1 transaction) |
 | Trừ kho, đặt đơn `PAID`, cộng điểm, lưu biên lai | cùng `POST /payments` | `payment.service.ts:pay` trong `orders.runInTransaction`: `products.deductStockWithOptimisticLock` (thử lại 3 lần), `orders.updateStatus`, `users.addLoyaltyPoints`, `payments.save`; `LOYALTY_RATE`, `VND_PER_POINT` |
 | Kẹt kho hoặc lỗi ghi → hoàn tiền, `PAYMENT_FAILED` | 409 `Out of stock` (hoặc 404 / 500 theo lỗi gốc) | `payment.service.ts:pay` (`catch` sau `runInTransaction`: `gateway.refund` rồi `updateStatus(PAYMENT_FAILED)`); FE `api-gateway.ts:paymentErrorMessage` ("Món đã hết hàng, tiền đã được hoàn lại") |
 | Trả biên lai: mã đơn, giảm giá, điểm cộng | `POST /payments` 201 | `payment.service.ts:pay` (kết quả), FE `api-gateway.ts:pay` → `PaymentResult`; `frontend/src/components/PaymentSuccess.tsx:PaymentReceipt` ("Mã đơn", "+N điểm tích lũy", "Đã giảm") |
 | Tự làm mới trạng thái đơn mỗi 3 giây | `GET /orders/:id` 200 / 403 đơn người khác / 404 | `backend/src/order/order.controller.ts:byId` → `OrderService.getById`; FE `frontend/src/lib/use-order-poll.ts:useOrderPoll` (`POLL_INTERVAL_MS = 3000`), `api.ts:getOrder`, `frontend/src/components/OrderStatusTrack.tsx` |
 | Đơn `COMPLETED`: nhận đồ uống | không gọi API | trạng thái do Barista đặt (AD2); `lib/order-status.ts` (`isTerminal`) dừng poll ở `COMPLETED` / `CANCELLED` |
+| Đơn `CANCELLED`: biên lai hiện "Đã hủy" | không gọi API | `lib/order-status.ts` (`STATUS_LABEL`, nhãn "Đã hủy"), `PaymentSuccess.tsx:receiptStatus`; hoàn tiền và hoàn kho do server làm lúc hủy đơn `PAID` (`payment.service.ts:cancel`), giao diện không có câu hoàn tiền |
 
 ---
 
