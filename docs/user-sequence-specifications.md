@@ -48,7 +48,7 @@ Biểu đồ Tuần tự (**Sequence Diagram**) là biểu đồ thể hiện **
    - `Cơ sở dữ liệu (PostgreSQL qua Prisma)`: Nơi lưu trữ vĩnh viễn đơn hàng, sản phẩm, tài khoản (5 bảng mục 12.2). Task 8-10 cắm qua 4 adapter `PrismaOrder/Product/Payment/UserRepo`; khi chạy backend **bắt buộc có `DATABASE_URL`**: thiếu thì `main.ts` ném lỗi `DATABASE_URL is required` và backend không khởi động (Postgres chạy qua `docker compose up -d db`). Bản In-Memory trên RAM (`backend/src/stubs`) chỉ để jest chạy test độc lập khi không đặt biến này, không dùng để chạy ứng dụng.
    - `Cổng thanh toán (Mock Gateway)`: Đơn vị trung gian xử lý trừ tiền Ví/Thẻ.
 3. **Đường gióng thời gian (Lifeline):** Đường thẳng đứng nét đứt chạy dọc từ trên xuống dưới, thể hiện sự tồn tại của đối tượng theo thời gian. **Càng ở phía dưới thì sự kiện diễn ra càng muộn**.
-4. **Vạch kích hoạt (Activation Bar):** Hình chữ nhật mỏng nằm đè lên đường nét đứt, thể hiện khoảng thời gian mà đối tượng đó **đang tích cực xử lý công việc** (chưa xong).
+4. **Vạch kích hoạt (Activation Bar):** Hình chữ nhật mỏng nằm đè lên đường nét đứt, thể hiện khoảng thời gian mà đối tượng đó **đang tích cực xử lý công việc** (chưa xong). Mọi mũi tên đều đi ra từ một vạch kích hoạt của bên gửi, kể cả mũi tên tự gọi (Self-Call); bên nhận một yêu cầu (`->`) được bật vạch kích hoạt ngay khi nhận. Kiểm bằng `node scripts/check-sequence-activation.mjs docs/user-sequence-specifications.md`.
 
 ### 1.3 Quy ước các loại đường nối & Mũi tên (Cực kỳ quan trọng)
 
@@ -131,7 +131,8 @@ note right of FE : Đang tải: 4 thẻ skeleton cùng dáng thẻ món.\nLỗi 
 deactivate BE
 
 FE -> FE : Tính số món và giá thấp nhất từ danh sách (menuSummary)
-FE --> User : Hiển thị hero ("N món", "giá từ X")\nvà lưới đồ uống "Menu hôm nay" lên màn hình\n(thẻ ghi "Còn N", hoặc "Sắp hết, còn N" khi tồn ≤ 3)
+FE --> User : Hiện hero ("N món", "giá từ X") và lưới đồ uống "Menu hôm nay"
+note right of FE : Thẻ món ghi "Còn N", hoặc "Sắp hết, còn N" khi tồn ≤ 3
 User -> FE : Bấm "Tùy chọn size / topping" trên thẻ Cappuccino
 FE --> User : Mở modal chi tiết: "Đang tải sản phẩm…" (nút "Thêm vào giỏ" bị khóa)
 FE -> BE : GET /products/:id (getProduct, cache: 'no-store')
@@ -142,15 +143,16 @@ DB --> BE : Món hoặc không có
 deactivate DB
 alt Không có món (404)
   BE --> FE : 404 Product not found
-  FE --> User : Khối role="alert": "Sản phẩm không tồn tại."\n(không có nút "Thử lại", nút thêm vẫn khóa)
+  FE --> User : Hiện khối role="alert": "Sản phẩm không tồn tại."\n(không có nút "Thử lại", nút thêm vẫn khóa)
 else Lỗi khác (5xx) hoặc không tới được máy chủ
   BE --> FE : 5xx / không có phản hồi
-  FE --> User : Khối role="alert": "Không tải được sản phẩm (mã N)."\nhoặc "Không kết nối được máy chủ để tải sản phẩm."\n+ nút "Thử lại" (nút thêm vẫn khóa)
+  FE --> User : Hiện khối role="alert": "Không tải được sản phẩm (mã N)."\nhoặc "Không kết nối được máy chủ để tải sản phẩm."
+  note right of FE : Kèm nút "Thử lại"; nút thêm vẫn khóa
 else Có món (200)
   BE --> FE : 200 { id, name, price, imageUrl, stock, version }
   FE --> User : Modal dùng dữ liệu mới (tên, giá gốc, "Còn N"), mở sẵn Size M = 50.000đ;\nstock = 0 thì nút đổi thành "Hết hàng" và bị khóa
   User -> FE : Chọn Size L, thêm Trân châu
-  FE -> FE : Tự động tính toán lại số tiền tạm tính trên máy khách
+  FE -> FE : Tính lại số tiền tạm tính trên máy khách
   FE --> User : Cập nhật giá mới tức thời (giá gốc 45.000đ + 10.000 Size L\n+ 5.000 Trân châu = 60.000đ)
 end
 deactivate BE
@@ -194,33 +196,46 @@ participant "Màn hình đặt món\n(Giao diện)" as UI
 participant "Bộ nhớ giỏ hàng\n(Lưu tạm trên máy)" as Cart
 
 == THÊM MÓN ==
-User -> UI : Bấm "Thêm vào giỏ" (size M, không topping)\nhoặc chọn size/topping/số lượng trong modal rồi bấm "Thêm vào giỏ"
+User -> UI : Bấm "Thêm vào giỏ"\n(trên thẻ món: size M, không topping; hoặc trong modal)
 activate UI
-UI -> Cart : Lưu món đã chọn (kèm size, topping, số lượng)
+UI -> Cart : Thêm món (size, topping, số ly)
 activate Cart
-
-Cart -> Cart : Kiểm theo thứ tự: món hết hàng, số lượng xin > 99,\ndòng mới khi giỏ đã đủ 20 dòng, dòng cũ cộng thêm quá 99,\ndòng cũ đã giữ hết số còn lại (không thêm được gì)
-alt Bị từ chối (giỏ không đổi)
-Cart --> UI : Trả lý do OUT_OF_STOCK / MAX_QTY / MAX_LINES / AT_STOCK_LIMIT
-deactivate Cart
-UI --> User : Hiện "Món đã hết hàng." / "Mỗi dòng tối đa 99 ly." / "Giỏ đã đủ 20 dòng." / "Bạn đã thêm hết số lượng còn lại."\n(không hiện "Đã thêm ✓"; thêm từ modal thì modal vẫn mở)
-else Hợp lệ
-Cart -> Cart : Gộp dòng cùng khóa productId|size|topping,\ncắt số lượng xuống tồn kho nếu xin nhiều hơn, tính lại tổng tiền
-Cart --> UI : Cập nhật số lượng trên biểu tượng Giỏ hàng
-deactivate Cart
-UI --> User : Nút đổi thành "Đã thêm ✓" trong 1,2 giây\n(thêm từ modal thì modal đóng lại)
+Cart -> Cart : Kiểm món này còn thêm được vào giỏ không
+alt Món đã hết hàng (tồn kho = 0)
+  Cart --> UI : Từ chối: OUT_OF_STOCK
+  UI --> User : Hiện "Món đã hết hàng."
+else Xin hơn 99 ly cho một dòng
+  Cart --> UI : Từ chối: MAX_QTY
+  UI --> User : Hiện "Mỗi dòng tối đa 99 ly."
+else Món là dòng mới nhưng giỏ đã có 20 dòng
+  Cart --> UI : Từ chối: MAX_LINES
+  UI --> User : Hiện "Giỏ đã đủ 20 dòng."
+else Dòng đã có, cộng thêm sẽ quá 99 ly (ví dụ 98 + 5)
+  Cart --> UI : Từ chối: MAX_QTY
+  UI --> User : Hiện "Mỗi dòng tối đa 99 ly."
+else Dòng đã có và đã lấy hết số ly còn trong kho
+  Cart --> UI : Từ chối: AT_STOCK_LIMIT
+  UI --> User : Hiện "Bạn đã thêm hết số lượng còn lại."
+else Thêm được
+  Cart -> Cart : Gộp vào dòng cùng món, size, topping (chưa có thì tạo dòng mới)\n(xin nhiều hơn tồn kho thì chỉ lấy bằng tồn kho)
+  Cart -> Cart : Tính lại tổng tiền
+  Cart --> UI : Trả số món mới để cập nhật biểu tượng Giỏ hàng
+  UI --> User : Nút đổi thành "Đã thêm ✓" trong 1,2 giây\n(thêm từ modal thì modal đóng lại)
 end
+note right of UI : Bị từ chối thì giỏ không đổi, không hiện "Đã thêm ✓";\nthêm từ modal thì modal vẫn mở
+deactivate Cart
 deactivate UI
 
 == SỬA SỐ LƯỢNG ==
-User -> UI : Mở giỏ hàng và bấm tăng/giảm (+ / -) số lượng
+User -> UI : Mở giỏ hàng, bấm tăng/giảm (+ / -) số lượng
 activate UI
-UI -> Cart : Cập nhật số lượng mới cho món đó (tối thiểu 1, tối đa 99; nút - mờ khi còn 1, nút + mờ khi đạt 99)
+UI -> Cart : Cập nhật số lượng (từ 1 đến 99)
+note right of UI : Số lượng tối thiểu 1, tối đa 99; nút - mờ khi còn 1, nút + mờ khi đạt 99
 activate Cart
-Cart -> Cart : Tính lại tổng tiền giỏ hàng tức thời
+Cart -> Cart : Tính lại tổng tiền giỏ hàng
 Cart --> UI : Trả về tổng tiền mới
 deactivate Cart
-UI --> User : Cập nhật lại số tiền hiển thị trên màn hình
+UI --> User : Hiện tổng tiền mới trên màn hình
 deactivate UI
 
 == XÓA MÓN ==
@@ -289,6 +304,8 @@ opt Khách chưa có tài khoản
     else Email chưa tồn tại
         BE -> BE : Băm mật khẩu (bcrypt)
         BE -> DB : Lưu tài khoản mới (loyaltyPoints = 0)
+        activate DB
+        deactivate DB
         BE --> FE : 201 { id, email } (không cấp token)
         FE --> User : Báo "Đăng ký thành công. Đăng nhập bằng email vừa tạo.",\nchuyển về tab Đăng nhập (giữ email, xóa ô mật khẩu)
     end
@@ -298,7 +315,7 @@ end
 
 == LUỒNG 2: ĐĂNG NHẬP ==
 note over User, BE : Áp dụng mọi vai trò: khách và nhân viên (Barista, Admin) dùng chung form này (POST /auth/login).\nTài khoản nhân viên do seed tạo sẵn, không đăng ký qua luồng 1 (đăng ký luôn tạo CUSTOMER).
-User -> FE : Nhập Email, Mật khẩu -> Bấm "Đăng nhập"
+User -> FE : Nhập Email, Mật khẩu rồi bấm "Đăng nhập"
 activate FE
 FE -> BE : POST /auth/login { email, password }
 activate BE
@@ -309,17 +326,24 @@ activate DB
 DB --> BE : Trả về thông tin tài khoản và mật khẩu đã mã hóa (hoặc không có)
 deactivate DB
 
-BE -> BE : Kiểm tra đối chiếu mật khẩu người dùng nhập (bcrypt.compare)
-
-alt Không có tài khoản, hoặc mật khẩu KHÔNG chính xác (Kịch bản thất bại)
-    BE --> FE : Báo lỗi 401 "Invalid credentials" (giống nhau cho sai mật khẩu và sai email để chống đoán tài khoản)
+alt Không có tài khoản với Email này (Kịch bản thất bại)
+    BE --> FE : Trả lỗi 401 "Invalid credentials"
+    note right of BE : Cùng mã 401 và cùng câu lỗi với trường hợp sai mật khẩu để chống đoán tài khoản.\nThời gian phản hồi có thể khác: không có tài khoản thì không chạy bcrypt.compare
     FE --> User : Hiển thị lỗi "Sai email hoặc mật khẩu."
-else Mật khẩu chính xác (Kịch bản thành công)
-    BE -> BE : Tạo mã phiên đăng nhập an toàn (Token JWT { sub, email, role }, hạn 7 ngày)
-    BE --> FE : 200 { accessToken, user: { id, email, role } }
-    FE -> FE : Lưu mã Token vào sessionStorage của tab (key "brewlite-token"):\nmỗi tab một phiên, tab khác không bị ghi đè
-    FE -> FE : Đơn đang thanh toán dở của tab (clearCheckoutIfOtherUser):\ngiữ nếu đúng tài khoản đã tạo nó (sub của JWT), bỏ nếu là tài khoản khác
-    FE --> User : Nếu URL có ?next= hợp lệ (đường dẫn tương đối trong site, ví dụ /cart)\nthì về đúng trang đó (riêng nhân viên mà next là trang khách thì bỏ qua);\nkhông thì điều hướng theo role trong JWT:\nCUSTOMER -> / (Thực đơn), BARISTA -> /barista, ADMIN -> /admin
+else Có tài khoản
+    BE -> BE : So mật khẩu vừa nhập với mật khẩu đã mã hóa (bcrypt.compare)
+    alt Mật khẩu KHÔNG chính xác (Kịch bản thất bại)
+        BE --> FE : Trả lỗi 401 "Invalid credentials"
+        FE --> User : Hiển thị lỗi "Sai email hoặc mật khẩu."
+    else Mật khẩu chính xác (Kịch bản thành công)
+        BE -> BE : Tạo mã phiên đăng nhập an toàn (Token JWT { sub, email, role }, hạn 7 ngày)
+        BE --> FE : 200 { accessToken, user: { id, email, role } }
+        FE -> FE : Lưu mã Token vào sessionStorage của tab (key "brewlite-token"):\nmỗi tab một phiên, tab khác không bị ghi đè
+        FE -> FE : Giữ đơn đang thanh toán dở nếu cùng tài khoản, bỏ nếu khác\n(clearCheckoutIfOtherUser)
+        note right of FE : Đơn đang thanh toán dở của tab: giữ nếu đúng tài khoản đã tạo nó (sub của JWT), bỏ nếu là tài khoản khác
+        FE --> User : Chuyển trang: về ?next= nếu hợp lệ, không thì theo vai trò
+        note right of FE : Nếu URL có ?next= hợp lệ (đường dẫn tương đối trong site, ví dụ /cart)\nthì về đúng trang đó (riêng nhân viên mà next là trang khách thì bỏ qua);\nkhông thì điều hướng theo role trong JWT:\nCUSTOMER -> / (Thực đơn), BARISTA -> /barista, ADMIN -> /admin
+    end
 end
 deactivate BE
 deactivate FE
@@ -333,14 +357,16 @@ deactivate FE
 
 == LUỒNG 4: HẾT PHIÊN GIỮA CHỪNG (API có xác thực trả 401) ==
 note over User, BE : Áp dụng mọi vai trò (Customer, Barista, Admin): lifeline Guest ở đây đại diện cho người dùng\nđang đăng nhập bất kỳ; màn quầy (/barista) và tồn kho (/admin) cũng đi đúng luồng này
-User -> FE : Thao tác cần đăng nhập (Hủy đơn, xem Lịch sử, hàng đợi và thao tác ở quầy, tồn kho, xem Hồ sơ, Xác nhận trả)
+User -> FE : Thực hiện thao tác cần đăng nhập
 activate FE
+note right of FE : Gồm: Hủy đơn, xem Lịch sử, hàng đợi và thao tác ở quầy, tồn kho, xem Hồ sơ, Xác nhận trả
 FE -> BE : Gọi API kèm Bearer JWT đã hết hạn hoặc sai
 activate BE
 BE --> FE : 401 Unauthorized
 deactivate BE
-FE -> FE : handleUnauthorized(): xóa token của tab,\ngiữ nguyên giỏ hàng và đơn đang thanh toán dở
-FE --> User : Chuyển về /login?next=<trang đang xem>\n(đang ở /login thì không kèm next); đăng nhập xong quay lại đúng trang;\nđang trả tiền dở thì đăng nhập lại cùng tài khoản là trả tiếp đúng đơn đó (cùng mã đơn, cùng key)
+FE -> FE : Xóa token của tab, giữ nguyên giỏ hàng và đơn đang thanh toán dở\n(handleUnauthorized)
+FE --> User : Chuyển về /login?next=<trang đang xem>\n(đang ở /login thì không kèm next)
+note right of FE : Đăng nhập xong quay lại đúng trang;\ncó đơn đang thanh toán dở thì đăng nhập lại cùng tài khoản là trả tiếp đúng đơn đó (cùng mã đơn, cùng key)
 deactivate FE
 @enduml
 ```
@@ -401,28 +427,28 @@ participant "Máy chủ xử lý\n(Backend)" as BE
 database "PostgreSQL\n(qua Prisma)" as DB
 participant "Cổng thanh toán\n(Mock Gateway)" as Gateway
 
-User -> FE : Tôi muốn thanh toán giỏ hàng này
+User -> FE : Bấm "Thanh toán" ở trang Giỏ hàng
 activate FE
-FE --> User : Mở màn Thanh toán (chưa tạo đơn)
+FE --> User : Hiện màn Thanh toán (chưa tạo đơn)
 deactivate FE
 
 == BƯỚC 1: ÁP MÃ GIẢM GIÁ (UC05a - TÙY CHỌN EXTEND) ==
 opt Khách hàng có mã khuyến mãi
-    User -> FE : Tôi có mã "BREWLITE10", áp giúp tôi nhé
+    User -> FE : Nhập mã "BREWLITE10", bấm "Áp dụng"
     activate FE
-    FE -> FE : Tự kiểm tra mã và tính lại tiền còn phải trả (tạm tính)
-    FE --> User : Trừ 10% rồi nhé, còn phải trả 110.700đ
+    FE -> FE : Kiểm mã và tính lại tiền phải trả (tạm tính)
+    FE --> User : Hiện "Đã áp BREWLITE10: −12.300đ", thực trả 110.700đ
     deactivate FE
 end
 
 == BƯỚC 2a: TẠO ĐƠN HÀNG (UC04) - CHẠY KHI BẤM "XÁC NHẬN TRẢ" ==
-User -> FE : Tôi chọn trả bằng ví, bấm "Xác nhận trả"
+User -> FE : Bấm "Xác nhận trả" (chọn Ví)
 activate FE
 opt Chưa có đơn (lần bấm đầu; lần thử lại đã giữ orderId thì bỏ qua)
     FE -> BE : POST /orders (giỏ hàng: món, số lượng, size, topping)\nkèm Idempotency-Key của đơn
     note right of FE #fef3c7 : Gửi kèm token đăng nhập.\nKey tạo đơn giữ nguyên tới khi rời màn Thanh toán\n(khác key của POST /payments).\nLỗi ở bước này (thiếu/sai token 401, token BARISTA / ADMIN 403 Insufficient role do RolesGuard chạy sau JwtAuthGuard và trước mọi bước nghiệp vụ, 400, 404, 422) thì dừng:\nkhông gọi POST /payments, lần bấm sau tạo đơn lại.\n401 còn xóa token và chuyển về /login?next=/cart (giỏ và đơn đang trả dở giữ nguyên;\nđăng nhập lại cùng tài khoản thì trả tiếp đúng đơn đó)
     activate BE
-    BE -> DB : Kiểm xem Idempotency-Key này đã tạo đơn chưa
+    BE -> DB : Tìm đơn đã tạo bằng Idempotency-Key này
     activate DB
     DB --> BE : Đơn đã tạo bằng key này (nếu có)
     deactivate DB
@@ -435,20 +461,20 @@ opt Chưa có đơn (lần bấm đầu; lần thử lại đã giữ orderId th
         activate DB
         DB --> BE : Giá gốc các món
         deactivate DB
-        BE -> BE : Tự tính giá: giá gốc + phụ thu size\n+ topping (bỏ qua giá client gửi)
+        BE -> BE : Tính giá từng dòng: giá gốc + phụ thu size + topping\n(bỏ qua giá client gửi)
         note right of BE #fef3c7 : Thiếu size -> M\nGiỏ rỗng hoặc > 20 dòng, quantity ngoài 1..99,\nsize ngoài S/M/L -> 400 (DTO)\nTopping lạ -> 400, món lạ -> 404\nTổng đơn > 2147483647 -> 400
-        BE -> DB : Lưu đơn mới, đơn đang chờ thanh toán (PENDING)
-        note right of DB #fef3c7 : Cột idempotencyKey là duy nhất:\n2 request song song cùng key -> bên thua\nvi phạm chỉ số, đọc lại đơn bên thắng -> 200
+        BE -> DB : Lưu đơn mới ở trạng thái Chờ thanh toán (PENDING)
         activate DB
-        DB --> BE : Xong rồi, đơn số #1042 đây nhé
+        note right of DB #fef3c7 : Cột idempotencyKey là duy nhất:\n2 request song song cùng key -> bên thua\nvi phạm chỉ số, đọc lại đơn bên thắng -> 200
+        DB --> BE : Đơn #1042 đã lưu
         deactivate DB
-        BE --> FE : 201 Tạo đơn thành công, mã đơn là #1042
+        BE --> FE : 201 Đã tạo đơn #1042 (PENDING)
     end
     deactivate BE
 end
 
 == BƯỚC 2b: THANH TOÁN KHÔNG TIỀN MẶT (UC05) - GỌI NGAY SAU 2a ==
-FE -> BE : POST /payments: thanh toán đơn #1042 bằng ví
+FE -> BE : POST /payments (đơn #1042, trả bằng Ví)
 note right of FE #fef3c7 : Gửi kèm Idempotency-Key trả tiền (1 key cho cả phiên\nmàn Thanh toán, dùng lại khi thử lại) và mã giảm giá (nếu có)
 activate BE
 
@@ -460,17 +486,17 @@ else Token hợp lệ nhưng là BARISTA / ADMIN (RolesGuard, @Roles(CUSTOMER))
     note right of BE #fef3c7 : Dừng trước mọi bước nghiệp vụ: không khóa, không đọc đơn,\nkhông gọi cổng thanh toán. Giao diện không cho nhân viên tới màn này\n(trang khách bị chuyển về trang nhà), nên chỉ gặp khi gọi API tay
 else Token hợp lệ, vai trò CUSTOMER
     note right of BE #fef3c7 : Body sai DTO / thiếu hoặc quá dài (> 255 ký tự)\nheader Idempotency-Key -> 400, dừng trước khi vào khóa
-    BE -> BE : Xếp hàng theo khóa trong tiến trình\n(theo Idempotency-Key, rồi theo orderId)
+    BE -> BE : Xếp hàng chờ theo khóa trong tiến trình\n(withLock: Idempotency-Key, rồi orderId)
     note right of BE #fef3c7 : Request song song cùng key\nhoặc cùng đơn phải chờ nhau,\nrequest sau đọc lại kết quả mới
 
     alt Không có đơn hoặc không phải chủ đơn (đọc đơn trước khi xét trùng lặp)
         BE --> FE : 404 Không có đơn / 403 Không phải đơn của bạn
         note right of BE #fef3c7 : Người lạ không thanh toán hộ, cũng không\nđọc được biên lai của người khác bằng key
     else Đúng chủ đơn
-        BE -> DB : Kiểm tra giúp xem mã giao dịch này đã dùng chưa
-        note right of DB #fef3c7 : Tìm đúng 1 biên lai theo mã,\nkhóa này là duy nhất trong bảng
+        BE -> DB : Tìm biên lai theo Idempotency-Key
         activate DB
-        DB --> BE : Đây là kết quả kiểm tra mã giao dịch
+        note right of DB #fef3c7 : Tìm đúng 1 biên lai theo mã,\nkhóa này là duy nhất trong bảng
+        DB --> BE : Biên lai theo key (nếu có)
         deactivate DB
 
         alt Key đã có biên lai, nhưng của đơn khác (không phải #1042)
@@ -481,62 +507,82 @@ else Token hợp lệ, vai trò CUSTOMER
             BE --> FE : 404 Không có đơn kia / 403 Đơn kia không phải của bạn\n/ 422 Key đã dùng cho đơn khác (cùng chủ)
             note right of BE #fef3c7 : Đơn kia cũng phải của người gọi, nếu không -> 403;\nđúng chủ nhưng khác đơn -> 422: không trả biên lai\nđơn cũ như thể đơn này đã trả, không charge
         else Đơn này đã thu tiền rồi (Yêu cầu trùng lặp - Idempotent Cache Hit)
-            BE --> FE : Đơn này trả rồi nhé, gửi lại kết quả cũ, không thu thêm
+            BE --> FE : 200 Trả lại biên lai cũ, không thu thêm tiền
             note right of BE #fef3c7 : Trả HTTP 200, tuyệt đối\nkhông gọi lại cổng thanh toán.\nBấm lại sau khi mất phản hồi (cùng key)\ncũng vào nhánh này, nhận lại biên lai
-            FE --> User : Đơn của bạn đã thanh toán rồi, đây là biên lai nhé
+            FE --> User : Hiện "Đặt hàng thành công" kèm biên lai đơn #1042
         else Đây là lần thanh toán đầu tiên (Cache Miss)
             note over BE #fef3c7
                 Tự kiểm tra mã "BREWLITE10" trong máy:
                 đúng mã thì trừ floor(10% x tổng đơn server), sai thì thôi
             end note
-            BE -> BE : Tự kiểm tra mã giảm giá và tính tiền còn lại
-            BE -> BE : Kiểm trạng thái đơn: chỉ PENDING / PAYMENT_FAILED được trả
+            BE -> BE : Kiểm mã giảm giá và tính số tiền phải thu
+            BE -> BE : Kiểm đơn đang ở Chờ thanh toán hoặc Thanh toán lỗi\n(PENDING / PAYMENT_FAILED)
             note right of BE #fef3c7 : Đơn đã PAID / PREPARING / ... mà gửi key mới\n-> assertTransition ném 400, không gọi cổng thanh toán
             opt Đơn đang PAYMENT_FAILED (thử lại, UC06 KB1)
-                BE -> DB : Đưa đơn về PENDING (assertTransition PAYMENT_FAILED -> PENDING)
+                BE -> DB : Đưa đơn về Chờ thanh toán\n(assertTransition PAYMENT_FAILED -> PENDING)
+                activate DB
+                deactivate DB
             end
 
-            BE -> Gateway : Nhờ trừ giúp tiền của khách qua ví nhé
+            BE -> Gateway : Trừ tiền qua Ví (charge)
             activate Gateway
 
             alt Trừ tiền thất bại
-                Gateway --> BE : Trừ tiền thất bại rồi nhé
-                BE -> BE : Tự chuyển đơn sang thanh toán lỗi
-                BE -> DB : Lưu giúp đơn sang trạng thái thanh toán lỗi nhé
-                BE --> FE : 400 Thanh toán lỗi rồi, giỏ hàng giữ nguyên nhé
-                FE -> FE : Lưu orderId #1042 + 2 key vào sessionStorage\n(theo giỏ): thử lại, kể cả sau reload,\nchỉ gọi POST /payments (cùng key)
-                FE --> User : Thẻ/ví lỗi rồi, bạn thử lại nhé (giỏ vẫn còn)
+                Gateway --> BE : Trừ tiền thất bại
+                deactivate Gateway
+                BE -> BE : Kiểm đơn được chuyển sang Thanh toán lỗi\n(assertTransition PENDING -> PAYMENT_FAILED)
+                BE -> DB : Lưu đơn sang Thanh toán lỗi (PAYMENT_FAILED)
+                activate DB
+                deactivate DB
+                BE --> FE : 400 Payment failed: cổng từ chối, giỏ hàng giữ nguyên
+                FE -> FE : Ghi thêm mã đơn #1042 vào phiên thanh toán\n(rememberOrder, sessionStorage)
+                note right of FE #fef3c7 : Hai key (đơn, trả tiền) đã được ghi khi mở màn Thanh toán (loadCheckout).\n400 "Payment failed" không bị bỏ phiên (dropsCheckout trả false):\nthử lại theo giỏ (orderId #1042), kể cả sau reload,\nchỉ gọi POST /payments (cùng key)
+                FE --> User : Hiện "Thanh toán thất bại. Giỏ hàng được giữ nguyên. Bạn có thể thử lại."
             else Trừ tiền thành công
-                Gateway --> BE : Trừ tiền thành công rồi nhé
-                BE -> BE : Tự kiểm tra xem đơn có được chuyển\ntừ chờ thanh toán sang đã thanh toán không
+                activate Gateway
+                Gateway --> BE : Trừ tiền thành công
+                deactivate Gateway
+                BE -> BE : Kiểm đơn được chuyển sang Đã thanh toán\n(assertTransition PENDING -> PAID)
 
                 group 1 DB transaction (runInTransaction): thiếu một là rollback hết
-                    BE -> DB : Trừ giúp tồn kho các món trong đơn nhé
+                    activate DB
+                    BE -> DB : Trừ tồn kho từng món trong đơn
                     note over BE, DB #fef3c7
                         Mỗi món trừ theo kiểu "đúng phiên bản mới trừ":
                         sai phiên bản hoặc hết hàng thì không trừ.
                         Kẹt thì thử lại 3 lần, vẫn kẹt thì ném 409
                         -> cả transaction rollback
                     end note
-                    BE -> DB : Đổi giúp đơn #1042 sang đã thanh toán nhé
-                    BE -> DB : Cộng giúp điểm tích lũy cho khách nhé
-                    BE -> DB : Lưu giúp biên lai thanh toán kèm mã chống thu trùng nhé
+                    BE -> DB : Chuyển đơn #1042 sang Đã thanh toán (PAID)
+                    BE -> DB : Cộng điểm tích lũy cho khách
+                    BE -> DB : Lưu biên lai thanh toán kèm Idempotency-Key
+                    deactivate DB
                 end
 
                 alt Lỗi trong transaction, đã rollback (kẹt kho 409 / món mất 404 / lỗi DB 500)
-                    BE -> Gateway : Hoàn lại đúng số vừa trừ (refund)
-                    BE -> DB : Lưu đơn sang thanh toán lỗi (PAYMENT_FAILED)
-                    BE --> FE : Ném lại lỗi gốc: 409 / 404 / 500
+                    BE -> Gateway : Hoàn lại đúng số vừa trừ (refund, ngoài transaction)
+                    activate Gateway
+                    deactivate Gateway
+                    BE -> DB : Lưu đơn sang Thanh toán lỗi (PAYMENT_FAILED)
+                    activate DB
+                    deactivate DB
+                    BE --> FE : Trả lại lỗi gốc: 409 / 404 / 500
                     note right of BE #fef3c7 : Nếu chính bước hoàn tiền hoặc ghi PAYMENT_FAILED lỗi\nthì bỏ qua (chưa có sổ đối soát)
-                    FE -> FE : Lưu orderId #1042 + 2 key vào sessionStorage để thử lại
-                    FE --> User : 409: "Món đã hết hàng, tiền đã được hoàn lại";\nmã khác: "Thanh toán thất bại (mã ...)" (giỏ vẫn còn)
+                    alt 409 hoặc 500: giữ phiên thanh toán
+                        FE -> FE : Ghi thêm mã đơn #1042 vào phiên thanh toán\n(rememberOrder, sessionStorage)
+                        note right of FE #fef3c7 : Hai key đã ghi từ loadCheckout, lần bấm sau\nchỉ gọi POST /payments với cùng key
+                    else 404 (món không còn): bỏ phiên thanh toán
+                        FE -> FE : Xóa phiên thanh toán, tạo phiên mới\n(dropsCheckout: clearCheckout, loadCheckout)
+                        note right of FE #fef3c7 : Đơn #1042 không trả tiếp được:\nlần bấm sau tạo đơn mới với 2 key mới
+                    end
+                    FE --> User : Hiện lỗi hết hàng hoặc lỗi thanh toán (giỏ vẫn còn)
+                    note right of FE #fef3c7 : Hiện thông báo lỗi theo mã.\n409: "Món đã hết hàng, tiền đã được hoàn lại";\nmã khác: "Thanh toán thất bại (mã ...)"
                 else Transaction thành công
-                    BE --> FE : Thanh toán xong rồi nhé, đơn #1042 đã được trả tiền\n(kèm orderId, amount, discount, loyaltyPointsEarned)
+                    BE --> FE : 201 Đã trả tiền đơn #1042 (PAID)\n(kèm orderId, amount, discount, loyaltyPointsEarned)
                     note right of BE #fef3c7 : Trả HTTP 201 cho lần thanh toán đầu tiên
-                    FE --> User : Xong rồi, mời bạn xem biên lai đơn #1042 nhé
+                    FE --> User : Hiện "Đặt hàng thành công" kèm biên lai đơn #1042
                 end
             end
-            deactivate Gateway
         end
     end
 end
@@ -600,56 +646,71 @@ participant "Cổng thanh toán\n(Mock Gateway)" as Gateway
 alt Kịch bản 1: Thử thanh toán lại (Khi bị lỗi trừ tiền, 1 bước duy nhất)
     User -> FE : Bấm lại "Xác nhận trả" ngay trên màn Thanh toán\n(form vẫn mở, đang giữ orderId của đơn lỗi)
     activate FE
-    FE -> BE : POST /payments (orderId cũ đã giữ, cùng Idempotency-Key, có thể đổi phương thức)
+    FE -> BE : Gửi lại POST /payments\n(orderId cũ đã giữ, cùng Idempotency-Key, có thể đổi phương thức)
     note right of FE : Không gọi lại POST /orders
     activate BE
     note right of BE : Vẫn chạy guard -> khóa -> chủ đơn -> cache như §2.4\n(lần trước lỗi nên key chưa được lưu: đi nhánh Cache Miss)
-    BE -> BE : assertTransition(from: PAYMENT_FAILED, to: PENDING)
-    BE -> DB : Cập nhật trạng thái đơn về "Chờ thanh toán (PENDING)"
-    BE -> Gateway : Trừ tiền lại từ đầu (đi tiếp như nhánh Cache Miss của UC05)
-    BE -> DB : 1 transaction: trừ kho, đổi đơn sang PAID, cộng điểm, lưu biên lai mới
-    BE --> FE : Thanh toán lại thành công (201 Created, biên lai mới)
+    BE -> BE : Kiểm đơn được quay lại Chờ thanh toán\n(assertTransition PAYMENT_FAILED -> PENDING)
+    BE -> DB : Đổi trạng thái đơn về "Chờ thanh toán (PENDING)"
+    activate DB
+    deactivate DB
+    BE -> Gateway : Trừ tiền lại từ đầu (charge)\n(đi tiếp như nhánh Cache Miss của UC05)
+    activate Gateway
+    deactivate Gateway
+    BE -> DB : Ghi 1 transaction: trừ kho, đổi đơn sang PAID,\ncộng điểm, lưu biên lai mới
+    activate DB
+    deactivate DB
+    BE --> FE : 201 Created (thanh toán lại thành công, biên lai mới)
     note right of BE : Trừ tiền lỗi lần nữa -> PAYMENT_FAILED + 400;\nlỗi trong transaction -> hoàn tiền + PAYMENT_FAILED (như §2.4)
     deactivate BE
-    FE --> User : Hiển thị biên lai mới (giỏ được xóa sau khi trả thành công)
+    FE --> User : Hiện biên lai mới (giỏ được xóa sau khi trả thành công)
     deactivate FE
 
 else Kịch bản 2: Chủ đơn hủy đơn chưa thanh toán (PENDING / PAYMENT_FAILED -> CANCELLED)
     User -> FE : Bấm nút "Hủy đơn" ở trang Lịch sử
     activate FE
-    FE -> BE : PATCH /orders/1042 { status: 'CANCELLED' } + Bearer JWT
+    FE -> BE : Gửi yêu cầu hủy đơn\n(PATCH /orders/1042 { status: 'CANCELLED' } + Bearer JWT)
     activate BE
-    BE -> BE : Kiểm tra chủ đơn (khác chủ -> 403, không có đơn -> 404)
-    BE -> BE : assertTransition(from: PENDING | PAYMENT_FAILED, to: CANCELLED)
-    BE -> DB : Cập nhật trạng thái đơn thành "CANCELLED" (chưa thu tiền nên không hoàn tiền, không đụng kho)
-    BE --> FE : Xác nhận hủy đơn thành công (200 OK)
+    BE -> BE : Kiểm đơn tồn tại và người gọi là chủ đơn\n(không có đơn -> 404, khác chủ -> 403)
+    BE -> BE : Kiểm đơn chưa thanh toán được hủy\n(assertTransition PENDING | PAYMENT_FAILED -> CANCELLED)
+    BE -> DB : Đổi đơn sang CANCELLED
+    activate DB
+    deactivate DB
+    note right of BE : Chưa thu tiền: không hoàn tiền, không đụng kho
+    BE --> FE : 200 OK (hủy đơn thành công)
     deactivate BE
-    FE --> User : Tải lại danh sách, đơn hiện trạng thái CANCELLED
+    FE --> User : Tải lại và hiện danh sách, đơn ở trạng thái CANCELLED
     note right of FE : Lỗi 400/403 từ backend\nhiện ngay dưới thẻ đơn.\n401 (token hết hạn): xóa token,\nchuyển về /login?next=/history
     deactivate FE
 
 else Kịch bản 3: Chủ đơn hủy đơn đã thanh toán (PAID -> CANCELLED / Hoàn tiền)
     User -> FE : Bấm nút "Hủy đơn" ở trang Lịch sử
     activate FE
-    FE --> User : Hộp thoại xác nhận: hủy sẽ hoàn tiền + hoàn kho
+    FE --> User : Hiện hộp thoại xác nhận (hủy sẽ hoàn tiền + hoàn kho)
     User -> FE : Đồng ý hủy
-    FE -> BE : PATCH /orders/1042 { status: 'CANCELLED' } + Bearer JWT
+    FE -> BE : Gửi yêu cầu hủy đơn\n(PATCH /orders/1042 { status: 'CANCELLED' } + Bearer JWT)
     activate BE
-    BE -> BE : Kiểm tra chủ đơn (khác chủ -> 403, không có đơn -> 404)
-    BE -> BE : assertTransition(from: PAID, to: CANCELLED)
+    BE -> BE : Kiểm đơn tồn tại và người gọi là chủ đơn\n(không có đơn -> 404, khác chủ -> 403)
+    BE -> BE : Kiểm đơn đã thanh toán được hủy\n(assertTransition PAID -> CANCELLED)
     BE -> DB : Đọc mọi biên lai SUCCESS của đơn (số tiền thực thu)
-    BE -> Gateway : Hoàn đúng số thực thu (Refund), NGOÀI transaction
-    activate Gateway
-    Gateway --> BE : Phản hồi: Hoàn tiền THÀNH CÔNG
-    deactivate Gateway
+    activate DB
+    deactivate DB
+    opt Đã thu tiền (tổng biên lai SUCCESS > 0)
+        BE -> Gateway : Hoàn đúng số thực thu (Refund), NGOÀI transaction
+        activate Gateway
+        Gateway --> BE : Hoàn tiền THÀNH CÔNG
+        deactivate Gateway
+    end
     group 1 DB transaction: lỗi giữa chừng thì rollback, đơn vẫn PAID
+        activate DB
         BE -> DB : Hoàn lại tồn kho mọi món
         BE -> DB : Đổi trạng thái đơn thành "CANCELLED"
+        deactivate DB
     end
     note right of BE : Giới hạn: transaction lỗi sau khi đã hoàn tiền thì đơn vẫn PAID,\nhủy lại sẽ hoàn tiền lần 2. Điểm thưởng đã cộng không bị thu hồi.
-    BE --> FE : Xác nhận hủy và hoàn tiền thành công (200 OK)
+    BE --> FE : 200 OK (hủy và hoàn tiền thành công)
     deactivate BE
-    FE --> User : Tải lại danh sách, đơn hiện trạng thái CANCELLED
+    FE --> User : Tải lại và hiện danh sách, đơn ở trạng thái CANCELLED
     deactivate FE
 end
 @enduml
@@ -745,18 +806,22 @@ participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
 
 == PHẦN 1: MÀN HÌNH XÁC NHẬN (LIÊN KẾT TRỰC TIẾP SAU KHI THANH TOÁN UC05) ==
-BE --> FE : 201 thanh toán thành công (orderId, amount, discount, loyaltyPointsEarned)
+activate FE
+activate BE
+BE --> FE : 201 Thanh toán thành công (orderId, amount, discount, loyaltyPointsEarned)
+deactivate BE
 FE -> FE : Xóa rỗng giỏ hàng
-FE --> User : Hiển thị màn hình biên lai xác nhận "Đặt hàng thành công":\n- Mã đơn: #1042 (8 ký tự đầu của mã đơn)\n- Nhãn "+N điểm tích lũy" (chỉ khi loyaltyPointsEarned > 0)\n- Trạng thái: thanh 5 bước, đang ở "Đã thanh toán" (lấy từ kết quả thanh toán)\n- Đã trả: số tiền + phương thức\n- Đã giảm: số tiền (chỉ khi discount > 0)\n- Lời nhắn: "Mời tới quầy lấy nước"\n- Nút "Về trang chủ"
+FE --> User : Hiện biên lai "Đặt hàng thành công"
+note right of FE : Biên lai gồm:\n- Mã đơn: #1042 (8 ký tự đầu của mã đơn)\n- Nhãn "+N điểm tích lũy" (chỉ khi loyaltyPointsEarned > 0)\n- Trạng thái: thanh 5 bước, đang ở "Đã thanh toán" (lấy từ kết quả thanh toán)\n- Đã trả: số tiền + phương thức\n- Đã giảm: số tiền (chỉ khi discount > 0)\n- Lời nhắn: "Mời tới quầy lấy nước"\n- Nút "Về trang chủ"
 
 opt Kết quả thanh toán có mã đơn đầy đủ (cổng API thật) và tab còn token
     loop Mỗi 3 giây, đến khi đơn COMPLETED / CANCELLED hoặc khách rời màn
         note over FE : Hỏi ngay lần đầu; lần sau chỉ hẹn khi lần trước đã xong (không gọi chồng)
-        FE -> BE : GET /orders/:id + Bearer JWT
+        FE -> BE : Hỏi trạng thái đơn (GET /orders/:id + Bearer JWT)
         activate BE
         alt Token sai / hết hạn
             BE --> FE : 401 Unauthorized
-            FE -> FE : handleUnauthorized(): xóa token của tab,\nchuyển về /login?next=/cart
+            FE -> FE : Xóa token của tab, chuyển về /login?next=/cart\n(handleUnauthorized)
             note over FE : Dừng poll
         else Không có đơn
             BE --> FE : 404 Not Found
@@ -775,35 +840,37 @@ opt Kết quả thanh toán có mã đơn đầy đủ (cổng API thật) và t
             activate DB
             DB --> BE : Đơn
             deactivate DB
-            BE --> FE : 200 đơn với status hiện tại
-            FE --> User : Thanh 5 bước đổi theo status\n(Đang pha, Sẵn sàng, Hoàn tất; hoặc nhãn xám "Đã hủy")
+            BE --> FE : 200 Đơn với status hiện tại
+            FE --> User : Hiện thanh 5 bước theo status\n(Đang pha, Sẵn sàng, Hoàn tất; hoặc nhãn xám "Đã hủy")
             note over FE : status là COMPLETED / CANCELLED thì dừng poll
         end
         deactivate BE
     end
 end
+deactivate FE
 
 == PHẦN 2: XEM LỊCH SỬ CÁC ĐƠN HÀNG ĐÃ MUA ==
 User -> FE : Bấm vào mục "Lịch sử"
 activate FE
 alt Chưa đăng nhập trong tab này (sessionStorage không có "brewlite-token")
-    FE --> User : "Bạn chưa đăng nhập." + liên kết "Đăng nhập" tới /login?next=%2Fhistory\n(đăng nhập xong về lại /history; không gọi API)
+    FE --> User : Hiện "Bạn chưa đăng nhập." + liên kết "Đăng nhập" tới /login?next=%2Fhistory\n(đăng nhập xong về lại /history; không gọi API)
 else Có token
     loop Mỗi 3 giây, đến khi không còn đơn PAID / PREPARING / READY hoặc khách rời trang
         note over FE : Hỏi ngay khi mở trang; lần sau chỉ hẹn khi lần trước đã xong (không gọi chồng);\nnút "Hủy đơn" thành công hoặc "Thử lại" thì hỏi lại ngay
-        FE -> BE : GET /orders/me + Bearer JWT
+        FE -> BE : Hỏi danh sách đơn của khách (GET /orders/me + Bearer JWT)
         activate BE
         alt Token sai / hết hạn
             BE --> FE : 401 Unauthorized
-            FE -> FE : handleUnauthorized(): xóa token của tab,\nchuyển về /login?next=/history
-            FE --> User : "Không tải được lịch sử: Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại."\n(thoáng qua, trang đang chuyển về /login)
+            FE -> FE : Xóa token của tab, chuyển về /login?next=/history\n(handleUnauthorized)
+            FE --> User : Hiện "Không tải được lịch sử: Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại."\n(thoáng qua, trang đang chuyển về /login)
             note over FE : Dừng vòng làm mới
         else Token của BARISTA / ADMIN (RolesGuard, @Roles(CUSTOMER))
             BE --> FE : 403 Insufficient role
             note over FE : Chỉ gặp khi gọi API tay: nhân viên mở /history thì Header.tsx\nchuyển về trang nhà. Dừng vòng làm mới
         else Lỗi máy chủ (5xx) hoặc mất kết nối
             BE --> FE : 5xx / không có phản hồi
-            FE --> User : Khối lỗi "Không tải được lịch sử: ..." (thông điệp của backend,\nhoặc "Không kết nối được máy chủ.") + nút "Thử lại";\nđã có danh sách thì giữ danh sách bên dưới khối lỗi
+            FE --> User : Hiện khối lỗi "Không tải được lịch sử: ..." + nút "Thử lại"
+            note over FE : Thông điệp lỗi là của backend, hoặc "Không kết nối được máy chủ.";\nđã có danh sách thì giữ danh sách bên dưới khối lỗi
             note over FE : Giữ danh sách cũ, thử lại sau 3 giây
         else Token hợp lệ
             BE -> DB : Tra cứu toàn bộ các đơn của userId kèm món (mới nhất lên đầu)
@@ -814,8 +881,9 @@ else Có token
             activate DB
             DB --> BE : Danh sách món
             deactivate DB
-            BE --> FE : 200 danh sách lịch sử đơn, mỗi dòng món kèm productName
-            FE --> User : Thẻ đơn: mã đơn, nhãn trạng thái tiếng Việt (STATUS_LABEL), tổng tiền, giờ đặt, thanh 5 bước cỡ nhỏ\n+ dòng món "2× Latte (M + Trân châu)" và đơn giá "45.000đ" ở cột riêng\n(rỗng thì "Chưa có đơn hàng nào." + liên kết "Xem menu"); thanh tiến trình đổi khi trạng thái đơn đổi
+            BE --> FE : 200 Danh sách lịch sử đơn (mỗi dòng món kèm productName)
+            FE --> User : Hiện các thẻ đơn (thanh tiến trình đổi khi trạng thái đơn đổi)
+            note over FE : Thẻ đơn: mã đơn, nhãn trạng thái tiếng Việt (STATUS_LABEL), tổng tiền, giờ đặt, thanh 5 bước cỡ nhỏ\n+ dòng món "2× Latte (M + Trân châu)" và đơn giá "45.000đ" ở cột riêng\n(rỗng thì "Chưa có đơn hàng nào." + liên kết "Xem menu")
             note over FE : Không còn đơn nào PAID / PREPARING / READY (mọi đơn đã COMPLETED / CANCELLED,\nPENDING, PAYMENT_FAILED, hoặc chưa có đơn nào) thì dừng vòng làm mới
         end
         deactivate BE
@@ -875,12 +943,12 @@ loop Mỗi 5 giây (POLL_MS), dừng khi gặp 401/403
         BE --> FE : 401 / 403
         FE --> User : 401: xóa token, chuyển về /login?next=/barista (§2.3), ngừng tự tải lại\n403: báo cần tài khoản quầy, ngừng tự tải lại
     else BARISTA / ADMIN
-        BE -> DB : Đơn PAID / PREPARING / READY, cũ trước + tên món
+        BE -> DB : Lấy đơn PAID / PREPARING / READY (cũ nhất trước) kèm tên món
         activate DB
         DB --> BE : Danh sách đơn
         deactivate DB
-        BE --> FE : 200 hàng đợi
-        FE --> User : 3 cột: Chờ pha | Đang pha | Sẵn sàng\n(số đơn ở đầu cột; cột rỗng ghi "Không có đơn")
+        BE --> FE : 200 Hàng đợi đơn
+        FE --> User : Hiện 3 cột: Chờ pha | Đang pha | Sẵn sàng\n(số đơn ở đầu cột; cột rỗng hiện "Không có đơn")
     end
     deactivate BE
 end
@@ -891,23 +959,31 @@ User -> FE : Bấm "Nhận pha" (rồi "Pha xong", "Đã giao")
 activate FE
 FE -> BE : PATCH /orders/:id { status: PREPARING | READY | COMPLETED }
 activate BE
+note right of BE : Chỉ gặp khi gọi API tay: status ngoài PREPARING / READY / COMPLETED / CANCELLED\n-> 400 từ DTO (UpdateOrderStatusDto, @IsIn), chặn trước service.\nstatus CANCELLED đi nhánh hủy (UC12) ở controller nên không tới advanceOrder:\nnhánh 400 "Use cancel for CANCELLED" của service không gặp được
 alt Thiếu/sai token hoặc hết hạn (JwtAuthGuard)
     BE --> FE : 401 Unauthorized
     FE --> User : Xóa token, chuyển về /login?next=/barista (§2.3)
 else Không phải BARISTA/ADMIN
     BE --> FE : 403 Only staff can advance orders
-else Không có đơn
-    BE --> FE : 404 Order not found
-else Sai thứ tự (assertTransition, ví dụ PAID -> READY)
-    BE --> FE : 400 Invalid transition
-else Hợp lệ (dưới khóa order:<id>)
-    BE -> DB : Cập nhật trạng thái đơn
-    BE --> FE : 200 đơn mới
-    FE -> BE : GET /orders?status=PAID,PREPARING,READY (tải lại ngay)
-    FE --> User : Đơn chuyển sang cột kế tiếp
+else BARISTA / ADMIN: các bước dưới chạy trong khóa order:<id>
+    alt Không có đơn
+        BE --> FE : 404 Order not found
+    else Sai thứ tự (assertTransition, ví dụ PAID -> READY)
+        BE --> FE : 400 Invalid transition
+    else Hợp lệ
+        BE -> DB : Đổi đơn sang trạng thái mới
+        activate DB
+        deactivate DB
+        BE --> FE : 200 Đơn đã đổi trạng thái
+        deactivate BE
+        FE -> BE : GET /orders?status=PAID,PREPARING,READY (tải lại ngay)
+        activate BE
+        BE --> FE : 200 Hàng đợi đơn
+        deactivate BE
+        FE --> User : Đơn chuyển sang cột kế tiếp
+    end
 end
 note right of FE : Lỗi 403 / 404 / 400 hiện câu tiếng Việt ở đầu trang
-deactivate BE
 deactivate FE
 
 == UC12: Hủy đơn do hết nguyên liệu (chỉ cột Chờ pha) ==
@@ -926,20 +1002,29 @@ else Từ PREPARING trở đi, hoặc đơn đã kết thúc (assertTransition)
     BE --> FE : 400 Invalid transition
 else Đơn PAID (dưới khóa order:<id>)
     BE -> DB : Đọc mọi biên lai SUCCESS của đơn (số tiền thực thu)
-    BE -> Gateway : Hoàn đúng số tiền thực thu, NGOÀI transaction
-    activate Gateway
-    Gateway --> BE : Hoàn tiền thành công
-    deactivate Gateway
+    activate DB
+    deactivate DB
+    opt Đã thu tiền (tổng biên lai SUCCESS > 0)
+        BE -> Gateway : Hoàn đúng số tiền thực thu, NGOÀI transaction
+        activate Gateway
+        Gateway --> BE : Hoàn tiền thành công
+        deactivate Gateway
+    end
     group 1 DB transaction: lỗi giữa chừng thì rollback, đơn vẫn PAID
+        activate DB
         BE -> DB : Hoàn kho mọi món
         BE -> DB : Đổi đơn sang CANCELLED
+        deactivate DB
     end
-    BE --> FE : 200 đơn đã hủy
+    BE --> FE : 200 Đơn đã hủy
+    deactivate BE
     FE -> BE : GET /orders?status=PAID,PREPARING,READY (tải lại ngay)
+    activate BE
+    BE --> FE : 200 Hàng đợi đơn
+    deactivate BE
     FE --> User : Đơn rời hàng đợi
 end
 note right of BE : Giới hạn như UC06 KB3: transaction lỗi sau khi đã hoàn tiền\nthì đơn vẫn PAID (hủy lại sẽ hoàn lần 2); điểm thưởng không bị thu hồi
-deactivate BE
 deactivate FE
 @enduml
 ```
@@ -989,12 +1074,15 @@ FE -> BE : GET /admin/products + Bearer JWT
 activate BE
 alt Thiếu/sai token (401) hoặc không phải ADMIN (403, RolesGuard)
   BE --> FE : 401 / 403
-  FE --> User : 401: xóa token, chuyển về /login?next=/admin (§2.3)\n403: vẫn chỉ hiện "Trang này dành cho quản trị" (thông báo lỗi 403 của lib/admin.ts bị màn chặn che)
+  FE --> User : 401: xóa token, chuyển về /login?next=/admin (§2.3)\n403: vẫn chỉ hiện "Trang này dành cho quản trị"
+  note right of FE : (thông báo lỗi 403 của lib/admin.ts bị màn chặn che)
 else ADMIN
-  BE -> DB : Mọi món, kể cả stock = 0, sắp theo tên
+  BE -> DB : Lấy mọi món, kể cả hết hàng (stock = 0), sắp theo tên
+  activate DB
   DB --> BE : Danh sách món (stock, version)
-  BE --> FE : 200
-  FE --> User : Dòng tóm tắt ("4 món. 1 món sắp hết, 1 món hết hàng.")\n+ bảng tồn kho + nhãn Hết hàng / Sắp hết / Còn hàng
+  deactivate DB
+  BE --> FE : 200 Danh sách món
+  FE --> User : Hiện dòng tóm tắt ("4 món. 1 món sắp hết, 1 món hết hàng.")\n+ bảng tồn kho, nhãn Hết hàng / Sắp hết / Còn hàng
 end
 deactivate BE
 deactivate FE
@@ -1006,6 +1094,8 @@ activate BE
 note right of BE : Thiếu/sai token -> 401, không phải ADMIN -> 403 (guard, trước mọi bước dưới);\nFE gặp 401 thì xóa token, chuyển về /login?next=/admin (§2.3)
 note right of BE : Body sai AdjustStockDto (mode lạ, value lẻ / ngoài Int32,\nversion < 1) -> 400 (ValidationPipe) trước mọi bước dưới
 BE -> DB : Đọc món theo id
+activate DB
+deactivate DB
 alt Món không tồn tại
   BE --> FE : 404 Product not found
 else version gửi lên khác version hiện tại (vừa có đơn trừ kho / người khác sửa)
@@ -1013,20 +1103,27 @@ else version gửi lên khác version hiện tại (vừa có đơn trừ kho / 
 else version khớp nhưng kết quả âm, hoặc vượt Int32
   BE --> FE : 400 Stock cannot be negative / Stock too large
 else hợp lệ
-  BE -> DB : UPDATE stock, version + 1 WHERE id và version khớp
+  BE -> DB : Ghi tồn kho mới, tăng version\n(chỉ khi version vẫn khớp)
+  activate DB
+  deactivate DB
   alt Có người ghi chen vào giữa (0 dòng được cập nhật)
     BE --> FE : 409 Stock changed, reload
   else Cập nhật được
     BE -> DB : Đọc lại món
-    BE --> FE : 200 món đã cập nhật
+    activate DB
+    deactivate DB
+    BE --> FE : 200 Món đã cập nhật
     FE --> User : Cập nhật dòng trong bảng
   end
 end
+deactivate BE
 opt Có lỗi (404 / 409 / 400 / lỗi khác)
   FE -> BE : GET /admin/products (tải lại bảng TRƯỚC)
-  FE --> User : Rồi mới hiện lỗi: 409 "Tồn kho vừa thay đổi...",\n400 âm "Tồn kho không được âm", 400 khác "Giá trị tồn kho không hợp lệ"
+  activate BE
+  BE --> FE : 200 Danh sách món
+  deactivate BE
+  FE --> User : Hiện lỗi sau khi tải lại: 409 "Tồn kho vừa thay đổi...",\n400 âm "Tồn kho không được âm", 400 khác "Giá trị tồn kho không hợp lệ"
 end
-deactivate BE
 deactivate FE
 @enduml
 ```
@@ -1069,37 +1166,41 @@ participant "Giao diện Web\n(Frontend /profile)" as FE
 participant "Máy chủ xử lý\n(Backend)" as BE
 database "Cơ sở dữ liệu" as DB
 
-User -> FE : Bấm viên vai trò "Khách" trên thanh đầu trang (liên kết /profile; viên của nhân viên là nhãn tĩnh, không bấm được)
+User -> FE : Bấm nhãn vai trò "Khách" trên thanh đầu trang (liên kết /profile)
 activate FE
 FE -> FE : Đọc token trong sessionStorage của tab (getToken)
-note right of FE : Chưa đọc xong token (undefined): chưa vẽ gì, tránh nháy "chưa đăng nhập".\nTrang chỉ kiểm có token, không xét role: việc chặn nhân viên nằm ở Header.tsx (chuyển về trang nhà) và ở backend (403)
+note right of FE : Nhãn của nhân viên là chữ tĩnh, không bấm được.\nChưa đọc xong token (undefined): chưa vẽ gì, tránh nháy "chưa đăng nhập".\nTrang chỉ kiểm có token, không xét role: việc chặn nhân viên nằm ở Header.tsx (chuyển về trang nhà) và ở backend (403)
 alt Chưa có token (null)
-  FE --> User : "Hồ sơ" + "Bạn chưa đăng nhập."\n+ "Đăng nhập để xem điểm tích lũy và lịch sử đơn."\n+ liên kết "Đăng nhập" tới /login?next=%2Fprofile (không gọi API)
+  FE --> User : Hiện "Hồ sơ" + "Bạn chưa đăng nhập."\n+ liên kết "Đăng nhập" tới /login?next=%2Fprofile
+  note right of FE : Câu mời: "Đăng nhập để xem điểm tích lũy và lịch sử đơn."\nKhông gọi API
 else Có token
-  FE --> User : "Hồ sơ" + "Đang tải…"
+  FE --> User : Hiện "Hồ sơ" + "Đang tải…"
   FE -> BE : GET /users/me + Bearer JWT (getProfile, cache: 'no-store')
   activate BE
   alt Thiếu/sai/hết hạn token (401, JwtAuthGuard, trước mọi bước dưới)
     BE --> FE : 401 Unauthorized
-    FE -> FE : handleUnauthorized(): xóa token, chuyển trang cứng về /login?next=%2Fprofile (§2.3)
+    FE -> FE : Xóa token, chuyển trang cứng về /login?next=%2Fprofile (§2.3)\n(handleUnauthorized())
     note right of FE : getProfile vẫn ném ApiError 401 "Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại."\nnên khối role="alert" có thể hiện thoáng qua trước khi trình duyệt rời trang
   else Token hợp lệ nhưng là BARISTA / ADMIN (RolesGuard, @Roles(CUSTOMER))
     BE --> FE : 403 Insufficient role
-    FE --> User : Khối role="alert": "Không tải được hồ sơ (mã 403)."
+    FE --> User : Hiện khối role="alert": "Không tải được hồ sơ (mã 403)."
     note right of FE : Nhân viên thường không tới được đây: Header.tsx chuyển /profile về trang nhà\n(BARISTA /barista, ADMIN /admin) trước khi trang gọi API; nhánh này chỉ hiện trong\ntích tắc chuyển hướng hoặc khi gọi API tay (backend vẫn chặn)
   else Token hợp lệ, vai trò CUSTOMER
     BE -> DB : Tìm User theo id = sub của JWT
+    activate DB
     DB --> BE : User hoặc không có
+    deactivate DB
     alt Tài khoản của token không còn (404)
       BE --> FE : 404 User not found
-      FE -> FE : handleUnauthorized(): như nhánh 401 (hết phiên)
+      FE -> FE : Xóa token, chuyển trang như nhánh 401 (hết phiên)\n(handleUnauthorized())
     else Còn tài khoản
       BE --> FE : 200 { id, email, role, loyaltyPoints } (không có passwordHash)
-      FE --> User : "Hồ sơ" + "Điểm tích lũy": số điểm (định dạng vi-VN) + "điểm"\n+ "Mỗi 10.000đ thanh toán được 1 điểm."\n+ "Thông tin tài khoản": Email, Vai trò (Khách)\n+ liên kết "Xem lịch sử đơn hàng" tới /history
+      FE --> User : Hiện "Hồ sơ" + "Điểm tích lũy": số điểm (định dạng vi-VN) + "điểm"\n+ "Thông tin tài khoản": Email, Vai trò (Khách)
+      note right of FE : "Mỗi 10.000đ thanh toán được 1 điểm."\n+ liên kết "Xem lịch sử đơn hàng" tới /history
     end
   else Lỗi khác (5xx) hoặc không tới được máy chủ
     BE --> FE : 5xx / không có phản hồi
-    FE --> User : Khối role="alert": "Không tải được hồ sơ (mã 5xx)."\nhoặc "Không kết nối được máy chủ để tải hồ sơ." + liên kết "Đăng nhập" (/login)
+    FE --> User : Hiện khối role="alert": "Không tải được hồ sơ (mã 5xx)."\nhoặc "Không kết nối được máy chủ để tải hồ sơ." + liên kết "Đăng nhập" (/login)
   end
   deactivate BE
 end
