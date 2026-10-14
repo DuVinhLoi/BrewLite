@@ -33,7 +33,7 @@ Nhánh lỗi của đề §5 ("hủy / thanh toán lỗi, về giỏ") là `PAYM
 ```plantuml
 @startuml
 skinparam shadowing false
-skinparam wrapWidth 220
+skinparam wrapWidth 170
 skinparam ActivityDiamondFontSize 11
 skinparam DefaultFontColor #1f2937
 skinparam ArrowColor #5b6b8c
@@ -53,7 +53,7 @@ start
 :Hiện menu các món còn hàng;
 note right
   GET /products (chỉ món có tồn kho)
-  Lỗi mạng hoặc 5xx: báo lỗi và nút Thử lại
+  Lỗi tải: báo lỗi và nút Thử lại
 end note
 repeat
   |Khách hàng|
@@ -68,7 +68,7 @@ repeat
   :Chọn size S/M/L, topping, số lượng;
   |Hệ thống BrewLite|
   if (Hết hàng, quá 20 dòng hoặc quá 99 ly?) then (có)
-    :Từ chối, giữ nguyên giỏ và báo lý do;
+    :Từ chối, giữ nguyên giỏ, báo lý do;
   else (không)
     :Thêm vào giỏ (lưu trên máy khách);
   endif
@@ -76,85 +76,77 @@ repeat
   |Khách hàng|
 repeat while (Mua thêm?) is (có) not (không)
 :Chọn Ví / Thẻ, nhập mã giảm giá, bấm Xác nhận trả;
-repeat
-  |Hệ thống BrewLite|
-  :Tính giảm giá và số tiền phải trả;
+|Hệ thống BrewLite|
+if (Chưa đăng nhập hoặc token hết hạn?) then (có)
+  :Báo thiếu đăng nhập, chuyển sang trang đăng nhập;
   note right
-    BREWLITE10: giảm 10% (làm tròn xuống)
-    Mã khác: tính giá gốc, không báo lỗi
+    FE biết qua 401 của POST /orders
+    hoặc POST /payments, không chặn trước
+    Giỏ và phiên thanh toán được giữ
   end note
-  if (Có token đăng nhập hợp lệ?) then (chưa hoặc hết hạn)
-    :Chuyển sang trang đăng nhập;
+  |Khách hàng|
+  :Đăng nhập hoặc đăng ký;
+  note right
+    POST /auth/login, POST /auth/register
+  end note
+  :Quay lại giỏ theo ?next=, bấm Xác nhận trả;
+endif
+|Hệ thống BrewLite|
+repeat
+  :Tạo đơn PENDING, server tính lại giá;
+  note right
+    POST /orders + Idempotency-Key
+    Cùng khóa: 200 trả lại đơn cũ
+  end note
+  :Tính giảm giá, gọi cổng trừ tiền;
+  note right
+    POST /payments + Idempotency-Key
+    BREWLITE10 giảm 10%, mã khác giảm 0
+    Ngoài transaction
+  end note
+  |Cổng thanh toán (mock)|
+  :Trừ tiền bằng Ví hoặc Thẻ;
+  |Hệ thống BrewLite|
+  if (Cổng chấp nhận?) then (từ chối)
+    :Đặt đơn PAYMENT_FAILED, báo lỗi, giữ giỏ;
     note right
-      POST /orders hoặc POST /payments: 401
-      Giỏ và phiên thanh toán của tab được giữ
+      400 "Payment failed"
+      Chưa trừ kho nên không hoàn kho
     end note
-    |Khách hàng|
-    :Đăng nhập hoặc đăng ký;
+  else (chấp nhận)
+    :Trừ kho, đặt đơn PAID, cộng điểm, lưu biên lai;
     note right
-      POST /auth/login, POST /auth/register
-      Xong thì quay lại /cart theo ?next=
+      4 lệnh ghi trong 1 transaction
+      Kho trừ theo version, thử tối đa 3 lần
     end note
-  else (đã đăng nhập)
-    :Tạo đơn PENDING, server tính lại giá;
-    note right
-      POST /orders + Idempotency-Key
-      201 đơn mới, 200 cùng khóa trả đơn cũ
-      404 món lạ; 400 topping lạ, quá 20 dòng, quá 99 ly
-      403 tài khoản nhân viên; 422 khóa của người khác
-    end note
-    :Gọi cổng trừ tiền (ngoài transaction);
-    note right
-      POST /payments + Idempotency-Key
-      Khóa đã có biên lai: 200 trả biên lai cũ, không trừ lần 2
-    end note
-    |Cổng thanh toán (mock)|
-    :Trừ tiền bằng Ví hoặc Thẻ;
-    |Hệ thống BrewLite|
-    if (Cổng chấp nhận?) then (từ chối)
-      :Đặt đơn PAYMENT_FAILED, báo lỗi và giữ giỏ;
+    if (Ghi thành công?) then (kẹt kho)
+      |Cổng thanh toán (mock)|
+      :Hoàn đúng số tiền đã trừ;
+      |Hệ thống BrewLite|
+      :Đặt đơn PAYMENT_FAILED, báo "Món đã hết hàng";
       note right
-        400 "Payment failed"
-        Chưa trừ kho nên không có gì để hoàn kho
+        409 Out of stock, rollback phần kho đã trừ
       end note
-      |Khách hàng|
-      if (Thử lại hay hủy?) then (hủy đơn)
-        |Hệ thống BrewLite|
-        :Đặt đơn CANCELLED;
-        note right
-          PATCH /orders/:id (status CANCELLED): 200
-          Đơn chưa PAID: không hoàn tiền, không hoàn kho
-        end note
-        stop
-      else (thử lại, đơn về PENDING)
-      endif
-    else (chấp nhận)
-      :Trừ kho, đặt đơn PAID, cộng điểm, lưu biên lai;
+    else (thành công)
+      :Trả biên lai: mã đơn, giảm giá, điểm cộng;
       note right
-        Cả 4 lệnh ghi trong 1 transaction
-        Kho trừ theo version, thử lại tối đa 3 lần mỗi món
+        201 (khóa đã có biên lai: 200, không trừ lần 2)
       end note
-      if (Ghi thành công?) then (kẹt kho hoặc lỗi ghi)
-        |Cổng thanh toán (mock)|
-        :Hoàn đúng số tiền đã trừ;
-        |Hệ thống BrewLite|
-        :Đặt đơn PAYMENT_FAILED, báo "Món đã hết hàng";
-        note right
-          409 kẹt kho; 404 món không còn; 500 lỗi DB
-          Rollback nên phần kho đã trừ tự mất
-        end note
-        |Khách hàng|
-      else (thành công)
-        |Hệ thống BrewLite|
-        :Trả biên lai: mã đơn, giảm giá, điểm cộng;
-        note right
-          201 {orderId, amount, discount, loyaltyPointsEarned}
-          Điểm = 10% số tiền trả / 1.000 đ, làm tròn xuống
-        end note
-      endif
     endif
   endif
-repeat while (Đơn chưa PAID?) is (thử lại) not (đã PAID)
+repeat while (Đơn chưa PAID và khách thử lại?) is (thử lại) not (xong)
+if (Đơn đã PAID?) then (chưa, khách bỏ)
+  |Khách hàng|
+  :Hủy đơn ở trang Lịch sử;
+  |Hệ thống BrewLite|
+  :Đặt đơn CANCELLED;
+  note right
+    PATCH /orders/:id (CANCELLED): 200
+    Đơn chưa PAID: không hoàn tiền, không hoàn kho
+  end note
+  stop
+else (đã PAID)
+endif
 |Khách hàng|
 :Xem biên lai "Đặt hàng thành công", "+N điểm";
 |Hệ thống BrewLite|
@@ -164,11 +156,11 @@ repeat
     GET /orders/:id
     Barista xử lý đơn ở AD2
   end note
-repeat while (Đơn chưa COMPLETED và chưa CANCELLED?) is (chưa) not (xong)
+repeat while (Chưa COMPLETED và chưa CANCELLED?) is (chưa) not (xong)
 if (Đơn COMPLETED?) then (có)
   |Khách hàng|
   :Nhận đồ uống tại quầy;
-else (đơn CANCELLED)
+else (CANCELLED)
   |Khách hàng|
   :Biên lai báo "Đã hủy", tiền được hoàn;
 endif
@@ -186,15 +178,15 @@ stop
 | Hết hàng, quá 20 dòng hoặc quá 99 ly (từ chối) | không gọi API | `frontend/src/store/cart.ts:addItem` (lý do `OUT_OF_STOCK`, `MAX_LINES`, `MAX_QTY`, `AT_STOCK_LIMIT`), `frontend/src/lib/cart-limits.ts` |
 | Thêm vào giỏ, hiện giỏ và tổng tiền | không gọi API (Zustand + localStorage) | `store/cart.ts:addItem`, `frontend/src/app/cart/page.tsx`, `frontend/src/components/cart/CartView.tsx` |
 | Mua thêm | quay lại menu `/` | `CartView.tsx` (link "Về Menu"), `frontend/src/app/page.tsx` |
-| Tính giảm giá và số tiền phải trả (UC05a) | FE tạm tính; server tính lại trong `POST /payments` | `frontend/src/components/PaymentForm.tsx` (`discount`, `final`), `frontend/src/lib/promo.ts`; `backend/src/payment/payment.service.ts:pay` (`VOUCHER_CODE`, `VOUCHER_RATE`) |
-| Chưa có token hoặc token hết hạn | `POST /orders` hoặc `POST /payments` 401 | `frontend/src/lib/payment/api-gateway.ts:pay` (ném `PaymentError` status 401), `checkout-session.ts:isUnauthorizedPayment`, `PaymentForm.tsx:handleConfirm` → `frontend/src/lib/session.ts:handleUnauthorized` (về `/login?next=...`) |
+| Chọn Ví / Thẻ, nhập mã giảm giá (UC05a); và "Tính giảm giá" ở server | FE tạm tính (không gọi API); server tính lại trong `POST /payments`: `BREWLITE10` giảm 10% làm tròn xuống, mã khác giảm 0 (không báo lỗi) | `frontend/src/components/PaymentForm.tsx` (`discount`, `final`), `frontend/src/lib/promo.ts`; `backend/src/payment/payment.service.ts:pay` (`VOUCHER_CODE`, `VOUCHER_RATE`) |
+| Chưa đăng nhập hoặc token hết hạn (FE chỉ biết qua 401, không chặn trước) | `POST /orders` hoặc `POST /payments` 401 | `frontend/src/lib/payment/api-gateway.ts:pay` (ném `PaymentError` status 401), `checkout-session.ts:isUnauthorizedPayment`, `PaymentForm.tsx:handleConfirm` → `frontend/src/lib/session.ts:handleUnauthorized` (về `/login?next=...`) |
 | Đăng nhập hoặc đăng ký, quay lại `/cart` | `POST /auth/login` 200 (đăng nhập) / `POST /auth/register` 201; sai thông tin 401, trùng email 409 | `backend/src/auth/auth.controller.ts`; FE `frontend/src/app/login/page.tsx:submit`, `session.ts:postLoginTarget`, `safeNext`, `checkout-session.ts:clearCheckoutIfOtherUser` |
-| Tạo đơn PENDING, server tính lại giá | `POST /orders` 201 mới / 200 cùng khóa; 404, 400, 403, 422 như ghi chú | `backend/src/order/order.controller.ts:create` → `OrderService.create`, `replay` (khóa người khác: 422); giá: `backend/src/order/pricing.ts`; DTO: `backend/src/order/dto/create-order.dto.ts`; vai trò: `@Roles(Role.CUSTOMER)` (nhân viên 403 `Insufficient role`) |
-| Gọi cổng trừ tiền (ngoài transaction) | `POST /payments` 201 / 200 (biên lai cũ) | `backend/src/payment/payment.controller.ts:pay` → `PaymentService.processPayment` → `pay`; `MockPaymentGatewayService.charge` |
+| Tạo đơn PENDING, server tính lại giá | `POST /orders` 201 mới / 200 cùng khóa. Chỉ gặp khi gọi API tay: 404 món lạ, 400 topping lạ / quá 20 dòng / quá 99 ly / tổng quá lớn / khóa quá 255 ký tự, 403 tài khoản nhân viên, 422 khóa của người khác | `backend/src/order/order.controller.ts:create` → `OrderService.create`, `replay` (khóa người khác: 422); giá: `backend/src/order/pricing.ts`; DTO: `backend/src/order/dto/create-order.dto.ts`; vai trò: `@Roles(Role.CUSTOMER)` (nhân viên 403 `Insufficient role`) |
+| Tính giảm giá, gọi cổng trừ tiền (ngoài transaction) | `POST /payments` 201 / 200 (khóa đã có biên lai: trả biên lai cũ, không trừ lần 2); gọi tay: 403 đơn người khác, 422 khóa đã dùng cho đơn khác, 400 `Invalid transition` nếu đơn không ở PENDING / PAYMENT_FAILED | `backend/src/payment/payment.controller.ts:pay` → `PaymentService.processPayment` → `pay`; `MockPaymentGatewayService.charge` |
 | Trừ tiền bằng Ví hoặc Thẻ | gọi nội bộ, không có endpoint | `backend/src/payment/mock-payment-gateway.service.ts:charge`; từ chối khi `MOCK_GATEWAY_DECLINE_METHOD` trùng phương thức |
 | Cổng từ chối → `PAYMENT_FAILED` | 400 `Payment failed` | `payment.service.ts:pay` (`catch` quanh `gateway.charge`), `backend/src/state-machine/order-state.machine.ts:assertTransition` (`PENDING -> PAYMENT_FAILED`) |
-| Thử lại (đơn về `PENDING` rồi trừ tiền lại) | `POST /payments`, cùng `Idempotency-Key` | `payment.service.ts:pay` (`PAYMENT_FAILED -> PENDING`); FE `PaymentForm.tsx:handleConfirm`, `checkout-session.ts:loadCheckout`, `dropsCheckout` |
-| Hủy đơn (đơn chưa `PAID`) | `PATCH /orders/:id` `{ status: "CANCELLED" }` 200; đơn người khác 403; không có đơn 404 | `backend/src/payment/payment.controller.ts:update` → `PaymentService.cancelOrderAs` → `cancelOrder`; FE `api.ts:cancelOrder` (nút Hủy đơn ở `/history`) |
+| Vòng "Đơn chưa PAID và khách thử lại?" (đơn về `PENDING` rồi trừ tiền lại) | `POST /payments`, cùng `Idempotency-Key` | `payment.service.ts:pay` (`PAYMENT_FAILED -> PENDING`); FE `PaymentForm.tsx:handleConfirm`, `checkout-session.ts:loadCheckout`, `dropsCheckout` |
+| Hủy đơn ở trang Lịch sử (khách bỏ, đơn chưa `PAID`) | `PATCH /orders/:id` `{ status: "CANCELLED" }` 200; đơn người khác 403; không có đơn 404 | `backend/src/payment/payment.controller.ts:update` → `PaymentService.cancelOrderAs` → `cancelOrder`; FE `api.ts:cancelOrder` (nút Hủy đơn ở `/history`) |
 | Trừ kho, đặt đơn `PAID`, cộng điểm, lưu biên lai | cùng `POST /payments` | `payment.service.ts:pay` trong `orders.runInTransaction`: `products.deductStockWithOptimisticLock` (thử lại 3 lần), `orders.updateStatus`, `users.addLoyaltyPoints`, `payments.save`; `LOYALTY_RATE`, `VND_PER_POINT` |
 | Kẹt kho hoặc lỗi ghi → hoàn tiền, `PAYMENT_FAILED` | 409 `Out of stock` (hoặc 404 / 500 theo lỗi gốc) | `payment.service.ts:pay` (`catch` sau `runInTransaction`: `gateway.refund` rồi `updateStatus(PAYMENT_FAILED)`); FE `api-gateway.ts:paymentErrorMessage` ("Món đã hết hàng, tiền đã được hoàn lại") |
 | Trả biên lai: mã đơn, giảm giá, điểm cộng | `POST /payments` 201 | `payment.service.ts:pay` (kết quả), FE `api-gateway.ts:pay` → `PaymentResult`; `frontend/src/components/PaymentSuccess.tsx:PaymentReceipt` ("Mã đơn", "+N điểm tích lũy", "Đã giảm") |
