@@ -131,7 +131,8 @@ note right of FE : Đang tải: 4 thẻ skeleton cùng dáng thẻ món.\nLỗi 
 deactivate BE
 
 FE -> FE : Tính số món và giá thấp nhất từ danh sách (menuSummary)
-FE --> User : Hiển thị hero ("N món", "giá từ X")\nvà lưới đồ uống "Menu hôm nay" lên màn hình\n(thẻ ghi "Còn N", hoặc "Sắp hết, còn N" khi tồn ≤ 3)
+FE --> User : Hiện hero ("N món", "giá từ X") và lưới đồ uống "Menu hôm nay"
+note right of FE : Thẻ món ghi "Còn N", hoặc "Sắp hết, còn N" khi tồn ≤ 3
 User -> FE : Bấm "Tùy chọn size / topping" trên thẻ Cappuccino
 FE --> User : Mở modal chi tiết: "Đang tải sản phẩm…" (nút "Thêm vào giỏ" bị khóa)
 FE -> BE : GET /products/:id (getProduct, cache: 'no-store')
@@ -142,15 +143,16 @@ DB --> BE : Món hoặc không có
 deactivate DB
 alt Không có món (404)
   BE --> FE : 404 Product not found
-  FE --> User : Khối role="alert": "Sản phẩm không tồn tại."\n(không có nút "Thử lại", nút thêm vẫn khóa)
+  FE --> User : Hiện khối role="alert": "Sản phẩm không tồn tại."\n(không có nút "Thử lại", nút thêm vẫn khóa)
 else Lỗi khác (5xx) hoặc không tới được máy chủ
   BE --> FE : 5xx / không có phản hồi
-  FE --> User : Khối role="alert": "Không tải được sản phẩm (mã N)."\nhoặc "Không kết nối được máy chủ để tải sản phẩm."\n+ nút "Thử lại" (nút thêm vẫn khóa)
+  FE --> User : Hiện khối role="alert": "Không tải được sản phẩm (mã N)."\nhoặc "Không kết nối được máy chủ để tải sản phẩm."
+  note right of FE : Kèm nút "Thử lại"; nút thêm vẫn khóa
 else Có món (200)
   BE --> FE : 200 { id, name, price, imageUrl, stock, version }
   FE --> User : Modal dùng dữ liệu mới (tên, giá gốc, "Còn N"), mở sẵn Size M = 50.000đ;\nstock = 0 thì nút đổi thành "Hết hàng" và bị khóa
   User -> FE : Chọn Size L, thêm Trân châu
-  FE -> FE : Tự động tính toán lại số tiền tạm tính trên máy khách
+  FE -> FE : Tính lại số tiền tạm tính trên máy khách
   FE --> User : Cập nhật giá mới tức thời (giá gốc 45.000đ + 10.000 Size L\n+ 5.000 Trân châu = 60.000đ)
 end
 deactivate BE
@@ -194,33 +196,46 @@ participant "Màn hình đặt món\n(Giao diện)" as UI
 participant "Bộ nhớ giỏ hàng\n(Lưu tạm trên máy)" as Cart
 
 == THÊM MÓN ==
-User -> UI : Bấm "Thêm vào giỏ" (size M, không topping)\nhoặc chọn size/topping/số lượng trong modal rồi bấm "Thêm vào giỏ"
+User -> UI : Bấm "Thêm vào giỏ"\n(trên thẻ món: size M, không topping; hoặc trong modal)
 activate UI
-UI -> Cart : Lưu món đã chọn (kèm size, topping, số lượng)
+UI -> Cart : Thêm món (size, topping, số ly)
 activate Cart
-
-Cart -> Cart : Kiểm theo thứ tự: món hết hàng, số lượng xin > 99,\ndòng mới khi giỏ đã đủ 20 dòng, dòng cũ cộng thêm quá 99,\ndòng cũ đã giữ hết số còn lại (không thêm được gì)
-alt Bị từ chối (giỏ không đổi)
-Cart --> UI : Trả lý do OUT_OF_STOCK / MAX_QTY / MAX_LINES / AT_STOCK_LIMIT
-deactivate Cart
-UI --> User : Hiện "Món đã hết hàng." / "Mỗi dòng tối đa 99 ly." / "Giỏ đã đủ 20 dòng." / "Bạn đã thêm hết số lượng còn lại."\n(không hiện "Đã thêm ✓"; thêm từ modal thì modal vẫn mở)
-else Hợp lệ
-Cart -> Cart : Gộp dòng cùng khóa productId|size|topping,\ncắt số lượng xuống tồn kho nếu xin nhiều hơn, tính lại tổng tiền
-Cart --> UI : Cập nhật số lượng trên biểu tượng Giỏ hàng
-deactivate Cart
-UI --> User : Nút đổi thành "Đã thêm ✓" trong 1,2 giây\n(thêm từ modal thì modal đóng lại)
+Cart -> Cart : Kiểm món này còn thêm được vào giỏ không
+alt Món đã hết hàng (tồn kho = 0)
+  Cart --> UI : Từ chối: OUT_OF_STOCK
+  UI --> User : Hiện "Món đã hết hàng."
+else Xin hơn 99 ly cho một dòng
+  Cart --> UI : Từ chối: MAX_QTY
+  UI --> User : Hiện "Mỗi dòng tối đa 99 ly."
+else Món là dòng mới nhưng giỏ đã có 20 dòng
+  Cart --> UI : Từ chối: MAX_LINES
+  UI --> User : Hiện "Giỏ đã đủ 20 dòng."
+else Dòng đã có, cộng thêm sẽ quá 99 ly (ví dụ 98 + 5)
+  Cart --> UI : Từ chối: MAX_QTY
+  UI --> User : Hiện "Mỗi dòng tối đa 99 ly."
+else Dòng đã có và đã lấy hết số ly còn trong kho
+  Cart --> UI : Từ chối: AT_STOCK_LIMIT
+  UI --> User : Hiện "Bạn đã thêm hết số lượng còn lại."
+else Thêm được
+  Cart -> Cart : Gộp vào dòng cùng món, cùng size, cùng topping\n(xin nhiều hơn tồn kho thì chỉ lấy bằng tồn kho)
+  Cart -> Cart : Tính lại tổng tiền
+  Cart --> UI : Số món mới trên biểu tượng Giỏ hàng
+  UI --> User : Nút đổi thành "Đã thêm ✓" trong 1,2 giây\n(thêm từ modal thì modal đóng lại)
 end
+note right of UI : Bị từ chối thì giỏ không đổi, không hiện "Đã thêm ✓";\nthêm từ modal thì modal vẫn mở
+deactivate Cart
 deactivate UI
 
 == SỬA SỐ LƯỢNG ==
-User -> UI : Mở giỏ hàng và bấm tăng/giảm (+ / -) số lượng
+User -> UI : Mở giỏ hàng, bấm tăng/giảm (+ / -) số lượng
 activate UI
-UI -> Cart : Cập nhật số lượng mới cho món đó (tối thiểu 1, tối đa 99; nút - mờ khi còn 1, nút + mờ khi đạt 99)
+UI -> Cart : Cập nhật số lượng (từ 1 đến 99)
+note right of UI : Số lượng tối thiểu 1, tối đa 99; nút - mờ khi còn 1, nút + mờ khi đạt 99
 activate Cart
-Cart -> Cart : Tính lại tổng tiền giỏ hàng tức thời
+Cart -> Cart : Tính lại tổng tiền giỏ hàng
 Cart --> UI : Trả về tổng tiền mới
 deactivate Cart
-UI --> User : Cập nhật lại số tiền hiển thị trên màn hình
+UI --> User : Hiện tổng tiền mới trên màn hình
 deactivate UI
 
 == XÓA MÓN ==
@@ -289,6 +304,8 @@ opt Khách chưa có tài khoản
     else Email chưa tồn tại
         BE -> BE : Băm mật khẩu (bcrypt)
         BE -> DB : Lưu tài khoản mới (loyaltyPoints = 0)
+        activate DB
+        deactivate DB
         BE --> FE : 201 { id, email } (không cấp token)
         FE --> User : Báo "Đăng ký thành công. Đăng nhập bằng email vừa tạo.",\nchuyển về tab Đăng nhập (giữ email, xóa ô mật khẩu)
     end
@@ -298,7 +315,7 @@ end
 
 == LUỒNG 2: ĐĂNG NHẬP ==
 note over User, BE : Áp dụng mọi vai trò: khách và nhân viên (Barista, Admin) dùng chung form này (POST /auth/login).\nTài khoản nhân viên do seed tạo sẵn, không đăng ký qua luồng 1 (đăng ký luôn tạo CUSTOMER).
-User -> FE : Nhập Email, Mật khẩu -> Bấm "Đăng nhập"
+User -> FE : Nhập Email, Mật khẩu rồi bấm "Đăng nhập"
 activate FE
 FE -> BE : POST /auth/login { email, password }
 activate BE
@@ -309,17 +326,20 @@ activate DB
 DB --> BE : Trả về thông tin tài khoản và mật khẩu đã mã hóa (hoặc không có)
 deactivate DB
 
-BE -> BE : Kiểm tra đối chiếu mật khẩu người dùng nhập (bcrypt.compare)
+BE -> BE : So mật khẩu vừa nhập với mật khẩu đã mã hóa (bcrypt.compare)
 
 alt Không có tài khoản, hoặc mật khẩu KHÔNG chính xác (Kịch bản thất bại)
-    BE --> FE : Báo lỗi 401 "Invalid credentials" (giống nhau cho sai mật khẩu và sai email để chống đoán tài khoản)
+    BE --> FE : Trả lỗi 401 "Invalid credentials"
+    note right of BE : Giống nhau cho sai mật khẩu và sai email để chống đoán tài khoản
     FE --> User : Hiển thị lỗi "Sai email hoặc mật khẩu."
 else Mật khẩu chính xác (Kịch bản thành công)
     BE -> BE : Tạo mã phiên đăng nhập an toàn (Token JWT { sub, email, role }, hạn 7 ngày)
     BE --> FE : 200 { accessToken, user: { id, email, role } }
     FE -> FE : Lưu mã Token vào sessionStorage của tab (key "brewlite-token"):\nmỗi tab một phiên, tab khác không bị ghi đè
-    FE -> FE : Đơn đang thanh toán dở của tab (clearCheckoutIfOtherUser):\ngiữ nếu đúng tài khoản đã tạo nó (sub của JWT), bỏ nếu là tài khoản khác
-    FE --> User : Nếu URL có ?next= hợp lệ (đường dẫn tương đối trong site, ví dụ /cart)\nthì về đúng trang đó (riêng nhân viên mà next là trang khách thì bỏ qua);\nkhông thì điều hướng theo role trong JWT:\nCUSTOMER -> / (Thực đơn), BARISTA -> /barista, ADMIN -> /admin
+    FE -> FE : Giữ đơn đang trả dở nếu cùng tài khoản, bỏ nếu khác\n(clearCheckoutIfOtherUser)
+    note right of FE : Đơn đang thanh toán dở của tab: giữ nếu đúng tài khoản đã tạo nó (sub của JWT), bỏ nếu là tài khoản khác
+    FE --> User : Chuyển trang: về ?next= nếu hợp lệ, không thì theo vai trò
+    note right of FE : Nếu URL có ?next= hợp lệ (đường dẫn tương đối trong site, ví dụ /cart)\nthì về đúng trang đó (riêng nhân viên mà next là trang khách thì bỏ qua);\nkhông thì điều hướng theo role trong JWT:\nCUSTOMER -> / (Thực đơn), BARISTA -> /barista, ADMIN -> /admin
 end
 deactivate BE
 deactivate FE
@@ -333,14 +353,16 @@ deactivate FE
 
 == LUỒNG 4: HẾT PHIÊN GIỮA CHỪNG (API có xác thực trả 401) ==
 note over User, BE : Áp dụng mọi vai trò (Customer, Barista, Admin): lifeline Guest ở đây đại diện cho người dùng\nđang đăng nhập bất kỳ; màn quầy (/barista) và tồn kho (/admin) cũng đi đúng luồng này
-User -> FE : Thao tác cần đăng nhập (Hủy đơn, xem Lịch sử, hàng đợi và thao tác ở quầy, tồn kho, xem Hồ sơ, Xác nhận trả)
+User -> FE : Làm thao tác cần đăng nhập
 activate FE
+note right of FE : Gồm: Hủy đơn, xem Lịch sử, hàng đợi và thao tác ở quầy, tồn kho, xem Hồ sơ, Xác nhận trả
 FE -> BE : Gọi API kèm Bearer JWT đã hết hạn hoặc sai
 activate BE
 BE --> FE : 401 Unauthorized
 deactivate BE
-FE -> FE : handleUnauthorized(): xóa token của tab,\ngiữ nguyên giỏ hàng và đơn đang thanh toán dở
-FE --> User : Chuyển về /login?next=<trang đang xem>\n(đang ở /login thì không kèm next); đăng nhập xong quay lại đúng trang;\nđang trả tiền dở thì đăng nhập lại cùng tài khoản là trả tiếp đúng đơn đó (cùng mã đơn, cùng key)
+FE -> FE : Xóa token của tab, giữ nguyên giỏ hàng và đơn đang thanh toán dở\n(handleUnauthorized)
+FE --> User : Chuyển về /login?next=<trang đang xem>\n(đang ở /login thì không kèm next)
+note right of FE : Đăng nhập xong quay lại đúng trang;\nđang trả tiền dở thì đăng nhập lại cùng tài khoản là trả tiếp đúng đơn đó (cùng mã đơn, cùng key)
 deactivate FE
 @enduml
 ```
