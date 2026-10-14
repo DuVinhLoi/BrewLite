@@ -36,7 +36,7 @@ Tài liệu gồm **4 biểu đồ lớp**, mỗi biểu đồ một khối Plan
 Quy ước thành viên ở CD2–CD4:
 
 - Chỉ ghi phương thức `public`; không ghi field `private` và token DI.
-- Bỏ `Promise<>` ở kiểu trả về (gần như mọi phương thức repository và service là `async`). Kiểu trả về không khai báo trong code (suy luận) thì để trống.
+- Bỏ `Promise<>` chỉ ở kiểu trả về của phương thức (gần như mọi phương thức repository và service là `async`). `Promise<>` trong kiểu của tham số callback thì giữ nguyên, ví dụ `runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): T`. Kiểu trả về không khai báo trong code (suy luận) thì để trống.
 - Bỏ tham số `tx?: TxContext` của các phương thức repository (mọi phương thức repository đều nhận); bỏ `req`, `res` của controller. Số tham số còn lại giữ nguyên.
 - Controller ghi route ở cuối dòng, dạng `«POST /orders»`.
 
@@ -215,7 +215,7 @@ hide empty members
 
 package "Controller" {
   class OrderController {
-    +create(dto: CreateOrderDto, key: string)  «POST /orders»
+    +create(dto: CreateOrderDto, key?: string)  «POST /orders»
     +queue(status?: string)  «GET /orders»
     +mine()  «GET /orders/me»
     +byId(id: string)  «GET /orders/:id»
@@ -228,7 +228,7 @@ package "Controller" {
 
 package "Service" {
   class OrderService {
-    +create(userId: string, dto: CreateOrderDto, idempotencyKey?: string): OrderDto
+    +create(userId: string, dto: CreateOrderDto, idempotencyKey?: string): OrderDto & { isCached: boolean }
     +listMine(userId: string): NamedOrderDto[]
     +getById(userId: string, orderId: string)
     +listQueue(statuses?: OrderStatus[]): NamedOrderDto[]
@@ -259,7 +259,7 @@ package "Contracts" {
     +findByStatuses(statuses: OrderStatus[]): OrderDto[]
     +updateStatus(id: string, status: OrderStatus): OrderDto
     +save(order: OrderDto): OrderDto
-    +runInTransaction<T>(fn: (tx: TxContext) => T): T
+    +runInTransaction<T>(fn: (tx: TxContext) => Promise<T>): T
   }
   interface IPaymentRepository <<interface>> {
     +findByIdempotencyKey(key: string): PaymentDto | null
@@ -292,9 +292,9 @@ package "Adapters" {
   class InMemoryPaymentRepo <<test double>>
   class InMemoryProductRepo <<test double>>
   class InMemoryUserRepo <<test double>>
-  class "in-memory-tx" as InMemoryTx <<test double>> {
+  class "in-memory-tx" as InMemoryTx <<module, test double>> {
     +registerInMemoryRepo(entry): void
-    +runInMemoryTransaction<T>(fn: () => T): T
+    +runInMemoryTransaction<T>(fn: () => Promise<T>): T
   }
 }
 
@@ -330,6 +330,18 @@ InMemoryUserRepo .up.|> IUserRepository
 
 InMemoryOrderRepo .down.> InMemoryTx : "cả 4 InMemory*Repo"
 
+note bottom of OrderController
+  @UseGuards(JwtAuthGuard, RolesGuard) từng route:
+  create, mine, byId: @Roles(CUSTOMER);
+  queue: @Roles(BARISTA, ADMIN).
+end note
+
+note bottom of PaymentController
+  pay: @UseGuards(JwtAuthGuard, RolesGuard), @Roles(CUSTOMER).
+  update (PATCH): chỉ JwtAuthGuard; luật vai trò
+  nằm ở PaymentService (isStaff, chủ đơn).
+end note
+
 note bottom of OrderStateMachine
   Không có class: file
   order-state.machine.ts xuất hàm
@@ -363,7 +375,7 @@ end note
 | `TxContext` | `backend/src/contracts/transaction.contract.ts` | `type TxContext = unknown`, tham số `tx?` của mọi phương thức repository |
 | `PrismaOrderRepo`, `PrismaPaymentRepo`, `PrismaProductRepo`, `PrismaUserRepo` | `backend/src/prisma/prisma-order.repo.ts`, `prisma-payment.repo.ts`, `prisma-product.repo.ts`, `prisma-user.repo.ts` | Hiện thực đủ phương thức của interface tương ứng; phụ thuộc `PrismaService` (không vẽ). `PrismaOrderRepo.runInTransaction` gọi `db.$transaction` |
 | `InMemoryOrderRepo`, `InMemoryPaymentRepo`, `InMemoryProductRepo`, `InMemoryUserRepo` | `backend/src/stubs/in-memory-order.repo.ts`, `in-memory-payment.repo.ts`, `in-memory-product.repo.ts`, `in-memory-user.repo.ts` | `<<test double>>`: Map trong bộ nhớ, trả bản sao `structuredClone`. Mỗi lớp đăng ký bản chụp qua `registerInMemoryRepo` |
-| `in-memory-tx` | `backend/src/stubs/in-memory-tx.ts` | Hàm `registerInMemoryRepo`, `runInMemoryTransaction`, `snapshotMap`: transaction giả bằng chụp và khôi phục, có mutex chuỗi promise. `InMemoryOrderRepo.runInTransaction` dùng `runInMemoryTransaction` |
+| `in-memory-tx` | `backend/src/stubs/in-memory-tx.ts` | Không phải `class`: file hàm rời (vẽ `<<module>>`). Hàm `registerInMemoryRepo`, `runInMemoryTransaction`, `snapshotMap`: transaction giả bằng chụp và khôi phục, có mutex chuỗi promise. `InMemoryOrderRepo.runInTransaction` dùng `runInMemoryTransaction` |
 | Chọn bản hiện thực | `backend/src/order/order.module.ts`, `backend/src/payment/payment.module.ts` | `useDb = !!process.env.DATABASE_URL`: có thì cắm `Prisma*Repo`, không thì `InMemory*Repo`; `useFactory` + `inject` truyền repository vào `new OrderService(...)`, `new PaymentService(...)` |
 
 ---
@@ -411,7 +423,7 @@ class AdjustStockDto <<DTO>> {
   version: number
 }
 
-class ProductDto <<DTO>> {
+interface ProductDto <<DTO>> {
   id: string
   name: string
   price: number
@@ -472,7 +484,7 @@ end note
 | `AdminProductController` | `backend/src/product/admin-product.controller.ts` | `@Controller('admin/products')`, guard cả lớp, chỉ `Role.ADMIN` |
 | `ProductService` | `backend/src/product/product.service.ts` | Constructor nhận `IProductRepository`. `getById` ném 404; `adjustStock` kiểm version, âm, quá Int32 rồi gọi `setStockWithOptimisticLock` |
 | `AdjustStockDto` | `backend/src/product/dto/adjust-stock.dto.ts` | `mode` thuộc `'set'` hoặc `'delta'`; `value` trong khoảng Int32; `version` là số đang thấy trên màn hình. Thư mục `product/dto` chỉ có DTO này |
-| `ProductDto` | `backend/src/contracts/product.contract.ts` | Ứng với `model Product` (CD1); `version` là cột optimistic lock |
+| `ProductDto` | `backend/src/contracts/product.contract.ts` | `export interface`, ứng với `model Product` (CD1); `version` là cột optimistic lock |
 | `IProductRepository` | `backend/src/contracts/product.contract.ts` | Chữ ký đầy đủ của hai phương thức khoá: `(id: string, stock\|quantity: number, currentVersion: number): boolean` |
 | `PrismaProductRepo` | `backend/src/prisma/prisma-product.repo.ts` | Hiện thực bằng Prisma; module chọn bản này khi có `DATABASE_URL` (`backend/src/product/product.module.ts`) |
 | `JwtAuthGuard`, `RolesGuard` | `backend/src/auth/jwt-auth.guard.ts`, `roles.guard.ts` | Chi tiết ở CD4. `@Roles` đặt trên lớp `AdminProductController` |
@@ -546,7 +558,7 @@ interface IUserRepository <<interface>> {
 
 class PrismaUserRepo
 
-class UserDto <<DTO>> {
+interface UserDto <<DTO>> {
   id: string
   email: string
   loyaltyPoints: number
@@ -582,7 +594,6 @@ AuthService ..> IUserRepository
 AuthService ..> JwtService
 
 JwtAuthGuard ..> JwtService
-JwtAuthGuard ..> Role
 RolesGuard ..> Role
 Roles ..> Role
 Actor --> Role
@@ -593,7 +604,7 @@ PrismaUserRepo ..|> IUserRepository
 
 note as GuardNote
   JwtAuthGuard: chỉ nhận "Bearer <token>"; payload
-  thiếu sub hoặc email thì 401; role lạ → CUSTOMER.
+  thiếu sub hoặc email thì 401; role lạ → CUSTOMER (toRole).
   RolesGuard: đọc metadata ROLES_KEY qua Reflector;
   thiếu @Roles thì cho qua, sai role thì 403.
 end note
@@ -617,11 +628,11 @@ end note
 | `AuthController` | `backend/src/auth/auth.controller.ts` | `@Controller('auth')`; `login` đặt `@HttpCode(200)` |
 | `UserController` | `backend/src/auth/user.controller.ts` | `@Controller('users')`, `me` chỉ CUSTOMER; mở rộng ngoài đề §12.1 |
 | `AuthService` | `backend/src/auth/auth.service.ts` | Constructor nhận `IUserRepository`, `JwtService`. `register` luôn tạo `Role.CUSTOMER`, băm bcrypt, trùng email thì 409; `login` sai thông tin thì 401; `profile` không trả `passwordHash` |
-| `JwtAuthGuard` | `backend/src/auth/jwt-auth.guard.ts` | `implements CanActivate`; dùng `toRole` để chuẩn hoá role |
+| `JwtAuthGuard` | `backend/src/auth/jwt-auth.guard.ts` | `implements CanActivate`; chỉ import hàm `toRole` (không import enum `Role`) để chuẩn hoá role |
 | `RolesGuard` | `backend/src/auth/roles.guard.ts` | `implements CanActivate`; phụ thuộc `Reflector` (không vẽ) |
 | `Roles` | `backend/src/auth/roles.decorator.ts` | Không phải `class`: hàm `Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles)`; vẽ như decorator |
 | `RegisterDto`, `LoginDto` | `backend/src/auth/dto.ts` | Chuẩn hoá email (`normalizeEmail`: cắt khoảng trắng, chữ thường); `password` của `RegisterDto` tối thiểu 6 ký tự |
-| `IUserRepository`, `UserDto`, `Role`, `Actor` | `backend/src/contracts/user.contract.ts` | `Role` là enum 3 giá trị (CD1); `Actor` là `type`, không phải `class`. Hàm rời `isStaff`, `toRole` cũng ở file này (không vẽ) |
+| `IUserRepository`, `UserDto`, `Role`, `Actor` | `backend/src/contracts/user.contract.ts` | `Role` là enum 3 giá trị (CD1); `UserDto` là `interface`; `Actor` là `type`, không phải `class`. Hàm rời `isStaff`, `toRole` cũng ở file này (không vẽ) |
 | `PrismaUserRepo` | `backend/src/prisma/prisma-user.repo.ts` | Hiện thực bằng Prisma; `AuthModule` chọn bản này khi có `DATABASE_URL` (`backend/src/auth/auth.module.ts`) |
 | `JwtService` | thư viện `@nestjs/jwt` | Lớp ngoài dự án, chỉ ghi hai phương thức dùng tới (`signAsync`, `verifyAsync`); khởi tạo trong `AuthModule` với `JWT_SECRET`, hạn 7 ngày |
 | `InMemoryUserRepo` (note) | `backend/src/stubs/in-memory-user.repo.ts` | `<<test double>>`, vẽ ở CD2 |
