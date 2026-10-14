@@ -34,6 +34,7 @@ Hành vi là: endpoint, guard / vai trò, chuyển trạng thái, mã HTTP, th�
 - `group` transaction chỉ bao các lệnh ghi DB nằm trong cùng một `runInTransaction`. Lời gọi Mock Gateway (charge, refund) vẽ bên ngoài `group`, ghi chữ "ngoài transaction".
 - Giới hạn có chủ đích (comment `ponytail:` trong code) ghi ở mục C của UC.
 - Tham chiếu đề bằng số mục, ví dụ `đề §9.1`.
+- `node scripts/check-sequence-activation.mjs docs/user-sequence-specifications.md` ra `0 activation, 0 dài, 0 giọng`: mọi mũi tên đi ra từ vạch kích hoạt, nhãn tối đa 2 dòng × 90 ký tự (chi tiết để ở `note`), không dùng "nhé" / "giúp" / "Tôi…".
 
 ## Phạm vi
 
