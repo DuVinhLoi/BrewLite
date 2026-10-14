@@ -6,6 +6,8 @@ paths:
   - "docs/BrewLite-CongNghePhanMem-fixed.md"
   - "docs/use-case-specifications.md"
   - "docs/user-sequence-specifications.md"
+  - "docs/activity-diagrams.md"
+  - "docs/class-diagrams.md"
 ---
 
 # Đồng bộ đề, code và tài liệu UC / sequence
@@ -14,7 +16,7 @@ Ba nguồn, theo thứ tự ưu tiên:
 
 1. **Đề** `docs/BrewLite-CongNghePhanMem-fixed.md`: §8 (10 task), §9 (Task 10, State Machine §9.1), §12 (API, 5 thực thể).
 2. **Code** `backend/src`, `frontend/src`: làm đúng đề.
-3. **Tài liệu** `docs/use-case-specifications.md` (cột Trạng thái ở bảng §4) và `docs/user-sequence-specifications.md` (sơ đồ §2.x, mục C, ma trận Phần III): mô tả đúng code.
+3. **Tài liệu** `docs/use-case-specifications.md` (cột Trạng thái ở bảng §4), `docs/user-sequence-specifications.md` (sơ đồ §2.x, mục C, ma trận Phần III), `docs/activity-diagrams.md` (AD1, AD2) và `docs/class-diagrams.md` (CD1–CD4): mô tả đúng code.
 
 Code lệch đề thì sửa code. Tài liệu lệch code thì sửa tài liệu. Chưa rõ bên nào đúng thì hỏi người dùng trước khi sửa.
 
@@ -23,6 +25,8 @@ Code lệch đề thì sửa code. Tài liệu lệch code thì sửa tài liệ
 Hành vi là: endpoint, guard / vai trò, chuyển trạng thái, mã HTTP, thứ tự side effect (gọi Mock Gateway, ghi DB, transaction), câu thông báo giao diện mà sơ đồ trích. Trong cùng commit với code, cập nhật:
 
 - sơ đồ sequence của UC đó và mục C bên dưới sơ đồ;
+- `activity-diagrams.md` khi đổi nhánh rẽ, thứ tự bước hoặc endpoint trong luồng đặt món – thanh toán (AD1) hay luồng quầy pha chế (AD2);
+- `class-diagrams.md` khi đổi `backend/prisma/schema.prisma`, `backend/src/contracts/*.ts`, hoặc chữ ký public của controller / service / repo;
 - dòng UC trong ma trận Phần III;
 - cột Trạng thái ở bảng UC §4 khi UC đổi trạng thái;
 - test chứng minh hành vi mới.
@@ -47,6 +51,6 @@ Hành vi là: endpoint, guard / vai trò, chuyển trạng thái, mã HTTP, th�
 
 - `cd backend && npx jest` và `cd frontend && npx vitest run` xanh. Schema Prisma đổi thì chạy `npx prisma generate` trong `backend/` trước.
 - Mọi khối PlantUML đã sửa render được, không ra ảnh "Syntax Error".
-- Grep tên hàm, endpoint, mã lỗi vừa đổi trong 2 file tài liệu: không còn chỗ nào tả hành vi cũ.
+- Grep tên hàm, endpoint, mã lỗi vừa đổi trong các file tài liệu ở mục 3: không còn chỗ nào tả hành vi cũ.
 
 Viết tiếng Việt, cùng văn phong các file trong `docs/`.

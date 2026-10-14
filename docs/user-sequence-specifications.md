@@ -5,7 +5,7 @@
 > **Môn học:** Công nghệ Phần mềm (Bài tập lớn 10 Task Agile Scrum)  
 > **Phạm vi & Định vị tài liệu:**  
 > • **Tài liệu này là Phụ lục chi tiết (Architecture Appendix) cho Developers & AI Agents** dùng để hiểu sâu bối cảnh, đối chiếu mã nguồn và viết test case.  
-> • **Bản nộp chính cho giảng viên** tập trung vào các biểu đồ cốt lõi tinh gọn (Use Case Bản 1 tổng quan 17 UC & Bản 2 phân hệ Khách hàng 9 UC: UC01–UC07 + UC05a + UC16; Activity luồng nghiệp vụ theo đề §5; State Machine đơn hàng theo đề §9.1, vẽ ở §2.5 mục B2).  
+> • **Bản nộp chính cho giảng viên** tập trung vào các biểu đồ cốt lõi tinh gọn (Use Case Bản 1 tổng quan 17 UC & Bản 2 phân hệ Khách hàng 9 UC: UC01–UC07 + UC05a + UC16; Activity luồng nghiệp vụ theo đề §5 và luồng quầy pha chế (`docs/activity-diagrams.md`); State Machine đơn hàng theo đề §9.1, vẽ ở §2.5 mục B2; Class Diagram: domain model đề §12.2 và thiết kế backend (`docs/class-diagrams.md`)).  
 > **Đối tượng độc giả:**  
 > 1. **Sinh viên & Giảng viên:** Tra cứu chi tiết từng bước, đối chiếu ma trận truy vết (Traceability) với 7 API endpoint tối thiểu (+6 mở rộng) và 10 Task Backlog.  
 > 2. **AI Agents / Developers:** Đọc hiểu bối cảnh kiến trúc (Context Navigation), ánh xạ các bước của biểu đồ vào mã nguồn NestJS (Backend) và Next.js (Frontend) để lập trình và viết kiểm thử tự động.
@@ -1252,5 +1252,5 @@ UC13, UC15: chưa hiện thực (backlog) nên chưa có sơ đồ tuần tự v
    - **(a) State Machine:** Mọi cập nhật trạng thái đơn phải đi qua `assertTransition()`.
    - **(b) Idempotency:** Gửi 2 lần cùng `Idempotency-Key` chỉ tạo 1 đơn (`POST /orders`) và chỉ trừ tiền 1 lần (`POST /payments`, nhánh Cache Hit trả kết quả cũ đã lưu).
    - **(c) Concurrency:** Kho bị trừ lúc thanh toán (`POST /payments`), không phải lúc tạo đơn (`POST /orders` không kiểm tồn kho). Thanh toán đồng thời sử dụng Optimistic Locking (`version` trên bảng `Product` + điều kiện `stock >= số lượng` trong cùng 1 lệnh `updateMany` nguyên tử), retry 3 lần, chạy trong cùng 1 `runInTransaction` với các ghi sau charge; hết kho thì rollback transaction + hoàn tiền + `PAYMENT_FAILED` rồi trả lỗi xung đột 409.
-3. **Phạm vi nộp bài:** Tài liệu này đóng vai trò **Phụ lục kiến trúc chuyên sâu (Appendix)** cho đội ngũ phát triển và AI Agent. Khi nộp bài chính, nhóm dùng các sơ đồ nộp chính đang có: Use Case Bản 1 (17 UC) và Bản 2 (phân hệ Khách hàng, 9 UC) trong `docs/use-case-specifications.md`, Activity luồng nghiệp vụ theo đề §5, State Machine đơn hàng theo đề §9.1 (§2.5 mục B2).
+3. **Phạm vi nộp bài:** Tài liệu này đóng vai trò **Phụ lục kiến trúc chuyên sâu (Appendix)** cho đội ngũ phát triển và AI Agent. Khi nộp bài chính, nhóm dùng các sơ đồ nộp chính đang có: Use Case Bản 1 (17 UC) và Bản 2 (phân hệ Khách hàng, 9 UC) trong `docs/use-case-specifications.md`, Activity luồng nghiệp vụ theo đề §5 và luồng quầy pha chế (`docs/activity-diagrams.md`), State Machine đơn hàng theo đề §9.1 (§2.5 mục B2), Class Diagram: domain model đề §12.2 và thiết kế backend (`docs/class-diagrams.md`).
 
