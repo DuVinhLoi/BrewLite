@@ -34,7 +34,7 @@ export default function PaymentForm({
   const [voucher, setVoucher] = useState('');
   const [applied, setApplied] = useState<string | null>(null);
   // Phiên thanh toán của tab (lib/payment/checkout-session.ts): mã đơn + key tạo đơn + key trả tiền, gắn với nội dung giỏ.
-  // Reload, hoặc quay lại giỏ rồi vào lại mà giỏ không đổi, vẫn trả tiếp đúng đơn đó với cùng key (UC06 KB1, phương án A).
+  // Reload, hoặc quay lại giỏ rồi vào lại mà giỏ không đổi, vẫn trả tiếp đúng đơn đó với cùng key (US-08, phương án A).
   const [checkout, setCheckout] = useState(() => loadCheckout(items));
   const [orderId, setOrderId] = useState<string | undefined>(checkout.orderId);
 

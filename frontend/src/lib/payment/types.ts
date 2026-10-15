@@ -29,7 +29,7 @@ export interface PaymentRequest {
   items?: CartLine[];
   /** Idempotency-Key của POST /orders (khác `idempotencyKey` của POST /payments): thử lại tạo đơn vẫn chỉ ra 1 đơn. */
   orderIdempotencyKey?: string;
-  /** Mã giảm giá UC05a, backend validate nội bộ. */
+  /** Mã giảm giá (US-10), backend validate nội bộ. */
   voucherCode?: string;
 }
 
@@ -48,7 +48,7 @@ export interface PaymentResult {
 }
 
 /**
- * Lỗi thanh toán. `orderId`: đơn đã tạo → lần thử lại trả tiếp đơn này (UC06 KB1), không tạo đơn mới.
+ * Lỗi thanh toán. `orderId`: đơn đã tạo → lần thử lại trả tiếp đơn này (US-08), không tạo đơn mới.
  * `status`: mã HTTP (không có khi mất kết nối); `detail`: message gốc của backend. PaymentForm dùng hai trường này
  * (`dropsCheckout()`) để quyết định giữ hay bỏ đơn đang trả dở.
  */

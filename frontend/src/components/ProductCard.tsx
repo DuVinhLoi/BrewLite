@@ -20,7 +20,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [customizing, setCustomizing] = useState(false);
-  // Cùng ngưỡng với màn Kho (stockBadge, LOW_STOCK trong lib/stock.ts): hết hàng khi stock <= 0, sắp hết khi stock <= LOW_STOCK.
+  // Ngưỡng tồn kho (stockBadge, LOW_STOCK trong lib/stock.ts): hết hàng khi stock <= 0, sắp hết khi stock <= LOW_STOCK.
   const { tone } = stockBadge(product.stock);
   const outOfStock = tone === 'out';
   // Một timer "Đã thêm ✓" duy nhất: lần bấm sau đặt lại hoặc hủy nó, rời màn thì dọn (không setAdded sau unmount).
