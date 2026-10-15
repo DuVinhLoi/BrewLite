@@ -14,7 +14,7 @@ export const EMAIL_TAKEN = 'Email đã được đăng ký.';
 export const BAD_CREDENTIALS = 'Sai email hoặc mật khẩu.';
 export const NETWORK_ERROR = 'Không kết nối được máy chủ.';
 export const REGISTER_OK_NOTICE = 'Đăng ký thành công. Đăng nhập bằng email vừa tạo.';
-export const SWAGGER_URL = 'http://localhost:3000/docs';
+export const SWAGGER_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/docs`;
 export const STAFF_LOGIN_MESSAGE = `Tài khoản nhân viên thao tác qua Swagger: ${SWAGGER_URL}`;
 
 /** Web chỉ phục vụ khách: BARISTA / ADMIN không được lưu phiên, trả câu chỉ sang Swagger; CUSTOMER (hoặc không rõ) → null. */
