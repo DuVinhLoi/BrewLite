@@ -38,7 +38,7 @@ Hiện tại mỗi thư mục `apps/web`, `apps/api`, `tests/`, `.github/workflo
 
 ## Quy tắc quan trọng
 
-- Agent AI **không viết code** trong `apps/`, `tests/`, `.github/workflows/` trên nhánh này. Chi tiết: [`.claude/rules/doc-code-sync.md`](.claude/rules/doc-code-sync.md).
+- Agent AI được soạn nháp tài liệu Task 1–3 (SRS, sơ đồ, ADR) để nhóm sửa và chốt; code trong `apps/`, `tests/`, `.github/workflows/` chỉ viết khi người dùng yêu cầu rõ. Chi tiết: [`.claude/rules/doc-code-sync.md`](.claude/rules/doc-code-sync.md).
 - Mỗi thay đổi làm trên nhánh `a2/task-<n>-<tên>`, mở pull request vào `develop-Assignment2`, có người review và nêu lý do thay đổi.
 - Không push và không merge vào `develop` / `main` khi chưa có đồng ý của nhóm.
 

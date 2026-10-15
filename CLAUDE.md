@@ -1,6 +1,6 @@
-## Nhánh develop-Assignment2: chỉ tài liệu, không code
+## Nhánh develop-Assignment2: tài liệu soạn được, code chỉ khi được yêu cầu
 
-Nhánh này chuẩn bị cho đề `docs/Assignment2-BrewLite.md`. Giảng viên cấm vibecoding: **không viết code trong `apps/`, `tests/`, `.github/workflows/`** (chỉ được sửa `README.md` mô tả cần nộp gì). Đọc `.claude/rules/doc-code-sync.md` và `docs/planning/2026-10-15-assignment2-plan.md` trước khi sửa.
+Nhánh này chuẩn bị cho đề `docs/Assignment2-BrewLite.md`. Giảng viên cấm vibecoding: agent được soạn nháp tài liệu Task 1–3 (SRS, sơ đồ, ADR); **code trong `apps/`, `tests/`, `.github/workflows/` chỉ viết khi người dùng yêu cầu rõ**. Đọc `.claude/rules/doc-code-sync.md` và `docs/planning/2026-10-15-assignment2-plan.md` trước khi sửa.
 
 ## graphify
 

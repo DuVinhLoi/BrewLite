@@ -2,7 +2,7 @@
 
 > Ngày lập: 2026-10-15. Nhánh: `develop-Assignment2`. Đề: [`docs/Assignment2-BrewLite.md`](../Assignment2-BrewLite.md) (gọi tắt **đề A2**). Đề của lần trước: [`docs/BrewLite-CongNghePhanMem-fixed.md`](../BrewLite-CongNghePhanMem-fixed.md) (gọi tắt **đề A1**).
 >
-> Đây là kế hoạch **cho nhóm tự làm**. Giảng viên cấm vibecoding, nên mọi tạo phẩm (SRS, sơ đồ, ADR, code, pipeline) do thành viên nhóm tự viết và tự giải thích được. Kế hoạch này chỉ nói *làm gì, ở đâu, theo thứ tự nào, đạt tiêu chí nào*, không viết hộ nội dung.
+> Đây là kế hoạch **cho nhóm thực hiện**. Giảng viên cấm vibecoding: tài liệu Task 1–3 (SRS, sơ đồ, ADR) có thể nhờ agent soạn nháp rồi nhóm sửa và chốt; code và pipeline Task 4–5 do nhóm viết (agent chỉ viết khi được yêu cầu rõ). Mọi tạo phẩm, thành viên phụ trách phải tự giải thích được. Kế hoạch này nói *làm gì, ở đâu, theo thứ tự nào, đạt tiêu chí nào*.
 >
 > Chỗ ghi `[nhóm điền]` là thông tin chỉ nhóm biết (người phụ trách, ngày, URL...).
 
@@ -45,7 +45,7 @@
 
 ### A.4 Vai trò của AI agent trên nhánh này
 
-Xem [`.claude/rules/doc-code-sync.md`](../../.claude/rules/doc-code-sync.md): agent không viết code trong `apps/`, `tests/`, `.github/workflows/`. Agent chỉ được review, đối chiếu đề, giải thích, sửa kế hoạch và `README.md` mô tả. Thành viên nào dùng AI để hỏi khái niệm thì vẫn phải tự viết và tự giải thích được tạo phẩm của mình khi vấn đáp.
+Xem [`.claude/rules/doc-code-sync.md`](../../.claude/rules/doc-code-sync.md): agent được soạn nháp tài liệu Task 1–3 (`docs/requirements/`, `docs/diagrams/`, `docs/architecture/`, ma trận truy vết); code trong `apps/`, `tests/`, `.github/workflows/` chỉ viết khi người dùng yêu cầu rõ. Agent luôn được review, đối chiếu đề và giải thích. Bản nháp do agent soạn phải được thành viên phụ trách đọc, sửa, chốt qua PR và tự giải thích được khi vấn đáp.
 
 ---
 

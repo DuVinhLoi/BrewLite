@@ -14,16 +14,14 @@ paths:
 
 # Đồng bộ đề A2, yêu cầu, sơ đồ và code (nhánh develop-Assignment2)
 
-## Quy tắc số 1: agent không viết code
+## Quy tắc số 1: tài liệu được soạn, code chỉ viết khi được yêu cầu
 
-**Agent không viết code trong `apps/`, `tests/`, `.github/workflows/` trên nhánh này**, vì giảng viên cấm vibecoding. Không sinh code, config, Dockerfile, workflow, test. Được làm:
+Giảng viên cấm vibecoding, nên phân hai loại việc:
 
-- sửa `README.md` trong các thư mục đó để mô tả cần nộp gì;
-- viết, sửa kế hoạch và tài liệu quy trình;
-- đối chiếu bài của nhóm với đề và báo chỗ lệch (review, không viết hộ);
-- giải thích khái niệm, đề xuất cấu trúc, đặt câu hỏi gợi mở.
+- **Tài liệu (Task 1–3), agent được soạn nháp:** `docs/requirements/` (context-and-scope, SRS, đặc tả use-case), `docs/diagrams/` (`.puml` + `.svg`), `docs/architecture/` (mô tả kiến trúc, ADR, deployment diagram), `docs/traceability-matrix.md`, `docs/deployment.md`, kế hoạch và `README.md`. Bản soạn là bản nháp để nhóm đọc, sửa và chốt; mỗi người phải giải thích được phần mình khi vấn đáp.
+- **Code (Task 4–5), chỉ khi người dùng yêu cầu rõ:** `apps/`, `tests/`, `.github/workflows/`, Dockerfile, `docker-compose.yml`. Không tự viết code khi chỉ được giao lên plan hay soạn tài liệu. Khi được yêu cầu, làm đúng phạm vi được giao và nhắc rằng nhóm phải hiểu, giải thích được phần code đó.
 
-Không tự viết hộ SRS, sơ đồ, ADR: đó là bài của nhóm (đề A2 §3–§5). Người dùng yêu cầu viết code vào `apps/` thì từ chối và nhắc quy tắc này.
+Ngoài ra luôn được: đối chiếu bài của nhóm với đề và báo chỗ lệch, giải thích khái niệm, đề xuất cấu trúc.
 
 ## Nguồn, theo thứ tự ưu tiên
 

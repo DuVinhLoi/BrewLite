@@ -1,6 +1,6 @@
 # apps/web — Next.js mobile-first / PWA
 
-> Thư mục này **chưa có code**. Giảng viên cấm vibecoding: nhóm tự viết code ở Task 4 và Task 5, agent AI không viết code vào `apps/` trên nhánh `develop-Assignment2` (xem `.claude/rules/doc-code-sync.md`).
+> Thư mục này **chưa có code**. Giảng viên cấm vibecoding: code ở Task 4 và Task 5 do nhóm viết; agent AI chỉ viết code vào `apps/` khi người dùng yêu cầu rõ (xem `.claude/rules/doc-code-sync.md`).
 
 Đề A2 yêu cầu frontend dùng **Next.js**, mobile-first / PWA (đề A2 §1.1).
 
