@@ -60,7 +60,7 @@ Barista không tham gia use-case này (xem UC-07 trong `srs.md` mục 2.3). Các
 
 1. Customer đã đăng nhập: có JWT hợp lệ, chưa hết hạn, `role = CUSTOMER` (FR-09, FR-10).
 2. Giỏ hàng có ít nhất 1 dòng và mọi dòng hợp lệ: số lượng 1 đến 99, tối đa 20 dòng (FR-05, FR-06, BR-02).
-3. API và database hoạt động; Payment Service sẵn sàng.
+3. API và database hoạt động.
 
 (Nếu tiền điều kiện 1 không đúng thì chạy ngoại lệ E1, không tính là lỗi hệ thống.)
 
@@ -84,9 +84,6 @@ Barista không tham gia use-case này (xem UC-07 trong `srs.md` mục 2.3). Các
 | E5 Mã giảm giá không hợp lệ | `PENDING` | không | vẫn giữ chỗ | giữ | không |
 | E6 Dữ liệu không hợp lệ | không tạo (hoặc giữ nguyên) | không | không đổi | giữ | không |
 | E7 Đơn không thanh toán được | không đổi | không | không đổi | giữ | không |
-| E8 Lỗi hệ thống sau khi thu tiền | `PAYMENT_FAILED` | không có `SUCCESS`; khoản thu được hoàn tiền mô phỏng | vẫn giữ chỗ (đơn `PAYMENT_FAILED`) | giữ | không |
-
-> Ghi chú E8: nếu lỗi xảy ra trong bước 14 thì transaction hoàn tác (không có `Payment` `SUCCESS`, không `LoyaltyTransaction`, đơn không `PAID`) và API hoàn tiền mô phỏng; đơn ở `PAYMENT_FAILED` nên tồn kho vẫn đang giữ chỗ và khách có thể thử lại (A3) hoặc hủy (A5).
 
 ## 5. Luồng chính
 
@@ -193,7 +190,7 @@ Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc m�
 
 - **Kích hoạt:** `promotionCode` không tồn tại, hết hạn (`EXPIRED10`), chưa tới ngày hiệu lực, không còn hoạt động, hoặc hết lượt dùng (`SOLDOUT10`).
 - **Phản ứng:**
-  1. API trả 422 `PROMOTION_INVALID` với `details.reason` thuộc `NOT_FOUND`, `EXPIRED`, `NOT_STARTED`, `INACTIVE`, `USAGE_LIMIT_REACHED` (AC-F17.2); không gọi Payment Service.
+  1. API trả 422 `PROMOTION_INVALID` (AC-F17.2); không gọi Payment Service.
   2. `Order` vẫn `PENDING` (đã tạo ở bước 8), tồn kho vẫn giữ chỗ.
   3. UI hiển thị "Mã giảm giá không hợp lệ hoặc đã hết hạn" tại ô mã, giữ nguyên các lựa chọn khác.
   4. Customer sửa hoặc xóa mã rồi gửi lại từ bước 9 (cùng `Idempotency-Key` được, vì chưa có kết quả thành công; AC-F17.3).
@@ -203,7 +200,7 @@ Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc m�
 ### E6 — Dữ liệu không hợp lệ (tại bước 5, 6 hoặc 10)
 
 - **Kích hoạt:** giỏ rỗng, số lượng ngoài 1 đến 99, quá 20 dòng, size hoặc topping lạ, thiếu `paymentMethod`, thiếu `Idempotency-Key`, số thẻ sai định dạng.
-- **Phản ứng:** UI chặn trước khi gửi nếu lỗi định dạng (AC-N06.3). Nếu vẫn tới API: 400 `VALIDATION_ERROR` hoặc `IDEMPOTENCY_KEY_REQUIRED` (AC-F12.1, AC-F14.2); sản phẩm không tồn tại: 404 `PRODUCT_NOT_FOUND` (AC-F12.2). Không tạo `Order`, không gọi Payment Service; UI hiển thị lỗi dưới từng ô.
+- **Phản ứng:** UI chặn trước khi gửi nếu lỗi định dạng (AC-N06.3). Nếu vẫn tới API: 400 `VALIDATION_ERROR` hoặc `IDEMPOTENCY_KEY_REQUIRED` (AC-F12.1, AC-F14.2); sản phẩm không tồn tại: 404 `PRODUCT_NOT_FOUND` (AC-F12.2). Không tạo `Order` mới, không gọi Payment Service; UI hiển thị lỗi dưới từng ô.
 - **Yêu cầu:** FR-12, FR-14, NFR-06.
 
 ### E7 — Đơn không thể thanh toán (tại bước 10)
@@ -212,11 +209,9 @@ Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc m�
 - **Phản ứng:** không gọi Payment Service; UI hiển thị thông báo tương ứng và dẫn khách về lịch sử đơn.
 - **Yêu cầu:** FR-14, NFR-05.
 
-### E8 — Lỗi hệ thống (tại bước 6 đến 15)
+### E8 — Lỗi hệ thống (tại bước 10 đến 15)
 
-- **E8a — lỗi 5xx hoặc mất kết nối trước khi có phản hồi:** UI hiển thị "Có lỗi xảy ra, vui lòng thử lại"; vì thanh toán idempotent nên bấm lại an toàn (E4a, A3).
-- **E8b — lỗi database sau khi Payment Service đã thu tiền (bước 14):** transaction hoàn tác; API gọi hoàn tiền mô phỏng cho khoản vừa thu, đơn sang `PAYMENT_FAILED`, trả 500 (AC-N13.3). Khách không bị mất tiền; xử lý tiếp như E3.
-- **Yêu cầu:** NFR-13, FR-16.
+- **E8a — lỗi 5xx hoặc mất kết nối trước khi có phản hồi:** UI hiển thị "Có lỗi xảy ra, vui lòng thử lại"; vì thanh toán idempotent nên bấm lại an toàn (E4a, A3).- **Yêu cầu:** NFR-13, FR-16.
 
 ## 8. Quy tắc nghiệp vụ áp dụng
 

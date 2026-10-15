@@ -70,7 +70,7 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 | NFR-10 | Toàn hệ thống (web); kiểm Lighthouse Installable | chờ Task 3 | dự kiến manifest và service worker trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
 | NFR-11 | UC-01, UC-05; kiểm ba trạng thái loading/empty/error | chờ Task 3 | dự kiến `apps/web`; chờ Task 4–5 | chờ Task 4–5 |
 | NFR-12 | UC-01 đến UC-05; kiểm E2E Chromium và chạy tay trên 4 trình duyệt | chờ Task 3 | dự kiến `apps/web`; chờ Task 5 | chờ Task 5 |
-| NFR-13 | UC-04 (ngoại lệ E2, E4, E8); kiểm transaction, đồng thời, hoàn tiền | chờ Task 2 (Sequence: transaction), chờ Task 3 (ADR 005) | dự kiến module orders, payments; chờ Task 5 | chờ Task 5 |
+| NFR-13 | UC-04 (ngoại lệ E2, E4, E8); kiểm transaction, đồng thời | chờ Task 2 (Sequence: transaction), chờ Task 3 (ADR 005) | dự kiến module orders, payments; chờ Task 5 | chờ Task 5 |
 | NFR-14 | Triển khai; kiểm `docker compose up` trên máy sạch | chờ Task 3 (Deployment-01: vùng Local) | dự kiến `docker-compose.yml`, Dockerfile; chờ Task 5 | chờ Task 5 |
 | NFR-15 | Triển khai; kiểm `GET /health` 200/503 | chờ Task 3 (ADR, deployment: health check) | dự kiến `GET /health`; chờ Task 5 | chờ Task 5 |
 | NFR-16 | Triển khai; kiểm migration/seed tái tạo DB | chờ Task 3 (ADR 003) | dự kiến migration và seed trong `apps/api`; chờ Task 4–5 | chờ Task 4–5 |

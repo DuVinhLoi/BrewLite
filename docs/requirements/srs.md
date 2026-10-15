@@ -323,7 +323,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Tiêu chí chấp nhận:**
   - AC-F12.1: Khi `items` rỗng, hoặc có hơn 20 dòng, `quantity` < 1, `quantity` > 99, `quantity` không phải số nguyên, `size` ngoài `S`/`M`/`L`, hoặc topping không có trong danh sách thì trả 400 `VALIDATION_ERROR` và không tạo `Order`.
   - AC-F12.2: Khi `productId` không tồn tại thì trả 404 `PRODUCT_NOT_FOUND` và không tạo `Order`.
-  - AC-F12.3: Khi body có thêm trường `total: 1` hoặc `unitPrice: 1` thì trả 400 (trường lạ) hoặc bỏ qua trường đó; trong cả hai trường hợp `Order.total` không bao giờ lấy từ client.
+  - AC-F12.3: Khi body có thêm trường `total: 1` hoặc `unitPrice: 1` thì trả 400 (trường lạ); `Order.total` không bao giờ lấy từ client.
   - AC-F12.4: Khi giỏ trên giao diện rỗng thì nút "Thanh toán" bị vô hiệu và không gọi API.
 
 #### FR-13 — Xử lý hết hàng khi đặt đơn
@@ -374,7 +374,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Ưu tiên:** Should · **Use-case:** UC-04.3 · **Stakeholder:** S1, S3
 - **Tiêu chí chấp nhận:**
   - AC-F17.1: Khi `POST /payments` kèm `promotionCode = "BREWLITE10"` cho đơn `total = 124000` thì trả 201 với `discountAmount = 12400`, `amount = 111600`; `usedCount` của mã tăng 1; mã `brewlite10 ` (chữ thường, thừa khoảng trắng) cho kết quả y hệt.
-  - AC-F17.2: Khi mã không tồn tại, hoặc `EXPIRED10` (hết hạn), hoặc `SOLDOUT10` (hết lượt), hoặc chưa tới `validFrom`, hoặc `active = false` thì trả 422 `PROMOTION_INVALID` với `details.reason` thuộc `NOT_FOUND`, `EXPIRED`, `NOT_STARTED`, `INACTIVE`, `USAGE_LIMIT_REACHED`; không gọi Payment Service; `Order` vẫn `PENDING`; không có `Payment`.
+  - AC-F17.2: Khi mã không tồn tại, hoặc `EXPIRED10` (hết hạn), hoặc `SOLDOUT10` (hết lượt), hoặc chưa tới `validFrom`, hoặc `active = false` thì trả 422 `PROMOTION_INVALID`; không gọi Payment Service; `Order` vẫn `PENDING`; không có `Payment`.
   - AC-F17.3: Sau lỗi `PROMOTION_INVALID`, khách gửi lại cùng `Idempotency-Key` và không kèm mã thì thanh toán thành công với `amount = total`.
   - AC-F17.4: Giao diện có ô "Mã giảm giá" tùy chọn; mã không hợp lệ hiển thị "Mã giảm giá không hợp lệ hoặc đã hết hạn" và giữ nguyên các lựa chọn khác; thành công hiển thị dòng "Đã giảm: 12.400đ" trên biên lai.
   - AC-F17.5: Mỗi đơn chỉ áp tối đa một mã (body chỉ nhận một `promotionCode`).
@@ -578,8 +578,6 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Tiêu chí chấp nhận:**
   - AC-N13.1: Tạo đơn (tạo `Order`, `OrderItem`, giữ chỗ tồn kho) là một transaction; gây lỗi ở bước bất kỳ thì DB không đổi (xem AC-F11.3).
   - AC-N13.2: Hai mươi yêu cầu đặt đồng thời trên tổng tồn kho 10 không bao giờ làm `stock` âm hoặc tạo tổng số lượng đặt vượt 10 (xem AC-F13.3).
-  - AC-N13.3: Khi lỗi cơ sở dữ liệu xảy ra **sau** khi Payment Service đã thu tiền thì API gọi hoàn tiền mô phỏng cho khoản vừa thu, `Order` sang `PAYMENT_FAILED`, không có `Payment` `SUCCESS` hay `LoyaltyTransaction`, và trả 500; kiểm bằng integration test giả lập lỗi DB.
-
 ### 6.5 Khả năng triển khai
 
 #### NFR-14 — Chạy local bằng docker-compose
