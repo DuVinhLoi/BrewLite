@@ -1,6 +1,6 @@
 # docs/requirements — Task 1: Khai thác và đặc tả yêu cầu
 
-Thư mục này **chưa có nội dung**. Nhóm tự viết (đề A2 §3). Đầu vào tham khảo: `docs/reference/a1/use-case-specifications.md`.
+Thư mục này đã có **bản nháp do agent soạn** cho đủ các file dưới đây (đề A2 §3). Nhóm đọc, sửa, chốt qua PR; các câu hỏi nhóm phải chốt nằm ở `srs.md` mục 8. Đầu vào tham khảo: `docs/reference/a1/use-case-specifications.md`.
 
 ## Nhóm phải nộp ở đây
 
