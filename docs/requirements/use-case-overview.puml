@@ -1,0 +1,76 @@
+@startuml use-case-overview
+' BrewLite A2 - Use-case diagram tong quat (de A2 3.2 muc 5). Nguon: docs/requirements/srs.md muc 2.
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam RectangleBackgroundColor #ffffff
+skinparam RectangleBorderColor #94a3b8
+skinparam ActorBackgroundColor #eef2fb
+skinparam ActorBorderColor #5b6b8c
+skinparam UsecaseBackgroundColor #eef2fb
+skinparam UsecaseBorderColor #5b6b8c
+skinparam Shadowing false
+
+left to right direction
+
+title BrewLite - Use-case tổng quát (phạm vi Assignment 2)
+
+actor "Khách vãng lai\n(Guest)" as Guest
+actor "Khách hàng\n(Customer)" as Customer
+actor "Nhân viên quầy\n(Barista)\nphạm vi Should" as Barista
+actor "Dịch vụ\nthanh toán\n(Payment Service)" as Pay <<Service>>
+
+Customer --|> Guest
+
+rectangle "Hệ thống BrewLite" {
+  usecase "UC-01 Xem menu và chi tiết món\n(size, topping)\nFR-01..FR-04" as UC01
+  usecase "UC-02 Quản lý giỏ hàng\nFR-05..FR-07" as UC02
+  usecase "UC-03 Đăng ký / Đăng nhập (JWT)\nFR-08..FR-10" as UC03
+  usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-18" as UC04
+  usecase "UC-04.1 Tạo đơn hàng\nFR-11..FR-13" as UC041
+  usecase "UC-04.2 Thanh toán đơn hàng\nFR-14..FR-16" as UC042
+  usecase "UC-04.3 Áp mã giảm giá\nFR-17 (Should)" as UC043
+  usecase "UC-04.4 Ghi nhận điểm thưởng\nFR-18 (Should)" as UC044
+  usecase "UC-05 Xem lịch sử và theo dõi đơn\nFR-20..FR-22" as UC05
+  usecase "UC-06 Hủy đơn\nFR-25 (Should), FR-26 (Could)" as UC06
+  usecase "UC-07 Cập nhật trạng thái đơn\nFR-23, FR-24 (Should)\nFR-27 (Could)" as UC07
+  usecase "UC-08 Xem điểm thưởng\nFR-19 (Could)" as UC08
+}
+
+Guest --- UC01
+Guest --- UC02
+Guest --- UC03
+
+Customer --- UC04
+Customer --- UC05
+Customer --- UC06
+Customer --- UC08
+
+Barista --- UC03
+Barista --- UC07
+Barista --- UC06
+
+UC04 .> UC041 : <<include>>
+UC04 .> UC042 : <<include>>
+UC043 .> UC042 : <<extend>>
+UC044 .> UC042 : <<extend>>
+UC03 .> UC04 : <<extend>>
+
+UC042 --- Pay
+UC06 --- Pay
+
+note right of UC03
+  Extend UC-04 khi chưa có
+  phiên đăng nhập (FR-10)
+end note
+
+note right of UC07
+  Trạng thái đơn:
+  PENDING, PAID, PAYMENT_FAILED,
+  PREPARING, READY, COMPLETED,
+  CANCELLED
+end note
+
+@enduml
