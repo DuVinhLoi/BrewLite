@@ -1,3 +1,5 @@
+> **Tài liệu lịch sử.** Báo cáo này ghi hiện trạng nhánh `develop` ngày 2026-10-08/09. Trên nhánh `develop-agile`, các tài liệu UC / sequence và giao diện Barista/Admin (`/barista`, `/admin`) không còn; backlog hiện hành là `docs/product-backlog.md`.
+
 # Báo cáo hiện trạng nhánh `develop` — đối chiếu 10 task (Mục 8) + API (12.1) + thực thể (12.2)
 
 > Ngày: 2026-10-08 (cập nhật 2026-10-09). HEAD khi viết: `b290706`; HEAD khi cập nhật: `259f9ff`, thêm hai merge ngày 2026-10-09 là `0e8773b` (sửa 3 lỗi review: hoàn tiền mọi lỗi sau charge, compose không đọc `DATABASE_URL` từ `.env`, thông báo lỗi thanh toán tiếng Việt) và `e938c18` (Order State Machine hiện trên giao diện). Phạm vi: những gì đã nâng cấp để đạt yêu cầu và những gì chưa đạt.
