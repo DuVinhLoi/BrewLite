@@ -44,7 +44,7 @@ Là đầu vào tham khảo, mô tả code ở nhánh `develop`. Không sửa n�
 
 ## Ràng buộc kiểm tra được
 
-- Lớp domain của A2: đúng 7 lớp `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` (đề A2 §4.3). Tên lớp, thuộc tính, trạng thái trong sơ đồ khớp SRS.
+- Lớp domain của A2: tối thiểu 7 lớp `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` (đề A2 §4.3). Tên lớp, thuộc tính, trạng thái trong sơ đồ khớp SRS.
 - Mỗi sơ đồ lưu cả `.puml` và ảnh kết xuất `.svg` (đề A2 §4.2).
 - Secret thật không xuất hiện trong repo; mật khẩu chỉ ghi cho tài khoản demo, luôn kèm chữ "demo" (đề A2 §7.4).
 - Tham chiếu đề bằng số mục, ví dụ `đề A2 §7.3`.
