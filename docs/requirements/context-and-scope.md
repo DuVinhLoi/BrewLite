@@ -1,10 +1,10 @@
 # Bối cảnh, stakeholder và phạm vi (Task 1.1)
 
-> **BẢN NHÁP do agent soạn — nhóm đọc, sửa, chốt qua PR.** Thành viên phụ trách phải tự giải thích được từng mục khi vấn đáp.
+> **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5.** Thành viên phụ trách phải tự giải thích được từng mục khi vấn đáp.
 >
 > Đáp ứng đề A2 §3.1. Đề A2: [`../Assignment2-BrewLite.md`](../Assignment2-BrewLite.md). Bối cảnh từ đề A1 (chỉ tham khảo): [`../BrewLite-CongNghePhanMem-fixed.md`](../BrewLite-CongNghePhanMem-fixed.md) §3. Tài liệu đi kèm: [`srs.md`](srs.md), [`uc-checkout.md`](uc-checkout.md), [`use-case-overview.svg`](use-case-overview.svg).
 >
-> Chỗ ghi **(nhóm chốt)** là quyết định còn mở, nhóm phải xác nhận hoặc sửa trước khi nghiệm thu Task 1.
+> Phạm vi bản nộp đã chốt tại SRS mục 1.4 và 8; lựa chọn triển khai/ADR thuộc các task sau.
 
 ## Mục lục
 
@@ -44,8 +44,8 @@ Sáu bên theo đề A2 §3.1 (mô tả gốc: đề A1 §3.2).
 | # | Stakeholder | Vai trò với hệ thống | Mục tiêu | Kỳ vọng |
 |---|---|---|---|---|
 | S1 | Khách hàng | Người dùng cuối, đặt và trả tiền cho đồ uống | Đặt đồ uống nhanh, không xếp hàng, không cần tiền mặt, biết đơn đang ở đâu | Menu rõ giá; chọn size/topping dễ; tổng tiền đúng và thấy trước khi trả; thanh toán lỗi thì không mất tiền và giữ lại giỏ; xem lại được lịch sử đơn; dùng tốt trên điện thoại |
-| S2 | Nhân viên quầy (Barista) | Nhận đơn đã trả tiền và pha chế | Biết đơn nào cần làm, báo tiến độ chính xác, không nhầm đơn chưa thanh toán | Chỉ nhìn thấy và xử lý đơn hợp lệ (đã `PAID`); đổi trạng thái theo đúng thứ tự `PAID → PREPARING → READY → COMPLETED`; không thể đổi sai trạng thái. Trong MVP, vai trò này làm qua API (Swagger/Postman), chưa có màn quầy riêng (xem mục 3.2) |
-| S3 | Quản lý cửa hàng (Product Owner) | Đặt yêu cầu, ưu tiên backlog, nghiệm thu từng Increment | Tăng số đơn thanh toán không tiền mặt, giảm thời gian xếp hàng, có dữ liệu đơn đáng tin | Phạm vi MVP rõ, bàn giao đúng hạn; số liệu đơn và thanh toán không sai lệch; mã khuyến mãi và điểm thưởng đúng quy tắc; có thể mở rộng sau (quản trị menu, kho, voucher) |
+| S2 | Nhân viên quầy (Barista) | Nhận đơn đã trả tiền và pha chế | Biết đơn nào cần làm, báo tiến độ chính xác, không nhầm đơn chưa thanh toán | Đọc đơn theo mã từ biên lai demo; chỉ chuyển sang pha chế với đơn đã `PAID`; đổi trạng thái theo đúng thứ tự `PAID → PREPARING → READY → COMPLETED`; không thể đổi sai trạng thái. Trong MVP, vai trò này làm qua API (Postman), chưa có màn quầy riêng (xem mục 3.2) |
+| S3 | Quản lý cửa hàng (Product Owner) | Đặt yêu cầu, ưu tiên backlog, nghiệm thu từng Increment | Tăng số đơn thanh toán không tiền mặt, giảm thời gian xếp hàng, có dữ liệu đơn đáng tin | Phạm vi MVP rõ, bàn giao đúng hạn; số liệu đơn và thanh toán không sai lệch; khuyến mãi và điểm thưởng được mô hình hóa để mở rộng sau; có thể mở rộng sau (quản trị menu, kho, voucher) |
 | S4 | Giảng viên / khách hàng nghiệm thu | Chấm bài, đánh giá quy trình và sản phẩm | Kiểm chứng nhóm làm đúng chuỗi yêu cầu → thiết kế → code → CI/CD → production | Tạo phẩm đủ và nhất quán (SRS, sơ đồ, ADR, ma trận truy vết); lịch sử commit/PR rõ; URL production sống lúc chấm; nhóm giải thích được từng tạo phẩm, không vibecoding |
 | S5 | Nhóm phát triển | Phân tích, thiết kế, lập trình, kiểm thử, triển khai | Giao hệ thống chạy được, đạt tiêu chí chấp nhận, đúng hạn từng task | Yêu cầu rõ và kiểm chứng được để viết test; phạm vi vừa sức hai Sprint; công cụ miễn phí chạy ổn; không bị đổi yêu cầu giữa chừng nếu không qua PR |
 | S6 | Đơn vị thanh toán (Payment Service) | Cổng Ví/Thẻ; trong bài là dịch vụ **mô phỏng** | Nhận yêu cầu trừ tiền hợp lệ, trả kết quả thành công/thất bại rõ ràng | Hệ thống gọi đúng giao diện (số tiền, phương thức, mã tham chiếu); không gọi trùng cho cùng một giao dịch; xử lý được khi cổng báo lỗi hoặc không phản hồi |
@@ -73,11 +73,7 @@ MVP phủ đúng luồng của đề A2 §1.1. Mỗi bước gắn với nhóm y
 | Thanh toán | Ví/Thẻ mô phỏng; thành công `PAID`, thất bại `PAYMENT_FAILED`; chống trừ tiền hai lần (Idempotency-Key) | FR-14, FR-15, FR-16 |
 | Theo dõi đơn | Biên lai sau khi trả; lịch sử đơn; xem trạng thái một đơn | FR-20, FR-21, FR-22 |
 
-Thêm vào MVP ở mức **Should** (làm khi Must xong, xem SRS):
-
-- áp mã khuyến mãi (`Promotion`) khi thanh toán: FR-17;
-- ghi nhận điểm thưởng (`LoyaltyTransaction`) khi đơn `PAID`: FR-18;
-- quản lý trạng thái đơn: state machine, Barista đổi trạng thái qua API, khách hủy đơn chưa trả: FR-23, FR-24, FR-25.
+Quản lý trạng thái đơn là **Must** trong minimum: state machine (FR-23), Barista đổi trạng thái qua API/Postman (FR-24), khách hủy đơn chưa trả và hoàn tồn kho (FR-25). Không cần màn hàng đợi để thực hiện API theo mã đơn.
 
 Kèm các yêu cầu phi chức năng (hiệu năng, bảo mật, tính khả dụng, triển khai): NFR-01 đến NFR-20.
 
@@ -85,14 +81,14 @@ Hệ thống **làm được** (tóm tắt cho người đọc ngoài nhóm): kh
 
 ### 3.2 Phạm vi mở rộng
 
-Chỉ làm nếu còn thời gian sau khi các yêu cầu Must và Should đã đạt (mức **Could**, xem SRS):
+Các tính năng sau **ngoài bản nộp (Won’t)**; chỉ triển khai khi có PR phê duyệt thay đổi phạm vi, đồng bộ SRS, sơ đồ và truy vết:
 
-- hiển thị điểm thưởng cho khách (hồ sơ `GET /users/me`, dòng "+N điểm" trên biên lai): FR-19;
-- hủy đơn đã `PAID` kèm hoàn tiền mô phỏng, hoàn kho, đảo điểm thưởng: FR-26;
-- màn hàng đợi tối giản cho Barista (`GET /orders?status=` và trang quầy): FR-27;
-- sơ đồ state machine đơn hàng riêng (`state-order`) ở Task 2.
+- áp mã khuyến mãi: FR-17;
+- ghi nhận và hiển thị điểm thưởng: FR-18, FR-19 (FR-19 phụ thuộc FR-18);
+- hủy đơn đã PAID và hoàn tiền: FR-26; đảo điểm chỉ khi triển khai cả FR-18;
+- API danh sách và màn hàng đợi Barista: FR-27.
 
-Nếu hạ yêu cầu quản lý trạng thái đơn xuống Won't thì vẫn phải giữ vòng đời trạng thái trong mô hình (class diagram có enum trạng thái, đề A2 §4.3); hiện tại nhóm giữ ở mức Should (SRS mục 5.8).
+Sơ đồ state machine riêng ở Task 2 là tùy chọn; mô hình trạng thái và API FR-23/24/25 vẫn bắt buộc. Minimum chỉ có 8 chuyển trạng thái hợp lệ, không cho PAID → CANCELLED khi chưa triển khai FR-26.
 
 ### 3.3 Ngoài phạm vi (out-of-scope)
 
@@ -102,13 +98,13 @@ Những việc **hệ thống không làm** trong Assignment 2:
 |---|---|---|
 | Màn hình quản trị menu (CRUD món, giá, size, topping) | Đề A2 §7.1 không đòi; dữ liệu menu nạp bằng seed. A1 gọi là UC13 | FR-28 |
 | Màn hình quản trị kho / chỉnh tồn kho | Tồn kho đổi qua seed và qua luồng đặt/hủy đơn. A1 gọi là UC14 | FR-29 |
-| Màn hình quản trị voucher / khuyến mãi | Mã khuyến mãi nạp bằng seed. A1 gọi là UC15 | FR-30 |
+| Màn hình quản trị voucher / khuyến mãi | Chỉ seed mã khi triển khai FR-17. A1 gọi là UC15 | FR-30 |
 | Thanh toán thật (Momo, VNPay, Stripe...) | Chỉ dùng dịch vụ mô phỏng, không xử lý thông tin thẻ thật | FR-31 |
-| Đổi / trừ điểm thưởng khi thanh toán | Chỉ ghi nhận và hiển thị điểm (FR-18, FR-19) | FR-32 |
+| Đổi / trừ điểm thưởng khi thanh toán | Ghi nhận và hiển thị điểm cũng ngoài bản nộp (FR-18, FR-19) | FR-32 |
 | Nhiều chi nhánh, giao hàng tận nơi, đặt trước giờ, thông báo đẩy | Ngoài luồng đề A2 §1.1 | không đánh mã |
 | Vai trò Admin | Đề A2 chỉ có khách và nhân viên quầy; tài khoản Barista do seed tạo | không đánh mã |
 
-> **Lưu ý để SRS và class diagram không mâu thuẫn:** "ngoài phạm vi" ở đây nghĩa là **không có màn hình quản trị** và không có API quản trị. Dữ liệu `Promotion` (mã khuyến mãi) và `LoyaltyTransaction` (giao dịch điểm) **vẫn tồn tại trong mô hình dữ liệu** vì class diagram bắt buộc có hai lớp này (đề A2 §4.3). Dữ liệu `Promotion` được nạp bằng seed; `LoyaltyTransaction` được ghi bởi luồng thanh toán.
+> **Mô hình domain bắt buộc:** Task 2 vẫn có `Promotion` và `LoyaltyTransaction` với thuộc tính, quan hệ và multiplicity theo đề A2 §4.3. Minimum không yêu cầu seed khuyến mãi hoặc ghi giao dịch điểm lúc thanh toán; phần runtime chỉ thêm khi triển khai FR-17/18. Hai lớp vẫn nằm trong mô hình dù chức năng và API quản trị nằm ngoài bản nộp.
 
 ---
 
@@ -120,9 +116,9 @@ Những việc **hệ thống không làm** trong Assignment 2:
 | A-02 | Một cửa hàng, một đơn vị tiền tệ **VND**, giá là số nguyên đồng, không có phần thập phân | Phải đổi kiểu dữ liệu giá nếu hỗ trợ nhiều tiền tệ |
 | A-03 | Khách đăng ký bằng email và mật khẩu; không xác minh email, không quên mật khẩu | Thêm luồng email nếu PO yêu cầu |
 | A-04 | Tài khoản Barista do seed tạo sẵn; không có màn đăng ký cho nhân viên | Cần màn quản trị tài khoản nếu muốn tự tạo |
-| A-05 | Menu, size (S/M/L), topping, mã khuyến mãi nạp bằng seed; một lần seed tái tạo được dữ liệu | Thay đổi menu phải sửa seed và triển khai lại |
+| A-05 | Menu, size (S/M/L), topping nạp bằng seed; mã khuyến mãi chỉ khi triển khai FR-17; một lần seed tái tạo được dữ liệu | Thay đổi menu phải sửa seed và triển khai lại |
 | A-06 | Tồn kho tính theo **số ly** từng sản phẩm (cột tồn kho của `Product`), không theo nguyên liệu | Nếu theo nguyên liệu cần thêm mô hình công thức |
-| A-07 | Tồn kho được **giữ chỗ khi tạo đơn** và hoàn lại khi đơn `CANCELLED` (nhóm chốt, xem câu hỏi mở #1 trong SRS mục 8) | Nếu trừ lúc thanh toán thì sequence và FR-13 phải đổi |
+| A-07 | Tồn kho được **giữ chỗ khi tạo đơn** và hoàn lại khi đơn `CANCELLED` (đã chốt; SRS mục 8.1) | Nếu trừ lúc thanh toán thì sequence và FR-13 phải đổi |
 | A-08 | Giỏ hàng lưu ở trình duyệt (phía client); chỉ khi đặt đơn mới gửi lên server | Nếu cần giỏ theo tài khoản phải thêm bảng giỏ |
 | A-09 | Người dùng có kết nối mạng ổn định; PWA chỉ cài được và hiển thị khung, chưa hỗ trợ đặt đơn offline | Đặt đơn offline là ngoài phạm vi |
 | A-10 | Môi trường demo/chấm dùng hạ tầng miễn phí; dịch vụ có thể "ngủ" và phản hồi đầu tiên chậm | Xem rủi ro R-03, R-04 |
@@ -159,7 +155,7 @@ Mức: C = cao, TB = trung bình, T = thấp. Xác suất × ảnh hưởng đá
 | R-04 | Smoke test hỏng giả vì dịch vụ free ngủ đông | TB | Pipeline CD đỏ không do lỗi code | Smoke test có retry khoảng 2 phút |
 | R-05 | Yêu cầu mơ hồ, tiêu chí không đo được nên khó viết test | TB | Test không bám yêu cầu, truy vết đứt | Mỗi yêu cầu có tiêu chí chấp nhận đo được (mã HTTP, trạng thái, thời gian); nhóm rà ở PR Task 1 |
 | R-06 | Sơ đồ Task 2 mâu thuẫn SRS (tên lớp, trạng thái, mã lỗi) | TB | Mất điểm Task 2 (đề A2 §4.3) | Dùng đúng tên ở SRS mục 3; bảng kiểm chéo ở PR Task 2 |
-| R-07 | Thiếu thời gian cho Sprint 2 (nhiều hạng mục nhất) | C | Không xong luồng end-to-end | Cắt Could trước (FR-19, FR-26, FR-27), giữ Must; làm hạ tầng sớm |
+| R-07 | Thiếu thời gian cho Sprint 2 (nhiều hạng mục nhất) | C | Không xong luồng end-to-end | Giữ minimum đã chốt, không đưa FR-17/18/19/26/27 vào bản nộp; làm hạ tầng sớm |
 | R-08 | Bán vượt tồn kho hoặc trừ tiền hai lần do xử lý đồng thời sai | TB | Sai nghiệp vụ cốt lõi | Transaction khi đặt đơn, khóa lạc quan hoặc cập nhật có điều kiện, Idempotency-Key; có test đồng thời (NFR-13, FR-16) |
 | R-09 | Lộ secret trong repo hoặc log CI | TB | Sự cố bảo mật, mất điểm (đề A2 §7.4) | `.env` nằm trong `.gitignore`; không `echo` biến; rà `git log -p` và log CI trước khi nộp |
 | R-10 | Sao chép sơ đồ/code từ A1 thay vì thiết kế lại | TB | Lệch phạm vi A2, nghi đạo văn | A1 chỉ tham khảo; viết lại theo phạm vi A2 (kế hoạch A2 mục D) |

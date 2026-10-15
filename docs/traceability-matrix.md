@@ -1,6 +1,6 @@
 # Ma trận truy vết (đề A2 §8.1)
 
-> **BẢN NHÁP do agent khởi tạo cuối Task 1 — nhóm đọc, sửa, chốt qua PR.** Mới điền hai cột đầu (mã yêu cầu và use-case). Ba cột còn lại điền dần theo task (xem "Cách điền dần").
+> **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5.** Các cột thiết kế, code và test ghi kế hoạch/chờ đúng task, không phải bằng chứng đã hiện thực. Không chờ tạo phẩm Task 2–5 để merge Task 1.
 >
 > Nguồn: [`requirements/srs.md`](requirements/srs.md) (`FR-xx`, `NFR-xx`), [`requirements/uc-checkout.md`](requirements/uc-checkout.md), [`requirements/use-case-overview.svg`](requirements/use-case-overview.svg). Quy tắc kiểm và cách điền: kế hoạch A2 mục C ([`planning/2026-10-15-assignment2-plan.md`](planning/2026-10-15-assignment2-plan.md)).
 
@@ -28,24 +28,24 @@
 | FR-07 | UC-02 Quản lý giỏ hàng; UC-04 (bước 1) | chờ Task 2 | dự kiến giỏ hàng phía client trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
 | FR-08 | UC-03 Đăng ký / Đăng nhập | chờ Task 2 | dự kiến `POST /auth/register`; chờ Task 5 | chờ Task 4–5 |
 | FR-09 | UC-03 Đăng ký / Đăng nhập | chờ Task 2 | dự kiến `POST /auth/login`; chờ Task 5 | chờ Task 4–5 |
-| FR-10 | UC-03; UC-04 (ngoại lệ E1) | chờ Task 2 (Activity: nhánh chưa đăng nhập; Sequence: kiểm JWT) | dự kiến JWT guard cho `POST /orders`, `POST /payments`, `GET /orders/me`, `GET /orders/:id`, `PATCH /orders/:id`, `GET /users/me`; chờ Task 5 | chờ Task 4–5 |
+| FR-10 | UC-03; UC-04 (E1a chưa tạo đơn; E1b tiếp tục orderId cũ sau đăng nhập lại cùng tài khoản) | chờ Task 2 (Activity: nhánh chưa đăng nhập; Sequence: kiểm JWT và tiếp tục đơn cũ) | dự kiến JWT guard cho `POST /orders`, `POST /payments`, `GET /orders/me`, `GET /orders/:id`, `PATCH /orders/:id`; chờ Task 5 | chờ Task 4–5 |
 | FR-11 | UC-04.1 Tạo đơn hàng | chờ Task 2 (Sequence: transaction tạo đơn; Class: `Order`, `OrderItem`) | dự kiến `POST /orders`; chờ Task 5 | chờ Task 4–5 |
 | FR-12 | UC-04.1 Tạo đơn hàng; UC-04 (ngoại lệ E6) | chờ Task 2 (Sequence: validate) | dự kiến `POST /orders`; chờ Task 5 | chờ Task 4–5 |
 | FR-13 | UC-04.1 Tạo đơn hàng; UC-04 (ngoại lệ E2) | chờ Task 2 (Activity: nhánh hết hàng; Class: `Product.stock`) | dự kiến `POST /orders` trả 409; chờ Task 5 | chờ Task 4–5 |
 | FR-14 | UC-04.2 Thanh toán đơn hàng | chờ Task 2 (Sequence: gọi Payment Service; Class: `Payment`) | dự kiến `POST /payments`; chờ Task 5 | chờ Task 4–5 |
 | FR-15 | UC-04.2, UC-04.5; UC-04 (ngoại lệ E3, thay thế A3) | chờ Task 2 (Activity: nhánh thanh toán thất bại; Sequence: `alt` thất bại) | dự kiến `POST /payments` trả 402/502; chờ Task 5 | chờ Task 4–5 |
 | FR-16 | UC-04.2, UC-04.5; UC-04 (ngoại lệ E4) | chờ Task 2 (Sequence: idempotency; Class: `Payment.idempotencyKey`) | dự kiến `POST /payments` với header `Idempotency-Key`; chờ Task 5 | chờ Task 4–5 |
-| FR-17 | UC-04.3 Áp mã giảm giá; UC-04 (thay thế A1, ngoại lệ E5) | chờ Task 2 (Class: `Promotion`) | dự kiến `POST /payments` với `promotionCode`; chờ Task 5 | chờ Task 4–5 |
-| FR-18 | UC-04.4 Ghi nhận điểm thưởng | chờ Task 2 (Class: `LoyaltyTransaction`) | dự kiến ghi trong `POST /payments`; chờ Task 5 | chờ Task 4–5 |
-| FR-19 | UC-08 Xem điểm thưởng | chờ Task 2 | dự kiến `GET /users/me`; chờ Task 5 | chờ Task 4–5 |
+| FR-17 | Won’t bản nộp: UC-04.3; A1/E5 | Task 2 bắt buộc lớp `Promotion`, không cần luồng áp mã | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
+| FR-18 | Won’t bản nộp: UC-04.4 | Task 2 bắt buộc lớp `LoyaltyTransaction`, không cần luồng ghi điểm | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
+| FR-19 | Won’t bản nộp: UC-08; phụ thuộc FR-18 | ngoài bản nộp | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
 | FR-20 | UC-04 (bước 16); UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | dự kiến màn xác nhận trong `apps/web`, `GET /orders/:id`; chờ Task 5 | chờ Task 4–5 |
 | FR-21 | UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | dự kiến `GET /orders/me`; chờ Task 5 | chờ Task 4–5 |
 | FR-22 | UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | dự kiến `GET /orders/:id`; chờ Task 5 | chờ Task 4–5 |
-| FR-23 | UC-07 Cập nhật trạng thái đơn | chờ Task 2 (Class: enum `OrderStatus`; State-01) | dự kiến hàm kiểm chuyển trạng thái trong module orders; chờ Task 5 | chờ Task 4–5 |
-| FR-24 | UC-07 Cập nhật trạng thái đơn | chờ Task 2 | dự kiến `PATCH /orders/:id` (Barista); chờ Task 5 | chờ Task 4–5 |
+| FR-23 | UC-07 Cập nhật trạng thái đơn | chờ Task 2 (Class: enum `OrderStatus`, 8 chuyển minimum; State-01 tùy chọn) | dự kiến hàm kiểm chuyển trạng thái trong module orders; chờ Task 5 | chờ Task 4–5 |
+| FR-24 | UC-07 Cập nhật trạng thái đơn (Must) | chờ Task 2 | dự kiến `GET /orders/:id`, `PATCH /orders/:id` (Barista), Postman collection; chờ Task 5 | chờ Task 5: AC-F24.1–4; không yêu cầu Swagger UI |
 | FR-25 | UC-06 Hủy đơn; UC-04 (thay thế A5) | chờ Task 2 | dự kiến `PATCH /orders/:id` (Customer hủy); chờ Task 5 | chờ Task 4–5 |
-| FR-26 | UC-06 Hủy đơn | chờ Task 2 | dự kiến `PATCH /orders/:id` (Barista hủy đơn `PAID`); chờ Task 5 | chờ Task 4–5 |
-| FR-27 | UC-07 Cập nhật trạng thái đơn | chờ Task 2 | dự kiến `GET /orders?status=`; chờ Task 5 | chờ Task 4–5 |
+| FR-26 | Won’t bản nộp: UC-06 mở rộng; đảo điểm chỉ khi có FR-18 | Task 2: PAID → CANCELLED không hợp lệ trong minimum | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
+| FR-27 | Won’t bản nộp: UC-07 mở rộng: hàng đợi | ngoài bản nộp | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
 | FR-28 | Won't: quản trị menu (ngoài phạm vi) | không thực hiện (lý do ở SRS mục 5.9) | không thực hiện | không thực hiện |
 | FR-29 | Won't: quản trị kho (ngoài phạm vi) | không thực hiện (lý do ở SRS mục 5.9) | không thực hiện | không thực hiện |
 | FR-30 | Won't: quản trị voucher (ngoài phạm vi); dữ liệu `Promotion` vẫn có trong mô hình | không thực hiện (lý do ở SRS mục 5.9) | không thực hiện | không thực hiện |
@@ -73,7 +73,7 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 | NFR-13 | UC-04 (ngoại lệ E2, E4, E8); kiểm transaction, đồng thời | chờ Task 2 (Sequence: transaction), chờ Task 3 (ADR 005) | dự kiến module orders, payments; chờ Task 5 | chờ Task 5 |
 | NFR-14 | Triển khai; kiểm `docker compose up` trên máy sạch | chờ Task 3 (Deployment-01: vùng Local) | dự kiến `docker-compose.yml`, Dockerfile; chờ Task 5 | chờ Task 5 |
 | NFR-15 | Triển khai; kiểm `GET /health` 200/503 | chờ Task 3 (ADR, deployment: health check) | dự kiến `GET /health`; chờ Task 5 | chờ Task 5 |
-| NFR-16 | Triển khai; kiểm migration/seed tái tạo DB | chờ Task 3 (ADR 003) | dự kiến migration và seed trong `apps/api`; chờ Task 4–5 | chờ Task 4–5 |
+| NFR-16 | Triển khai; kiểm migration/seed tái tạo DB; minimum không seed khuyến mãi | chờ Task 3 (ADR 003) | dự kiến migration và seed trong `apps/api`; chờ Task 4–5 | chờ Task 4–5 |
 | NFR-17 | Triển khai; kiểm pipeline CI xanh và đỏ | chờ Task 3 (Deployment-01: vùng CI) | dự kiến `.github/workflows/ci.yml`; chờ Task 4 | chờ Task 4 |
 | NFR-18 | Triển khai; kiểm pipeline CD, smoke test, rollback | chờ Task 3 (ADR 004, Deployment-01) | dự kiến `.github/workflows/cd.yml`, `docs/deployment.md`; chờ Task 5 | chờ Task 5 |
 | NFR-19 | Triển khai; kiểm URL production sống và người ngoài nhóm chạy theo README | chờ Task 3 (Deployment-01) | dự kiến `README.md`, nền tảng production; chờ Task 5 | chờ Task 5 |
@@ -81,8 +81,10 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 
 ## 3. Thống kê và quy tắc kiểm
 
-- **Số dòng:** 32 dòng FR (27 được làm, 5 Won't) và 20 dòng NFR.
-- **MoSCoW:** FR Must: FR-01 đến FR-16, FR-20 đến FR-22 (19 yêu cầu); FR Should: FR-17, FR-18, FR-23, FR-24, FR-25 (5); FR Could: FR-19, FR-26, FR-27 (3); FR Won't: FR-28 đến FR-32 (5). NFR Must: 16 (NFR-01, NFR-04 đến NFR-09, NFR-11 đến NFR-19); NFR Should: NFR-02, NFR-03, NFR-10, NFR-20 (4).
+- **Số dòng:** 32 dòng FR (22 Must, 10 Won’t bản nộp) và 20 dòng NFR.
+- **MoSCoW:** FR Must: FR-01 đến FR-16, FR-20 đến FR-25 (22); FR Won’t bản nộp: FR-17/18/19/26/27, FR-28 đến FR-32 (10). NFR Must: 16 (NFR-01, NFR-04 đến NFR-09, NFR-11 đến NFR-19); NFR Should: NFR-02, NFR-03, NFR-10, NFR-20 (4).
 - **Quy tắc đề A2 §8.1 và kế hoạch mục C:** mọi `FR-xx` Must có ít nhất một dòng đủ 5 cột trước khi kết thúc Task 5; mọi endpoint của `apps/api` xuất hiện trong ma trận; mọi mã test ghi ở đây phải tồn tại thật trong `apps/` hoặc `tests/`; cuối mỗi Sprint rà hai chiều (yêu cầu → test và test → yêu cầu) và ghi kết quả vào mô tả PR.
-- **Dòng Won't:** ghi "không thực hiện" kèm lý do trong SRS mục 5.9 (đã làm).
+- **Dòng Won’t:** lý do/phạm vi theo SRS mục 1.4, 5.6, 5.8 và 5.9; giữ yêu cầu mô hình hóa hai lớp domain ở Task 2, không yêu cầu code/test tính năng mở rộng trong bản nộp.
 - **Mẫu của đề A2 §8.1** (`FR-01 / US-01 Xem menu / Activity-01, Class-01 / GET /products / API-T01` và `FR-05 / UC-01 Thanh toán / Sequence-01 / POST /payments / INT-T03`) chỉ minh họa định dạng; mã yêu cầu thật của nhóm là bảng ở trên.
+
+Các phụ thuộc minimum: FR-22 → FR-23/24; FR-15, BR-03 → FR-25. NFR-05 chỉ kiểm endpoint đã triển khai; NFR-16 chỉ cần seed minimum. Test E1b phải chứng minh số Order không tăng và tồn kho không bị trừ thêm sau đăng nhập lại (AC-F10.4); máy trạng thái kiểm 8/49 cặp hợp lệ ở minimum (AC-F23.1).

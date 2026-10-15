@@ -1,6 +1,6 @@
 # Đặc tả use-case trọng tâm: UC-04 Đặt và thanh toán đơn hàng (Task 1.3)
 
-> **BẢN NHÁP do agent soạn — nhóm đọc, sửa, chốt qua PR.** Thành viên phụ trách phải tự giải thích được từng luồng khi vấn đáp.
+> **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5.** Thành viên phụ trách phải tự giải thích được từng luồng khi vấn đáp.
 >
 > Đáp ứng đề A2 §3.3. Yêu cầu: [`srs.md`](srs.md) (mã `FR-xx`, `NFR-xx`, quy tắc `BR-xx`, mã lỗi ở mục 3). Phạm vi: [`context-and-scope.md`](context-and-scope.md). Use-case tổng quát: [`use-case-overview.svg`](use-case-overview.svg). Truy vết: [`../traceability-matrix.md`](../traceability-matrix.md).
 >
@@ -28,7 +28,7 @@
 | Mã và tên | **UC-04 Đặt và thanh toán đơn hàng** |
 | Mục tiêu | Customer biến giỏ hàng thành một đơn hàng đã thanh toán không dùng tiền mặt, nhận mã đơn xác nhận |
 | Giá trị nghiệp vụ | Là bước tạo doanh thu của BrewLite: khách trả tiền xong thì đơn mới vào quy trình pha chế |
-| Ưu tiên | Must (lõi); các phần Áp mã giảm giá và Ghi nhận điểm thưởng là Should |
+| Ưu tiên | Must (lõi); Áp mã giảm giá và Ghi nhận điểm thưởng ngoài bản nộp (FR-17/18) |
 | Use-case con | UC-04.1 Tạo đơn hàng (include), UC-04.2 Thanh toán đơn hàng (include), UC-04.3 Áp mã giảm giá (extend UC-04.2), UC-04.4 Ghi nhận điểm thưởng (extend UC-04.2), UC-04.5 Thử lại thanh toán (extend UC-04.2); UC-03 Đăng nhập extend UC-04 khi chưa đăng nhập |
 | Lý do chọn | Đi qua đủ các thành phần (UI, API, DB, Payment Service) và đủ ba nhánh lỗi bắt buộc của đề A2 §4.1 (hết hàng, chưa đăng nhập, thanh toán thất bại); là use-case mà sequence diagram Task 2.2 phải vẽ |
 
@@ -38,8 +38,8 @@
 
 Nguồn: [`uc-checkout.puml`](uc-checkout.puml). Quan hệ:
 
-- UC-04 `<<include>>` UC-04.1 và UC-04.2: luôn chạy khi đặt hàng (tạo đơn rồi thanh toán).
-- UC-04.3, UC-04.4, UC-04.5 `<<extend>>` UC-04.2: chỉ chạy khi có điều kiện (có mã giảm giá; thanh toán thành công; đơn đang `PAYMENT_FAILED`).
+- UC-04 `<<include>>` UC-04.1 và UC-04.2: chạy khi đặt đơn mới (tạo đơn rồi thanh toán). Khi tiếp tục đơn đã tạo qua E1b/A3, chỉ chạy lại UC-04.2; không tạo đơn lần nữa.
+- UC-04.3, UC-04.4, UC-04.5 `<<extend>>` UC-04.2: chỉ chạy khi có điều kiện (triển khai FR-17 và có mã; triển khai FR-18 và thanh toán thành công; đơn đang `PAYMENT_FAILED`).
 - UC-03 Đăng nhập `<<extend>>` UC-04: chỉ chạy khi chưa có phiên đăng nhập; đây là cách vẽ của ngoại lệ "chưa đăng nhập". Tiền điều kiện của use-case vẫn là đã đăng nhập (mục 4).
 
 ## 3. Actor
@@ -69,19 +69,20 @@ Barista không tham gia use-case này (xem UC-07 trong `srs.md` mục 2.3). Các
 - Đúng 1 `Order` của Customer ở trạng thái `PAID`, kèm các `OrderItem` khớp giỏ; `Order.total` do server tính (BR-01).
 - Đúng 1 `Payment` `SUCCESS` cho đơn, lưu `Idempotency-Key`.
 - `stock` mỗi sản phẩm đã giảm đúng số lượng đặt (đã giữ chỗ ở bước 8).
-- Nếu có mã giảm giá hợp lệ: `Order.discountAmount` đúng và `Promotion.usedCount` tăng 1.
-- Nếu điểm quy đổi lớn hơn 0 (FR-18): đúng 1 `LoyaltyTransaction` `EARN`.
+- Chỉ khi triển khai FR-17, nếu có mã giảm giá hợp lệ: `Order.discountAmount` đúng và `Promotion.usedCount` tăng 1.
+- Chỉ khi triển khai FR-18 và điểm quy đổi lớn hơn 0: đúng 1 `LoyaltyTransaction` `EARN`.
 - Giỏ hàng trên trình duyệt đã bị xóa; Customer thấy màn xác nhận có mã đơn.
 
 **Hậu điều kiện khi thất bại** (mỗi nhánh chi tiết ở mục 7; đây là bảng tổng hợp):
 
 | Tình huống | `Order` | `Payment` | Tồn kho | Giỏ hàng | Điểm thưởng |
 |---|---|---|---|---|---|
-| E1 Chưa đăng nhập | không tạo | không | không đổi | giữ | không |
+| E1a Chưa tạo đơn | không tạo | không | không đổi | giữ | không |
+| E1b Đã tạo đơn, JWT hết hạn | giữ đơn cũ và orderId | không thêm do 401 | vẫn giữ chỗ, không trừ thêm | giữ | không ghi thêm |
 | E2 Hết hàng | không tạo | không | không đổi | giữ (khách chỉnh) | không |
 | E3 Thanh toán thất bại | `PAYMENT_FAILED` | 1 bản ghi `FAILED` | vẫn giữ chỗ | giữ | không |
 | E4 Gửi lại cùng key (đã thành công) | giữ `PAID` | không thêm | không đổi thêm | đã xóa từ lần đầu | không cộng thêm |
-| E5 Mã giảm giá không hợp lệ | `PENDING` | không | vẫn giữ chỗ | giữ | không |
+| E5 Mã giảm giá không hợp lệ (chỉ FR-17) | `PENDING` | không | vẫn giữ chỗ | giữ | không |
 | E6 Dữ liệu không hợp lệ | không tạo (hoặc giữ nguyên) | không | không đổi | giữ | không |
 | E7 Đơn không thanh toán được | không đổi | không | không đổi | giữ | không |
 
@@ -92,27 +93,27 @@ Luồng thành công nhất: Customer đã đăng nhập, thanh toán Ví, khôn
 | Bước | Tác nhân | Hành động |
 |---|---|---|
 | 1 | Customer | Mở màn Giỏ hàng và bấm "Thanh toán" |
-| 2 | Next.js UI | Kiểm giỏ không rỗng và có JWT hợp lệ; hiển thị màn Thanh toán gồm tóm tắt các dòng, tổng tiền, lựa chọn phương thức Ví/Thẻ, ô mã giảm giá tùy chọn |
+| 2 | Next.js UI | Kiểm giỏ không rỗng và có JWT hợp lệ; hiển thị màn Thanh toán gồm tóm tắt các dòng, tổng tiền, lựa chọn phương thức Ví/Thẻ, ô mã giảm giá chỉ khi triển khai FR-17 |
 | 3 | Customer | Chọn phương thức (`WALLET` hoặc `CARD`; với `CARD` nhập số thẻ demo) |
 | 4 | Customer | Bấm "Xác nhận trả" |
 | 5 | Next.js UI | Kiểm dữ liệu nhập (định dạng thẻ), vô hiệu nút "Xác nhận trả", tạo `Idempotency-Key` cho phiên thanh toán; gửi `POST /orders` kèm JWT và danh sách dòng (không gửi giá) |
 | 6 | NestJS API | Xác thực JWT và vai trò `CUSTOMER`; kiểm dữ liệu theo DTO (số lượng, size, topping, số dòng) |
 | 7 | NestJS API | Tính giá từng dòng và `total` từ giá trong Database (BR-01) |
 | 8 | NestJS API, Database | Trong **một transaction**: kiểm tồn kho từng sản phẩm; giữ chỗ (trừ `stock`); tạo `Order` ở `PENDING` và các `OrderItem`; commit. Trả 201 với `id`, `status = PENDING`, `total` |
-| 9 | Next.js UI | Gửi `POST /payments` với `orderId`, `paymentMethod` (và `cardNumber` nếu là Thẻ), `promotionCode` nếu có; header `Idempotency-Key` |
-| 10 | NestJS API | Xác thực JWT; kiểm dữ liệu; kiểm đơn thuộc người gọi và đang `PENDING` hoặc `PAYMENT_FAILED`; tra `Idempotency-Key` (chưa có kết quả thành công cho key này) |
-| 11 | NestJS API | Nếu có `promotionCode`: kiểm mã, tính `discountAmount` và `amount = total - discountAmount` (luồng A1); không có mã thì `amount = total` |
+| 9 | Next.js UI | Gửi `POST /payments` với `orderId`, `paymentMethod` (và `cardNumber` nếu là Thẻ), `promotionCode` chỉ khi triển khai FR-17 và có mã; header `Idempotency-Key` |
+| 10 | NestJS API | Xác thực JWT; kiểm dữ liệu và quyền sở hữu đơn; tra `Idempotency-Key`: nếu cùng người dùng/đơn/key/body đã thành công thì trả lại kết quả theo E4a trước khi kiểm trạng thái. Chỉ yêu cầu mới kiểm đơn ở `PENDING` hoặc `PAYMENT_FAILED` (luồng chính chưa có kết quả thành công) |
+| 11 | NestJS API | Chỉ khi triển khai FR-17 và có `promotionCode`: kiểm mã, tính `discountAmount` và `amount = total - discountAmount` (luồng A1); không có mã thì `amount = total` |
 | 12 | NestJS API → Payment Service | Gọi trừ tiền `amount` theo phương thức, kèm mã tham chiếu là `orderId` |
 | 13 | Payment Service | Trả `SUCCESS` |
-| 14 | NestJS API, Database | Trong **một transaction**: lưu `Payment` `SUCCESS` cùng `Idempotency-Key`; đổi `Order` từ `PENDING` sang `PAID`; tăng `Promotion.usedCount` (nếu có mã); ghi `LoyaltyTransaction` `EARN` (nếu điểm lớn hơn 0); commit |
-| 15 | NestJS API | Trả 201 với `orderId`, `paymentId`, `status = SUCCESS`, `orderStatus = PAID`, `amount`, `discountAmount`, `loyaltyPointsEarned` |
+| 14 | NestJS API, Database | Trong **một transaction**: lưu `Payment` `SUCCESS` cùng `Idempotency-Key`; đổi `Order` từ `PENDING` sang `PAID`; chỉ khi triển khai FR-17 thì tăng `Promotion.usedCount` nếu có mã; chỉ khi triển khai FR-18 thì ghi `LoyaltyTransaction` `EARN` nếu điểm lớn hơn 0; commit |
+| 15 | NestJS API | Trả 201 với `orderId`, `paymentId`, `status = SUCCESS`, `orderStatus = PAID`, `amount`, `discountAmount` (0 ở minimum); `loyaltyPointsEarned` chỉ khi triển khai FR-18 |
 | 16 | Next.js UI | Hiển thị màn xác nhận (mã đơn, trạng thái "Đã thanh toán", món, tiền); xóa giỏ hàng; cung cấp nút "Theo dõi đơn". Use-case kết thúc thành công |
 
 ## 6. Luồng thay thế
 
 Luồng thay thế vẫn dẫn tới kết quả thành công hoặc một kết thúc có kiểm soát, không phải lỗi.
 
-### A1 — Áp mã giảm giá hợp lệ (tại bước 3 và 11; UC-04.3)
+### A1 — Áp mã giảm giá hợp lệ (chỉ khi triển khai FR-17; ngoài bản nộp)
 
 1. Ở bước 3, Customer nhập mã (ví dụ `BREWLITE10`).
 2. Ở bước 9 UI gửi kèm `promotionCode`.
@@ -121,7 +122,7 @@ Luồng thay thế vẫn dẫn tới kết quả thành công hoặc một kết
 
 ### A2 — Đổi phương thức hoặc đổi mã trước khi xác nhận (tại bước 3)
 
-Customer đổi giữa Ví và Thẻ, sửa số thẻ, thêm, đổi hoặc xóa mã giảm giá bao nhiêu lần tùy ý trước khi bấm "Xác nhận trả". Chưa có `Order` nào được tạo nên không có tác dụng phụ. Quay lại bước 4.
+Customer đổi giữa Ví và Thẻ, sửa số thẻ, chỉ khi triển khai FR-17 mới thêm, đổi hoặc xóa mã giảm giá bao nhiêu lần tùy ý trước khi bấm "Xác nhận trả". Chưa có `Order` nào được tạo nên không có tác dụng phụ. Quay lại bước 4.
 
 ### A3 — Thử lại thanh toán sau khi thất bại (UC-04.5; sau E3)
 
@@ -142,16 +143,25 @@ Từ màn lỗi (hoặc lịch sử đơn), Customer bấm "Hủy đơn" và xá
 
 Ba nhánh bắt buộc của đề A2 §4.1 là **E1, E2, E3**; E4 là điều kiện idempotency của đề A2 §4.2.
 
-### E1 — Chưa đăng nhập (UC-03 extend UC-04)
+### E1 — Chưa đăng nhập hoặc JWT hết hạn (UC-03 extend UC-04)
 
-- **Kích hoạt:** ở bước 1 hoặc 2, UI không thấy JWT hợp lệ; hoặc ở bước 6 hoặc 10, API trả 401 (token hết hạn hoặc sai).
-- **Phản ứng:**
-  1. Không gọi `POST /orders` khi UI biết chưa đăng nhập.
-  2. UI chuyển tới `/login?next=/checkout` trong vòng 1 giây (AC-F10.3); với 401 giữa chừng hiển thị "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại" (AC-F10.4).
-  3. Guest đăng nhập (UC-03) hoặc đăng ký rồi đăng nhập.
-  4. Hệ thống đưa khách về `/checkout`, giỏ hàng còn nguyên; use-case tiếp tục từ bước 2.
-- **Kết quả:** không có `Order`, `Payment`; giỏ giữ nguyên. Nếu khách không đăng nhập thì use-case kết thúc không có tác dụng phụ.
-- **Yêu cầu:** FR-10, NFR-05.
+**E1a — Chưa tạo đơn:** ở bước 1/2 không có JWT hợp lệ, hoặc bước 6 trả 401.
+
+1. Nếu UI biết chưa đăng nhập thì không gọi `POST /orders`; API trả 401 trước khi tạo đơn nếu token sai/hết hạn.
+2. Giữ giỏ; chuyển tới `/login?next=/checkout`. Khi token hết hạn, hiển thị "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại".
+3. Sau đăng nhập, quay lại bước 2 rồi tạo đơn theo luồng chính.
+4. Kết quả trước khi đăng nhập lại: không tạo `Order`/`Payment`, tồn kho không đổi. Không đăng nhập thì kết thúc không có tác dụng phụ.
+
+**E1b — Đã tạo đơn:** bước 8 đã trả `orderId`, nhưng bước 10 (`POST /payments`) trả 401.
+
+1. Giữ `orderId`, tài khoản chủ đơn, giỏ và `Idempotency-Key` khi chuyển tới đăng nhập. 401 không tạo thêm `Payment` và không đổi đơn/tồn kho đã giữ.
+2. Sau đăng nhập lại **cùng tài khoản**, UI đọc `GET /orders/:id` để xác nhận trạng thái và quyền sở hữu.
+3. Với `PENDING`, tiếp tục bước 9 trên **đơn cũ**; với `PAYMENT_FAILED`, tiếp tục A3. Không quay lại bước 5, không gọi lại `POST /orders` và không trừ kho thêm.
+4. Nếu đơn đã `PAID`/`PREPARING`/`READY`/`COMPLETED`, hiển thị chi tiết/kết quả đã có; nếu `CANCELLED`, dừng thanh toán và hiển thị đơn đã hủy. Không gửi thanh toán mới.
+5. Nếu đăng nhập tài khoản khác, không tự tiếp tục đơn cũ; API đọc/trả tiền đơn của người khác trả 403. UI yêu cầu đăng nhập đúng tài khoản hoặc về lịch sử của tài khoản mới, không tự tạo đơn thay thế.
+6. Không đăng nhập lại thì đơn cũ và tồn kho giữ chỗ vẫn còn; khách có thể trở lại lịch sử bằng tài khoản chủ đơn để tiếp tục hoặc hủy theo FR-25.
+
+**Yêu cầu:** FR-10 (AC-F10.3–4), FR-14/16, FR-21/22, NFR-05. Nếu mất phản hồi `POST /orders` và chưa biết `orderId`, không coi là E1a: không tự gửi lại; kiểm tra lịch sử theo SRS mục 8.6.
 
 ### E2 — Hết hàng (tại bước 8)
 
@@ -168,7 +178,7 @@ Ba nhánh bắt buộc của đề A2 §4.1 là **E1, E2, E3**; E4 là điều k
 
 - **Kích hoạt:** Payment Service từ chối (ví dụ thẻ demo `...0002`) hoặc không phản hồi quá 5 giây (thẻ demo `...0119`).
 - **Phản ứng:**
-  1. API lưu 1 `Payment` `FAILED`, đổi `Order` từ `PENDING` sang `PAYMENT_FAILED`; không ghi `LoyaltyTransaction`; `usedCount` không tăng.
+  1. API lưu 1 `Payment` `FAILED`, đổi `Order` từ `PENDING` sang `PAYMENT_FAILED`; không ghi điểm nếu triển khai FR-18; `usedCount` không tăng nếu triển khai FR-17.
   2. API trả 402 `PAYMENT_DECLINED` (từ chối) hoặc 502 `PAYMENT_SERVICE_UNAVAILABLE` (không phản hồi) (AC-F15.1, AC-F15.2).
   3. UI hiển thị "Thanh toán không thành công. Đơn của bạn vẫn được giữ, bạn có thể thử lại hoặc chọn phương thức khác." kèm nút "Thử lại" và "Hủy đơn"; nút "Xác nhận trả" được bật lại.
   4. Customer chọn A3 (thử lại) hoặc A5 (hủy đơn).
@@ -179,14 +189,14 @@ Ba nhánh bắt buộc của đề A2 §4.1 là **E1, E2, E3**; E4 là điều k
 
 Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc mạng tự gửi lại.
 
-- **E4a — lần đầu đã thành công:** API thấy `Idempotency-Key` đã gắn với một `Payment` `SUCCESS` của đúng đơn này, **không** gọi Payment Service, trả 200 với nội dung kết quả cũ (cùng `paymentId`) (AC-F16.1). UI hiển thị màn xác nhận như bước 16. Không cộng điểm lần hai (AC-F18.3).
-- **E4b — hai yêu cầu cùng key gửi song song:** xử lý tuần tự; chỉ một yêu cầu gọi Payment Service; kết quả cuối là đúng 1 `Payment`, cả hai nhận 2xx cùng `paymentId` (AC-F16.2).
+- **E4a — lần đầu đã thành công:** Sau xác thực và kiểm quyền sở hữu, API thấy `Idempotency-Key` đã gắn với một `Payment` `SUCCESS` của đúng người dùng/đơn/body này (ưu tiên trước kiểm trạng thái đơn), **không** gọi Payment Service, trả 200 với nội dung kết quả cũ (cùng `paymentId`) (AC-F16.1). UI hiển thị màn xác nhận như bước 16. Chỉ khi triển khai FR-18: không cộng điểm lần hai (AC-F18.3).
+- **E4b — hai yêu cầu cùng người dùng/đơn/key/body gửi song song:** xử lý tuần tự theo key. Nếu lần đầu thành công, chỉ một yêu cầu gọi Payment Service; kết quả cuối đúng 1 `Payment` `SUCCESS`, cả hai nhận 2xx cùng `paymentId`. Nếu lần đầu thất bại, yêu cầu thứ hai là lần thử mới theo E4e; cùng thẻ từ chối/timeout thì mỗi lần trả 402/502 tương ứng, có 2 `Payment` `FAILED`, không ghi nhận khoản thu (AC-F16.2, AC-F16.5).
 - **E4c — cùng key nhưng `orderId` khác:** API trả 422 `IDEMPOTENCY_KEY_REUSED`, không gọi Payment Service (AC-F16.3).
 - **E4d — đơn đã `PAID`, key mới:** API trả 409 `ORDER_NOT_PAYABLE`, không gọi Payment Service, nên không trừ tiền lần hai (AC-F16.4).
 - **E4e — lần đầu đã thất bại (E3):** gửi lại là lần thử mới (BR-05), xem A3.
-- **Yêu cầu:** FR-16, FR-18, NFR-13.
+- **Yêu cầu:** FR-16, NFR-13; FR-18 chỉ khi triển khai mở rộng.
 
-### E5 — Mã giảm giá không hợp lệ (tại bước 11)
+### E5 — Mã giảm giá không hợp lệ (chỉ khi triển khai FR-17; ngoài bản nộp)
 
 - **Kích hoạt:** `promotionCode` không tồn tại, hết hạn (`EXPIRED10`), chưa tới ngày hiệu lực, không còn hoạt động, hoặc hết lượt dùng (`SOLDOUT10`).
 - **Phản ứng:**
@@ -205,13 +215,14 @@ Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc m�
 
 ### E7 — Đơn không thể thanh toán (tại bước 10)
 
-- **Kích hoạt:** `orderId` không tồn tại (404 `ORDER_NOT_FOUND`), thuộc người khác (403 `FORBIDDEN`), hoặc đơn đã `PAID`/`PREPARING`/`READY`/`COMPLETED`/`CANCELLED` (409 `ORDER_NOT_PAYABLE`) (AC-F14.3).
+- **Kích hoạt:** `orderId` không tồn tại (404 `ORDER_NOT_FOUND`), thuộc người khác (403 `FORBIDDEN`), hoặc yêu cầu mới cho đơn đã `PAID`/`PREPARING`/`READY`/`COMPLETED`/`CANCELLED` (409 `ORDER_NOT_PAYABLE`; replay thành công đúng người dùng/đơn/key/body được xử lý trước theo E4a) (AC-F14.3).
 - **Phản ứng:** không gọi Payment Service; UI hiển thị thông báo tương ứng và dẫn khách về lịch sử đơn.
 - **Yêu cầu:** FR-14, NFR-05.
 
 ### E8 — Lỗi hệ thống (tại bước 10 đến 15)
 
-- **E8a — lỗi 5xx hoặc mất kết nối trước khi có phản hồi:** UI hiển thị "Có lỗi xảy ra, vui lòng thử lại"; vì thanh toán idempotent nên bấm lại an toàn (E4a, A3).- **Yêu cầu:** NFR-13, FR-16.
+- **E8a — lỗi 5xx hoặc mất kết nối trước khi có phản hồi:** UI hiển thị "Có lỗi xảy ra, vui lòng thử lại"; vì thanh toán idempotent nên bấm lại an toàn (E4a, A3). Chỉ áp dụng khi đã biết `orderId`; không gọi lại `POST /orders`.
+- **Yêu cầu:** NFR-13, FR-16.
 
 ## 8. Quy tắc nghiệp vụ áp dụng
 
@@ -224,8 +235,8 @@ Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc m�
 | BR-03 | Giữ chỗ tồn kho khi tạo đơn, hoàn khi hủy | bước 8; E2; A5 |
 | BR-04 | Chỉ chủ đơn thanh toán; chỉ `PENDING` hoặc `PAYMENT_FAILED` thanh toán được | bước 10; E7 |
 | BR-05 | `Idempotency-Key` bắt buộc; chỉ kết quả thành công được giữ | bước 10; E4; A3 |
-| BR-06 | Một mã mỗi đơn; điều kiện hợp lệ; `BREWLITE10` giảm 10% | bước 11; A1; E5 |
-| BR-07 | Điểm thưởng `floor(amount / 10.000)` khi `PAID` | bước 14 |
+| BR-06 | Chỉ khi triển khai FR-17: một mã mỗi đơn; điều kiện hợp lệ; `BREWLITE10` giảm 10% | bước 11; A1; E5 |
+| BR-07 | Chỉ khi triển khai FR-18: điểm thưởng `floor(amount / 10.000)` khi `PAID` | bước 14 |
 | BR-08 | Máy trạng thái đơn (`PENDING → PAID`, `PENDING → PAYMENT_FAILED`, `PAYMENT_FAILED → PENDING`, `PENDING`/`PAYMENT_FAILED → CANCELLED`) | bước 8, 14; E3; A3; A5 |
 | BR-09 | Thanh toán thất bại không xóa giỏ, không hủy đơn | E3 |
 
@@ -252,7 +263,7 @@ Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc m�
 | A3 | Thử lại thanh toán | FR-15, FR-16 | — |
 | A4 | Rời màn thanh toán | FR-07 | — |
 | A5 | Hủy đơn sau thất bại | FR-25 | — |
-| E1 | Chưa đăng nhập | FR-10 | NFR-05 |
+| E1a/E1b | Chưa tạo đơn / tiếp tục đơn cũ sau đăng nhập lại cùng tài khoản | FR-10 | NFR-05 |
 | E2 | Hết hàng | FR-13 | NFR-13 |
 | E3 | Thanh toán thất bại | FR-15 | NFR-03 |
 | E4 | Gửi lại cùng Idempotency-Key | FR-16, FR-18 | NFR-13 |
@@ -264,12 +275,15 @@ Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc m�
 
 ## 10. Gợi ý test từ đặc tả
 
+Các tham chiếu FR-17/18 trong bảng mục 9 và test A1/E5 chỉ áp dụng khi triển khai mở rộng, không là phụ thuộc của luồng minimum.
+
 Mỗi luồng chuyển thành test bằng chính tiêu chí chấp nhận trong `srs.md` (mã test cụ thể ghi ở ma trận truy vết khi Task 4–5 viết):
 
 - **Luồng chính:** một test E2E menu → giỏ → đăng nhập → thanh toán Ví → màn xác nhận (FR-14, FR-20); một integration test `POST /orders` rồi `POST /payments` kiểm `PAID`, `stock`, `Payment`.
-- **E1:** E2E Guest bấm "Thanh toán" được chuyển tới đăng nhập, quay lại còn giỏ; API test 401 không token (AC-F10.1).
+- **E1a:** Guest bấm "Thanh toán" được chuyển tới đăng nhập, quay lại còn giỏ; 401 ở tạo đơn không tạo Order (AC-F10.1).
+- **E1b:** tạo đơn thành công rồi làm token hết hạn trước thanh toán; đăng nhập lại cùng tài khoản, thanh toán đúng orderId cũ, số Order và tồn kho không đổi thêm. Kiểm cả đơn đã trả/đã hủy và đăng nhập nhầm tài khoản (AC-F10.4).
 - **E2:** integration test đặt quá tồn (AC-F13.1) và đặt đồng thời (AC-F13.3).
 - **E3 và A3:** integration test thẻ `4000000000000002` rồi thẻ `4242424242424242` cùng `orderId` (AC-F15.1, AC-F15.5).
 - **E4:** integration test gửi hai lần cùng key, đếm số lần gọi Payment Service và số `Payment` (AC-F16.1).
-- **E5, A1:** API test mã `BREWLITE10`, `EXPIRED10`, `SOLDOUT10` (AC-F17.1, AC-F17.2).
-- **Máy trạng thái:** unit test toàn bộ 49 cặp chuyển trạng thái (AC-F23.1).
+- **E5, A1 (chỉ khi triển khai FR-17):** API test mã `BREWLITE10`, `EXPIRED10`, `SOLDOUT10` (AC-F17.1, AC-F17.2).
+- **Máy trạng thái:** unit test 49 cặp: minimum 8 hợp lệ/41 bị từ chối, bao gồm từ chối PAID → CANCELLED; chỉ khi triển khai FR-26 mới là 9/40 (AC-F23.1).
