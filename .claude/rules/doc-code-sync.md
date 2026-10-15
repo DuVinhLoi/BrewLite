@@ -1,51 +1,58 @@
 ---
 paths:
-  - "backend/src/**"
-  - "backend/prisma/**"
-  - "frontend/src/**"
-  - "docs/BrewLite-CongNghePhanMem-fixed.md"
-  - "docs/use-case-specifications.md"
-  - "docs/user-sequence-specifications.md"
+  - "docs/Assignment2-BrewLite.md"
+  - "docs/requirements/**"
+  - "docs/diagrams/**"
+  - "docs/architecture/**"
+  - "docs/traceability-matrix.md"
+  - "docs/deployment.md"
+  - "docs/planning/2026-10-15-assignment2-plan.md"
+  - "apps/**"
+  - "tests/**"
+  - ".github/workflows/**"
 ---
 
-# Đồng bộ đề, code và tài liệu UC / sequence
+# Đồng bộ đề A2, yêu cầu, sơ đồ và code (nhánh develop-Assignment2)
 
-Ba nguồn, theo thứ tự ưu tiên:
+## Quy tắc số 1: agent không viết code
 
-1. **Đề** `docs/BrewLite-CongNghePhanMem-fixed.md`: §8 (10 task), §9 (Task 10, State Machine §9.1), §12 (API, 5 thực thể).
-2. **Code** `backend/src`, `frontend/src`: làm đúng đề.
-3. **Tài liệu** `docs/use-case-specifications.md` (cột Trạng thái ở bảng §4) và `docs/user-sequence-specifications.md` (sơ đồ §2.x, mục C, ma trận Phần III): mô tả đúng code.
+**Agent không viết code trong `apps/`, `tests/`, `.github/workflows/` trên nhánh này**, vì giảng viên cấm vibecoding. Không sinh code, config, Dockerfile, workflow, test. Được làm:
 
-Code lệch đề thì sửa code. Tài liệu lệch code thì sửa tài liệu. Chưa rõ bên nào đúng thì hỏi người dùng trước khi sửa.
+- sửa `README.md` trong các thư mục đó để mô tả cần nộp gì;
+- viết, sửa kế hoạch và tài liệu quy trình;
+- đối chiếu bài của nhóm với đề và báo chỗ lệch (review, không viết hộ);
+- giải thích khái niệm, đề xuất cấu trúc, đặt câu hỏi gợi mở.
 
-## Khi đổi hành vi
+Không tự viết hộ SRS, sơ đồ, ADR: đó là bài của nhóm (đề A2 §3–§5). Người dùng yêu cầu viết code vào `apps/` thì từ chối và nhắc quy tắc này.
 
-Hành vi là: endpoint, guard / vai trò, chuyển trạng thái, mã HTTP, thứ tự side effect (gọi Mock Gateway, ghi DB, transaction), câu thông báo giao diện mà sơ đồ trích. Trong cùng commit với code, cập nhật:
+## Nguồn, theo thứ tự ưu tiên
 
-- sơ đồ sequence của UC đó và mục C bên dưới sơ đồ;
-- dòng UC trong ma trận Phần III;
-- cột Trạng thái ở bảng UC §4 khi UC đổi trạng thái;
-- test chứng minh hành vi mới.
+1. **Đề A2** `docs/Assignment2-BrewLite.md` (bản PDF cùng thư mục). Đề A1 `docs/BrewLite-CongNghePhanMem-fixed.md` chỉ là bối cảnh (stakeholder §3.2, NFR §4.2, state machine §9.1).
+2. **Yêu cầu** `docs/requirements/` (`context-and-scope.md`, `srs.md`, `uc-checkout.md`).
+3. **Sơ đồ và kiến trúc** `docs/diagrams/`, `docs/architecture/` (kể cả `adr/`).
+4. **Code** `apps/web`, `apps/api`, `tests/`, `.github/workflows/`.
 
-## Sơ đồ khớp code
+Tầng dưới lệch tầng trên thì sửa tầng dưới. Chưa rõ bên nào đúng thì hỏi người dùng trước khi sửa. Truy vết hai chiều trong `docs/traceability-matrix.md` (mẫu đề A2 §8.1).
 
-- Bước đi đúng thứ tự gọi trong code, kể cả thứ tự kiểm (ví dụ `POST /payments`: guard → validate → khóa → chủ đơn → cache → kiểm trạng thái → charge).
-- Mỗi lỗi người dùng gặp được qua giao diện là một nhánh `alt` / `else` có mã HTTP. Lỗi chỉ gặp khi gọi API tay (DTO sai, thiếu header) ghi bằng `note` kèm mã HTTP.
-- `group` transaction chỉ bao các lệnh ghi DB nằm trong cùng một `runInTransaction`. Lời gọi Mock Gateway (charge, refund) vẽ bên ngoài `group`, ghi chữ "ngoài transaction".
-- Giới hạn có chủ đích (comment `ponytail:` trong code) ghi ở mục C của UC.
-- Tham chiếu đề bằng số mục, ví dụ `đề §9.1`.
+## Khi nhóm đổi hành vi
 
-## Phạm vi
+Trong cùng pull request, cập nhật theo thứ tự: SRS (`FR-xx` / `NFR-xx` và tiêu chí chấp nhận), sơ đồ liên quan, ADR nếu là quyết định kiến trúc, `docs/traceability-matrix.md`, rồi mới đến code và test. Mô tả PR ghi lý do (đề A2 §6.2).
 
-- Đúng 5 thực thể của đề §12.2. Cần thêm dữ liệu thì thêm cột và ghi chú như `User.role`.
-- Sơ đồ sequence và dòng Phần III chỉ dành cho UC đã hiện thực. UC13, UC15 (backlog) chỉ có trên biểu đồ Bản 1 và bảng §4.
-- Mật khẩu chỉ ghi cho tài khoản demo của `backend/prisma/seed.ts`, luôn kèm chữ "demo" (seed đặt lại mật khẩu demo mỗi lần backend khởi động; đơn và tồn kho được giữ).
-- Smoke test hoặc thử API trên DB compose: dùng tài khoản email `@smoke.test`, không dùng tài khoản demo; xong chạy `docker compose exec backend npm run smoke:clean`.
+## Tài liệu A1 trong `docs/reference/a1/`
+
+Là đầu vào tham khảo, mô tả code ở nhánh `develop`. Không sửa nội dung, không coi là tạo phẩm A2, không dẫn từ tài liệu nộp bài như thể đó là nguồn sự thật của A2.
+
+## Ràng buộc kiểm tra được
+
+- Lớp domain của A2: đúng 7 lớp `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` (đề A2 §4.3). Tên lớp, thuộc tính, trạng thái trong sơ đồ khớp SRS.
+- Mỗi sơ đồ lưu cả `.puml` và ảnh kết xuất `.svg` (đề A2 §4.2).
+- Secret thật không xuất hiện trong repo; mật khẩu chỉ ghi cho tài khoản demo, luôn kèm chữ "demo" (đề A2 §7.4).
+- Tham chiếu đề bằng số mục, ví dụ `đề A2 §7.3`.
 
 ## Xong khi
 
-- `cd backend && npx jest` và `cd frontend && npx vitest run` xanh. Schema Prisma đổi thì chạy `npx prisma generate` trong `backend/` trước.
 - Mọi khối PlantUML đã sửa render được, không ra ảnh "Syntax Error".
-- Grep tên hàm, endpoint, mã lỗi vừa đổi trong 2 file tài liệu: không còn chỗ nào tả hành vi cũ.
+- `git diff --check` sạch; các liên kết tương đối trong tài liệu mới trỏ tới file tồn tại.
+- Mọi yêu cầu bắt buộc của đề A2 vẫn được phủ bởi bảng cuối `docs/planning/2026-10-15-assignment2-plan.md`.
 
 Viết tiếng Việt, cùng văn phong các file trong `docs/`.

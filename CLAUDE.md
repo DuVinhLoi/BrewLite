@@ -1,9 +1,7 @@
+## Nhánh develop-Assignment2: chỉ tài liệu, không code
+
+Nhánh này chuẩn bị cho đề `docs/Assignment2-BrewLite.md`. Giảng viên cấm vibecoding: **không viết code trong `apps/`, `tests/`, `.github/workflows/`** (chỉ được sửa `README.md` mô tả cần nộp gì). Đọc `.claude/rules/doc-code-sync.md` và `docs/planning/2026-10-15-assignment2-plan.md` trước khi sửa.
+
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+`graphify-out/` đã bị xóa khỏi nhánh này, nên chưa có knowledge graph. Không chạy `graphify query` / `graphify update` khi `graphify-out/graph.json` chưa tồn tại. Khi nhóm đã viết code trong `apps/`, dựng lại bằng `graphify update .` rồi áp dụng quy tắc của nhánh `develop` (query / path / explain trước khi đọc code).

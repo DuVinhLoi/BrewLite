@@ -22,7 +22,7 @@
    - sửa file ở worktree khác, ở checkout chính hoặc ở `~/.claude`.
 6. **Đầu vào:**
    - đọc `.claude/rules/doc-code-sync.md`;
-   - chạy `graphify query "<câu hỏi>"` trước khi đọc code;
+   - chạy `graphify query "<câu hỏi>"` trước khi đọc code, khi `graphify-out/graph.json` tồn tại (nhánh `develop-Assignment2` chưa có graph);
    - dùng Edit/Write cho text có `\` (PlantUML);
    - render PlantUML ra thư mục tạm, không ghi ảnh vào repo.
 7. **Commit trên branch của card**, đúng message trong card, không có trailer `Co-Authored-By`.

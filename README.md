@@ -1,134 +1,49 @@
-# BrewLite — đặt cà phê không tiền mặt (BTL Công nghệ Phần mềm, SGU)
+# BrewLite — Assignment 2 (Requirements to Deployment)
 
-> Khách chọn món → giỏ hàng → thanh toán Ví/Thẻ → nhận mã đơn tại quầy. Spec đầy đủ: `docs/BrewLite-CongNghePhanMem-fixed.md`, sequence chi tiết: `docs/user-sequence-specifications.md`.
+> Nhánh `develop-Assignment2`: **chỉ có kế hoạch và tài liệu, chưa có code**. Giảng viên cấm vibecoding, nên code của Assignment 2 (A2) do nhóm tự viết trong `apps/web` và `apps/api`, theo kế hoạch bên dưới.
 
-| Thành phần | Công nghệ | Chạy local |
+**Code Assignment 1 (A1) nằm ở nhánh `develop`** (`backend/`, `frontend/`, `docker-compose.yml`). Nhánh này không chứa code đó. Xem lại bằng `git show develop:backend/src/...`.
+
+## Hai đề
+
+| Đề | File | Nội dung |
 |---|---|---|
-| Frontend | Next.js 14 + Zustand | `:3001` |
-| Backend | NestJS 10 + class-validator | `:3000` |
-| CSDL | PostgreSQL 16 + Prisma (schema 5 entity) | `:5432` |
-| Thanh toán | Mock gateway (`MockPaymentGatewayService`), dữ liệu lưu Postgres qua Prisma | — |
+| A2 (đề của nhánh này) | [`docs/Assignment2-BrewLite.md`](docs/Assignment2-BrewLite.md) (bản PDF: [`docs/Assignment2-BrewLite.pdf`](docs/Assignment2-BrewLite.pdf)) | 5 task: yêu cầu, mô hình hóa, kiến trúc, Sprint 1, Sprint 2 + CI/CD + production. 10 điểm |
+| A1 (đã làm ở `develop`) | [`docs/BrewLite-CongNghePhanMem-fixed.md`](docs/BrewLite-CongNghePhanMem-fixed.md) | 10 task Agile Scrum, MVP đặt cà phê không tiền mặt |
 
-## Chạy nhanh
+## Kế hoạch thực hiện
 
-```bash
-cp .env.example .env   # tùy chọn: compose đã có mặc định dev
-docker compose up --build
-# Frontend http://localhost:3001, Backend http://localhost:3000/products
+**[`docs/planning/2026-10-15-assignment2-plan.md`](docs/planning/2026-10-15-assignment2-plan.md)** — quy trình làm việc, từng task 1→5 kèm tạo phẩm và đường dẫn file, checklist nghiệm thu, nền tảng triển khai, backlog Sprint 1 và 2, bảng phủ yêu cầu đề A2.
+
+Làm đúng thứ tự Task 1 → 5 (đề A2 §1): task sau chỉ được nghiệm thu khi tạo phẩm bắt buộc của task trước đã có trên repo kèm lịch sử commit.
+
+## Cấu trúc repository (theo đề A2 §9)
+
+```text
+apps/web/                 # Next.js mobile-first/PWA     (Task 4-5, nhóm tự viết)
+apps/api/                 # NestJS + PostgreSQL          (Task 4-5, nhóm tự viết)
+docs/requirements/        # Task 1
+docs/diagrams/            # Task 2
+docs/architecture/        # Task 3 (adr/ chứa các ADR)
+docs/planning/            # kế hoạch A2 và kế hoạch lịch sử của A1
+docs/reference/a1/        # tài liệu UC / sequence của A1, chỉ để tham khảo
+docs/traceability-matrix.md   # Task 1 trở đi, mẫu đề A2 §8.1 (chưa tạo)
+docs/deployment.md            # Task 5.4 (chưa tạo)
+tests/                    # integration / E2E            (Task 5.2)
+.github/workflows/        # ci.yml, cd.yml               (Task 4.4, 5.3)
+docker-compose.yml, .env.example   # Task 4.1 / 5.2 (chưa tạo)
 ```
 
-Frontend trong compose là bản production (`next build` rồi `next start`), không có hot reload: sửa mã frontend thì chạy lại `docker compose up -d --build frontend` (hoặc `docker compose up -d --build` để dựng lại backend và frontend; db dùng image `postgres:16` nên không có gì để dựng). `NEXT_PUBLIC_API_URL` và `NEXT_PUBLIC_PAYMENT_MODE` được nhúng lúc `next build` (qua `args:` của service `frontend`), nên đổi một trong hai trong `.env` thì phải chạy `docker compose up -d --build frontend`; `up` không kèm `--build` không đổi gì. Muốn hot reload, chạy rời bằng `npm run dev` như dưới.
+Hiện tại mỗi thư mục `apps/web`, `apps/api`, `tests/`, `.github/workflows/`, `docs/requirements/`, `docs/diagrams/`, `docs/architecture/` chỉ có `README.md` mô tả nhóm cần nộp gì ở đó.
 
-`DATABASE_URL` trong `.env` (host `localhost`) chỉ dành cho **chạy rời** ở dưới. Compose bỏ qua biến đó: backend trong container luôn nối `db:5432`, nên `cp .env.example .env` rồi `docker compose up` vẫn chạy đúng. `.env` đã nằm trong `.gitignore`, đừng commit.
+## Quy tắc quan trọng
 
-Chạy rời từng phần:
+- Agent AI **không viết code** trong `apps/`, `tests/`, `.github/workflows/` trên nhánh này. Chi tiết: [`.claude/rules/doc-code-sync.md`](.claude/rules/doc-code-sync.md).
+- Mỗi thay đổi làm trên nhánh `a2/task-<n>-<tên>`, mở pull request vào `develop-Assignment2`, có người review và nêu lý do thay đổi.
+- Không push và không merge vào `develop` / `main` khi chưa có đồng ý của nhóm.
 
-```bash
-cd backend && npm install && npm test   # jest dùng kho in-memory, không cần DB
-cd frontend && npm install && npm run dev   # http://localhost:3001
-cd frontend && npm test                     # vitest
-cd frontend && npm run lint                 # ESLint next/core-web-vitals: 0 lỗi; cảnh báo no-img-element là có chủ đích (ảnh SVG tĩnh)
-```
+## Tài liệu của A1 còn lại trên nhánh này
 
-Backend không tự đọc file `.env` và **bắt buộc có `DATABASE_URL` và `JWT_SECRET`**: thiếu `DATABASE_URL` thì dừng ngay với lỗi `DATABASE_URL is required` (kho in-memory chỉ dành cho jest), thiếu hoặc để rỗng `JWT_SECRET` thì dừng với lỗi `JWT_SECRET is required`. Muốn chạy rời: bật DB (`docker compose up -d db`), đặt `DATABASE_URL=postgresql://brewlite:brewlite@localhost:5432/brewlite` và một `JWT_SECRET` bất kỳ trong shell (bash: `export`; PowerShell: `$env:DATABASE_URL=...`), chạy `npx prisma migrate deploy` và `npx ts-node prisma/seed.ts` một lần (như `CMD` của `backend/Dockerfile`; không seed thì menu rỗng và chưa có tài khoản demo) rồi `npm run start:dev`.
-
-`NEXT_PUBLIC_PAYMENT_MODE=mock` demo UI không cần backend; `=api` cắm `POST /payments` thật.
-
-## Tiến độ 10 task (đã merge vào develop)
-
-Cả 10 task đã có trên `develop`. Kiểm thử: backend `npm test` 152 pass / 3 skip (suite Postgres, chạy khi có `DATABASE_URL`), frontend `npm test` 836 pass (đã gồm phần mở rộng Barista + Admin ngoài đề, xem mục Demo State Machine, và đợt làm lại giao diện, xem mục Giao diện); số đo ngày 2026-10-12. Bằng chứng từng task: `docs/develop-status-report.md`.
-
-| Task | Hiện thực chính |
-|---|---|
-| 1 Khởi tạo | `frontend/` + `backend/`, README, `.env.example`, `docker-compose.yml` |
-| 2 `GET /products` | `ProductModule`, lọc `stock > 0`, `GET /products/:id` trả 404 khi không có |
-| 3 Menu | `ProductGrid`: loading / lỗi + thử lại / rỗng |
-| 4 Size/Topping | `ProductDetailModal` + `lib/pricing.ts` |
-| 5 Giỏ hàng | Zustand + localStorage, badge số lượng |
-| 6 `POST /orders` | JWT, `class-validator`, server tự tính giá (`backend/src/order/pricing.ts`), đơn `PENDING` |
-| 7 JWT | `POST /auth/register` (bcrypt, 409 trùng email), `POST /auth/login`, `JwtAuthGuard` |
-| 8 Thanh toán | `POST /payments` Ví/Thẻ, `PAID` / `PAYMENT_FAILED`, thử lại giữ đơn cũ |
-| 9 Bàn giao | màn xác nhận, `/history` (`GET /orders/me`), compose 3 service, seed tài khoản demo |
-| 10 Nghiệp vụ | State Machine `assertTransition`, Idempotency-Key, optimistic lock + transaction, voucher `BREWLITE10` + điểm thưởng |
-
-## API (7 endpoint tối thiểu + 6 mở rộng) và Entity (5)
-
-Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`. Cả ba, cùng `GET /orders/:id` và `GET /users/me` bên dưới, chỉ dành cho CUSTOMER (`@Roles(CUSTOMER)`): token BARISTA/ADMIN nhận 403 `Insufficient role`, và giao diện chuyển nhân viên mở trang khách về `/barista` hoặc `/admin`.
-Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn, chỉ CUSTOMER), `GET /users/me` (hồ sơ + tổng điểm tích lũy, trang `/profile`, chỉ CUSTOMER). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2): `GET /orders?status=PAID,PREPARING,READY` (UC08, BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (UC14, chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
-`Product(stock,version)`, `User(loyaltyPoints, role)`, `Order(idempotencyKey unique)`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
-Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
-
-## Giao diện
-
-Giao diện theo phong cách "nét mực" (font Fraunces + Be Vietnam Pro, bộ hình minh họa SVG ở `frontend/public/doodles` và `frontend/public/images`). 11 màn: Header, Menu, Chi tiết món, Giỏ hàng (`/cart`), Thanh toán, Đặt hàng thành công (biên lai), Đăng nhập / Đăng ký (`/login`), Hồ sơ (`/profile`), Lịch sử (`/history`), Quầy pha chế (`/barista`) và Kho (`/admin`). Thanh toán và biên lai nằm trong `/cart`.
-
-**Chưa có ảnh chụp màn hình.** Đợt làm giao diện chạy trong môi trường không có trình duyệt nên chưa ai nhìn các màn bằng mắt và chưa chụp ảnh. Việc kiểm hình ảnh còn lại (1280, 1024, 760 và 360px) và kết quả kiểm thử cuối: `docs/develop-status-report.md` mục 8.
-
-## Demo end-to-end
-
-```bash
-cp .env.example .env   # hoặc bỏ qua: compose đã có default dev sẵn
-docker compose up --build
-# Frontend http://localhost:3001, Backend http://localhost:3000
-```
-
-Tài khoản demo (seed sẵn trong `backend/prisma/seed.ts`):
-
-| Vai trò | Email | Mật khẩu | Vào sau đăng nhập |
-|---|---|---|---|
-| Khách | `demo@brewlite.vn` | `demo1234` | `/` |
-| Quầy (Barista) | `barista@brewlite.vn` | `barista1234` | `/barista` |
-| Quản trị (Admin) | `admin@brewlite.vn` | `admin1234` | `/admin` |
-
-1. Mở `:3001`, đăng nhập tài khoản khách (bảng trên).
-2. Menu → bấm món mở modal chọn size/topping → thêm vào giỏ.
-3. Vào giỏ → nhập voucher `BREWLITE10` → thanh toán → xem biên lai.
-4. Mở `/history` xem đơn vừa đặt (mới nhất trước).
-
-Demo khách và quầy cùng lúc: mỗi tab trình duyệt giữ phiên đăng nhập riêng (token nằm trong sessionStorage của tab). Tab 1 đăng nhập khách, tab 2 đăng nhập barista; reload tab nào cũng giữ đúng tài khoản của tab đó. Tab mở mới bằng cách gõ URL phải đăng nhập lại; "Nhân bản tab" của trình duyệt mang theo phiên của tab gốc.
-
-Lưu ý: test pg (`backend/npm test` suite có DB thật) cần `DATABASE_URL` trỏ Postgres chạy được;
-không có `DATABASE_URL` thì các test pg tự skip, suite còn lại vẫn xanh.
-Chạy suite pg: `docker compose up -d db`, rồi trong `backend/`: `npx prisma generate` (chạy lại mỗi khi schema đổi), `npx prisma migrate deploy`, đặt `DATABASE_URL` như trên và `npx jest pg-payment`.
-
-### Demo thanh toán lỗi (UC06 KB1, `PAYMENT_FAILED`)
-
-Cổng thanh toán là bản giả nên mặc định luôn thành công. Muốn xem nhánh lỗi: đặt `MOCK_GATEWAY_DECLINE_METHOD=CARD` trong `.env` (bỏ dấu `#` ở dòng mẫu trong `.env.example`), chạy `docker compose up -d backend`, rồi ở màn Thanh toán chọn **Thẻ ngân hàng** → báo thanh toán thất bại, đơn sang `PAYMENT_FAILED`, giỏ hàng được giữ. Đổi sang **Ví điện tử** và bấm lại → thanh toán được, đơn cũ sang `PAID` (không tạo đơn mới). Xóa dòng biến rồi `docker compose up -d backend` để tắt.
-
-### Dữ liệu demo
-
-- Đơn, biên lai, điểm thưởng và tồn kho nằm trong volume `brewlite_pgdata`, giữ nguyên qua `docker compose restart`, `down` rồi `up` (không có `-v`). Đăng nhập lại tài khoản demo vẫn thấy lịch sử các buổi trước; quầy hiện đơn khách đã trả mà chưa giao.
-- Smoke test hoặc thử API bằng curl trên stack này: đăng ký tài khoản email đuôi `@smoke.test`, không dùng tài khoản demo. Xong thì dọn: `docker compose exec backend npm run smoke:clean` (xóa các tài khoản `@smoke.test` cùng đơn, biên lai của họ, hoàn kho các đơn đã trừ kho).
-- Làm lại từ đầu (DB trống, chỉ có 3 tài khoản demo và 4 món): `docker compose down -v` rồi `docker compose up -d --build`. Lệnh này xóa mọi đơn và lịch sử.
-
-### Lưu ý bảo mật (chỉ dành cho demo)
-
-- **Khóa JWT mặc định là công khai.** Mã không còn khóa mặc định (thiếu `JWT_SECRET` thì backend không khởi động), nhưng các giá trị mẫu (`dev-secret` trong `docker-compose.yml`, `change-me-in-production` trong `.env.example`) nằm ngay trong repo này. Vì JWT nay mang `role`, ai biết khóa đều tự ký được token ADMIN. Với mọi thứ ngoài bản demo cục bộ, hãy đặt `JWT_SECRET` riêng và kín. Compose cũng công bố cổng 3000/3001/5432 trên mọi giao diện mạng của máy chạy, nên đừng để cấu hình mặc định chạy trên máy truy cập được từ ngoài.
-- **Seed chạy lại mỗi lần container backend khởi động.** Nó tạo lại `barista@brewlite.vn` / `admin@brewlite.vn` với đúng mật khẩu ghi ở bảng trên (mật khẩu đã đổi sẽ bị đặt lại khi khởi động lại). Seed chỉ tạo tài khoản và món còn thiếu: đơn, biên lai, điểm thưởng và tồn kho đã có được giữ qua các lần khởi động lại (làm lại từ đầu: xem mục "Dữ liệu demo"). Chỉ phù hợp cho demo.
-- **Giới hạn đã biết.** Vai trò được đọc từ JWT (hạn 7 ngày), nên đổi vai trò trong DB chỉ có hiệu lực sau khi token hết hạn hoặc đăng nhập lại. Quầy/Admin hủy đơn `PAID` thì hoàn tiền và hoàn kho nhưng không thu hồi điểm thưởng đã cộng (giống khi khách tự hủy).
-
-## Demo State Machine (đề §9 + §9.1, tiêu chí a)
-
-Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua chấm mực kèm dấu ✓, bước hiện tại chấm cam và chữ đậm, bước sau chấm trắng; `Thanh toán lỗi` đỏ, `Đã hủy` xám) và **tự cập nhật mỗi 3 giây** (biên lai gọi `GET /orders/:id` đến khi đơn `COMPLETED` / `CANCELLED`; `/history` gọi `GET /orders/me` đến khi không còn đơn `PAID` / `PREPARING` / `READY`). Khách chỉ xem và hủy đơn của mình (nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy, `PREPARING` trở đi backend chặn 400); khách không tự tiến đơn (403). Tiến đơn là việc của Barista (UC09–UC11), mở rộng ngoài MVP theo đề §3.2:
-
-1. Khách `demo@brewlite.vn` đặt và trả một đơn (đơn sang `PAID`), mở `/history` xem thanh tiến trình.
-2. Đăng nhập `barista@brewlite.vn` / `barista1234` thì vào thẳng `/barista`: đơn nằm ở cột **Chờ pha**. Bấm **Nhận pha** → **Pha xong** → **Đã giao** (trang tự tải lại mỗi 5 giây). Hoặc bấm **Hủy (hết nguyên liệu)** để hủy đơn `PAID` (UC12: hoàn tiền + hoàn kho).
-3. Quay lại `/history` của khách (mở sẵn từ trước cũng được): trong khoảng 3 giây thanh tiến trình tự chuyển, không cần tải lại trang. Màn biên lai ngay sau khi trả tiền cũng tự cập nhật như vậy.
-
-Dự phòng nếu giao diện trục trặc (cần compose đang chạy, đã seed tài khoản khách và quầy):
-
-```bash
-bash scripts/demo-state-machine.sh   # đăng nhập → tạo đơn → trả → PREPARING → READY → COMPLETED → thử COMPLETED → CANCELLED (phải 400)
-```
-
-Test chứng minh chặn chuyển trạng thái sai (tiêu chí a của đề):
-
-```bash
-cd backend && npx jest order-state order-advance              # State Machine + tiến đơn theo vai trò + chặn người lạ
-cd backend && npx jest roles barista-queue admin-inventory    # RolesGuard, hàng đợi quầy, tồn kho Admin
-cd frontend && npx vitest run src/lib/order-status.test.ts    # bảng chuyển trạng thái FE = 9 mũi tên §9.1 = ALLOWED của backend
-```
-
-## Demo tồn kho (UC14, chỉ Admin)
-
-Đăng nhập `admin@brewlite.vn` / `admin1234` thì vào thẳng `/admin`: bảng mọi món, kể cả món hết hàng. Bấm `−1` / `+1` / `+10` hoặc nhập số rồi `Lưu`. Nếu trong lúc đó có đơn vừa trừ kho (hoặc người khác vừa sửa) thì backend trả 409, trang tự tải lại và báo thử lại trên số mới; không cho tồn kho âm (400). Món đặt về 0 biến khỏi menu của khách.
+- `docs/reference/a1/`: đặc tả use-case và sequence của A1 (đầu vào để nhóm tự vẽ lại sơ đồ A2).
+- `docs/scrum-process.md`: số liệu Scrum / git của A1.
+- `docs/planning/` (các kế hoạch cũ), `docs/checkpoints/`: nhật ký lịch sử của A1. Chúng nhắc tới `backend/`, `frontend/` và nhiều file đã xóa khỏi nhánh này; đọc như tư liệu, không làm theo.
