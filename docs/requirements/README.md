@@ -1,6 +1,8 @@
 # docs/requirements — Task 1: Khai thác và đặc tả yêu cầu
 
-Thư mục này **chưa có nội dung**. Nhóm tự viết (đề A2 §3). Đầu vào tham khảo: `docs/reference/a1/use-case-specifications.md`.
+Thư mục này là baseline **Task 1 đã chốt phạm vi minimum theo PR #5**. Quyết định và phụ thuộc ghi ở [SRS mục 1.4 và 8](srs.md). Quản lý trạng thái qua API/Postman là Must; khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi ngoài bản nộp. Task 2 vẫn phải giữ hai lớp domain Promotion và LoyaltyTransaction.
+
+Nghiệm thu Task 1 dựa trên tài liệu yêu cầu, hai use-case diagram và truy vết hiện có; không chờ code hoặc sơ đồ Task 2. Task sau bổ sung các cột truy vết theo đúng thứ tự đề A2. Thành viên phụ trách cần tự giải thích được tài liệu khi vấn đáp.
 
 ## Nhóm phải nộp ở đây
 
