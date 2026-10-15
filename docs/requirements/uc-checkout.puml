@@ -1,0 +1,71 @@
+@startuml uc-checkout
+' BrewLite A2 - Use-case diagram cho UC-04 "Dat va thanh toan don hang" (de A2 3.3). Dac ta: docs/requirements/uc-checkout.md
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam RectangleBackgroundColor #ffffff
+skinparam RectangleBorderColor #94a3b8
+skinparam ActorBackgroundColor #eef2fb
+skinparam ActorBorderColor #5b6b8c
+skinparam UsecaseBackgroundColor #eef2fb
+skinparam UsecaseBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam Shadowing false
+
+left to right direction
+
+title UC-04 Đặt và thanh toán đơn hàng - phạm vi use-case
+
+actor "Khách vãng lai\n(Guest)" as Guest
+actor "Khách hàng\n(Customer)" as Customer
+actor "Dịch vụ\nthanh toán\n(Payment Service)" as Pay <<Service>>
+
+Customer --|> Guest
+
+rectangle "Hệ thống BrewLite" {
+  usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-18" as UC04
+  usecase "UC-04.1 Tạo đơn hàng\nFR-11, FR-12, FR-13" as UC041
+  usecase "UC-04.2 Thanh toán đơn hàng\nFR-14, FR-15, FR-16" as UC042
+  usecase "UC-04.3 Áp mã giảm giá\nFR-17 (Should)" as UC043
+  usecase "UC-04.4 Ghi nhận điểm thưởng\nFR-18 (Should)" as UC044
+  usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
+  usecase "UC-03 Đăng nhập\nFR-09, FR-10" as UC03
+}
+
+Customer --- UC04
+Guest --- UC03
+
+UC04 .> UC041 : <<include>>
+UC04 .> UC042 : <<include>>
+UC043 .> UC042 : <<extend>>
+UC044 .> UC042 : <<extend>>
+UC045 .> UC042 : <<extend>>
+UC03 .> UC04 : <<extend>>
+
+UC042 --- Pay
+
+note right of UC03
+  Điều kiện extend: chưa có JWT
+  hợp lệ khi bấm "Thanh toán"
+  (luồng ngoại lệ E1)
+end note
+
+note right of UC043
+  Điều kiện extend: khách nhập
+  mã giảm giá (luồng thay thế A1,
+  ngoại lệ E5)
+end note
+
+note right of UC044
+  Điều kiện extend: thanh toán
+  thành công, đơn sang PAID
+end note
+
+note right of UC045
+  Điều kiện extend: đơn đang ở
+  PAYMENT_FAILED (ngoại lệ E3,
+  thay thế A3)
+end note
+
+@enduml

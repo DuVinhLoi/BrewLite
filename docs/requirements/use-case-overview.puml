@@ -33,6 +33,7 @@ rectangle "Hệ thống BrewLite" {
   usecase "UC-04.2 Thanh toán đơn hàng\nFR-14..FR-16" as UC042
   usecase "UC-04.3 Áp mã giảm giá\nFR-17 (Should)" as UC043
   usecase "UC-04.4 Ghi nhận điểm thưởng\nFR-18 (Should)" as UC044
+  usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
   usecase "UC-05 Xem lịch sử và theo dõi đơn\nFR-20..FR-22" as UC05
   usecase "UC-06 Hủy đơn\nFR-25 (Should), FR-26 (Could)" as UC06
   usecase "UC-07 Cập nhật trạng thái đơn\nFR-23, FR-24 (Should)\nFR-27 (Could)" as UC07
@@ -56,6 +57,7 @@ UC04 .> UC041 : <<include>>
 UC04 .> UC042 : <<include>>
 UC043 .> UC042 : <<extend>>
 UC044 .> UC042 : <<extend>>
+UC045 .> UC042 : <<extend>>
 UC03 .> UC04 : <<extend>>
 
 UC042 --- Pay

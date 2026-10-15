@@ -74,6 +74,7 @@ Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Use-case trọng t�
 | UC-04.2 | Thanh toán đơn hàng (include của UC-04) | Customer; Payment Service | FR-14, FR-15, FR-16 |
 | UC-04.3 | Áp mã giảm giá (extend UC-04.2) | Customer | FR-17 |
 | UC-04.4 | Ghi nhận điểm thưởng (extend UC-04.2) | hệ thống | FR-18 |
+| UC-04.5 | Thử lại thanh toán (extend UC-04.2, khi đơn `PAYMENT_FAILED`) | Customer; Payment Service | FR-15, FR-16 |
 | UC-05 | Xem lịch sử và theo dõi đơn | Customer | FR-20, FR-21, FR-22 |
 | UC-06 | Hủy đơn | Customer, Barista; Payment Service (hoàn tiền) | FR-25, FR-26 |
 | UC-07 | Cập nhật trạng thái đơn | Barista | FR-23, FR-24, FR-27 |
