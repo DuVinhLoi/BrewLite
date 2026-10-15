@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Headers, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -7,11 +8,14 @@ import { Role } from '../contracts/user.contract';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 
+@ApiTags('orders')
+@ApiBearerAuth()
 @Controller('orders')
 export class OrderController {
   constructor(private orders: OrderService) {}
 
   @Post()
+  @ApiHeader({ name: 'Idempotency-Key', required: false, description: 'Gửi lại cùng key thì trả đơn cũ (200), không tạo đơn mới' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CUSTOMER)
   async create(@Body() dto: CreateOrderDto, @Headers('idempotency-key') key: string | undefined, @Req() req: any, @Res({ passthrough: true }) res: any) {

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { setupSwagger } from './swagger';
 
 async function bootstrap() {
   // Kho in-memory chỉ để jest; chạy thật thiếu DB thì mỗi module giữ kho RAM riêng (POST /orders rồi POST /payments ra 404)
@@ -12,6 +13,7 @@ async function bootstrap() {
   // FE chạy origin khác (:3001) → thiếu CORS thì trình duyệt chặn mọi fetch, menu rơi về mock
   app.enableCors({ origin: (process.env.CORS_ORIGIN ?? 'http://localhost:3001').split(',') });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  setupSwagger(app);
   await app.listen(3000);
 }
 bootstrap();
