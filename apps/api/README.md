@@ -15,11 +15,12 @@ Task 5.1 (Sprint 2, đề A2 §7.1):
 - đăng ký, đăng nhập, JWT và guard;
 - tạo đơn hàng với validate;
 - thanh toán Ví/Thẻ mô phỏng;
-- trạng thái đơn và lịch sử đơn;
-- 7 lớp domain theo class diagram: `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` (đề A2 §4.3).
+- trạng thái đơn và lịch sử đơn; khách hủy đơn chưa thanh toán (FR-25);
+- Barista đổi trạng thái qua `GET /orders/:id`, `PATCH /orders/:id`, kèm Postman collection và hướng dẫn chạy (FR-24, AC-F24.4);
+- 7 lớp domain theo class diagram: `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` (đề A2 §4.3); `Promotion` và `LoyaltyTransaction` chưa cần luồng runtime (FR-17/18 ngoài bản nộp).
 
 Task 5.2 và 5.3:
-- unit test cho nghiệp vụ quan trọng (state machine, tính giá, khuyến mãi);
+- unit test cho nghiệp vụ quan trọng (state machine, tính giá);
 - integration test cho tạo đơn và thanh toán;
 - `GET /health`;
 - log dạng JSON, cấu hình qua biến môi trường;
