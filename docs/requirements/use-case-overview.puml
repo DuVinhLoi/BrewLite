@@ -35,7 +35,7 @@ rectangle "Hệ thống BrewLite" {
   usecase "UC-04.4 Ghi nhận điểm thưởng\nFR-18 (ngoài bản nộp)" as UC044
   usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
   usecase "UC-05 Xem lịch sử và theo dõi đơn\nFR-20..FR-22" as UC05
-  usecase "UC-06 Hủy đơn chưa trả\nFR-25 (Must)" as UC06
+  usecase "UC-06 Hủy đơn chưa trả\nFR-25 (Could)" as UC06
   usecase "UC-07 Cập nhật trạng thái đơn\nFR-23, FR-24 (Must)" as UC07
   usecase "Hoàn tiền đơn PAID\nFR-26 (ngoài bản nộp)" as Refund
   usecase "Hàng đợi Barista\nFR-27 (ngoài bản nộp)" as Queue
@@ -78,7 +78,7 @@ note right of UC07
   PENDING, PAID, PAYMENT_FAILED,
   PREPARING, READY, COMPLETED,
   CANCELLED. Minimum: 8 chuyển hợp lệ.
-  PAID -> CANCELLED chỉ khi triển khai FR-26.
+  PAID -> CANCELLED bị từ chối (FR-26 ngoài bản nộp).
 end note
 
 note right of UC043
@@ -92,7 +92,7 @@ note right of UC044
 end note
 
 legend bottom
-  Minimum: luồng chính và API trạng thái.
+  Minimum: luồng chính và API trạng thái. FR-25 (Could): làm nếu còn thời gian.
   FR-17/18/19/26/27 ngoài bản nộp; chỉ áp dụng khi được phê duyệt mở rộng.
   E1/A3 tiếp tục đơn đã tạo: chỉ thanh toán, không chạy lại tạo đơn.
 endlegend
