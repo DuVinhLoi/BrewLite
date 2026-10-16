@@ -267,7 +267,7 @@ Lập bảng kiểm trong mô tả PR của Task 2 (đề A2 §4.3: "ba loại s
 | Trạng thái đơn ở sequence và activity | là tập con của enum trạng thái ở class diagram |
 | Ba nhánh lỗi của activity | mỗi nhánh có FR hoặc tiêu chí chấp nhận trong SRS và có luồng ngoại lệ trong `uc-checkout.md` |
 | Lifeline sequence | khớp actor của `uc-checkout.md` |
-| Idempotency, transaction | có trong sequence **và** có NFR/FR tương ứng |
+| Idempotency, transaction | có trong sequence **và** có NFR/FR tương ứng; phân biệt cache API E4a với simulator chống thu trùng/phục hồi E8b (AC-F16.7) |
 
 ### Checklist nghiệm thu Task 2
 
@@ -315,8 +315,8 @@ Mẫu bảng truy vết "container → thành phần → mã nguồn" (để đ�
 | `001-monorepo.md` | Vì sao một repo cho `apps/web` và `apps/api`? Chia sẻ gì, tách gì? Hệ quả cho CI |
 | `002-layered-nestjs.md` | Chia module theo domain thế nào? Phân lớp controller / service / data access ra sao? Payment mô phỏng nằm trong API hay tách riêng? |
 | `003-prisma-migrations.md` | ORM nào, quản lý migration và seed thế nào để "tái tạo được database" (đề A2 §7.2), chính sách migration an toàn khi deploy |
-| `004-hosting-vercel-render.md` | Nền tảng production và rủi ro đã biết; xem mục E |
-| `005-idempotency-and-optimistic-lock.md` | Idempotency-Key cho thanh toán và khóa lạc quan hoặc transaction cho tồn kho; phương án đã loại |
+| `004-hosting-vercel-render.md` | Nền tảng production và rủi ro đã biết; chờ SHA qua `/health` trước smoke test; chốt ngày tạo/hết hạn DB so với lịch chấm (mục E) |
+| `005-idempotency-and-optimistic-lock.md` | Idempotency-Key ở API; simulator chống thu trùng theo `orderId`, lưu kết quả thành công bền vững qua restart và phục hồi E8b theo SRS mục 3.4/AC-F16.7; khóa lạc quan hoặc transaction cho tồn kho; phương án đã loại |
 
 ### Task 3.2 — Deployment diagram (đề A2 §5.2)
 
@@ -453,11 +453,11 @@ Mỗi chức năng phải khớp SRS, sơ đồ và được ghi vào ma trận 
 | Hạng mục (đề A2 §7.2) | Tạo phẩm gợi ý |
 |---|---|
 | Unit test cho nghiệp vụ quan trọng | cạnh code trong `apps/api`: state machine đơn hàng (49 cặp: 8 hợp lệ, 41 bị từ chối, AC-F23.1), tính giá theo size/topping |
-| Integration test API tạo đơn/thanh toán | `tests/integration/` chạy với Postgres thật; trong CI dùng service container |
+| Integration test API tạo đơn/thanh toán | `tests/integration/` chạy với Postgres thật; trong CI dùng service container; có test dừng API sau simulator thành công, trước API commit rồi restart/retry (AC-F16.7) |
 | Ít nhất một E2E từ menu đến xác nhận đơn | `tests/e2e/` (gợi ý Playwright) |
 | Migration/seed tái tạo được database | chạy `migrate` + seed trên DB trống ra cùng một kết quả |
 | `docker-compose.yml` chạy web, API, database ở local | gốc repo; kèm `Dockerfile` cho `apps/web`, `apps/api` |
-| Health endpoint | `GET /health` (kiểm cả kết nối DB hoặc ghi rõ chỉ kiểm tiến trình) |
+| Health endpoint | `GET /health` kiểm kết nối DB, trả 200/503 theo AC-N15.1–2; có `version` và không cache theo AC-N15.3 |
 
 Test phải bám tiêu chí chấp nhận trong SRS: mỗi mã test (`API-Txx`, `INT-Txx`, `E2E-Txx`, `UNIT-Txx`) xuất hiện trong ma trận truy vết. Cập nhật `ci.yml` để chạy thêm integration test.
 
@@ -472,19 +472,22 @@ Chuỗi bắt buộc (đề A2 §7.3): **Push/Tag → Lint và Test → Build Do
 | # | Yêu cầu của đề A2 §7.3 | Cách làm đề xuất |
 |---|---|---|
 | 1 | Quality gate: lint, test, build | job đầu tiên; các job sau `needs:` job này |
-| 2 | Image gắn tag bằng commit SHA hoặc semver | tag `${{ github.sha }}` và tag semver lấy từ tag git |
+| 2 | Image gắn tag bằng commit SHA hoặc semver | tag `${{ github.sha }}` và tag semver lấy từ tag git; build image API với `--build-arg APP_VERSION=${{ github.sha }}`, Dockerfile giữ giá trị này trong image để `/health.version` nhận diện bản đang chạy (AC-N15.3) |
 | 3 | Push image lên registry | push lên GHCR bằng `GITHUB_TOKEN` (quyền `packages: write`) |
-| 4 | Deploy vào production bằng secret của CI | API: gọi Render deploy hook với `imgURL` trỏ tới image SHA; Web: `vercel deploy --prebuilt --prod` với `VERCEL_TOKEN`; tắt auto-deploy từ Git trên Vercel để pipeline nắm quyền triển khai |
+| 4 | Deploy vào production bằng secret của CI | API: gọi Render deploy hook với `imgURL` trỏ tới image SHA, kiểm lỗi HTTP; 200/202 chỉ là đã nhận/bắt đầu hoặc xếp hàng deploy, phải chờ ở dòng 6. Web: `vercel deploy --prebuilt --prod` với `VERCEL_TOKEN`, đợi lệnh hoàn tất thành công; tắt auto-deploy từ Git trên Vercel để pipeline nắm quyền triển khai |
 | 5 | Migration an toàn | `prisma migrate deploy` (hoặc tương đương) trong lệnh khởi động container; chỉ dùng migration **cộng thêm** (thêm bảng/cột nullable), không xóa/đổi tên cột trong cùng lần phát hành, để rollback image vẫn chạy được với schema mới |
-| 6 | Health check/smoke test sau deploy | `curl` `/health` và `GET /products`, và trang web trả 200; thử lại tối đa khoảng 2 phút vì dịch vụ free ngủ đông (mục E) |
+| 6 | Health check/smoke test sau deploy | Chờ API: poll `/health` mỗi 5 giây (timeout mỗi request 10 giây), tối đa 10 phút; chỉ qua khi HTTP 200, `database=up`, `version=${{ github.sha }}`. SHA cũ dù HTTP 200 vẫn phải chờ; hết hạn thì pipeline đỏ. Sau khi đúng SHA và deploy web hoàn tất, smoke `/health` (vẫn đúng SHA), `GET /products` và trang web cùng 200, retry tối đa 2 phút chống ngủ đông theo AC-N18.2 |
 | 7 | Dừng pipeline và có cách rollback khi lỗi | step lỗi làm job thất bại; ghi cách rollback trong `docs/deployment.md` (xem dưới) |
 
 Quy tắc cho secret (đề A2 §7.4): chỉ nằm ở GitHub Secrets, biến môi trường Vercel và Render. Không in secret ra log CI (không `echo` biến, không bật debug in env). Gợi ý tên secret của GitHub: `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `PROD_API_URL`, `PROD_WEB_URL`.
 
+Chọn kiểm SHA qua `/health.version`, không cần thêm secret `RENDER_API_KEY`. SHA không phải secret; lấy từ image, không gán đè `APP_VERSION` bằng SHA mới ở cấu hình runtime cho image cũ. Chạy CD tuần tự cho cùng môi trường production để hai tag không ghi đè phiên bản khi đang kiểm. Xác nhận hành vi hook: [Render Deploy Hooks](https://render.com/docs/deploy-hooks), kiểm tra ngày 2026-10-16.
+
 **Rollback (viết vào `docs/deployment.md` và README):**
 
-- API: deploy lại image SHA của bản trước qua deploy hook (hoặc re-deploy image cũ ở Render); không cần đổi DB nếu migration chỉ cộng thêm.
+- API: deploy lại image SHA của bản trước qua deploy hook (hoặc re-deploy image cũ ở Render); poll theo giới hạn AC-N18.2 đến khi `/health` trả 200, DB up và `version` bằng **SHA bản trước**, không phải `${{ github.sha }}` của workflow hiện tại; không cần đổi DB nếu migration chỉ cộng thêm.
 - Web: `vercel rollback` về deployment trước, hoặc promote deployment cũ.
+- Thực hành rollback API và web ít nhất một lần; ghi SHA/deployment trước và sau, kết quả chờ đúng phiên bản cùng smoke test vào `docs/evidence/` và dẫn link trong `docs/deployment.md` (AC-N18.3).
 - Lỗi do dữ liệu/migration: quy trình khôi phục từ backup, nêu rõ giới hạn của gói free.
 
 ### Task 5.4 — Triển khai và bàn giao (đề A2 §7.4)
@@ -511,6 +514,7 @@ Quy tắc cho secret (đề A2 §7.4): chỉ nằm ở GitHub Secrets, biến m�
 - [ ] 5.1 (theo SRS): Barista đổi trạng thái qua `PATCH /orders/:id`, có Postman collection chạy được (AC-F24.4); khách hủy đơn chưa thanh toán (FR-25) là tùy chọn (Could).
 - [ ] 5.2: unit test nghiệp vụ quan trọng; integration test tạo đơn/thanh toán; ít nhất một E2E từ menu đến xác nhận đơn; migration/seed tái tạo DB; `docker-compose.yml` chạy web + API + DB; `GET /health`.
 - [ ] 5.3: pipeline thể hiện Push/Tag → Lint và Test → Build Docker Image → Push Registry → Deploy → Smoke Test; đủ 7 yêu cầu ở bảng trên.
+- [ ] 5.3 (theo SRS): chờ `/health` đúng SHA và DB up trước smoke; đã thử rollback một lần, kiểm SHA bản trước và smoke test đạt, có minh chứng (AC-N18.2–3).
 - [ ] 5.4: URL frontend HTTPS; URL API + health; DB không public; secret không lộ; release/tag + release notes; README đủ local/test/build/deploy/rollback; video/demo; Sprint Review + Retrospective.
 - [ ] **Tiêu chí nghiệm thu:** người ngoài nhóm clone, chạy theo README, và truy cập production (§7.4).
 - [ ] URL production **còn sống** vào ngày chấm (đề A2 §8.1); đã kiểm lại ngày trước hạn.
@@ -592,7 +596,7 @@ GitHub Actions --vercel deploy --prebuilt--> Vercel
 
 | Rủi ro | Hệ quả | Cách xử lý |
 |---|---|---|
-| Postgres free của Render hết hạn sau khoảng 30 ngày | mất DB lúc chấm | tạo DB gần ngày chấm hoặc dùng gói trả phí rẻ nhất; có seed để dựng lại; kiểm tra lại chính sách hiện hành của Render |
+| Postgres free của Render hết hạn sau khoảng 30 ngày | mất DB lúc chấm | ADR 004 ghi ngày tạo DB, ngày hết hạn theo nền tảng và lịch chấm; bảo đảm DB còn hạn hết đợt chấm, nếu không thì tạo lại/seed hoặc chuyển gói trước ngày hết hạn; kiểm tra lại chính sách hiện hành của Render |
 | Web service free ngủ sau 15 phút không có request | request đầu chậm hoặc timeout; smoke test có thể hỏng giả | smoke test có retry tới khoảng 2 phút; bật request "đánh thức" trước buổi demo/chấm |
 | `NEXT_PUBLIC_API_URL` nhúng lúc build | đổi URL API phải build lại web | đặt là biến env của Vercel cho môi trường production; deploy `--prebuilt` dùng đúng giá trị |
 | Image trên GHCR là private | Render không kéo được | cấp credential cho registry ở Render, hoặc đặt package public (không chứa secret) |
@@ -803,7 +807,7 @@ Mọi tạo phẩm bắt buộc của đề A2 §1-§9 và checklist §9.1 đề
 | Branch protection không bật được trên repo private gói free | Trung bình | kiểm tra ở Task 4.1; repo public hoặc tổ chức hỗ trợ (mục B.2) |
 | Sơ đồ mâu thuẫn SRS (đề A2 §4.3) | Trung bình | bảng kiểm chéo Task 2; cập nhật cả hai trong cùng PR |
 | Sao chép sơ đồ/code từ A1 | Trung bình | A1 chỉ là tham khảo; xem mục D |
-| Smoke test hỏng giả do dịch vụ free ngủ đông | Trung bình | retry ~2 phút (Task 5.3) |
+| Smoke test kiểm nhầm bản cũ hoặc hỏng giả do ngủ đông | Trung bình | chờ `/health.version` đúng SHA tối đa 10 phút rồi smoke retry ~2 phút; rollback kiểm SHA bản trước (Task 5.3) |
 | Migration làm hỏng dữ liệu production | Trung bình | chỉ migration cộng thêm; thử trên DB sao chép trước |
 | Lộ secret trong repo hoặc log CI (đề A2 §7.4) | Trung bình | `.gitignore` cho `.env`; không `echo` biến; rà log trước khi nộp |
 | Thiếu thời gian cho Sprint 2 (nhiều hạng mục nhất) | Cao | khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi đã ngoài bản nộp từ Task 1; nếu vẫn thiếu thì cắt FR-25 (Could) và `state-order` (tùy chọn) trước, giữ Must; PWA (NFR-10, Must, chỉ cần manifest) vẫn phải làm vì đề A2 §1.1 ghi mobile-first/PWA; xếp B-24..B-26 (hạ tầng) sớm để còn thời gian sửa lỗi triển khai |

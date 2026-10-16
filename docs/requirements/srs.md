@@ -106,7 +106,7 @@ Mục này cố định tên và giá trị để các tiêu chí kiểm chứng
 | `POST /payments` | Customer | Thanh toán (header `Idempotency-Key`) |
 | `GET /orders/me`, `GET /orders/:id` | Customer (`:id` còn cho Barista) | Lịch sử, chi tiết đơn |
 | `PATCH /orders/:id` | Barista (đổi trạng thái); Customer (hủy, chỉ khi làm FR-25 Could) | Body `{ "status": "<TRẠNG_THÁI_ĐÍCH>" }` |
-| `GET /health` | công khai | Kiểm tra sống |
+| `GET /health` | công khai | Kiểm kết nối DB và phiên bản API đang chạy (NFR-15) |
 
 Cổng chạy local (dự kiến): web 3000, API 4000, PostgreSQL 5432.
 
@@ -144,6 +144,8 @@ Các tiêu chí dùng chung bộ dữ liệu này (NFR-16 yêu cầu seed tái t
 - Phương thức `WALLET` (Ví): luôn thành công.
 - Phương thức `CARD` (Thẻ): body có `cardNumber` (số thẻ **demo**). `4242424242424242` thành công; kết thúc bằng `0002` (ví dụ `4000000000000002`) bị **từ chối**. Hệ thống không lưu và không ghi log số thẻ.
 - Có thể ép lỗi cho test bằng biến môi trường (tên do Task 3 chốt).
+- API gửi `orderId` làm mã tham chiếu cho simulator. Một `orderId` chỉ được ghi nhận một lần thu thành công; gọi lại sau thành công trả lại kết quả gốc (mã giao dịch mô phỏng, số tiền, phương thức), không thu thêm, kể cả khi đổi phương thức ở lần gọi lại. Kết quả từ chối không khóa `orderId`, nên đổi thẻ/phương thức sau thất bại vẫn được thử lại.
+- Bảo đảm trên phải còn sau khi tiến trình API/simulator khởi động lại. ADR 005 ở Task 3 chốt nơi lưu bền vững kết quả thành công và cách phục hồi nếu simulator đã thành công nhưng transaction lưu `Payment`/đổi `Order` chưa commit; không chỉ dùng bộ nhớ RAM, không cần thiết kế cổng thanh toán thật.
 
 ### 3.5 Quy tắc nghiệp vụ (BR)
 
@@ -370,6 +372,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
   - AC-F16.4: Khi đơn đã `PAID` mà khách gửi `Idempotency-Key` **mới** thì trả 409 `ORDER_NOT_PAYABLE`, không gọi Payment Service (không trừ tiền lần hai).
   - AC-F16.5: Khi lần đầu thất bại (FR-15) thì gửi lại cùng key được xử lý như lần thử mới (BR-05), không trả lại kết quả thất bại cũ.
   - AC-F16.6: Khi bấm "Xác nhận trả" thì nút bị vô hiệu cho tới khi có phản hồi (chống bấm đúp); giao diện dùng cùng một `Idempotency-Key` cho cả phiên màn thanh toán, sinh key mới khi bắt đầu phiên thanh toán khác; chuyển sang đăng nhập theo E1 phải giữ key cùng `orderId` để tiếp tục phiên cũ.
+  - AC-F16.7: Khi simulator đã ghi nhận thành công nhưng API dừng trước commit lưu `Payment`/đổi `Order`, khởi động lại rồi retry cùng `orderId`/key thì simulator trả kết quả thành công gốc, tổng số lần thu thành công của mã tham chiếu đó vẫn là 1; API phục hồi để có đúng 1 `Payment` `SUCCESS` và đơn `PAID`. Trường hợp lần đầu bị từ chối vẫn thử lại được theo AC-F15.5. Kiểm bằng integration test gây lỗi ở khoảng giữa bước 13 và 14 của UC-04 (E8b).
 
 ### 5.7 Lịch sử đơn
 
@@ -552,8 +555,9 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng có đặc tả mở rộng trong basel
 #### NFR-15 — Health check
 - **Ưu tiên:** Must · **Stakeholder:** S4, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N15.1: `GET /health` không cần token, trả 200 `{ "status": "ok", "database": "up" }` trong vòng 1 giây khi DB hoạt động.
-  - AC-N15.2: Khi DB không kết nối được thì `GET /health` trả 503 `{ "status": "error", "database": "down" }`.
+  - AC-N15.1: `GET /health` không cần token, trả 200 `{ "status": "ok", "database": "up", "version": "<APP_VERSION>" }` trong vòng 1 giây khi DB hoạt động.
+  - AC-N15.2: Khi DB không kết nối được thì `GET /health` trả 503 `{ "status": "error", "database": "down", "version": "<APP_VERSION>" }`.
+  - AC-N15.3: `version` của API production là commit SHA đầy đủ (40 ký tự hex) được nhúng vào image bằng build argument `APP_VERSION`; khi tạo image, Dockerfile lưu giá trị này trong môi trường chạy của image. Không gán đè SHA mới bằng biến runtime cho image cũ. Bản chạy local dùng `APP_VERSION=local` nếu không truyền SHA. Cả phản hồi 200 và 503 của `/health` có `Cache-Control: no-store`; sau deploy/rollback, `version` phải đúng SHA của image thực sự đang chạy.
 
 #### NFR-16 — Migration và seed tái tạo được
 - **Ưu tiên:** Must · **Stakeholder:** S4, S5
@@ -572,8 +576,8 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng có đặc tả mở rộng trong basel
 - **Ưu tiên:** Must · **Stakeholder:** S3, S4, S5
 - **Tiêu chí chấp nhận:**
   - AC-N18.1: Khi đẩy tag `a2-v*` thì pipeline chạy đủ chuỗi Lint và Test, Build Docker Image (gắn tag commit SHA hoặc semantic version), Push Registry, Deploy bằng secret của CI, chạy migration, Smoke Test.
-  - AC-N18.2: Smoke Test gọi `GET /health`, `GET /products` và trang web, cùng trả 200, có thử lại tối đa khoảng 2 phút; bước nào lỗi thì pipeline dừng và báo đỏ.
-  - AC-N18.3: Có quy trình rollback ghi trong `docs/deployment.md` và README, đã thử một lần (triển khai lại image bản trước, `GET /health` trả 200).
+  - AC-N18.2: Sau khi gọi deploy hook, pipeline poll `GET /health` mỗi 5 giây, mỗi request có timeout 10 giây, tổng thời gian chờ tối đa 10 phút. Chỉ qua bước chờ khi HTTP 200, `database = "up"` và `version` bằng SHA của image mục tiêu (deploy mới: `${{ github.sha }}`); lỗi mạng, 503 hoặc SHA cũ chưa được tính là deploy thành công. Hết thời gian chờ thì pipeline báo đỏ. Sau khi đúng phiên bản API và lệnh deploy web hoàn tất thành công, Smoke Test gọi `/health` (vẫn kiểm đúng SHA), `GET /products` và trang web, cùng trả 200, có thử lại tối đa khoảng 2 phút để chống ngủ đông/lỗi tạm thời; bước nào lỗi thì pipeline dừng và báo đỏ.
+  - AC-N18.3: Có quy trình rollback ghi trong `docs/deployment.md` và README, đã thử một lần: triển khai lại image bản trước, chờ `/health` trả 200, `database = "up"` và `version` bằng SHA bản trước theo giới hạn chờ ở AC-N18.2 (không so với SHA của workflow đang chạy); rollback web về deployment trước và chạy lại smoke test.
 
 #### NFR-19 — Production truy cập được và bàn giao
 - **Ưu tiên:** Must · **Stakeholder:** S3, S4
@@ -609,12 +613,13 @@ Baseline này chốt Task 1 trước Task 2 theo đề A2 §1. Không đợi cod
 1. **Tồn kho:** giữ chỗ trong transaction tạo đơn (BR-03), hoàn khi đơn `CANCELLED`, tức khi khách hủy đơn chưa trả nếu làm FR-25 (Could). Chấp nhận rủi ro đơn bỏ dở giữ chỗ vô thời hạn (kể cả khi không làm FR-25); tự hủy theo thời gian ngoài minimum.
 2. **Phạm vi:** FR-23/24 Must, FR-25 Could; FR-17/18/19/26/27 ngoài bản nộp. Giữ `Promotion`/`LoyaltyTransaction` trong mô hình domain Task 2, không yêu cầu seed hoặc luồng runtime tương ứng.
 3. **Dữ liệu và giới hạn:** dùng bộ giá size/topping, giới hạn 20 dòng/99 ly, JWT 1 giờ ở mục 3 làm baseline kiểm thử.
-4. **Thanh toán:** giữ quy ước mô phỏng mục 3.4. Payment Service là thành phần logic riêng trong sequence; bố trí trong tiến trình API hay dịch vụ riêng do Task 3 chốt bằng ADR, không chặn nghiệm thu Task 1.
+4. **Thanh toán:** giữ quy ước mô phỏng mục 3.4, gồm chống thu trùng theo `orderId` ở simulator và phục hồi sau lỗi E8b (AC-F16.7). Payment Service là thành phần logic riêng trong sequence; bố trí trong tiến trình API hay dịch vụ riêng và nơi lưu kết quả thành công do Task 3 chốt bằng ADR 005, không chặn nghiệm thu Task 1.
 5. **API và lỗi:** dùng tên endpoint, schema lỗi và mã HTTP mục 3.1–3.2 làm baseline; thay đổi sau này phải đồng bộ tài liệu và test trong cùng PR.
 6. **Tạo đơn:** không thêm idempotency cho `POST /orders` trong minimum. UI khóa nút khi đang gửi; nếu mất phản hồi tạo đơn thì không tự gửi lại, yêu cầu kiểm tra lịch sử trước khi quyết định tạo đơn mới. Khi đã biết `orderId`, E1/A3/E4 phải tiếp tục đơn cũ. Rủi ro bấm đúp từ nhiều tab còn được chấp nhận.
 7. **Nhân viên:** dùng Postman với `GET /orders/:id`, `PATCH /orders/:id`; mã đơn lấy từ biên lai demo. Không cam kết Swagger UI hoặc màn hàng đợi.
 8. **Task 2:** dùng baseline này để vẽ activity, sequence, class; phải thể hiện hai nhánh E1 trước/sau tạo đơn, 8 chuyển trạng thái hợp lệ (gồm hai chuyển `→ CANCELLED` dù API hủy FR-25 là Could); không cần mô tả FR-26.
 9. **Rút gọn bản nộp:** lý do và danh sách thay đổi ở mục 1.4 (ghi chú rút gọn). Mọi mục bắt buộc của đề A2 §3–§7 vẫn có ít nhất một yêu cầu Must phủ: menu, chi tiết và size/topping, giỏ hàng và tổng tiền, đăng ký/đăng nhập/JWT, tạo đơn, thanh toán Ví/Thẻ, ba nhánh lỗi, idempotency, transaction đơn và tồn kho, xác nhận/lịch sử/trạng thái đơn, validate hai phía, loading/empty/error, mobile-first/PWA, docker-compose, health, migration/seed, CI, CD và rollback, HTTPS và DB không public, secret.
+10. **Bổ sung sau rà soát luồng lỗi/triển khai (đề A2 §6.2):** `/health.version` và chờ SHA ở AC-N15.3/AC-N18.2 giúp smoke test không kiểm nhầm bản cũ; simulator chống thu trùng theo `orderId` và AC-F16.7 làm rõ bảo đảm retry đã chọn cho thanh toán mô phỏng. Đây là quyết định kỹ thuật của nhóm để kiểm chứng luồng đã đặc tả, không phải yêu cầu đề phải dùng Render hay xử lý cổng thanh toán thật.
 
 ---
 

@@ -14,7 +14,7 @@ Task 4.3 (Sprint 1, đề A2 §6.3):
 Task 5.1 (Sprint 2, đề A2 §7.1):
 - đăng ký, đăng nhập, JWT và guard;
 - tạo đơn hàng với validate;
-- thanh toán Ví/Thẻ mô phỏng;
+- thanh toán Ví/Thẻ mô phỏng; simulator chống thu trùng theo `orderId`, kết quả thành công còn sau restart để phục hồi E8b (SRS mục 3.4, AC-F16.7);
 - trạng thái đơn và lịch sử đơn; khách hủy đơn chưa thanh toán (FR-25) là Could, tùy chọn nếu còn thời gian;
 - Barista đổi trạng thái qua `GET /orders/:id`, `PATCH /orders/:id`, kèm Postman collection và hướng dẫn chạy (FR-24, AC-F24.4);
 - 7 lớp domain theo class diagram: `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` (đề A2 §4.3); `Promotion` và `LoyaltyTransaction` chưa cần luồng runtime (FR-17/18 ngoài bản nộp).
@@ -22,7 +22,7 @@ Task 5.1 (Sprint 2, đề A2 §7.1):
 Task 5.2 và 5.3:
 - unit test cho nghiệp vụ quan trọng (state machine, tính giá);
 - integration test cho tạo đơn và thanh toán;
-- `GET /health`;
+- `GET /health` kiểm DB: 200 khi kết nối được, 503 khi mất kết nối; thêm `version` từ `APP_VERSION` của image và không cache theo NFR-15; CD chờ đúng SHA trước smoke test;
 - log dạng JSON, cấu hình qua biến môi trường;
 - `Dockerfile` để build image đẩy lên container registry;
 - migration chạy an toàn khi deploy (chỉ migration cộng thêm).
