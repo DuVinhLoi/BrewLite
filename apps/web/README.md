@@ -19,7 +19,7 @@ Task 5.1 (Sprint 2, đề A2 §7.1):
 - tạo đơn, thanh toán Ví/Thẻ mô phỏng;
 - màn xác nhận, trạng thái và lịch sử đơn;
 - validate và xử lý lỗi ở frontend;
-- manifest và service worker cho PWA.
+- web app manifest cho PWA (NFR-10; không cần service worker).
 
 Task 5.2 và 5.3:
 - `Dockerfile` nếu chạy web trong `docker-compose.yml` local;

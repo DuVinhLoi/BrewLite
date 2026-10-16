@@ -111,7 +111,7 @@ Luồng thành công nhất: Customer đã đăng nhập, thanh toán Ví, còn 
 
 Luồng thay thế vẫn dẫn tới kết quả thành công hoặc một kết thúc có kiểm soát, không phải lỗi.
 
-### A1 — Áp mã giảm giá hợp lệ
+### A1 — Áp mã giảm giá hợp lệ (ngoài bản nộp)
 
 Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu các luồng khác.
 
@@ -191,7 +191,7 @@ Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc m�
 - **E4e — lần đầu đã thất bại (E3):** gửi lại là lần thử mới (BR-05), xem A3.
 - **Yêu cầu:** FR-16, NFR-13.
 
-### E5 — Mã giảm giá không hợp lệ
+### E5 — Mã giảm giá không hợp lệ (ngoài bản nộp)
 
 Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu các luồng khác.
 
