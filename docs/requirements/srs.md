@@ -45,7 +45,7 @@ BrewLite là ứng dụng đặt đồ uống không dùng tiền mặt, mobile-
 - FR-17, FR-18, FR-19, FR-26, FR-27 là **Won’t trong bản nộp** và đã gộp vào bảng ở mục 5.9 (giữ nguyên mã, không đánh lại số). Không yêu cầu UI, endpoint, seed khuyến mãi hay giao dịch điểm; nếu một PR sau phê duyệt đưa lại vào phạm vi thì viết lại tiêu chí chấp nhận trong PR đó.
 - NFR Must chỉ áp dụng cho endpoint và luồng thuộc baseline. NFR Should và Could không là điều kiện nghiệm thu minimum.
 - Task 2 vẫn phải mô hình hóa hai lớp domain bắt buộc `Promotion` và `LoyaltyTransaction` với thuộc tính, quan hệ, multiplicity (đề A2 §4.3); không đồng nghĩa phải hiện thực tính năng.
-- **Ghi chú rút gọn (đề A2 §6.2).** Baseline PR #5 đặc tả nhiều hơn đề đòi, nên bản này giữ đúng mức tối thiểu để nhóm làm được và giải thích được khi vấn đáp. Đề A2 §3–§7 không đòi hủy đơn, không đặt ngưỡng hiệu năng bằng số (production free tier còn "ngủ"), không đòi kiểm thử tay đa trình duyệt hay quét secret trong lịch sử git. Thay đổi: (1) FR-25 Must thành Could; (2) NFR-01 và NFR-12 Must thành Should, NFR-02 và NFR-03 Should thành Could; (3) NFR-10 PWA Should thành Must nhưng chỉ cần web app manifest, vì đề nhắc PWA ở §1.1, §5.1, §5.2, §9; (4) FR-17, FR-18, FR-19, FR-26, FR-27 gộp vào bảng Won’t; (5) bỏ các tiêu chí thừa: thanh toán song song cùng key, tái dùng key cho đơn khác, timeout Payment Service, ngưỡng thời gian giao diện, bảng ánh xạ mã lỗi, quét secret lịch sử, kiểm đồng thời trùng lặp. Mã tiêu chí, quy tắc, luồng đã bỏ không dùng lại; các mã còn lại giữ nguyên số hiệu.
+- **Ghi chú rút gọn (đề A2 §6.2).** Baseline PR #5 đặc tả nhiều hơn đề đòi, nên bản này giữ đúng mức tối thiểu để nhóm làm được và giải thích được khi vấn đáp. Đề A2 §3–§7 không đòi hủy đơn, không đặt ngưỡng hiệu năng bằng số (production free tier còn "ngủ"), không đòi kiểm thử tay đa trình duyệt hay quét secret trong lịch sử git. Thay đổi: (1) FR-25 Must thành Could; (2) NFR-01 Must thành Should; NFR-12 giữ Must cho E2E tự động tối thiểu theo đề A2 §7.2, bỏ kiểm thử tay đa trình duyệt, NFR-02 và NFR-03 Should thành Could; (3) NFR-10 PWA Should thành Must nhưng chỉ cần web app manifest, vì đề nhắc PWA ở §1.1, §5.1, §5.2, §9; (4) FR-17, FR-18, FR-19, FR-26, FR-27 gộp vào bảng Won’t; (5) bỏ các tiêu chí thừa: thanh toán song song cùng key, tái dùng key cho đơn khác, timeout Payment Service, ngưỡng thời gian giao diện, bảng ánh xạ mã lỗi, quét secret lịch sử, kiểm đồng thời trùng lặp. Mã tiêu chí, quy tắc, luồng đã bỏ không dùng lại; các mã còn lại giữ nguyên số hiệu.
 
 ### 1.5 Cách đọc một yêu cầu
 
@@ -206,10 +206,10 @@ Class diagram dùng đúng tên lớp và giá trị dưới đây (đề A2 §4
 | 8 | Quản lý trạng thái đơn | FR-23, FR-24 (Must); FR-25 (Could); FR-26, FR-27 (Won’t bản nộp) | Must / Could / Won’t |
 | 9 | Hiệu năng | NFR-01 (Should); NFR-02, NFR-03 (Could) | Should / Could |
 | 10 | Bảo mật | NFR-04 đến NFR-08, NFR-13 | Must |
-| 11 | Tính khả dụng | NFR-09, NFR-10, NFR-11 (Must); NFR-12 (Should) | Must / Should |
+| 11 | Tính khả dụng | NFR-09 đến NFR-12 | Must |
 | 12 | Khả năng triển khai | NFR-14 đến NFR-19 (Must); NFR-20 (Should) | Must / Should |
 
-Won’t bản nộp: FR-17, FR-18, FR-19, FR-26, FR-27 và FR-28 đến FR-32. Tổng cộng: **32 FR** (21 Must, 1 Could, 10 Won’t) và **20 NFR** (15 Must, 3 Should, 2 Could).
+Won’t bản nộp: FR-17, FR-18, FR-19, FR-26, FR-27 và FR-28 đến FR-32. Tổng cộng: **32 FR** (21 Must, 1 Could, 10 Won’t) và **20 NFR** (16 Must, 2 Should, 2 Could).
 
 Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu riêng: **chưa đăng nhập** → FR-10; **hết hàng** → FR-13; **thanh toán thất bại** → FR-15.
 
@@ -496,7 +496,7 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng có đặc tả mở rộng trong basel
 #### NFR-07 — Quản lý secret, cấu hình và CORS
 - **Ưu tiên:** Must · **Stakeholder:** S3, S4, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N07.1: `.env` có trong `.gitignore`; `.env.example` chỉ có tên biến, không chứa giá trị secret thật.
+  - AC-N07.1: Kiểm tra các file được Git theo dõi không chứa secret thật (đề A2 §7.4); `.env` có trong `.gitignore`; `.env.example` chỉ có giá trị mẫu, không chứa secret thật.
   - AC-N07.2: Log của các lần chạy CI/CD không in giá trị secret (rà log trước khi nộp); mật khẩu xuất hiện trong tài liệu chỉ thuộc tài khoản demo và kèm chữ "demo" (đề A2 §7.4).
   - AC-N07.3: API chỉ chấp nhận origin trong biến `CORS_ORIGINS`; yêu cầu từ origin khác không nhận header `Access-Control-Allow-Origin`.
   - AC-N07.4: Số thẻ, token, mật khẩu không được ghi vào log.
@@ -529,7 +529,7 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng có đặc tả mở rộng trong basel
   - AC-N11.2: Khi API giả lập trả 500 thì màn hiển thị thông báo tiếng Việt như "Không thể tải dữ liệu, vui lòng thử lại" kèm nút "Thử lại"; không hiển thị stack trace, JSON thô hay chỉ mã HTTP.
 
 #### NFR-12 — Trình duyệt hỗ trợ
-- **Ưu tiên:** Should · **Stakeholder:** S1, S4
+- **Ưu tiên:** Must · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
   - AC-N12.1: Luồng end-to-end (menu → giỏ → đăng nhập → thanh toán → theo dõi đơn) chạy đạt trên Chromium bằng test E2E tự động.
 

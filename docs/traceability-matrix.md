@@ -64,12 +64,12 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 | NFR-04 | UC-03; kiểm mẫu băm bcrypt, không lộ mật khẩu | chờ Task 3 | dự kiến `POST /auth/register`; chờ Task 5 | chờ Task 4–5 |
 | NFR-05 | UC-03, UC-04, UC-05, UC-06, UC-07; kiểm ma trận quyền 401/403 | chờ Task 2 (Sequence: kiểm JWT), chờ Task 3 | dự kiến JWT guard và role guard trong `apps/api`; chờ Task 5 | chờ Task 4–5 |
 | NFR-06 | UC-03, UC-04; kiểm 400 `VALIDATION_ERROR`, không tin giá client | chờ Task 2 (Sequence: validate) | dự kiến DTO validation `apps/api`, form validation `apps/web`; chờ Task 5 | chờ Task 4–5 |
-| NFR-07 | Toàn hệ thống; kiểm `.gitignore` và `.env.example`, kiểm CORS, kiểm log | chờ Task 3 (ADR, deployment: secret/biến môi trường) | dự kiến `.gitignore`, `.env.example`, cấu hình CORS; chờ Task 4–5 | chờ Task 4–5 |
+| NFR-07 | Toàn hệ thống; kiểm các file Git theo dõi không chứa secret, `.gitignore` và `.env.example`, kiểm CORS, kiểm log | chờ Task 3 (ADR, deployment: secret/biến môi trường) | dự kiến `.gitignore`, `.env.example`, cấu hình CORS; chờ Task 4–5 | chờ Task 4–5 |
 | NFR-08 | Toàn hệ thống; kiểm HTTPS và DB không public | chờ Task 3 (Deployment-01: HTTPS, kết nối nội bộ) | cấu hình nền tảng; chờ Task 5 | chờ Task 5 |
 | NFR-09 | UC-01 đến UC-05; kiểm khung nhìn 360 px, vùng chạm 44 px | chờ Task 3 | dự kiến `apps/web`; chờ Task 4–5 | chờ Task 4–5 |
 | NFR-10 | Toàn hệ thống (web); kiểm web app manifest (AC-N10.1) | chờ Task 3 | dự kiến manifest trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
 | NFR-11 | UC-01, UC-05; kiểm ba trạng thái loading/empty/error | chờ Task 3 | dự kiến `apps/web`; chờ Task 4–5 | chờ Task 4–5 |
-| NFR-12 | Should: UC-01 đến UC-05; kiểm E2E Chromium | chờ Task 3 | dự kiến `apps/web`; chờ Task 5 | chờ Task 5 |
+| NFR-12 | Must: UC-01 đến UC-05; kiểm E2E Chromium | chờ Task 3 | dự kiến `apps/web`; chờ Task 5 | chờ Task 5 |
 | NFR-13 | UC-04 (ngoại lệ E2, E4, E8); kiểm transaction, đồng thời | chờ Task 2 (Sequence: transaction), chờ Task 3 (ADR 005) | dự kiến module orders, payments; chờ Task 5 | chờ Task 5 |
 | NFR-14 | Triển khai; kiểm `docker compose up` trên máy sạch | chờ Task 3 (Deployment-01: vùng Local) | dự kiến `docker-compose.yml`, Dockerfile; chờ Task 5 | chờ Task 5 |
 | NFR-15 | Triển khai; kiểm `GET /health` 200/503 | chờ Task 3 (ADR, deployment: health check) | dự kiến `GET /health`; chờ Task 5 | chờ Task 5 |
@@ -81,8 +81,8 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 
 ## 3. Thống kê và quy tắc kiểm
 
-- **Số dòng:** 32 dòng FR (21 Must, 1 Could, 10 Won’t bản nộp) và 20 dòng NFR (15 Must, 3 Should, 2 Could).
-- **MoSCoW:** FR Must: FR-01 đến FR-16, FR-20 đến FR-24 (21); FR Could: FR-25 (1); FR Won’t bản nộp: FR-17/18/19/26/27, FR-28 đến FR-32 (10). NFR Must: 15 (NFR-04 đến NFR-11, NFR-13 đến NFR-19); NFR Should: NFR-01, NFR-12, NFR-20 (3); NFR Could: NFR-02, NFR-03 (2).
+- **Số dòng:** 32 dòng FR (21 Must, 1 Could, 10 Won’t bản nộp) và 20 dòng NFR (16 Must, 2 Should, 2 Could).
+- **MoSCoW:** FR Must: FR-01 đến FR-16, FR-20 đến FR-24 (21); FR Could: FR-25 (1); FR Won’t bản nộp: FR-17/18/19/26/27, FR-28 đến FR-32 (10). NFR Must: 16 (NFR-04 đến NFR-19); NFR Should: NFR-01, NFR-20 (2); NFR Could: NFR-02, NFR-03 (2).
 - **Quy tắc đề A2 §8.1 và kế hoạch mục C:** mọi `FR-xx` Must có ít nhất một dòng đủ 5 cột trước khi kết thúc Task 5; mọi endpoint của `apps/api` xuất hiện trong ma trận; mọi mã test ghi ở đây phải tồn tại thật trong `apps/` hoặc `tests/`; cuối mỗi Sprint rà hai chiều (yêu cầu → test và test → yêu cầu) và ghi kết quả vào mô tả PR.
 - **Dòng Won’t:** lý do/phạm vi theo SRS mục 1.4 và 5.9; giữ yêu cầu mô hình hóa hai lớp domain ở Task 2, không yêu cầu code/test tính năng mở rộng trong bản nộp.
 - **Mẫu của đề A2 §8.1** (`FR-01 / US-01 Xem menu / Activity-01, Class-01 / GET /products / API-T01` và `FR-05 / UC-01 Thanh toán / Sequence-01 / POST /payments / INT-T03`) chỉ minh họa định dạng; mã yêu cầu thật của nhóm là bảng ở trên.
