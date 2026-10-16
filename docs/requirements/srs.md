@@ -61,7 +61,7 @@ Mỗi yêu cầu có: **mô tả**, dòng **Ưu tiên / Use-case / Stakeholder**
 |---|---|---|
 | Khách vãng lai (**Guest**) | Chính | Chưa đăng nhập: xem menu, chi tiết món, quản lý giỏ hàng, đăng ký, đăng nhập |
 | Khách hàng (**Customer**) | Chính | Đã đăng nhập (JWT hợp lệ, `role = CUSTOMER`); kế thừa mọi việc của Guest (`Customer --\|> Guest`), thêm: đặt đơn, thanh toán, lịch sử và theo dõi đơn; hủy đơn chưa trả (FR-25, Could) |
-| Nhân viên quầy (**Barista**) | Chính | Đã đăng nhập, `role = BARISTA`; đổi trạng thái đơn đã thanh toán qua API (Postman); không đặt đơn, không thanh toán |
+| Nhân viên quầy (**Barista**) | Chính (minimum) | Đã đăng nhập, `role = BARISTA`; đổi trạng thái đơn đã thanh toán qua API (Postman); không đặt đơn, không thanh toán |
 | Dịch vụ thanh toán (**Payment Service**) | Phụ (dịch vụ) | Dịch vụ **mô phỏng** Ví/Thẻ: nhận yêu cầu trừ tiền, trả thành công/thất bại |
 
 ### 2.2 Use-case diagram tổng quát
