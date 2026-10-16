@@ -28,8 +28,8 @@
 | Mã và tên | **UC-04 Đặt và thanh toán đơn hàng** |
 | Mục tiêu | Customer biến giỏ hàng thành một đơn hàng đã thanh toán không dùng tiền mặt, nhận mã đơn xác nhận |
 | Giá trị nghiệp vụ | Là bước tạo doanh thu của BrewLite: khách trả tiền xong thì đơn mới vào quy trình pha chế |
-| Ưu tiên | Must (lõi); Áp mã giảm giá và Ghi nhận điểm thưởng ngoài bản nộp (FR-17/18) |
-| Use-case con | UC-04.1 Tạo đơn hàng (include), UC-04.2 Thanh toán đơn hàng (include), UC-04.3 Áp mã giảm giá (extend UC-04.2, ngoài bản nộp), UC-04.4 Ghi nhận điểm thưởng (extend UC-04.2, ngoài bản nộp), UC-04.5 Thử lại thanh toán (extend UC-04.2); UC-03 Đăng nhập extend UC-04 khi chưa đăng nhập |
+| Ưu tiên | Must |
+| Use-case con | UC-04.1 Tạo đơn hàng (include), UC-04.2 Thanh toán đơn hàng (include), UC-04.5 Thử lại thanh toán (extend UC-04.2); UC-03 Đăng nhập extend UC-04 khi chưa đăng nhập (UC-04.3, UC-04.4 ngoài bản nộp, không vẽ; xem `srs.md` §5.9) |
 | Lý do chọn | Đi qua đủ các thành phần (UI, API, DB, Payment Service) và đủ ba nhánh lỗi bắt buộc của đề A2 §4.1 (hết hàng, chưa đăng nhập, thanh toán thất bại); là use-case mà sequence diagram Task 2.2 phải vẽ |
 
 ## 2. Use-case diagram
@@ -39,7 +39,7 @@
 Nguồn: [`uc-checkout.puml`](uc-checkout.puml). Quan hệ:
 
 - UC-04 `<<include>>` UC-04.1 và UC-04.2: chạy khi đặt đơn mới (tạo đơn rồi thanh toán). Khi tiếp tục đơn đã tạo qua E1b/A3, chỉ chạy lại UC-04.2; không tạo đơn lần nữa.
-- UC-04.3, UC-04.4, UC-04.5 `<<extend>>` UC-04.2: chỉ chạy khi có điều kiện (UC-04.3 và UC-04.4 ngoài bản nộp, chỉ khi triển khai FR-17/FR-18; UC-04.5 khi đơn đang `PAYMENT_FAILED`).
+- UC-04.5 `<<extend>>` UC-04.2: chỉ chạy khi đơn đang `PAYMENT_FAILED`. Áp mã giảm giá và ghi điểm (FR-17/18) ngoài bản nộp nên không vẽ.
 - UC-03 Đăng nhập `<<extend>>` UC-04: chỉ chạy khi chưa có phiên đăng nhập; đây là cách vẽ của ngoại lệ "chưa đăng nhập". Tiền điều kiện của use-case vẫn là đã đăng nhập (mục 4).
 
 ## 3. Actor

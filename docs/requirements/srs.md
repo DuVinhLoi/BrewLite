@@ -80,13 +80,15 @@ Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Use-case trọng t�
 | UC-04 | **Đặt và thanh toán đơn hàng** (trọng tâm) | Customer; Payment Service | FR-10 đến FR-16; FR-17/18 ngoài bản nộp |
 | UC-04.1 | Tạo đơn hàng (include của UC-04) | Customer | FR-11, FR-12, FR-13 |
 | UC-04.2 | Thanh toán đơn hàng (include của UC-04) | Customer; Payment Service | FR-14, FR-15, FR-16 |
-| UC-04.3 | Áp mã giảm giá (extend UC-04.2) — ngoài bản nộp | Customer | FR-17 (Won’t) |
-| UC-04.4 | Ghi nhận điểm thưởng (extend UC-04.2) — ngoài bản nộp | hệ thống | FR-18 (Won’t) |
+| UC-04.3 | Áp mã giảm giá (extend UC-04.2) — ngoài bản nộp, không vẽ trong sơ đồ | Customer | FR-17 (Won’t) |
+| UC-04.4 | Ghi nhận điểm thưởng (extend UC-04.2) — ngoài bản nộp, không vẽ trong sơ đồ | hệ thống | FR-18 (Won’t) |
 | UC-04.5 | Thử lại thanh toán (extend UC-04.2, khi đơn `PAYMENT_FAILED`) | Customer; Payment Service | FR-15, FR-16 |
 | UC-05 | Xem lịch sử và theo dõi đơn | Customer | FR-20, FR-21, FR-22 |
-| UC-06 | Hủy đơn (Customer hủy đơn chưa trả: Could; Barista hủy đơn đã trả và hoàn tiền: ngoài bản nộp) | Customer, Barista; Payment Service (hoàn tiền) | FR-25 (Could); FR-26 (Won’t) |
-| UC-07 | Cập nhật trạng thái đơn | Barista | FR-23, FR-24; FR-27 (Won’t) |
-| UC-08 | Xem điểm thưởng — ngoài bản nộp | Customer | FR-19 (Won’t) |
+| UC-06 | Hủy đơn (Customer hủy đơn chưa trả: Could; Barista hủy đơn đã trả và hoàn tiền: ngoài bản nộp, phần FR-26 không vẽ trong sơ đồ) | Customer, Barista; Payment Service (hoàn tiền) | FR-25 (Could); FR-26 (Won’t) |
+| UC-07 | Cập nhật trạng thái đơn (hàng đợi Barista FR-27 không vẽ trong sơ đồ) | Barista | FR-23, FR-24; FR-27 (Won’t) |
+| UC-08 | Xem điểm thưởng — ngoài bản nộp, không vẽ trong sơ đồ | Customer | FR-19 (Won’t) |
+
+Sơ đồ chỉ vẽ use-case thuộc bản nộp (Must, Could). Các dòng Won’t giữ lại ở bảng này để truy vết (xem mục 5.9).
 
 ---
 
