@@ -93,8 +93,9 @@ Trước khi bắt đầu task kế tiếp, cả nhóm kiểm checklist nghiệm
 
 **Mục tiêu:** người đọc xác định rõ hệ thống làm gì, không làm gì, và dùng tiêu chí chấp nhận để viết test ở các task sau (đề A2 §3.3).
 > **Trạng thái:** đã chốt qua PR #5 (merge `0130ae0`). Phạm vi minimum ghi ở [`srs.md`](../requirements/srs.md) mục 1.4 và 8; khi mục này lệch SRS thì SRS đúng. Các quyết định đã chốt:
-> - quản lý trạng thái đơn là **Must** (FR-23, FR-24, FR-25): Barista đổi trạng thái qua `PATCH /orders/:id` bằng **Postman collection** (AC-F24.4); Swagger UI không là tiêu chí nghiệm thu;
-> - khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi Barista (FR-17, FR-18, FR-19, FR-26, FR-27) là **Won't trong bản nộp**; class diagram vẫn có `Promotion` và `LoyaltyTransaction`.
+> - quản lý trạng thái đơn: FR-23 và FR-24 là **Must**, Barista đổi trạng thái qua `PATCH /orders/:id` bằng **Postman collection** (AC-F24.4); FR-25 (khách hủy đơn chưa thanh toán) là **Could** vì đề A2 §7.1 không đòi hủy đơn; Swagger UI không là tiêu chí nghiệm thu;
+> - khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi Barista (FR-17, FR-18, FR-19, FR-26, FR-27) là **Won't trong bản nộp**; class diagram vẫn có `Promotion` và `LoyaltyTransaction`;
+> - SRS đã rút gọn thêm về mức tối thiểu của đề (ghi chú ở `srs.md` mục 1.4): NFR-01 và NFR-12 thành Should, NFR-02 và NFR-03 thành Could, NFR-10 (PWA) thành Must nhưng chỉ cần web app manifest.
 
 **Nhánh gợi ý:** `a2/task-1-requirements`, tách PR theo Task 1.1, 1.2, 1.3.
 **Đầu vào tham khảo:** đề A1 §3.1–3.2 (vision, stakeholder), §4 (yêu cầu), §5 (luồng nghiệp vụ); [`docs/reference/a1/use-case-specifications.md`](../reference/a1/use-case-specifications.md) §1 (actor), §2 (Bản 1), §4 (bảng UC).
@@ -110,7 +111,7 @@ Nội dung phải có:
 | Vấn đề nghiệp vụ | BrewLite giải quyết vấn đề gì (xếp hàng, thanh toán tiền mặt...) | đề A1 §3.1 (Product Vision) |
 | Bảng stakeholder | 6 bên theo đề A2 §3.1: khách hàng, nhân viên quầy, quản lý cửa hàng, giảng viên/khách hàng nghiệm thu, nhóm phát triển, đơn vị thanh toán. Mỗi bên có mục tiêu và kỳ vọng | đề A1 §3.2 (đã mô tả 6 bên) |
 | In-scope (MVP) | Luồng Xem menu → Chọn tùy chọn → Giỏ hàng → Đặt đơn → Thanh toán → Theo dõi đơn | đề A2 §1.1 |
-| Phạm vi mở rộng | Việc ngoài bản nộp, chỉ làm khi có PR phê duyệt (đã chốt: FR-17, FR-18, FR-19, FR-26, FR-27) | `context-and-scope.md` mục 3.2 |
+| Phạm vi mở rộng | Việc ngoài bản nộp (đã chốt: FR-25 Could; Won't: FR-17, FR-18, FR-19, FR-26, FR-27, chỉ làm khi có PR phê duyệt) | `context-and-scope.md` mục 3.2 |
 | Out-of-scope | Việc không làm, ví dụ quản trị menu, quản trị voucher động, quản trị kho (A1 gọi là UC13, UC14, UC15) | A1 use-case §4 |
 | Giả định | Ví dụ thanh toán là mô phỏng, một cửa hàng, tiền tệ VND | tự quyết |
 | Ràng buộc | 3 công nghệ bắt buộc, thứ tự task, thời hạn, free tier hạ tầng | đề A2 §1.1, §1 |
@@ -144,17 +145,17 @@ SRS phải có đủ 5 thành phần (đề A2 §3.2):
 | 5 | Đặt đơn | FR | Must | |
 | 6 | Thanh toán | FR | Must | Ví/Thẻ mô phỏng, thành công/thất bại, idempotency |
 | 7 | Lịch sử đơn | FR | Must | |
-| 8 | Quản lý trạng thái đơn | FR | Must (đã chốt) | FR-23, FR-24, FR-25; xem bên dưới |
-| 9 | Hiệu năng | NFR | Must | A1: đề §4.2 (API < 500ms với dữ liệu mẫu) |
+| 8 | Quản lý trạng thái đơn | FR | Must (đã chốt) | FR-23, FR-24 Must; FR-25 Could; xem bên dưới |
+| 9 | Hiệu năng | NFR | Should / Could | A1: đề §4.2 (API < 500ms với dữ liệu mẫu, đo ở local); đề A2 không đặt ngưỡng số |
 | 10 | Bảo mật | NFR | Must | A1: đề §4.2 (băm mật khẩu, JWT, validate) |
-| 11 | Tính khả dụng | NFR | Must | mobile-first, PWA, loading/empty/error, trình duyệt hỗ trợ |
+| 11 | Tính khả dụng | NFR | Must / Should | mobile-first, PWA (chỉ manifest), loading/empty/error Must; trình duyệt hỗ trợ (E2E Chromium) Should |
 | 12 | Khả năng triển khai | NFR | Must | docker-compose, CI/CD, health check, migration |
 
 Mã `FR-xx` cụ thể do nhóm tự đánh số. Bảng mẫu trong đề A2 §8.1 (`FR-01`, `FR-05`) chỉ để minh họa định dạng.
 
 Quyết định nhóm phải chốt trong SRS:
 
-- **Quản lý trạng thái đơn (đã chốt Must):** state machine chặn chuyển sai (FR-23); Barista đổi trạng thái qua `GET /orders/:id` và `PATCH /orders/:id` bằng Postman collection, mã đơn lấy từ biên lai demo (FR-24, AC-F24.4); khách hủy đơn chưa thanh toán và hoàn tồn kho (FR-25). Không có màn quầy; Swagger UI không là tiêu chí nghiệm thu.
+- **Quản lý trạng thái đơn (đã chốt Must):** state machine chặn chuyển sai (FR-23); Barista đổi trạng thái qua `GET /orders/:id` và `PATCH /orders/:id` bằng Postman collection, mã đơn lấy từ biên lai demo (FR-24, AC-F24.4). Khách hủy đơn chưa thanh toán và hoàn tồn kho (FR-25) chỉ là Could; hai chuyển `→ CANCELLED` vẫn nằm trong state machine. Không có màn quầy; Swagger UI không là tiêu chí nghiệm thu.
 - **Khuyến mãi và điểm thưởng (đã chốt Won't trong bản nộp):** FR-17, FR-18, FR-19 giữ đặc tả để truy vết, chỉ làm khi có PR phê duyệt mở rộng phạm vi. Class diagram vẫn phải có `Promotion` và `LoyaltyTransaction` (đề A2 §4.3); lý do ghi ở `srs.md` mục 1.4.
 - **Thanh toán lỗi, hết hàng, chưa đăng nhập:** ba tình huống này phải có FR hoặc tiêu chí chấp nhận riêng, vì activity diagram bắt buộc có ba nhánh này (đề A2 §4.1).
 
@@ -174,7 +175,7 @@ Use-case khuyến nghị: **Đặt và thanh toán đơn hàng**. Ghép từ A1:
 - actor (chính và phụ), trigger;
 - tiền điều kiện, hậu điều kiện (cả khi thành công và khi thất bại);
 - luồng chính;
-- luồng thay thế (ví dụ áp mã giảm giá, đổi phương thức);
+- luồng thay thế (ví dụ đổi phương thức, thử lại thanh toán);
 - luồng ngoại lệ (hết hàng, chưa đăng nhập, thanh toán thất bại, gửi lại yêu cầu thanh toán);
 - bảng liên kết tới các mã `FR-xx` / `NFR-xx` liên quan.
 
@@ -252,7 +253,7 @@ Yêu cầu của đề: tối thiểu 7 lớp, có thuộc tính chính, quan h�
 
 Enum: trạng thái đơn (A1 có 7 trạng thái, xem đề A1 §9.1 và [`docs/reference/a1/user-sequence-specifications.md`](../reference/a1/user-sequence-specifications.md) §2.5 mục B2), phương thức thanh toán, trạng thái thanh toán, vai trò. Tên enum, giá trị và 8 chuyển trạng thái hợp lệ của minimum đã chốt ở `srs.md` mục 3.6.
 
-Thuộc tính, quan hệ và multiplicity của `Promotion` và `LoyaltyTransaction` lấy theo `srs.md` mục 3.5 (BR-06, BR-07) và 3.6. Hai lớp có mặt trong mô hình dù luồng runtime của chúng ngoài bản nộp.
+Thuộc tính, quan hệ và multiplicity của `Promotion` và `LoyaltyTransaction` lấy theo `srs.md` mục 3.6. Hai lớp có mặt trong mô hình dù luồng runtime của chúng ngoài bản nộp.
 
 Tùy chọn nhưng nên có: `docs/diagrams/state-order.puml` và `state-order.svg` (state machine của đơn hàng), để nhất quán với yêu cầu "quản lý trạng thái đơn". Đề A1 §9.1 là nguồn tham khảo.
 
@@ -439,7 +440,7 @@ Lưu minh chứng trong `docs/evidence/ci/` (đường dẫn gợi ý) và dẫn
 | Đăng ký, đăng nhập, JWT | `apps/web`, `apps/api` | băm mật khẩu, guard bảo vệ route đặt đơn |
 | Tạo đơn hàng | `apps/api` | transaction tạo đơn và trừ tồn kho (khớp sequence) |
 | Thanh toán Ví/Thẻ mô phỏng | `apps/api` | idempotency; thành công/thất bại; không áp khuyến mãi, không ghi điểm (FR-17/18 ngoài bản nộp) |
-| Xác nhận, trạng thái, lịch sử đơn | `apps/web`, `apps/api` | FR-20, FR-21, FR-22; khách hủy đơn chưa thanh toán, hoàn tồn kho (FR-25) |
+| Xác nhận, trạng thái, lịch sử đơn | `apps/web`, `apps/api` | FR-20, FR-21, FR-22; khách hủy đơn chưa thanh toán, hoàn tồn kho (FR-25, Could: làm nếu còn thời gian) |
 | Đổi trạng thái đơn bởi Barista | `apps/api`, Postman collection | `GET /orders/:id`, `PATCH /orders/:id` theo state machine (FR-23, FR-24); collection kèm hướng dẫn lấy token Barista demo và chạy đủ `PAID → PREPARING → READY → COMPLETED` (AC-F24.4); gợi ý lưu ở `docs/postman/` |
 | Xử lý lỗi và validate ở frontend **và** backend | cả hai | thông báo lỗi dễ hiểu |
 
@@ -507,7 +508,7 @@ Quy tắc cho secret (đề A2 §7.4): chỉ nằm ở GitHub Secrets, biến m�
 ### Checklist nghiệm thu Task 5
 
 - [ ] 5.1: có chi tiết sản phẩm size/topping; giỏ hàng + tổng tiền; đăng ký/đăng nhập/JWT; tạo đơn; thanh toán Ví/Thẻ mô phỏng; xác nhận, trạng thái, lịch sử đơn; validate ở frontend/backend.
-- [ ] 5.1 (theo SRS): Barista đổi trạng thái qua `PATCH /orders/:id`, có Postman collection chạy được (AC-F24.4); khách hủy được đơn chưa thanh toán (FR-25).
+- [ ] 5.1 (theo SRS): Barista đổi trạng thái qua `PATCH /orders/:id`, có Postman collection chạy được (AC-F24.4); khách hủy đơn chưa thanh toán (FR-25) là tùy chọn (Could).
 - [ ] 5.2: unit test nghiệp vụ quan trọng; integration test tạo đơn/thanh toán; ít nhất một E2E từ menu đến xác nhận đơn; migration/seed tái tạo DB; `docker-compose.yml` chạy web + API + DB; `GET /health`.
 - [ ] 5.3: pipeline thể hiện Push/Tag → Lint và Test → Build Docker Image → Push Registry → Deploy → Smoke Test; đủ 7 yêu cầu ở bảng trên.
 - [ ] 5.4: URL frontend HTTPS; URL API + health; DB không public; secret không lộ; release/tag + release notes; README đủ local/test/build/deploy/rollback; video/demo; Sprint Review + Retrospective.
@@ -555,7 +556,7 @@ Ghi ở đây để nhóm không chép nhầm từ `develop`.
 | Thư mục | `backend/`, `frontend/` | `apps/api`, `apps/web` (đề A2 §9) |
 | Thực thể dữ liệu | 5 thực thể; mã `BREWLITE10` viết cứng trong code; điểm thưởng là cột của `User` | 7 lớp domain; `Promotion` và `LoyaltyTransaction` là lớp/bảng riêng (đề A2 §4.3) |
 | Hạ tầng | chỉ `docker-compose` local | có `GET /health`, CI (PR) và CD (tag), PWA, production có URL (đề A2 §5-§7) |
-| Phạm vi | mở rộng Barista/Admin (UC08–UC16) | không có màn Admin hay màn quầy; quản lý trạng thái đơn là Must, Barista gọi API bằng Postman (FR-23 đến FR-25); không khuyến mãi, điểm thưởng, hoàn tiền |
+| Phạm vi | mở rộng Barista/Admin (UC08–UC16) | không có màn Admin hay màn quầy; quản lý trạng thái đơn là Must, Barista gọi API bằng Postman (FR-23, FR-24; FR-25 Could); không khuyến mãi, điểm thưởng, hoàn tiền |
 | Tài liệu UML | sequence cho nhiều UC, use-case 2 bản | 3 sơ đồ bắt buộc cho 1 use-case trọng tâm + deployment + use-case tổng quát (đề A2 §3-§5) |
 | Code | do nhóm và công cụ hỗ trợ viết | **nhóm tự viết**, không vibecoding |
 | Nội dung của sơ đồ | lifeline gồm Guest/Customer, Frontend, Backend, Mock Gateway, DB | lifeline đề A2 §4.2: Customer, Next.js UI, NestJS API, Database, Payment Service |
@@ -629,7 +630,7 @@ Gợi ý để tạo board ở Task 4.1; cột phụ trách, ngày, ước lư�
 | B-17 | Sprint 2 | Đăng ký, đăng nhập, JWT (web + api) | 5.1 | B-09 | [nhóm điền] | [nhóm điền] |
 | B-18 | Sprint 2 | Tạo đơn (transaction, tồn kho) | 5.1 | B-16, B-17 | [nhóm điền] | [nhóm điền] |
 | B-19 | Sprint 2 | Thanh toán mô phỏng + idempotency | 5.1 | B-18 | [nhóm điền] | [nhóm điền] |
-| B-20 | Sprint 2 | Xác nhận, trạng thái, lịch sử đơn; khách hủy đơn chưa thanh toán (FR-25) | 5.1 | B-19 | [nhóm điền] | [nhóm điền] |
+| B-20 | Sprint 2 | Xác nhận, trạng thái, lịch sử đơn; khách hủy đơn chưa thanh toán (FR-25, Could: làm nếu còn thời gian) | 5.1 | B-19 | [nhóm điền] | [nhóm điền] |
 | B-30 | Sprint 2 | Barista đổi trạng thái `PATCH /orders/:id` + Postman collection (FR-23, FR-24) | 5.1 | B-19 | [nhóm điền] | [nhóm điền] |
 | B-21 | Sprint 2 | Unit test (state machine, giá) | 5.2 | B-19, B-30 | [nhóm điền] | [nhóm điền] |
 | B-22 | Sprint 2 | Integration test tạo đơn/thanh toán (Postgres) + CI | 5.2 | B-19 | [nhóm điền] | [nhóm điền] |
@@ -805,4 +806,4 @@ Mọi tạo phẩm bắt buộc của đề A2 §1-§9 và checklist §9.1 đề
 | Smoke test hỏng giả do dịch vụ free ngủ đông | Trung bình | retry ~2 phút (Task 5.3) |
 | Migration làm hỏng dữ liệu production | Trung bình | chỉ migration cộng thêm; thử trên DB sao chép trước |
 | Lộ secret trong repo hoặc log CI (đề A2 §7.4) | Trung bình | `.gitignore` cho `.env`; không `echo` biến; rà log trước khi nộp |
-| Thiếu thời gian cho Sprint 2 (nhiều hạng mục nhất) | Cao | khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi đã ngoài bản nộp từ Task 1; nếu vẫn thiếu thì cắt `state-order` (tùy chọn) trước, giữ Must; PWA (NFR-10, Should) vẫn nên làm vì đề A2 §1.1 ghi mobile-first/PWA; xếp B-24..B-26 (hạ tầng) sớm để còn thời gian sửa lỗi triển khai |
+| Thiếu thời gian cho Sprint 2 (nhiều hạng mục nhất) | Cao | khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi đã ngoài bản nộp từ Task 1; nếu vẫn thiếu thì cắt FR-25 (Could) và `state-order` (tùy chọn) trước, giữ Must; PWA (NFR-10, Must, chỉ cần manifest) vẫn phải làm vì đề A2 §1.1 ghi mobile-first/PWA; xếp B-24..B-26 (hạ tầng) sớm để còn thời gian sửa lỗi triển khai |

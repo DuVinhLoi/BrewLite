@@ -15,7 +15,7 @@ Task 5.1 (Sprint 2, đề A2 §7.1):
 - đăng ký, đăng nhập, JWT và guard;
 - tạo đơn hàng với validate;
 - thanh toán Ví/Thẻ mô phỏng;
-- trạng thái đơn và lịch sử đơn; khách hủy đơn chưa thanh toán (FR-25);
+- trạng thái đơn và lịch sử đơn; khách hủy đơn chưa thanh toán (FR-25) là Could, tùy chọn nếu còn thời gian;
 - Barista đổi trạng thái qua `GET /orders/:id`, `PATCH /orders/:id`, kèm Postman collection và hướng dẫn chạy (FR-24, AC-F24.4);
 - 7 lớp domain theo class diagram: `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` (đề A2 §4.3); `Promotion` và `LoyaltyTransaction` chưa cần luồng runtime (FR-17/18 ngoài bản nộp).
 
