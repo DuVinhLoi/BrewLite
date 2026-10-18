@@ -27,7 +27,8 @@ Customer --|> Guest
 rectangle "Hệ thống BrewLite" {
   usecase "UC-01 Xem menu và chi tiết món\n(size, topping)\nFR-01..FR-04" as UC01
   usecase "UC-02 Quản lý giỏ hàng\nFR-05..FR-07" as UC02
-  usecase "UC-03 Đăng ký / Đăng nhập (JWT)\nFR-08..FR-10" as UC03
+  usecase "UC-03 Đăng nhập (JWT)\nFR-09, FR-10" as UC03
+  usecase "UC-09 Đăng ký tài khoản\nFR-08" as UC09
   usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-16" as UC04
   usecase "UC-04.1 Tạo đơn hàng\nFR-11..FR-13" as UC041
   usecase "UC-04.2 Thanh toán đơn hàng\nFR-14..FR-16" as UC042
@@ -40,6 +41,7 @@ rectangle "Hệ thống BrewLite" {
 Guest --- UC01
 Guest --- UC02
 Guest --- UC03
+Guest --- UC09
 
 Customer --- UC04
 Customer --- UC05

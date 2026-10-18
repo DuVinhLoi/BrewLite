@@ -76,7 +76,7 @@ Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Use-case trọng t�
 |---|---|---|---|
 | UC-01 | Xem menu và chi tiết món (size, topping) | Guest, Customer | FR-01 đến FR-04 |
 | UC-02 | Quản lý giỏ hàng | Guest, Customer | FR-05 đến FR-07 |
-| UC-03 | Đăng ký / Đăng nhập (JWT) | Guest, Barista | FR-08, FR-09, FR-10 |
+| UC-03 | Đăng nhập (JWT) | Guest, Barista | FR-09, FR-10 |
 | UC-04 | **Đặt và thanh toán đơn hàng** (trọng tâm) | Customer; Payment Service | FR-10 đến FR-16; FR-17/18 ngoài bản nộp |
 | UC-04.1 | Tạo đơn hàng (include của UC-04) | Customer | FR-11, FR-12, FR-13 |
 | UC-04.2 | Thanh toán đơn hàng (include của UC-04) | Customer; Payment Service | FR-14, FR-15, FR-16 |
@@ -87,6 +87,7 @@ Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Use-case trọng t�
 | UC-06 | Hủy đơn (Customer hủy đơn chưa trả: Could; Barista hủy đơn đã trả và hoàn tiền: ngoài bản nộp, phần FR-26 không vẽ trong sơ đồ) | Customer, Barista; Payment Service (hoàn tiền) | FR-25 (Could); FR-26 (Won’t) |
 | UC-07 | Cập nhật trạng thái đơn (hàng đợi Barista FR-27 không vẽ trong sơ đồ) | Barista | FR-23, FR-24; FR-27 (Won’t) |
 | UC-08 | Xem điểm thưởng — ngoài bản nộp, không vẽ trong sơ đồ | Customer | FR-19 (Won’t) |
+| UC-09 | Đăng ký tài khoản (Barista không đăng ký, tài khoản do seed tạo: giả định A-04) | Guest | FR-08 |
 
 Sơ đồ chỉ vẽ use-case thuộc bản nộp (Must, Could). Các dòng Won’t giữ lại ở bảng này để truy vết (xem mục 5.9).
 
@@ -287,7 +288,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 
 #### FR-08 — Đăng ký tài khoản
 - **Mô tả:** Guest đăng ký bằng email và mật khẩu; tài khoản mới có vai trò `CUSTOMER`.
-- **Ưu tiên:** Must · **Use-case:** UC-03 · **Stakeholder:** S1
+- **Ưu tiên:** Must · **Use-case:** UC-09 · **Stakeholder:** S1
 - **Tiêu chí chấp nhận:**
   - AC-F08.1: Khi `POST /auth/register` với `{ email, password }` hợp lệ (email đúng định dạng, mật khẩu ít nhất 8 ký tự gồm chữ và số) thì trả 201 với `id`, `email`, `role = "CUSTOMER"`; phản hồi không chứa `password` hay `passwordHash`.
   - AC-F08.2: Khi email đã tồn tại (không phân biệt hoa/thường) thì trả 409 `EMAIL_ALREADY_EXISTS`.
