@@ -45,7 +45,7 @@ BrewLite là ứng dụng đặt đồ uống không dùng tiền mặt, mobile-
 - FR-17, FR-18, FR-19, FR-26, FR-27 là **Won’t trong bản nộp** và đã gộp vào bảng ở mục 5.9 (giữ nguyên mã, không đánh lại số). Không yêu cầu UI, endpoint, seed khuyến mãi hay giao dịch điểm; nếu một PR sau phê duyệt đưa lại vào phạm vi thì viết lại tiêu chí chấp nhận trong PR đó.
 - NFR Must chỉ áp dụng cho endpoint và luồng thuộc baseline. NFR Should và Could không là điều kiện nghiệm thu minimum.
 - Task 2 vẫn phải mô hình hóa hai lớp domain bắt buộc `Promotion` và `LoyaltyTransaction` với thuộc tính, quan hệ, multiplicity (đề A2 §4.3); không đồng nghĩa phải hiện thực tính năng.
-- **Ghi chú rút gọn (đề A2 §6.2).** Baseline PR #5 đặc tả nhiều hơn đề đòi, nên bản này giữ đúng mức tối thiểu để nhóm làm được và giải thích được khi vấn đáp. Đề A2 §3–§7 không đòi hủy đơn, không đặt ngưỡng hiệu năng bằng số (production free tier còn "ngủ"), không đòi kiểm thử tay đa trình duyệt hay quét secret trong lịch sử git. Thay đổi: (1) FR-25 Must thành Could; (2) NFR-01 Must thành Should; NFR-12 giữ Must cho E2E tự động tối thiểu theo đề A2 §7.2, bỏ kiểm thử tay đa trình duyệt; NFR-02 và NFR-03 Should thành Could; (3) NFR-10 PWA Should thành Must nhưng chỉ cần web app manifest, vì đề nhắc PWA ở §1.1, §5.1, §5.2, §9; (4) FR-17, FR-18, FR-19, FR-26, FR-27 gộp vào bảng Won’t; (5) bỏ các tiêu chí thừa: thanh toán song song cùng key, tái dùng key cho đơn khác, timeout Payment Service, ngưỡng thời gian giao diện, bảng ánh xạ mã lỗi, quét secret lịch sử, kiểm đồng thời trùng lặp. Mã tiêu chí, quy tắc, luồng đã bỏ không dùng lại; các mã còn lại giữ nguyên số hiệu.
+- **Ghi chú rút gọn (đề A2 §6.2).** Baseline PR #5 đặc tả nhiều hơn đề đòi, nên bản này giữ đúng mức tối thiểu để nhóm làm được và giải thích được khi vấn đáp. Đề A2 §3–§7 không đòi hủy đơn, không đặt ngưỡng hiệu năng bằng số (production free tier còn "ngủ"), không đòi kiểm thử tay đa trình duyệt hay quét secret trong lịch sử git. Thay đổi: (1) FR-25 Must thành Could; (2) NFR-01 giữ Must nhưng chỉ đo trên docker-compose local (nhóm chọn; đề A2 §3.2 chỉ đòi có nhóm hiệu năng, không đặt ngưỡng hay mức ưu tiên, ngưỡng 500 ms theo đề A1 §4.2); NFR-12 giữ Must cho E2E tự động tối thiểu theo đề A2 §7.2, bỏ kiểm thử tay đa trình duyệt; NFR-02 và NFR-03 Should thành Could; (3) NFR-10 PWA Should thành Must nhưng chỉ cần web app manifest, vì đề nhắc PWA ở §1.1, §5.1, §5.2, §9; (4) FR-17, FR-18, FR-19, FR-26, FR-27 gộp vào bảng Won’t; (5) bỏ các tiêu chí thừa: thanh toán song song cùng key, tái dùng key cho đơn khác, timeout Payment Service, ngưỡng thời gian giao diện, bảng ánh xạ mã lỗi, quét secret lịch sử, kiểm đồng thời trùng lặp. Mã tiêu chí, quy tắc, luồng đã bỏ không dùng lại; các mã còn lại giữ nguyên số hiệu.
 
 ### 1.5 Cách đọc một yêu cầu
 
@@ -207,12 +207,12 @@ Class diagram dùng đúng tên lớp và giá trị dưới đây (đề A2 §4
 | 6 | Thanh toán | FR-14, FR-15, FR-16 (Must); FR-17, FR-18, FR-19 (Won’t bản nộp) | Must / Won’t |
 | 7 | Lịch sử đơn | FR-20, FR-21, FR-22 | Must |
 | 8 | Quản lý trạng thái đơn | FR-23, FR-24 (Must); FR-25 (Could); FR-26, FR-27 (Won’t bản nộp) | Must / Could / Won’t |
-| 9 | Hiệu năng | NFR-01 (Should); NFR-02, NFR-03 (Could) | Should / Could |
+| 9 | Hiệu năng | NFR-01 (Must); NFR-02, NFR-03 (Could) | Must / Could |
 | 10 | Bảo mật | NFR-04 đến NFR-08, NFR-13 | Must |
 | 11 | Tính khả dụng | NFR-09 đến NFR-12 | Must |
 | 12 | Khả năng triển khai | NFR-14 đến NFR-19 (Must); NFR-20 (Should) | Must / Should |
 
-Won’t bản nộp: FR-17, FR-18, FR-19, FR-26, FR-27 và FR-28 đến FR-32. Tổng cộng: **32 FR** (21 Must, 1 Could, 10 Won’t) và **20 NFR** (16 Must, 2 Should, 2 Could).
+Won’t bản nộp: FR-17, FR-18, FR-19, FR-26, FR-27 và FR-28 đến FR-32. Tổng cộng: **32 FR** (21 Must, 1 Could, 10 Won’t) và **20 NFR** (17 Must, 1 Should, 2 Could).
 
 Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu riêng: **chưa đăng nhập** → FR-10; **hết hàng** → FR-13; **thanh toán thất bại** → FR-15.
 
@@ -458,8 +458,8 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng có đặc tả mở rộng trong basel
 ### 6.1 Hiệu năng
 
 #### NFR-01 — Thời gian phản hồi API đọc
-- **Mô tả:** Các API đọc menu phản hồi nhanh với dữ liệu mẫu trên môi trường local. Đề A2 không đặt ngưỡng số; production free tier có thể "ngủ" nên không đo ở production.
-- **Ưu tiên:** Should · **Stakeholder:** S1, S4
+- **Mô tả:** Các API đọc menu phản hồi nhanh với dữ liệu mẫu trên môi trường local. Đề A2 không đặt ngưỡng số; production free tier có thể "ngủ" nên không đo ở production. Nhóm chọn mức Must để nhóm hiệu năng có một cam kết kiểm chứng được; ngưỡng p95 ≤ 500 ms lấy theo đề A1 §4.2.
+- **Ưu tiên:** Must · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
   - AC-N01.1: Với dữ liệu mẫu (không quá 50 sản phẩm) trên môi trường `docker-compose` local, 100 yêu cầu tuần tự `GET /products` và 100 yêu cầu `GET /products/:id` đều có phân vị 95 (p95) không quá 500 ms.
 
@@ -619,7 +619,7 @@ Baseline này chốt Task 1 trước Task 2 theo đề A2 §1. Không đợi cod
 6. **Tạo đơn:** không thêm idempotency cho `POST /orders` trong minimum. UI khóa nút khi đang gửi; nếu mất phản hồi tạo đơn thì không tự gửi lại, yêu cầu kiểm tra lịch sử trước khi quyết định tạo đơn mới. Khi đã biết `orderId`, E1/A3/E4 phải tiếp tục đơn cũ. Rủi ro bấm đúp từ nhiều tab còn được chấp nhận.
 7. **Nhân viên:** dùng Postman với `GET /orders/:id`, `PATCH /orders/:id`; mã đơn lấy từ biên lai demo. Không cam kết Swagger UI hoặc màn hàng đợi.
 8. **Task 2:** dùng baseline này để vẽ activity, sequence, class; phải thể hiện hai nhánh E1 trước/sau tạo đơn, 8 chuyển trạng thái hợp lệ (gồm hai chuyển `→ CANCELLED` dù API hủy FR-25 là Could); không cần mô tả FR-26.
-9. **Rút gọn bản nộp:** lý do và danh sách thay đổi ở mục 1.4 (ghi chú rút gọn). Mọi mục bắt buộc của đề A2 §3–§7 vẫn có ít nhất một yêu cầu Must phủ: menu, chi tiết và size/topping, giỏ hàng và tổng tiền, đăng ký/đăng nhập/JWT, tạo đơn, thanh toán Ví/Thẻ, ba nhánh lỗi, idempotency, transaction đơn và tồn kho, xác nhận/lịch sử/trạng thái đơn, validate hai phía, loading/empty/error, mobile-first/PWA, docker-compose, health, migration/seed, CI, CD và rollback, HTTPS và DB không public, secret.
+9. **Rút gọn bản nộp:** lý do và danh sách thay đổi ở mục 1.4 (ghi chú rút gọn). Mọi mục bắt buộc của đề A2 §3–§7 vẫn có ít nhất một yêu cầu Must phủ: hiệu năng API đọc đo ở local (NFR-01), menu, chi tiết và size/topping, giỏ hàng và tổng tiền, đăng ký/đăng nhập/JWT, tạo đơn, thanh toán Ví/Thẻ, ba nhánh lỗi, idempotency, transaction đơn và tồn kho, xác nhận/lịch sử/trạng thái đơn, validate hai phía, loading/empty/error, mobile-first/PWA, docker-compose, health, migration/seed, CI, CD và rollback, HTTPS và DB không public, secret.
 10. **Bổ sung sau rà soát luồng lỗi/triển khai (đề A2 §6.2):** `/health.version` và chờ SHA ở AC-N15.3/AC-N18.2 giúp smoke test không kiểm nhầm bản cũ; simulator chống thu trùng theo `orderId` và AC-F16.7 làm rõ bảo đảm retry đã chọn cho thanh toán mô phỏng. Đây là quyết định kỹ thuật của nhóm để kiểm chứng luồng đã đặc tả, không phải yêu cầu đề phải dùng Render hay xử lý cổng thanh toán thật.
 
 ---

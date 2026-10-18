@@ -58,7 +58,7 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 
 | Mã yêu cầu | Use-case/User Story | Thiết kế/Sơ đồ | Code/API | Test |
 |---|---|---|---|---|
-| NFR-01 | Should: UC-01; đo thời gian p95 `GET /products`, `GET /products/:id` trên local | chờ Task 3 | dự kiến `GET /products`, `GET /products/:id`; chờ Task 4 | chờ Task 4–5 |
+| NFR-01 | Must: UC-01; đo thời gian p95 `GET /products`, `GET /products/:id` trên local | chờ Task 3 | dự kiến `GET /products`, `GET /products/:id`; chờ Task 4 | chờ Task 4–5 |
 | NFR-02 | Could: UC-01; đo Lighthouse (LCP, Performance) trang menu | chờ Task 3 | dự kiến trang menu `apps/web`; chờ Task 4 | chờ Task 4–5 |
 | NFR-03 | Could: UC-04; đo thời gian p95 `POST /orders`, `POST /payments` | chờ Task 3 | dự kiến `POST /orders`, `POST /payments`; chờ Task 5 | chờ Task 4–5 |
 | NFR-04 | UC-09 (AC-N04.1: kiểm mẫu băm bcrypt khi đăng ký); toàn hệ thống đối với AC-N04.2 (không lộ mật khẩu/giá trị băm trong mọi phản hồi API và log) | chờ Task 3 | dự kiến `POST /auth/register`, `POST /auth/login`, logger trong `apps/api`; chờ Task 5 | chờ Task 4–5 |
@@ -81,8 +81,8 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 
 ## 3. Thống kê và quy tắc kiểm
 
-- **Số dòng:** 32 dòng FR (21 Must, 1 Could, 10 Won’t bản nộp) và 20 dòng NFR (16 Must, 2 Should, 2 Could).
-- **MoSCoW:** FR Must: FR-01 đến FR-16, FR-20 đến FR-24 (21); FR Could: FR-25 (1); FR Won’t bản nộp: FR-17/18/19/26/27, FR-28 đến FR-32 (10). NFR Must: 16 (NFR-04 đến NFR-19); NFR Should: NFR-01, NFR-20 (2); NFR Could: NFR-02, NFR-03 (2).
+- **Số dòng:** 32 dòng FR (21 Must, 1 Could, 10 Won’t bản nộp) và 20 dòng NFR (17 Must, 1 Should, 2 Could).
+- **MoSCoW:** FR Must: FR-01 đến FR-16, FR-20 đến FR-24 (21); FR Could: FR-25 (1); FR Won’t bản nộp: FR-17/18/19/26/27, FR-28 đến FR-32 (10). NFR Must: 17 (NFR-01, NFR-04 đến NFR-19); NFR Should: NFR-20 (1); NFR Could: NFR-02, NFR-03 (2).
 - **Quy tắc đề A2 §8.1 và kế hoạch mục C:** mọi `FR-xx` Must có ít nhất một dòng đủ 5 cột trước khi kết thúc Task 5; mọi endpoint của `apps/api` xuất hiện trong ma trận; mọi mã test ghi ở đây phải tồn tại thật trong `apps/` hoặc `tests/`; cuối mỗi Sprint rà hai chiều (yêu cầu → test và test → yêu cầu) và ghi kết quả vào mô tả PR.
 - **Dòng Won’t:** lý do/phạm vi theo SRS mục 1.4 và 5.9; giữ yêu cầu mô hình hóa hai lớp domain ở Task 2, không yêu cầu code/test tính năng mở rộng trong bản nộp.
 - **Mẫu của đề A2 §8.1** (`FR-01 / US-01 Xem menu / Activity-01, Class-01 / GET /products / API-T01` và `FR-05 / UC-01 Thanh toán / Sequence-01 / POST /payments / INT-T03`) chỉ minh họa định dạng; mã yêu cầu thật của nhóm là bảng ở trên.
