@@ -220,7 +220,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 
 | Mã | Quy tắc | Dùng ở |
 |---|---|---|
-| BR-01 | Giá do server tính từ catalog; bỏ qua giá client | bước 7; E6 |
+| BR-01 | Giá do server tính từ catalog; trường giá/tổng tiền client gửi bị từ chối (AC-F12.3) | bước 7; E6 |
 | BR-02 | Số lượng 1 đến 99; tối đa 20 dòng | điều kiện đầu; bước 6; E6 |
 | BR-03 | Giữ chỗ tồn kho khi tạo đơn, hoàn khi đơn `CANCELLED` (A5 chỉ khi làm FR-25) | bước 8; E2; A5 |
 | BR-04 | Chỉ chủ đơn thanh toán; chỉ `PENDING` hoặc `PAYMENT_FAILED` thanh toán được | bước 10; E7 |
