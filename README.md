@@ -1,49 +1,102 @@
-# BrewLite — Assignment 2 (Requirements to Deployment)
+# BrewLite — Assignment 2
 
-> Nhánh `develop-Assignment2`: **chỉ có kế hoạch và tài liệu, chưa có code**. Giảng viên cấm vibecoding, nên code của Assignment 2 (A2) do nhóm tự viết trong `apps/web` và `apps/api`, theo kế hoạch bên dưới.
+MVP Sprint 1 dùng **Next.js**, **NestJS** và **PostgreSQL**: xem menu, giá, tồn kho, loading/empty/error và API chi tiết sản phẩm. Giỏ hàng, tài khoản, thanh toán và PWA thuộc Task 5; nút thêm vào giỏ chưa thực hiện thao tác.
 
-**Code Assignment 1 (A1) nằm ở nhánh `develop`** (`backend/`, `frontend/`, `docker-compose.yml`). Nhánh này không chứa code đó. Xem lại bằng `git show develop:backend/src/...`.
+Task 4 đang là bản nháp trên `a2/Task4`. Task 2–3 chưa có tạo phẩm bắt buộc trong checkout này, nên chưa đủ điều kiện merge/nghiệm thu. Xem [checkpoint Task 4](docs/checkpoints/2026-10-19-task4.md) để biết kiểm chứng và phần còn thiếu. Nhóm phải đọc, hiểu và giải thích được code khi vấn đáp.
 
-## Hai đề
+## Tài liệu và backlog
 
-| Đề | File | Nội dung |
-|---|---|---|
-| A2 (đề của nhánh này) | [`docs/Assignment2-BrewLite.md`](docs/Assignment2-BrewLite.md) (bản PDF: [`docs/Assignment2-BrewLite.pdf`](docs/Assignment2-BrewLite.pdf)) | 5 task: yêu cầu, mô hình hóa, kiến trúc, Sprint 1, Sprint 2 + CI/CD + production. 10 điểm |
-| A1 (đã làm ở `develop`) | [`docs/BrewLite-CongNghePhanMem-fixed.md`](docs/BrewLite-CongNghePhanMem-fixed.md) | 10 task Agile Scrum, MVP đặt cà phê không tiền mặt |
+- [Đề A2](docs/Assignment2-BrewLite.md), [kế hoạch Task 1–5](docs/planning/2026-10-15-assignment2-plan.md).
+- [Yêu cầu](docs/requirements/README.md), [sơ đồ Task 2](docs/diagrams/README.md), [kiến trúc Task 3](docs/architecture/README.md).
+- [Ma trận truy vết](docs/traceability-matrix.md), [Product Backlog Sprint 1 và 2](docs/sprint/backlog.md).
+- [Branch, PR, commit và Definition of Done](CONTRIBUTING.md), [CI và minh chứng](docs/evidence/ci/README.md).
 
-## Kế hoạch thực hiện
+Code A1 ở nhánh `develop` (`backend/`, `frontend/`), không phải code A2 trong `apps/`. Tài liệu A1 trong `docs/reference/a1/` và các kế hoạch cũ chỉ dùng tham khảo.
 
-**[`docs/planning/2026-10-15-assignment2-plan.md`](docs/planning/2026-10-15-assignment2-plan.md)** — quy trình làm việc, từng task 1→5 kèm tạo phẩm và đường dẫn file, checklist nghiệm thu, nền tảng triển khai, backlog Sprint 1 và 2, bảng phủ yêu cầu đề A2.
+## Chạy local
 
-Làm đúng thứ tự Task 1 → 5 (đề A2 §1): task sau chỉ được nghiệm thu khi tạo phẩm bắt buộc của task trước đã có trên repo kèm lịch sử commit.
+Cần **Node.js 24.19.0** (file `.nvmrc`), npm và một database **PostgreSQL** riêng cho demo. Hai app cài dependency độc lập bằng lockfile; không cần `package.json` ở gốc.
 
-## Cấu trúc repository (theo đề A2 §9)
+Ví dụ dùng PowerShell, chạy từ thư mục gốc trên bản clone mới. Windows dùng `npm.cmd` nếu PowerShell chặn `npm.ps1`; macOS/Linux dùng `npm`, `cp` thay `Copy-Item`.
 
-```text
-apps/web/                 # Next.js mobile-first/PWA     (Task 4-5, nhóm tự viết)
-apps/api/                 # NestJS + PostgreSQL          (Task 4-5, nhóm tự viết)
-docs/requirements/        # Task 1
-docs/diagrams/            # Task 2
-docs/architecture/        # Task 3 (adr/ chứa các ADR)
-docs/planning/            # kế hoạch A2 và kế hoạch lịch sử của A1
-docs/reference/a1/        # tài liệu UC / sequence của A1, chỉ để tham khảo
-docs/traceability-matrix.md   # Task 1 trở đi, mẫu đề A2 §8.1 (chưa tạo)
-docs/deployment.md            # Task 5.4 (chưa tạo)
-tests/                    # integration / E2E            (Task 5.2)
-.github/workflows/        # ci.yml, cd.yml               (Task 4.4, 5.3)
-docker-compose.yml, .env.example   # Task 4.1 / 5.2 (chưa tạo)
+```powershell
+Copy-Item apps/api/.env.example apps/api/.env
+Copy-Item apps/web/.env.example apps/web/.env.local
+npm.cmd --prefix apps/api ci
+npm.cmd --prefix apps/web ci
 ```
 
-Hiện tại mỗi thư mục `apps/web`, `apps/api`, `tests/`, `.github/workflows/`, `docs/requirements/`, `docs/diagrams/`, `docs/architecture/` chỉ có `README.md` mô tả nhóm cần nộp gì ở đó.
+Tạo database demo tên `brewlite` bằng công cụ PostgreSQL của bạn, rồi điền `DATABASE_URL` trong `apps/api/.env` bằng thông tin kết nối riêng. Định dạng: `postgresql://DB_USER:DB_PASSWORD@localhost:5432/brewlite?schema=public`; thay user/password/cổng theo máy, URL-encode ký tự đặc biệt. Các file `.env` thật được Git bỏ qua. `.env.example` ở gốc chỉ liệt kê biến, không được app tự nạp.
 
-## Quy tắc quan trọng
+| App | Biến | Ý nghĩa / giá trị local |
+|---|---|---|
+| API | `DATABASE_URL` | URL PostgreSQL; phải điền trước khi migrate/start |
+| API | `PORT` | Mặc định `4000` |
+| API | `CORS_ORIGINS` | Danh sách origin ngăn cách bằng dấu phẩy; mặc định `http://localhost:3000` |
+| Web | `NEXT_PUBLIC_API_URL` | Mặc định `http://localhost:4000`, không thêm `/` cuối; được nhúng lúc build |
 
-- Agent AI được soạn nháp tài liệu Task 1–3 (SRS, sơ đồ, ADR) để nhóm sửa và chốt; code trong `apps/`, `tests/`, `.github/workflows/` chỉ viết khi người dùng yêu cầu rõ. Chi tiết: [`.claude/rules/doc-code-sync.md`](.claude/rules/doc-code-sync.md).
-- Mỗi thay đổi làm trên nhánh `a2/task-<n>-<tên>`, mở pull request vào `develop-Assignment2`, có người review và nêu lý do thay đổi.
-- Không push và không merge vào `develop` / `main` khi chưa có đồng ý của nhóm.
+Khởi tạo database demo từ `apps/api` (Prisma nạp `.env` ở thư mục này):
 
-## Tài liệu của A1 còn lại trên nhánh này
+```powershell
+Set-Location apps/api
+npm.cmd run prisma:generate
+npm.cmd run prisma:migrate
+npm.cmd run prisma:seed
+npm.cmd run start:dev
+```
 
-- `docs/reference/a1/`: đặc tả use-case và sequence của A1 (đầu vào để nhóm tự vẽ lại sơ đồ A2).
-- `docs/scrum-process.md`: số liệu Scrum / git của A1.
-- `docs/planning/` (các kế hoạch cũ), `docs/checkpoints/`: nhật ký lịch sử của A1. Chúng nhắc tới `backend/`, `frontend/` và nhiều file đã xóa khỏi nhánh này; đọc như tư liệu, không làm theo.
+Seed upsert 8 sản phẩm theo SRS mục 3.3, gồm Bạc xỉu tồn 3 và Cold brew tồn 0. Chạy lại không tạo trùng ID nhưng cập nhật giá/tồn kho về dữ liệu mẫu, nên chỉ dùng trên database demo. Tài khoản, size/topping và các lớp domain còn lại sẽ bổ sung ở Task 5.
+
+Mở terminal thứ hai từ thư mục gốc:
+
+```powershell
+npm.cmd --prefix apps/web run dev
+```
+
+Mở `http://localhost:3000`. API ở `http://localhost:4000`. Đổi cổng web thì cập nhật `CORS_ORIGINS`; đổi API URL thì cập nhật web env và khởi động/build lại web.
+
+## API Sprint 1
+
+| Endpoint (không cần token) | Kết quả |
+|---|---|
+| `GET /products` | `200` mảng sản phẩm; `[]` khi bảng rỗng |
+| `GET /products/:id` | `200` sản phẩm, hoặc `404 PRODUCT_NOT_FOUND` |
+
+Product có `id`, `name`, `description`, `price` (số nguyên VND), `imageUrl`, `stock`. Ảnh `/images/*.svg` nằm trong `apps/web/public`, do web phục vụ. Lỗi dùng các trường `statusCode`, `error`, `message`; lỗi nội bộ trả 500 với thông báo chung.
+
+```powershell
+Invoke-RestMethod http://localhost:4000/products
+Invoke-RestMethod http://localhost:4000/products/cappuccino
+```
+
+## Lint, test và build
+
+Chạy từ thư mục gốc sau khi cài dependency và generate Prisma Client:
+
+```powershell
+npm.cmd --prefix apps/api run lint
+npm.cmd --prefix apps/web run lint
+npm.cmd --prefix apps/api test -- --runInBand
+npm.cmd --prefix apps/web test
+npm.cmd --prefix apps/web run typecheck
+npm.cmd --prefix apps/api run build
+npm.cmd --prefix apps/web run build
+git diff --check
+```
+
+API test chạy NestJS/HTTP với Prisma provider giả, không cần database; web test dùng Vitest + Testing Library. Kiểm PostgreSQL thật được ghi riêng trong checkpoint.
+
+Sau build, chạy production local ở hai terminal:
+
+```powershell
+npm.cmd --prefix apps/api run start:prod
+npm.cmd --prefix apps/web start
+```
+
+## CI và nghiệm thu
+
+[Workflow CI](.github/workflows/ci.yml) chạy khi mở/cập nhật PR vào `develop-Assignment2`: **Install → Lint → Unit Test → Build** cho cả hai app, cùng Node trong `.nvmrc`, một job tên `ci`. Không cần secret hay database cho job này.
+
+Quản trị viên còn phải bật branch protection yêu cầu check `ci` và một approval để chặn merge khi lỗi. Hướng dẫn/bằng chứng xanh-đỏ ở [hồ sơ CI](docs/evidence/ci/README.md); có workflow trong source chưa chứng minh GitHub đã bật các thiết lập này.
+
+Docker Compose, `GET /health`, CD, deploy production, rollback và release thuộc Task 5. Chưa có URL production, workflow CD hoặc quy trình rollback đã kiểm chứng trong Sprint 1.

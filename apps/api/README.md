@@ -1,34 +1,33 @@
-# apps/api — NestJS + PostgreSQL
+# BrewLite API — NestJS + PostgreSQL
 
-> Thư mục này **chưa có code**. Giảng viên cấm vibecoding: code ở Task 4 và Task 5 do nhóm viết; agent AI chỉ viết code vào `apps/` khi người dùng yêu cầu rõ (xem `.claude/rules/doc-code-sync.md`).
+Sprint 1 có module `catalog`, Prisma `Product`, migration và seed 8 đồ uống. Hợp đồng theo [SRS mục 3.3 và FR-01/03](../../docs/requirements/srs.md), truy vết trong [ma trận](../../docs/traceability-matrix.md).
 
-Đề A2 yêu cầu backend dùng **NestJS**, dữ liệu lưu trong **PostgreSQL** (đề A2 §1.1).
+## Chạy từ thư mục này
 
-## Nhóm phải nộp ở đây
+Dùng Node 24.19.0. Tạo database PostgreSQL demo, copy `.env.example` thành `.env` và điền `DATABASE_URL`. Chi tiết biến/URL/cổng ở [README gốc](../../README.md#chạy-local).
 
-Task 4.3 (Sprint 1, đề A2 §6.3):
-- `GET /products` và `GET /products/:id`;
-- migration và seed để tái tạo database;
-- test API (gợi ý Jest + supertest).
+```powershell
+npm.cmd ci
+npm.cmd run prisma:generate
+npm.cmd run prisma:migrate
+npm.cmd run prisma:seed
+npm.cmd run start:dev
+```
 
-Task 5.1 (Sprint 2, đề A2 §7.1):
-- đăng ký, đăng nhập, JWT và guard;
-- tạo đơn hàng với validate;
-- thanh toán Ví/Thẻ mô phỏng;
-- trạng thái đơn và lịch sử đơn;
-- 7 lớp domain theo class diagram: `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` (đề A2 §4.3).
+API mặc định cổng 4000, CORS cho `http://localhost:3000`. Seed upsert theo ID: chạy lại không tạo trùng nhưng đặt lại dữ liệu mẫu, chỉ chạy với DB demo. Không có tài khoản/auth ở Sprint 1.
 
-Task 5.2 và 5.3:
-- unit test cho nghiệp vụ quan trọng (state machine, tính giá, khuyến mãi);
-- integration test cho tạo đơn và thanh toán;
-- `GET /health`;
-- log dạng JSON, cấu hình qua biến môi trường;
-- `Dockerfile` để build image đẩy lên container registry;
-- migration chạy an toàn khi deploy (chỉ migration cộng thêm).
+## Endpoint và test
 
-## Ràng buộc
+- `GET /products`: mảng Product, `200 []` khi chưa có dữ liệu.
+- `GET /products/:id`: Product hoặc `404 PRODUCT_NOT_FOUND`.
+- Product: `id`, `name`, `description`, `price` (VND nguyên), `imageUrl`, `stock`. Ảnh được web phục vụ.
+- `test/products.e2e-spec.ts`: `API-T01` danh sách, `API-T02` chi tiết, `API-T03` không tồn tại, `API-T04` rỗng, `API-T05` lỗi DB không lộ chi tiết trong HTTP response. NestJS/HTTP chạy thật; Prisma provider được mock, không cần DB cho test.
 
-- Cấu trúc module theo domain, thống nhất với `docs/architecture/architecture.md`.
-- Mỗi endpoint truy vết được tới `FR-xx` trong `docs/requirements/srs.md` và ghi vào `docs/traceability-matrix.md`.
-- Mỗi thay đổi đi qua nhánh `a2/task-<n>-<tên>` và pull request vào `develop-Assignment2`.
-- Kế hoạch chi tiết: `docs/planning/2026-10-15-assignment2-plan.md`.
+```powershell
+npm.cmd run lint
+npm.cmd test -- --runInBand
+npm.cmd run build
+npm.cmd run start:prod
+```
+
+`prisma:migrate` chạy migration đã lưu bằng `prisma migrate deploy`; không dùng reset. Tài khoản, đơn/thanh toán, các lớp domain còn lại, `GET /health`, Docker và test tích hợp DB tự động thuộc Task 5. Kiến trúc/ADR Task 3 chưa được chốt trong checkout này.
