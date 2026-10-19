@@ -1,0 +1,132 @@
+@startuml
+' BrewLite A2 SRS section 3.6 is the authoritative source.
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam classAttributeIconSize 0
+skinparam ClassBackgroundColor #EDF5FB
+skinparam ClassBorderColor #58758A
+skinparam ArrowColor #58758A
+skinparam NoteBackgroundColor #FFF4D9
+skinparam NoteBorderColor #B99655
+skinparam linetype ortho
+hide empty members
+title BrewLite A2 — Class: Domain model (SRS 3.6)
+
+class User {
+  +id: UUID
+  +email: String
+  +passwordHash: String
+  +role: Role
+}
+class Product {
+  +id: UUID
+  +name: String
+  +price: Integer
+  +imageUrl: String
+  +stock: Integer
+}
+class Order {
+  +id: UUID
+  +userId: UUID
+  +status: OrderStatus
+  +total: Integer
+  +discountAmount: Integer
+  +promotionId: UUID [0..1]
+  +createdAt: DateTime
+}
+class OrderItem {
+  +id: UUID
+  +orderId: UUID
+  +productId: UUID
+  +size: String
+  +toppings: String[*]
+  +quantity: Integer
+  +unitPrice: Integer
+  +lineTotal: Integer
+}
+class Payment {
+  +id: UUID
+  +orderId: UUID
+  +method: PaymentMethod
+  +status: PaymentStatus
+  +amount: Integer
+  +idempotencyKey: String
+  +createdAt: DateTime
+}
+class Promotion {
+  +id: UUID
+  +code: String
+  +discountPercent: Decimal
+  +validFrom: DateTime
+  +validTo: DateTime
+  +maxUses: Integer [0..1]
+  +usedCount: Integer
+  +active: Boolean
+}
+class LoyaltyTransaction {
+  +id: UUID
+  +userId: UUID
+  +orderId: UUID [0..1]
+  +type: LoyaltyType
+  +points: Integer
+  +createdAt: DateTime
+}
+
+enum Role {
+  CUSTOMER
+  BARISTA
+}
+enum OrderStatus {
+  PENDING
+  PAID
+  PAYMENT_FAILED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+enum PaymentMethod {
+  WALLET
+  CARD
+}
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+enum LoyaltyType {
+  EARN
+  REVERSAL
+}
+
+User "1" -- "0..*" Order : places
+Order "1" *-- "1..*" OrderItem : contains
+Product "1" -- "0..*" OrderItem : selected in
+Order "1" *-- "0..*" Payment : payment attempts
+Promotion "0..1" -- "0..*" Order : applied to
+User "1" -- "0..*" LoyaltyTransaction : earns / reverses
+Order "0..1" -- "0..*" LoyaltyTransaction : origin
+
+User ..> Role
+Order ..> OrderStatus
+Payment ..> PaymentMethod
+Payment ..> PaymentStatus
+LoyaltyTransaction ..> LoyaltyType
+
+note bottom of Product
+  stock reserved by POST /orders (BR-03).
+  Client size/toppings are validated, prices recomputed on server.
+end note
+note bottom of Promotion
+  Domain only: FR-17 is Won't.
+  discountAmount = 0 in minimum.
+end note
+note bottom of LoyaltyTransaction
+  Domain only: FR-18/19 are Won't.
+  No runtime accrual in minimum.
+end note
+note bottom of Payment
+  Only SUCCESS results are cached by API key.
+  REFUNDED is an enum value, not an enabled FR-26 flow.
+end note
+@enduml
