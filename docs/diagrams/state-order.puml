@@ -1,0 +1,46 @@
+@startuml
+' Exactly 8 business transitions: SRS section 3.6, FR-23/24, BR-08
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam ArrowColor #536C83
+skinparam StateBackgroundColor #EDF5FB
+skinparam StateBorderColor #536C83
+skinparam NoteBackgroundColor #FFF4D9
+skinparam NoteBorderColor #B99655
+title BrewLite A2 — Order state machine (8 valid transitions)
+
+state PENDING
+state PAID
+state PAYMENT_FAILED #FCE8E5
+state PREPARING
+state READY
+state COMPLETED #DFF1E5
+state CANCELLED #EAEAEA
+
+[*] --> PENDING : POST /orders creates order
+PENDING --> PAID : successful payment
+PENDING --> PAYMENT_FAILED : payment declined
+PENDING --> CANCELLED : Customer cancellation [FR-25 Could]
+PAYMENT_FAILED --> PENDING : retry payment (same Order)
+PAYMENT_FAILED --> CANCELLED : Customer cancellation [FR-25 Could]
+PAID --> PREPARING : Barista
+PREPARING --> READY : Barista
+READY --> COMPLETED : Barista
+COMPLETED --> [*]
+CANCELLED --> [*]
+
+note right of PENDING
+  POST /orders reserves stock atomically.
+  Failure does not release reserved stock.
+end note
+note right of PAID
+  PAID -> CANCELLED is NOT allowed in A2.
+  FR-26 is Won't; reject with
+  409 INVALID_ORDER_TRANSITION.
+end note
+note bottom of CANCELLED
+  FR-25 is Could: both cancel edges exist in
+  model but API/UI not required for minimum.
+  If implemented, release stock atomically.
+end note
+@enduml
