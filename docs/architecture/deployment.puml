@@ -1,0 +1,55 @@
+@startuml deployment
+title BrewLite – Deployment diagram (production: Vercel + Render + GHCR)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam nodesep 40
+skinparam ranksep 60
+
+node "Thiết bị người dùng" as USER {
+  node "Trình duyệt / PWA" as BROWSER
+}
+
+node "Vercel (production)" as VERCEL {
+  node "CDN / Edge (HTTPS)" as CDN
+  component "Next.js web\n(apps/web)\nEnv: NEXT_PUBLIC_API_URL" as WEB
+}
+
+node "Render (production)" as RENDER {
+  node "Web Service – container" as RSVC {
+    component "NestJS API (apps/api)\nGET /health · log JSON ra stdout\nEnv: DATABASE_URL (internal), JWT_SECRET,\nCORS_ORIGINS, LOG_LEVEL, APP_VERSION=<SHA>" as API
+  }
+  node "Postgres managed – private" as RPG {
+    database "PostgreSQL :5432\npersistent disk" as DB
+  }
+  artifact "Render logs" as RLOG
+}
+
+node "GHCR – container registry" as REG {
+  artifact "brewlite-api:<commit-sha>" as IMG
+}
+
+node "CI/CD – GitHub Actions" as CI {
+  artifact "ci.yml (PR)\ninstall → lint → test → build" as CIYML
+  artifact "cd.yml (tag a2-v*)\nlint/test → build image → push → deploy\n→ chờ /health đúng SHA → smoke test" as CDYML
+  artifact "GitHub Secrets\n(deploy hook, VERCEL_*, PROD_*_URL)" as SEC
+}
+
+node "Local – docker-compose" as LOCAL {
+  artifact "web :3000 · api :4000 · postgres :5432\n(.env từ .env.example)" as DC
+}
+
+BROWSER --> CDN : (1) HTTPS 443
+CDN --> WEB
+BROWSER --> API : (2) HTTPS 443 → API :4000\nREST + JWT, CORS
+API --> DB : (3) internal URL\nTCP 5432, không public (NFR-08)
+API ..> RLOG : (4) stdout
+
+SEC ..> CDYML
+CDYML --> IMG : (5) docker push
+IMG --> RSVC : (6) pull theo SHA
+CDYML --> RSVC : (7) deploy hook
+CDYML --> VERCEL : (8) vercel deploy --prebuilt
+CDYML ..> API : (9) poll /health\nrồi smoke test
+CIYML -[hidden]- CDYML
+LOCAL -[hidden]- CI
+@enduml
