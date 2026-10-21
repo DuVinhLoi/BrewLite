@@ -21,6 +21,7 @@ class User {
 class Product {
   +id: UUID
   +name: String
+  +description: String
   +price: Integer
   +imageUrl: String
   +stock: Integer
