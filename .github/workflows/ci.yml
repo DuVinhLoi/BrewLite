@@ -1,30 +1,43 @@
 name: CI
-
 on:
   pull_request:
     branches: [develop-Assignment2]
+  push:
+    branches: [develop-Assignment2, 'feat/assignment2-task5-*']
+    tags: ['a2-v*']
   workflow_dispatch:
-
+  workflow_call:
 permissions:
   contents: read
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   ci:
     name: ci
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: brewlite
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: brewlite_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U brewlite -d brewlite_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       CI: 'true'
+      DATABASE_URL: postgresql://brewlite:ci-only-password@localhost:5432/brewlite_test?schema=public
+      TEST_DATABASE_URL: postgresql://brewlite:ci-only-password@localhost:5432/brewlite_test?schema=public
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:4105
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           persist-credentials: false
-
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -33,25 +46,37 @@ jobs:
           cache-dependency-path: |
             apps/api/package-lock.json
             apps/web/package-lock.json
-
       - name: Install
         run: |
           npm --prefix apps/api ci
           npm --prefix apps/web ci
           npm --prefix apps/api run prisma:generate
-
       - name: Lint
         run: |
           npm --prefix apps/api run lint
           npm --prefix apps/web run lint
-
       - name: Unit Test
         run: |
           npm --prefix apps/api test -- --runInBand
           npm --prefix apps/web test
-
+      - name: Integration Test (independent database)
+        run: |
+          cd apps/api
+          npm run prisma:migrate
+          SEED_DEMO_USERS=true npm run prisma:seed
+          npm run test:integration
       - name: Build
         run: |
           npm --prefix apps/web run typecheck
           npm --prefix apps/api run build
           npm --prefix apps/web run build
+      - name: Browser E2E
+        working-directory: apps/web
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - name: Validate Compose
+        env:
+          POSTGRES_PASSWORD: compose-validation-only
+          JWT_SECRET: compose-validation-secret-at-least-32-characters
+        run: docker compose config --quiet

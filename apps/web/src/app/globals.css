@@ -51,3 +51,22 @@ p {
 button {
   font: inherit;
 }
+.shop-nav { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; padding:1rem max(1rem, calc((100vw - 960px)/2)); background:var(--surface); border-bottom:1px solid var(--border); }
+.shop-nav a { color:var(--accent-ink); }
+.shop-nav span { overflow-wrap:anywhere; }
+.shop-page { max-width:760px; margin:2rem auto; padding:0 1rem 3rem; display:grid; gap:1.25rem; }
+.shop-page h1 { font-size:2rem; }
+.shop-page h2 { font-size:1.15rem; }
+.shop-page a { color:var(--accent-ink); }
+.shop-page form { display:grid; gap:1rem; }
+.shop-page label { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; margin:.5rem 0; }
+.shop-page input:not([type=radio]):not([type=checkbox]), .shop-page select { width:100%; padding:.8rem; border:1px solid var(--border); border-radius:6px; font:inherit; background:white; }
+.shop-page fieldset { border:1px solid var(--border); border-radius:8px; padding:1rem; }
+.shop-page button, .shop-button, .shop-nav button { padding:.7rem 1rem; border:0; border-radius:6px; background:var(--accent-ink); color:white; cursor:pointer; font:inherit; }
+.shop-page a.shop-button { color:white; text-align:center; text-decoration:none; }
+.shop-page button:disabled { opacity:.5; cursor:not-allowed; }
+.shop-line { padding:1rem; border:1px solid var(--border); background:var(--surface); border-radius:8px; display:grid; gap:.7rem; overflow-wrap:anywhere; }
+.shop-total { font-size:1.3rem; font-weight:700; }
+.shop-actions { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; }
+.shop-page [role=alert] { color:var(--danger-ink); }
+:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }

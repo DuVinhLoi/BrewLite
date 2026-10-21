@@ -1,6 +1,6 @@
 # Ma trận truy vết (đề A2 §8.1)
 
-> **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5; bổ sung source/test Sprint 1 trên `a2/Task4` ngày 2026-10-19.** Các đường dẫn Task 4 là bản nháp local, chưa chứng minh đã merge hoặc nghiệm thu. Cột thiết kế vẫn chờ Task 2–3; tính năng Task 5 và các phép đo NFR chưa chạy giữ trạng thái chờ. Xem [checkpoint Task 4](checkpoints/2026-10-19-task4.md).
+> **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5; bổ sung source/test Sprint 1 trên `a2/Task4` ngày 2026-10-19.** Các đường dẫn Task 4 là bản nháp local, chưa chứng minh đã merge hoặc nghiệm thu. Cột thiết kế vẫn chờ Task 2–3; bổ sung code/test Task 5 ngày 21/10/2026 trên branch feat/assignment2-task5-delivery; các phép đo NFR chưa chạy giữ trạng thái chờ. Xem [checkpoint Task 4](checkpoints/2026-10-19-task4.md).
 >
 > Nguồn: [`requirements/srs.md`](requirements/srs.md) (`FR-xx`, `NFR-xx`), [`requirements/uc-checkout.md`](requirements/uc-checkout.md), [`requirements/use-case-overview.svg`](requirements/use-case-overview.svg). Quy tắc kiểm và cách điền: kế hoạch A2 mục C ([`planning/2026-10-15-assignment2-plan.md`](planning/2026-10-15-assignment2-plan.md)).
 
@@ -21,29 +21,29 @@
 |---|---|---|---|---|
 | FR-01 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /products` — `apps/api/src/catalog/`; `apps/web/src/components/menu/MenuScreen.tsx`, `ProductCard.tsx`; `apps/api/prisma/seed.ts` | `apps/api/test/products.e2e-spec.ts`: API-T01 (HTTP/provider giả); web: `src/components/menu/MenuScreen.test.tsx` UNIT-T04, `ProductCard.test.tsx` UNIT-T03; `src/lib/format.test.ts` UNIT-T01, `stock.test.ts` UNIT-T02. Seed đủ 8 món được kiểm riêng trên DB local; chưa kiểm DB trống tự động |
 | FR-02 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `apps/web/src/components/menu/MenuScreen.tsx`, `apps/web/src/lib/api.ts` | `apps/web/src/components/menu/MenuScreen.test.tsx`: UNIT-T04 loading, UNIT-T05 empty, UNIT-T06 mất mạng/retry, UNIT-T07 HTTP 503/retry; API-T04 tại `apps/api/test/products.e2e-spec.ts` kiểm API rỗng. Chưa đo ngưỡng loading 200 ms |
-| FR-03 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /products/:id` — `apps/api/src/catalog/catalog.controller.ts`, `catalog.service.ts`; UI chi tiết chờ Task 5 | `apps/api/test/products.e2e-spec.ts`: API-T02 (200), API-T03 (404 PRODUCT_NOT_FOUND). AC-F03.3 UI chưa hiện thực |
-| FR-04 | UC-01 Xem menu và chi tiết món | chờ Task 2 | dự kiến màn chi tiết trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
-| FR-05 | UC-02 Quản lý giỏ hàng | chờ Task 2 | dự kiến giỏ hàng phía client trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
-| FR-06 | UC-02 Quản lý giỏ hàng | chờ Task 2 | dự kiến giỏ hàng phía client trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
-| FR-07 | UC-02 Quản lý giỏ hàng; UC-04 (bước 1) | chờ Task 2 | dự kiến giỏ hàng phía client trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
-| FR-08 | UC-03 Đăng ký / Đăng nhập | chờ Task 2 | dự kiến `POST /auth/register`; chờ Task 5 | chờ Task 4–5 |
-| FR-09 | UC-03 Đăng ký / Đăng nhập | chờ Task 2 | dự kiến `POST /auth/login`; chờ Task 5 | chờ Task 4–5 |
-| FR-10 | UC-03; UC-04 (E1a chưa tạo đơn; E1b tiếp tục orderId cũ sau đăng nhập lại cùng tài khoản) | chờ Task 2 (Activity: nhánh chưa đăng nhập; Sequence: kiểm JWT và tiếp tục đơn cũ) | dự kiến JWT guard cho `POST /orders`, `POST /payments`, `GET /orders/me`, `GET /orders/:id`, `PATCH /orders/:id`; chờ Task 5 | chờ Task 4–5 |
-| FR-11 | UC-04.1 Tạo đơn hàng | chờ Task 2 (Sequence: transaction tạo đơn; Class: `Order`, `OrderItem`) | dự kiến `POST /orders`; chờ Task 5 | chờ Task 4–5 |
-| FR-12 | UC-04.1 Tạo đơn hàng; UC-04 (ngoại lệ E6) | chờ Task 2 (Sequence: validate) | dự kiến `POST /orders`; chờ Task 5 | chờ Task 4–5 |
-| FR-13 | UC-04.1 Tạo đơn hàng; UC-04 (ngoại lệ E2) | chờ Task 2 (Activity: nhánh hết hàng; Class: `Product.stock`) | dự kiến `POST /orders` trả 409; chờ Task 5 | chờ Task 4–5 |
-| FR-14 | UC-04.2 Thanh toán đơn hàng | chờ Task 2 (Sequence: gọi Payment Service; Class: `Payment`) | dự kiến `POST /payments`; chờ Task 5 | chờ Task 4–5 |
-| FR-15 | UC-04.2, UC-04.5; UC-04 (ngoại lệ E3, thay thế A3) | chờ Task 2 (Activity: nhánh thanh toán thất bại; Sequence: `alt` thất bại) | dự kiến `POST /payments` trả 402/502; chờ Task 5 | chờ Task 4–5 |
-| FR-16 | UC-04.2, UC-04.5; UC-04 (ngoại lệ E4) | chờ Task 2 (Sequence: idempotency; Class: `Payment.idempotencyKey`) | dự kiến `POST /payments` với header `Idempotency-Key`; chờ Task 5 | chờ Task 4–5 |
+| FR-03 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /products/:id`; `apps/web/src/components/shop/ProductDetail.tsx` | API-T02/03; E2E-S2-01; UI error/not-found được hiện thực, chưa test browser riêng từng nhánh |
+| FR-04 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /catalog/options`; `ProductDetail.tsx`; `apps/api/src/checkout/pricing.ts` | UNIT-S2-01, UNIT-S2-04; E2E-S2-01 |
+| FR-05 | UC-02 Quản lý giỏ hàng | chờ Task 2 | `apps/web/src/components/shop/ShopProvider.tsx`; `apps/web/src/lib/shop.ts` | UNIT-S2-04; E2E-S2-01 (reload giỏ) |
+| FR-06 | UC-02 Quản lý giỏ hàng | chờ Task 2 | `apps/web/src/components/shop/CartScreen.tsx`; `shop.ts` | UNIT-S2-04; E2E-S2-01 (tăng số lượng); giảm/xóa chưa có browser test riêng |
+| FR-07 | UC-02 Quản lý giỏ hàng; UC-04 (bước 1) | chờ Task 2 | `CartScreen.tsx`; `ShopProvider.tsx`; `cartTotal` trong `shop.ts` | UNIT-S2-04; E2E-S2-01/02/04 |
+| FR-08 | UC-03 Đăng ký / Đăng nhập | chờ Task 2 | `POST /auth/register`; `apps/api/src/auth/auth.service.ts`; `AuthScreen.tsx` | UNIT-S2-05 (từ chối role lạ); E2E-S2-01–06 tạo account thật qua API; validation từng ô UI chưa test riêng |
+| FR-09 | UC-03 Đăng ký / Đăng nhập | chờ Task 2 | `POST /auth/login`; `auth.service.ts`; `AuthScreen.tsx` | UNIT-S2-05; E2E-S2-01/06 login và login lại |
+| FR-10 | UC-03; UC-04 (E1a chưa tạo đơn; E1b tiếp tục orderId cũ sau đăng nhập lại cùng tài khoản) | chờ Task 2 (Activity: nhánh chưa đăng nhập; Sequence: kiểm JWT và tiếp tục đơn cũ) | `apps/api/src/auth/auth.guard.ts`; `CheckoutScreen.tsx` lưu order/key theo tài khoản | UNIT-S2-05; INT-S2-02; E2E-S2-06 (401 rồi resume cùng key, không tạo thêm đơn) |
+| FR-11 | UC-04.1 Tạo đơn hàng | chờ Task 2 (Sequence: transaction tạo đơn; Class: `Order`, `OrderItem`) | `POST /orders`; `apps/api/src/checkout/checkout.service.ts` transaction giữ kho/tạo đơn | INT-S2-01 (giá + tồn + rollback); E2E-S2-01/03 |
+| FR-12 | UC-04.1 Tạo đơn hàng; UC-04 (ngoại lệ E6) | chờ Task 2 (Sequence: validate) | `apps/api/src/checkout/pricing.ts` parseItems; `CartScreen.tsx` | UNIT-S2-02; UNIT-S2-05; INT-S2-02 |
+| FR-13 | UC-04.1 Tạo đơn hàng; UC-04 (ngoại lệ E2) | chờ Task 2 (Activity: nhánh hết hàng; Class: `Product.stock`) | `CheckoutService.create` atomic stock decrement | INT-S2-06 (hai request, chỉ một thành công, không âm kho) |
+| FR-14 | UC-04.2 Thanh toán đơn hàng | chờ Task 2 (Sequence: gọi Payment Service; Class: `Payment`) | `POST /payments`; `CheckoutService.pay`; `CheckoutScreen.tsx` | UNIT-S2-03/05; INT-S2-03; E2E-S2-01/02/04 |
+| FR-15 | UC-04.2, UC-04.5; UC-04 (ngoại lệ E3, thay thế A3) | chờ Task 2 (Activity: nhánh thanh toán thất bại; Sequence: `alt` thất bại) | `apps/api/src/checkout/payment.ts`; transaction ghi FAILED trước khi trả 402/502 | UNIT-S2-03; INT-S2-04/07 (decline, timeout, retry); E2E-S2-02 |
+| FR-16 | UC-04.2, UC-04.5; UC-04 (ngoại lệ E4) | chờ Task 2 (Sequence: idempotency; Class: `Payment.idempotencyKey`) | `CheckoutService.pay` advisory/row lock + fingerprint + partial unique indexes; `CheckoutScreen.tsx` | INT-S2-03/07 (parallel replay/failure, reused/new key); E2E-S2-04/06 |
 | FR-17 | Won’t bản nộp: UC-04.3; A1/E5 | Task 2 bắt buộc lớp `Promotion`, không cần luồng áp mã | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
 | FR-18 | Won’t bản nộp: UC-04.4 | Task 2 bắt buộc lớp `LoyaltyTransaction`, không cần luồng ghi điểm | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
 | FR-19 | Won’t bản nộp: UC-08; phụ thuộc FR-18 | ngoài bản nộp | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
-| FR-20 | UC-04 (bước 16); UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | dự kiến màn xác nhận trong `apps/web`, `GET /orders/:id`; chờ Task 5 | chờ Task 4–5 |
-| FR-21 | UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | dự kiến `GET /orders/me`; chờ Task 5 | chờ Task 4–5 |
-| FR-22 | UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | dự kiến `GET /orders/:id`; chờ Task 5 | chờ Task 4–5 |
-| FR-23 | UC-07 Cập nhật trạng thái đơn | chờ Task 2 (Class: enum `OrderStatus`, 8 chuyển minimum; State-01 tùy chọn) | dự kiến hàm kiểm chuyển trạng thái trong module orders; chờ Task 5 | chờ Task 4–5 |
-| FR-24 | UC-07 Cập nhật trạng thái đơn (Must) | chờ Task 2 | dự kiến `GET /orders/:id`, `PATCH /orders/:id` (Barista), Postman collection; chờ Task 5 | chờ Task 5: AC-F24.1–4; không yêu cầu Swagger UI |
-| FR-25 | UC-06 Hủy đơn; UC-04 (thay thế A5) | chờ Task 2 | dự kiến `PATCH /orders/:id` (Customer hủy); chờ Task 5 | chờ Task 4–5 |
+| FR-20 | UC-04 (bước 16); UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | `GET /orders/:id`; `apps/web/src/components/shop/OrdersScreen.tsx` | E2E-S2-01/02/04 |
+| FR-21 | UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | `GET /orders/me` 50 đơn mới nhất; `OrdersScreen.tsx` | INT-S2-02 kiểm history của user khác rỗng; E2E-S2-01/03 |
+| FR-22 | UC-05 Xem lịch sử và theo dõi đơn | chờ Task 2 | `OrdersScreen.tsx`: polling 5 giây, dừng request khi terminal, tiến trình có aria-current | E2E-S2-01 xác nhận; polling/terminal chưa test browser riêng |
+| FR-23 | UC-07 Cập nhật trạng thái đơn | chờ Task 2 (Class: enum `OrderStatus`, 8 chuyển minimum; State-01 tùy chọn) | `apps/api/src/checkout/order-state.ts`; `CheckoutService.transition/pay` | UNIT-S2-06: đủ 49 cặp; INT-S2-05 |
+| FR-24 | UC-07 Cập nhật trạng thái đơn (Must) | chờ Task 2 | `PATCH /orders/:id`; `tests/postman/BrewLite-Sprint2.postman_collection.json` | INT-S2-05 kiểm role và 3 bước Barista; collection parse JSON, chưa chạy bằng Postman GUI |
+| FR-25 | UC-06 Hủy đơn; UC-04 (thay thế A5) | chờ Task 2 | `CheckoutService.transition`; `OrdersScreen.tsx` xác nhận hủy và hoàn tồn | INT-S2-05: hoàn kho một lần, hủy lặp bị từ chối; browser confirm chưa test riêng |
 | FR-26 | Won’t bản nộp: UC-06 mở rộng; đảo điểm chỉ khi có FR-18 | Task 2: PAID → CANCELLED không hợp lệ trong minimum | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
 | FR-27 | Won’t bản nộp: UC-07 mở rộng: hàng đợi | ngoài bản nộp | không hiện thực trong bản nộp | AC mở rộng chỉ áp dụng khi được phê duyệt đưa lại vào phạm vi |
 | FR-28 | Won't: quản trị menu (ngoài phạm vi) | không thực hiện (lý do ở SRS mục 5.9) | không thực hiện | không thực hiện |
@@ -61,22 +61,22 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 | NFR-01 | UC-01; đo thời gian p95 `GET /products`, `GET /products/:id` | chờ Task 3 | `apps/api/src/catalog/` đã có hai endpoint | Chưa đo p95; HTTP smoke local không thay thế kiểm hiệu năng |
 | NFR-02 | UC-01; đo Lighthouse (LCP, Performance) trang menu | chờ Task 3 | `apps/web/src/app/page.tsx`, `apps/web/src/components/menu/MenuScreen.tsx` | Chưa chạy Lighthouse/LCP; UNIT-T04 chỉ kiểm trạng thái loading |
 | NFR-03 | UC-04; đo thời gian p95 `POST /orders`, `POST /payments` | chờ Task 3 | dự kiến `POST /orders`, `POST /payments`; chờ Task 5 | chờ Task 4–5 |
-| NFR-04 | UC-03; kiểm mẫu băm bcrypt, không lộ mật khẩu | chờ Task 3 | dự kiến `POST /auth/register`; chờ Task 5 | chờ Task 4–5 |
-| NFR-05 | UC-03, UC-04, UC-05, UC-06, UC-07; kiểm ma trận quyền 401/403 | chờ Task 2 (Sequence: kiểm JWT), chờ Task 3 | dự kiến JWT guard và role guard trong `apps/api`; chờ Task 5 | chờ Task 4–5 |
-| NFR-06 | UC-03, UC-04; kiểm 400 `VALIDATION_ERROR`, không tin giá client | chờ Task 2 (Sequence: validate) | dự kiến DTO validation `apps/api`, form validation `apps/web`; chờ Task 5 | chờ Task 4–5 |
+| NFR-04 | UC-03; kiểm mẫu băm bcrypt, không lộ mật khẩu | chờ Task 3 | `auth.service.ts` bcrypt cost 12; seed opt-in demo users | E2E login account thật; chưa có bộ đo bcrypt timing |
+| NFR-05 | UC-03, UC-04, UC-05, UC-06, UC-07; kiểm ma trận quyền 401/403 | chờ Task 2 (Sequence: kiểm JWT), chờ Task 3 | JWT HS256 secret env >=32, expiresIn 1h; AuthGuard; startup main.ts | UNIT-S2-05 (tamper, expired, role); INT-S2-02; E2E-S2-06 |
+| NFR-06 | UC-03, UC-04; kiểm 400 `VALIDATION_ERROR`, không tin giá client | chờ Task 2 (Sequence: validate) | `record/parseItems` validation; credentials validation; payment validation | UNIT-S2-02/05; INT-S2-02; chưa fuzz toàn bộ input |
 | NFR-07 | Toàn hệ thống; quét secret, kiểm CORS, kiểm log | chờ Task 3 (ADR, deployment: secret/biến môi trường) | `.gitignore`, `.env.example`, `apps/api/.env.example`, `apps/web/.env.example`, `apps/api/src/app.setup.ts`, `apps/api/src/common/api-exception.filter.ts` | API-T05 kiểm HTTP 500 không lộ lỗi DB; kiểm ignore/env local trong checkpoint. Chưa kiểm toàn bộ CORS/log/secret theo NFR-07 |
 | NFR-08 | Toàn hệ thống; kiểm HTTPS và DB không public | chờ Task 3 (Deployment-01: HTTPS, kết nối nội bộ) | cấu hình nền tảng; chờ Task 5 | chờ Task 5 |
 | NFR-09 | UC-01 đến UC-05; kiểm khung nhìn 360 px, vùng chạm 44 px | chờ Task 3 | Menu: `apps/web/src/components/menu/MenuScreen.module.css`, `ProductCard.module.css`; màn khác chờ Task 5 | Có CSS responsive; chưa kiểm trực quan 360 px/vùng chạm toàn bộ màn, chưa nghiệm thu AC-N09 |
 | NFR-10 | Toàn hệ thống (web); kiểm Lighthouse Installable | chờ Task 3 | dự kiến manifest và service worker trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
 | NFR-11 | UC-01, UC-05; kiểm ba trạng thái loading/empty/error | chờ Task 3 | Menu: `apps/web/src/components/menu/MenuScreen.tsx`; màn khác chờ Task 5 | Menu: `apps/web/src/components/menu/MenuScreen.test.tsx` UNIT-T04–T07; chưa phủ màn Task 5 |
 | NFR-12 | UC-01 đến UC-05; kiểm E2E Chromium và chạy tay trên 4 trình duyệt | chờ Task 3 | dự kiến `apps/web`; chờ Task 5 | chờ Task 5 |
-| NFR-13 | UC-04 (ngoại lệ E2, E4, E8); kiểm transaction, đồng thời | chờ Task 2 (Sequence: transaction), chờ Task 3 (ADR 005) | dự kiến module orders, payments; chờ Task 5 | chờ Task 5 |
-| NFR-14 | Triển khai; kiểm `docker compose up` trên máy sạch | chờ Task 3 (Deployment-01: vùng Local) | dự kiến `docker-compose.yml`, Dockerfile; chờ Task 5 | chờ Task 5 |
-| NFR-15 | Triển khai; kiểm `GET /health` 200/503 | chờ Task 3 (ADR, deployment: health check) | dự kiến `GET /health`; chờ Task 5 | chờ Task 5 |
-| NFR-16 | Triển khai; kiểm migration/seed tái tạo DB; minimum không seed khuyến mãi | chờ Task 3 (ADR 003) | `apps/api/prisma/schema.prisma`, `migrations/20261019000000_init/migration.sql`, `seed.ts` (8 món); tài khoản demo chờ Task 5 | DB local schema up to date, API đọc đủ 8 món; chưa chạy migration/seed hai lần trên DB trống, chưa đạt đầy đủ AC-N16.1–3 |
-| NFR-17 | Triển khai; kiểm pipeline CI xanh và đỏ | chờ Task 3 (Deployment-01: vùng CI) | `.github/workflows/ci.yml`, `.nvmrc`, `CONTRIBUTING.md` | Kiểm local ghi ở `docs/evidence/ci/`; chưa có run GitHub xanh/đỏ hoặc xác minh branch protection chặn merge. AC-N17.2 chưa đạt |
-| NFR-18 | Triển khai; kiểm pipeline CD, smoke test, rollback | chờ Task 3 (ADR 004, Deployment-01) | dự kiến `.github/workflows/cd.yml`, `docs/deployment.md`; chờ Task 5 | chờ Task 5 |
-| NFR-19 | Triển khai; kiểm URL production sống và người ngoài nhóm chạy theo README | chờ Task 3 (Deployment-01) | dự kiến `README.md`, nền tảng production; chờ Task 5 | chờ Task 5 |
+| NFR-13 | UC-04 (ngoại lệ E2, E4, E8); kiểm transaction, đồng thời | chờ Task 2 (Sequence: transaction), chờ Task 3 (ADR 005) | `CheckoutService` transactions + PostgreSQL locks; migration partial indexes/check constraints | INT-S2-01/03/05/06/07 |
+| NFR-14 | Triển khai; kiểm `docker compose up` trên máy sạch | chờ Task 3 (Deployment-01: vùng Local) | `docker-compose.yml`; Dockerfiles hai app | Compose build/up/health + smoke thực tế; kiểm persistence down/up trong verification.md |
+| NFR-15 | Triển khai; kiểm `GET /health` 200/503 | chờ Task 3 (ADR, deployment: health check) | `GET /health`; `HealthController` | UNIT-S2-05 DB-down 503 payload; Compose/API thật health 200 |
+| NFR-16 | Triển khai; kiểm migration/seed tái tạo DB; minimum không seed khuyến mãi | chờ Task 3 (ADR 003) | `apps/api/prisma/migrations/20261021000000_sprint2`; seed không ghi đè bản ghi tồn tại | Migrate/seed trên DB test sạch; Compose migrate/seed; seed lần hai kiểm riêng trong verification.md |
+| NFR-17 | Triển khai; kiểm pipeline CI xanh và đỏ | chờ Task 3 (Deployment-01: vùng CI) | `.github/workflows/ci.yml` job ci lint/unit/integration/build/E2E | Local các lệnh đã chạy; GitHub run và branch protection NOT RUN |
+| NFR-18 | Triển khai; kiểm pipeline CD, smoke test, rollback | chờ Task 3 (ADR 004, Deployment-01) | `.github/workflows/cd.yml`; `scripts/deploy.sh`; `docs/deployment.md` | YAML/Compose parse PASS; publish/deploy/production smoke/rollback NOT RUN vì chưa có hosting/approval |
+| NFR-19 | Triển khai; kiểm URL production sống và người ngoài nhóm chạy theo README | chờ Task 3 (Deployment-01) | `README.md`; `docs/deployment.md`; release/review/retro trong docs/task5 | BLOCKED: chưa có URL production và minh chứng bàn giao thực tế |
 | NFR-20 | Triển khai; kiểm log JSON mỗi yêu cầu | chờ Task 3 (architecture.md: logging) | dự kiến logger trong `apps/api`; chờ Task 5 | chờ Task 5 |
 
 ## 3. Thống kê và quy tắc kiểm
@@ -88,3 +88,10 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 - **Mẫu của đề A2 §8.1** (`FR-01 / US-01 Xem menu / Activity-01, Class-01 / GET /products / API-T01` và `FR-05 / UC-01 Thanh toán / Sequence-01 / POST /payments / INT-T03`) chỉ minh họa định dạng; mã yêu cầu thật của nhóm là bảng ở trên.
 
 Các phụ thuộc minimum: FR-22 → FR-23/24; FR-15, BR-03 → FR-25. NFR-05 chỉ kiểm endpoint đã triển khai; NFR-16 chỉ cần seed minimum. Test E1b phải chứng minh số Order không tăng và tồn kho không bị trừ thêm sau đăng nhập lại (AC-F10.4); máy trạng thái kiểm 8/49 cặp hợp lệ ở minimum (AC-F23.1).
+## Minh chứng Sprint 2
+
+Tên test UNIT-S2/INT-S2/E2E-S2 được khai báo trực tiếp trong source test.
+Unit/API: apps/api/test/*.spec.ts; integration: checkout.integration-spec.ts (PostgreSQL riêng);
+web unit: apps/web/src/lib/shop.test.ts; browser: tests/e2e/checkout.spec.ts.
+Kết quả chính xác, lệnh, giới hạn và file inventory: [verification](task5/verification.md).
+Thiết kế vẫn BLOCKED bởi Task 2–3; không có nghĩa các FR/NFR đạt toàn bộ AC chỉ vì có code và một test liên quan.

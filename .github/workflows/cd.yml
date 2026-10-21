@@ -1,0 +1,85 @@
+name: Delivery (manual approval)
+on:
+  push:
+    tags: ['a2-v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production-delivery
+  cancel-in-progress: false
+jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+  publish:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Image namespace
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - name: Authenticate registry
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - name: Build and push immutable images
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          PUBLIC_API: ${{ vars.PRODUCTION_API_URL }}
+        run: |
+          [[ "$PUBLIC_API" == https://* ]] || { echo 'Set release environment PRODUCTION_API_URL to HTTPS API URL'; exit 1; }
+          docker build -t "$IMAGE-api:$GITHUB_SHA" apps/api
+          docker build --build-arg "NEXT_PUBLIC_API_URL=$PUBLIC_API" -t "$IMAGE-web:$GITHUB_SHA" apps/web
+          docker push "$IMAGE-api:$GITHUB_SHA"
+          docker push "$IMAGE-web:$GITHUB_SHA"
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_WEB_URL }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Configure SSH (pinned host key)
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+      - name: Deploy and migrate safely
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_LOGIN: ${{ secrets.DEPLOY_USER }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+        run: |
+          [[ "$HOST" =~ ^[a-zA-Z0-9.-]+$ && "$DEPLOY_LOGIN" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
+          scp -o BatchMode=yes -o ConnectTimeout=10 docker-compose.production.yml scripts/deploy.sh "$DEPLOY_LOGIN@$HOST:/opt/brewlite/"
+          ssh -o BatchMode=yes -o ConnectTimeout=10 "$DEPLOY_LOGIN@$HOST" "RELEASE_SHA='$GITHUB_SHA' REGISTRY_IMAGE='$IMAGE' bash /opt/brewlite/deploy.sh"
+      - name: Production smoke test
+        env:
+          API_URL: ${{ vars.PRODUCTION_API_URL }}
+          WEB_URL: ${{ vars.PRODUCTION_WEB_URL }}
+        run: |
+          [[ "$API_URL" == https://* && "$WEB_URL" == https://* ]] || exit 1
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 10 --retry 6 --retry-max-time 120 --retry-connrefused --retry-delay 5 "$API_URL/health"
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 10 --retry 6 --retry-max-time 120 --retry-connrefused --retry-delay 5 "$API_URL/products" >/dev/null
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 10 --retry 6 --retry-max-time 120 --retry-connrefused --retry-delay 5 "$WEB_URL/" >/dev/null
+      - name: Rollback instructions
+        if: failure()
+        run: echo 'Delivery failed. Follow docs/deployment.md rollback using previous immutable SHA. Never reset DB or delete volumes.'
