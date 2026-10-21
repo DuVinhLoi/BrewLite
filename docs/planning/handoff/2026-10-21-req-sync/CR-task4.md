@@ -1,6 +1,6 @@
 # CR-task4: đồng bộ Task 4 với PR #11
 
-> Change request cho chủ Task 4 (branch `a2/Task4`, PR #9), Card C của [kế hoạch 2026-10-21](../../2026-10-21-req-sync-sprint2-scope-plan.md). PR #11 đã merge vào `develop-Assignment2` (merge commit `040dd25`).
+> Chỉ mục: [`README.md`](README.md). Change request cho chủ Task 4 (branch `a2/Task4`, PR #9), Card C của [kế hoạch 2026-10-21](../../2026-10-21-req-sync-sprint2-scope-plan.md). PR #11 đã merge vào `develop-Assignment2` (merge commit `040dd25`).
 >
 > **Code `apps/` không phải sửa.** `apps/api/prisma/schema.prisma` đã có `Product.description` (D1); `/health` chưa hiện thực nên chưa chịu ảnh hưởng của C2.
 

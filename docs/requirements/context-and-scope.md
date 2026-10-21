@@ -138,7 +138,7 @@ Những việc **hệ thống không làm** trong Assignment 2:
 | C-05 | Tài liệu | Mỗi sơ đồ lưu cả nguồn `.puml` và ảnh `.svg`; mọi thay đổi yêu cầu qua commit/PR kèm lý do | đề A2 §4.2, §6.2 |
 | C-06 | Mô hình | Class diagram tối thiểu 7 lớp: `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction` | đề A2 §4.3 |
 | C-07 | Triển khai | Có CI khi mở PR (Install → Lint → Unit Test → Build), CD (Push/Tag → Lint và Test → Build Docker Image → Push Registry → Deploy → Smoke Test), production qua HTTPS, DB không public, secret không nằm trong repo hoặc log CI | đề A2 §6.4, §7.3, §7.4 |
-| C-08 | Hạ tầng (đề xuất, nhóm chốt bằng ADR 004) | Web trên **Vercel**; API (container, image từ GHCR) và PostgreSQL trên **Render**; free tier có giới hạn ngủ đông và hết hạn DB | kế hoạch A2 mục E |
+| C-08 | Hạ tầng (đã chốt 2026-10-21, ghi ở ADR 004) | Web trên **Vercel**; API (container, image từ GHCR) và PostgreSQL trên **Render** (internal URL); không dùng VPS; free tier có giới hạn ngủ đông và hết hạn DB | kế hoạch A2 mục E; quyết định P1 trong `docs/planning/handoff/2026-10-21-req-sync/README.md` |
 | C-09 | Nhân lực | Code Task 4–5 do nhóm tự viết; tài liệu Task 1–3 có thể nhờ agent soạn nháp rồi nhóm sửa, chốt; mọi người phải giải thích được tạo phẩm của mình | kế hoạch A2 mục A.4 |
 | C-10 | Thời gian | Hai Sprint cho Task 4 và Task 5; mốc ngày: **(nhóm điền)** | đề A2 §6, §7 |
 

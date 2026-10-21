@@ -148,6 +148,8 @@ Report và CR nằm trong `docs/planning/handoff/2026-10-21-req-sync/` (`report-
 
 ### Card B: Đưa Task 3 về lịch sử chung và cập nhật ADR (D2, C1, C2)
 
+> **Đã thay thế 2026-10-21:** bản thực thi là [`handoff/2026-10-21-req-sync/card-task3.md`](handoff/2026-10-21-req-sync/card-task3.md) (thêm quyết định P1 Vercel + Render, ADR-003/004 đã chốt). Agent đọc [`handoff/2026-10-21-req-sync/README.md`](handoff/2026-10-21-req-sync/README.md) trước; phần dưới đây chỉ giữ làm lịch sử.
+
 **Branch / worktree:** `a2/task-3-architecture` tại `.worktrees/task3-rehome`. Branch này chỉ được tạo khi chủ Task 3 đồng ý; tốt nhất là chủ Task 3 tự làm card này để giữ tác giả.
 
 **Allowed paths:**
@@ -190,7 +192,7 @@ Report và CR nằm trong `docs/planning/handoff/2026-10-21-req-sync/` (`report-
 
 **Allowed paths:** chỉ tạo `docs/planning/handoff/2026-10-21-req-sync/CR-task4.md` và `CR-task5.md`, trên branch `a2/req-sync-change-requests` (tách từ develop sau khi PR #11 merge). Card này không sửa branch Task 4/5, vì các branch đó có chủ riêng.
 
-> **Trạng thái 2026-10-21:** đã soạn [`CR-task4.md`](handoff/2026-10-21-req-sync/CR-task4.md) và [`CR-task5.md`](handoff/2026-10-21-req-sync/CR-task5.md). Khác bản nháp C2: `apps/webs` là lựa chọn có chủ đích của plan Task 5, nên CR-5.3 để nhóm chốt thay vì tự sửa thành `apps/web`.
+> **Trạng thái 2026-10-21:** đã soạn [`CR-task4.md`](handoff/2026-10-21-req-sync/CR-task4.md) và [`CR-task5.md`](handoff/2026-10-21-req-sync/CR-task5.md). Cập nhật cùng ngày: người dùng chốt Task 5 dùng `feat/assignment2-task5-delivery` (format `apps/web`, `apps/api`) và production Vercel + Render; `CR-task5.md` đã viết lại cho branch này. Branch `feat/assignment2-task5` (format `backend/` + `frontend/`, `apps/webs`) ngừng dùng.
 
 - [ ] **C1. `CR-task4.md`.**
   - Ma trận dòng FR-02 bỏ "Chưa đo ngưỡng loading 200 ms" (SRS không có ngưỡng này).
