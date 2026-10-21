@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 64" role="img" aria-labelledby="t">
+  <title id="t">Hạt cà phê</title>
+  <g stroke="#171513" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="45" cy="32" rx="36" ry="22" transform="rotate(-14 45 32)" fill="#C48A55"/>
+    <path d="M14 39 C30 27 44 45 58 31 C64 25 70 25 76 27" fill="none" stroke-width="2.5"/>
+  </g>
+</svg>

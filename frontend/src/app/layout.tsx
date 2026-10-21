@@ -1,19 +1,35 @@
 import type { Metadata } from 'next';
+import { Be_Vietnam_Pro, Fraunces } from 'next/font/google';
 import type { ReactNode } from 'react';
 import Header from '@/components/Header';
 import './globals.css';
 
+// Cả hai font có subset vietnamese: bắt buộc để không rớt dấu tiếng Việt (ui-visual-plan.md §3.2).
+const display = Fraunces({
+  subsets: ['vietnamese', 'latin'],
+  axes: ['SOFT', 'WONK', 'opsz'],
+  display: 'swap',
+  variable: '--font-display',
+});
+
+const body = Be_Vietnam_Pro({
+  subsets: ['vietnamese', 'latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-body',
+});
+
 export const metadata: Metadata = {
-  title: 'BrewLite — Đặt cà phê không tiền mặt',
-  description: 'Task 3 Menu + Task 5 Giỏ hàng',
+  title: 'BrewLite: Đặt cà phê không tiền mặt',
+  description: 'Chọn món yêu thích, thanh toán không tiền mặt và tới quầy nhận ly.',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi">
+    <html lang="vi" className={`${display.variable} ${body.variable}`}>
       <body>
         <Header />
-        <main style={{ maxWidth: 1024, margin: '0 auto', padding: '20px' }}>{children}</main>
+        <main>{children}</main>
       </body>
     </html>
   );

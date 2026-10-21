@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { getProducts } from '@/lib/api';
 import type { Product } from '@/lib/types';
 import ProductGrid from '@/components/ProductGrid';
+import MenuHero from '@/components/menu/MenuHero';
+import MenuSection from '@/components/menu/MenuSection';
 
 // ============================================================
 // FEATURE: Menu page (Task 3) — GET /products, render lưới + loading/empty/error.
@@ -33,12 +35,14 @@ export default function MenuPage() {
   }, [load]);
 
   return (
-    <section>
-      <h1 style={{ margin: '8px 0 4px' }}>BrewLite — Menu</h1>
-      <p style={{ color: '#6b7280', marginTop: 0 }}>
-        Chọn món, thêm vào giỏ rồi thanh toán không tiền mặt. (Task 3: hiển thị menu)
-      </p>
-      <ProductGrid products={products} loading={loading} error={error} fromMock={fromMock} onRetry={load} />
-    </section>
+    <>
+      <MenuHero summary={!loading && !error && products.length > 0 ? {
+        count: products.length,
+        minPrice: Math.min(...products.map((product) => product.price)),
+      } : null} />
+      <MenuSection>
+        <ProductGrid products={products} loading={loading} error={error} fromMock={fromMock} onRetry={load} />
+      </MenuSection>
+    </>
   );
 }

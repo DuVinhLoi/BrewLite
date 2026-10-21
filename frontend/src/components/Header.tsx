@@ -1,73 +1,38 @@
 'use client';
 
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import { usePathname } from 'next/navigation';
 import { useCart } from '@/store/cart';
+import styles from './Header.module.css';
 
-// FEATURE: App header — logo + badge tổng số ly trong giỏ.
+// FEATURE: App header — menu navigation and live cart count.
 export default function Header() {
   const count = useCart((s) => s.count);
+  const pathname = usePathname();
 
   return (
-    <header style={styles.bar}>
-      <Link href="/" style={styles.brand}>
-        BrewLite ☕
-      </Link>
-      <nav style={styles.nav}>
-        <Link href="/" style={styles.link}>
-          Menu
+    <header className={styles.bar}>
+      <div className={styles.inner}>
+        <Link href="/" className={styles.brand}>
+          <img src="/doodles/bean.svg" alt="" width={38} height={27} className={styles.bean} />
+          <span className={`display ${styles.wordmark}`}>BrewLite</span>
         </Link>
-        <Link href="/cart" style={styles.cartLink}>
+        <nav aria-label="Chính" className={styles.nav}>
+          <Link
+            href="/"
+            className={pathname === '/' ? `${styles.navLink} ${styles.navActive}` : styles.navLink}
+            aria-current={pathname === '/' ? 'page' : undefined}
+          >
+            Menu
+          </Link>
+        </nav>
+        <Link href="/cart" className={styles.pill} aria-current={pathname === '/cart' ? 'page' : undefined}>
           Xem giỏ hàng
-          <span style={styles.badge} aria-label={`${count} món trong giỏ`}>
+          <span className={`tabular ${styles.count}`} aria-label={`${count} món trong giỏ`}>
             {count}
           </span>
         </Link>
-      </nav>
+      </div>
     </header>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  bar: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '12px 20px',
-    borderBottom: '1px solid #e5e7eb',
-    background: '#fff',
-    position: 'sticky',
-    top: 0,
-    zIndex: 10,
-  },
-  brand: { fontWeight: 800, fontSize: 20, textDecoration: 'none', color: '#065f46' },
-  nav: { display: 'flex', gap: 16, alignItems: 'center' },
-  link: { textDecoration: 'none', color: '#111827', fontWeight: 600 },
-  cartLink: {
-    position: 'relative',
-    textDecoration: 'none',
-    color: '#fff',
-    background: '#065f46',
-    padding: '8px 14px',
-    borderRadius: 8,
-    fontWeight: 700,
-    paddingRight: 44,
-  },
-  badge: {
-    position: 'absolute',
-    right: 10,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: '#fff',
-    color: '#065f46',
-    borderRadius: 999,
-    minWidth: 24,
-    height: 24,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 13,
-    fontWeight: 800,
-    padding: '0 6px',
-  },
-};
