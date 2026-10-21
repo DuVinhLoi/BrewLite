@@ -160,7 +160,8 @@ Report và CR nằm trong `docs/planning/handoff/2026-10-21-req-sync/` (`report-
 **Interfaces:**
 - Consumes: câu chữ D2/C1/C2 ở mục Interfaces của Card A.
 
-- [ ] **B1.** Chạy `git restore --source=feat/a2task-3-architecture -- docs/architecture/architecture.md docs/architecture/adr/001-monorepo.md docs/architecture/adr/002-layered-nestjs.md docs/architecture/adr/003-prisma-migrations.md docs/architecture/adr/004-hosting-vercel-render.md docs/architecture/adr/005-idempotency-and-optimistic-lock.md docs/architecture/deployment.puml docs/architecture/deployment.svg`
+- [ ] **B0.** `git fetch origin && git switch -c a2/task-3-architecture origin/develop-Assignment2` (develop đã có PR #11, merge commit `040dd25`).
+- [ ] **B1.** Chạy `git restore --source=origin/feat/a2task-3-architecture -- docs/architecture/architecture.md docs/architecture/adr/001-monorepo.md docs/architecture/adr/002-layered-nestjs.md docs/architecture/adr/003-prisma-migrations.md docs/architecture/adr/004-hosting-vercel-render.md docs/architecture/adr/005-idempotency-and-optimistic-lock.md docs/architecture/deployment.puml docs/architecture/deployment.svg`
 - [ ] **B2. ADR-005.**
   - Mục A: định nghĩa replay theo D2.
   - Xóa mục B (bảng lưu bền vững của simulator) và mục C (phục hồi E8b). Thay bằng: "Simulator là module không lưu trạng thái; crash giữa bước 13–14 là rủi ro chấp nhận (SRS 3.4)."
@@ -172,16 +173,24 @@ Report và CR nằm trong `docs/planning/handoff/2026-10-21-req-sync/` (`report-
   - `architecture.md` §5 lưu ý thứ hai và §6 dòng ADR 005: bỏ bảng simulator.
   - Bỏ câu "chưa đối chiếu với srs.md" ở đầu file; thay bằng "đã đối chiếu SRS ngày <ngày merge Card A>".
   - Thêm ghi chú "Product.description có trong class diagram" ở lưu ý nhất quán.
+- [ ] **B3b. `deployment.puml` theo C2.**
+  - Component API: bỏ `, APP_VERSION=<SHA>` khỏi dòng `Env: …`.
+  - Artifact `cd.yml`: đổi `→ chờ /health đúng SHA → smoke test` thành `→ smoke test (chờ 200)`.
+  - Mũi tên `(9)`: đổi `poll /health\nrồi smoke test` thành `smoke /health, /products, web`.
+  - Giữ `brewlite-api:<commit-sha>` và `(6) pull theo SHA`, vì đề §7.3 mục 2 vẫn đòi image tag SHA.
 - [ ] **B4.** `adr/README.md` dòng 19–20: viết lại mô tả 004/005 theo B2–B3.
 - [ ] **B5. Render và kiểm.**
-  - Render `deployment.puml` theo cách A12; SVG phải có `<?plantuml`.
+  - Render `deployment.puml` bằng `java -jar plantuml-1.2026.8.jar -charset UTF-8 -tsvg` (thêm `-Playout=smetana` nếu máy không có Graphviz). SVG phải có `<?plantuml` hoặc `data-diagram-type=`; SVG hiện tại trên branch cũ không có cả hai nên phải render lại.
   - `git grep -n "E8b\|AC-F16.7\|APP_VERSION\|version.*SHA" -- docs/architecture`: 0 dòng.
   - `git diff --check`: sạch.
-- [ ] **B6. Commit và report.** `git commit -m "docs(architecture): add Task 3 ADRs and deployment diagram on shared history"`. Ghi report rồi gửi `worker_done`.
+- [ ] **B6. Commit và report.** `git commit -m "docs(architecture): add Task 3 ADRs and deployment diagram on shared history"`. Ghi report rồi gửi `worker_done`. Mở PR vào `develop-Assignment2`; PR này merge **trước** PR #9 (đề A2 §1).
+- [ ] **B7. Ma trận, cột Thiết kế cho NFR (PR riêng, chỉ sau khi PR #9 đã merge).** Điền 19 ô "chờ Task 3" bằng ADR, `Deployment-01` và `architecture.md` theo bảng §8 của `architecture.md`. Phải chờ PR #9, vì PR #9 sửa các dòng NFR-01/02/07/09/11/16/17 và git báo xung đột cả khi hai bên sửa dòng sát nhau.
 
 ### Card C: CR cho Task 4 và Task 5 (chạy sau khi A đã merge)
 
-**Allowed paths:** chỉ tạo `docs/planning/handoff/2026-10-21-req-sync/CR-task4.md` và `CR-task5.md`, trên branch `a2/req-sync-sprint2-scope`. Card này không sửa branch Task 4/5, vì các branch đó có chủ riêng.
+**Allowed paths:** chỉ tạo `docs/planning/handoff/2026-10-21-req-sync/CR-task4.md` và `CR-task5.md`, trên branch `a2/req-sync-change-requests` (tách từ develop sau khi PR #11 merge). Card này không sửa branch Task 4/5, vì các branch đó có chủ riêng.
+
+> **Trạng thái 2026-10-21:** đã soạn [`CR-task4.md`](handoff/2026-10-21-req-sync/CR-task4.md) và [`CR-task5.md`](handoff/2026-10-21-req-sync/CR-task5.md). Khác bản nháp C2: `apps/webs` là lựa chọn có chủ đích của plan Task 5, nên CR-5.3 để nhóm chốt thay vì tự sửa thành `apps/web`.
 
 - [ ] **C1. `CR-task4.md`.**
   - Ma trận dòng FR-02 bỏ "Chưa đo ngưỡng loading 200 ms" (SRS không có ngưỡng này).
