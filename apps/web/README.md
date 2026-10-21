@@ -22,3 +22,5 @@ npm.cmd start
 ```
 
 Test Vitest + Testing Library trong `src/`: `UNIT-T01` định dạng VND, `UNIT-T02` tồn kho, `UNIT-T03` thẻ món, `UNIT-T04` tải/8 món, `UNIT-T05` rỗng, `UNIT-T06` mất mạng/thử lại, `UNIT-T07` HTTP 503/thử lại. Fetch được mock trong test; không cần API/DB đang chạy. Xem [ma trận](../../docs/traceability-matrix.md) và [checkpoint](../../docs/checkpoints/2026-10-19-task4.md) cho phạm vi đã kiểm.
+
+Phạm vi Task 5 theo baseline mới nhất: [SRS](../../docs/requirements/srs.md) và [kế hoạch A2](../../docs/planning/2026-10-15-assignment2-plan.md). PWA chỉ cần web app manifest theo AC-N10.1; service worker không thuộc yêu cầu minimum.

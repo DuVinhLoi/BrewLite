@@ -1,6 +1,6 @@
 # docs/requirements — Task 1: Khai thác và đặc tả yêu cầu
 
-Thư mục này là baseline **Task 1 đã chốt phạm vi minimum theo PR #5**. Quyết định và phụ thuộc ghi ở [SRS mục 1.4 và 8](srs.md). Quản lý trạng thái qua API/Postman là Must; khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi ngoài bản nộp. Task 2 vẫn phải giữ hai lớp domain Promotion và LoyaltyTransaction.
+Thư mục này là baseline **Task 1 đã chốt phạm vi minimum theo PR #5, rồi rút gọn thêm về mức tối thiểu của đề**. Quyết định, phụ thuộc và lý do rút gọn ghi ở [SRS mục 1.4 và 8](srs.md). Quản lý trạng thái qua API/Postman (FR-23, FR-24) là Must; khách hủy đơn (FR-25) là Could; khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi (FR-17, FR-18, FR-19, FR-26, FR-27) là Won’t, gộp ở SRS mục 5.9. Task 2 vẫn phải giữ hai lớp domain Promotion và LoyaltyTransaction.
 
 Nghiệm thu Task 1 dựa trên tài liệu yêu cầu, hai use-case diagram và truy vết hiện có; không chờ code hoặc sơ đồ Task 2. Task sau bổ sung các cột truy vết theo đúng thứ tự đề A2. Thành viên phụ trách cần tự giải thích được tài liệu khi vấn đáp.
 

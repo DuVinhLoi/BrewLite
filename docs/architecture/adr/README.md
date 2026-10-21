@@ -16,7 +16,7 @@ Thư mục này **chưa có ADR**. Đề A2 §5.1: mỗi quyết định kiến 
 | `001-monorepo.md` | Một repo, `apps/web` + `apps/api` |
 | `002-layered-nestjs.md` | NestJS chia module theo domain, phân lớp controller / service / repository |
 | `003-prisma-migrations.md` | ORM và cách quản lý migration, seed |
-| `004-hosting-vercel-render.md` | Nền tảng production, rủi ro đã biết |
-| `005-idempotency-and-optimistic-lock.md` | Idempotency-Key cho thanh toán, khóa lạc quan cho tồn kho |
+| `004-hosting-vercel-render.md` | Nền tảng production; chờ `/health.version` đúng SHA image trước smoke test; ngày tạo/hết hạn DB so với lịch chấm |
+| `005-idempotency-and-optimistic-lock.md` | Idempotency-Key ở API; simulator chống thu trùng theo `orderId`, lưu kết quả thành công bền vững qua restart và phục hồi E8b (SRS mục 3.4, AC-F16.7); khóa lạc quan hoặc transaction cho tồn kho |
 
 Nội dung gợi ý cho từng ADR: `docs/planning/2026-10-15-assignment2-plan.md`, Task 3.

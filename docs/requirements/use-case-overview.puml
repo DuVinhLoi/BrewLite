@@ -19,7 +19,7 @@ title BrewLite - Use-case tổng quát (phạm vi Assignment 2)
 
 actor "Khách vãng lai\n(Guest)" as Guest
 actor "Khách hàng\n(Customer)" as Customer
-actor "Nhân viên quầy\n(Barista)\nAPI / Postman (Must)" as Barista
+actor "Nhân viên quầy\n(Barista)\nAPI / Postman" as Barista
 actor "Dịch vụ\nthanh toán\n(Payment Service)" as Pay <<Service>>
 
 Customer --|> Guest
@@ -27,74 +27,46 @@ Customer --|> Guest
 rectangle "Hệ thống BrewLite" {
   usecase "UC-01 Xem menu và chi tiết món\n(size, topping)\nFR-01..FR-04" as UC01
   usecase "UC-02 Quản lý giỏ hàng\nFR-05..FR-07" as UC02
-  usecase "UC-03 Đăng ký / Đăng nhập (JWT)\nFR-08..FR-10" as UC03
-  usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-16 (minimum)" as UC04
+  usecase "UC-03 Đăng nhập (JWT)\nFR-09, FR-10" as UC03
+  usecase "UC-09 Đăng ký tài khoản\nFR-08" as UC09
+  usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-16" as UC04
   usecase "UC-04.1 Tạo đơn hàng\nFR-11..FR-13" as UC041
   usecase "UC-04.2 Thanh toán đơn hàng\nFR-14..FR-16" as UC042
-  usecase "UC-04.3 Áp mã giảm giá\nFR-17 (ngoài bản nộp)" as UC043
-  usecase "UC-04.4 Ghi nhận điểm thưởng\nFR-18 (ngoài bản nộp)" as UC044
   usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
   usecase "UC-05 Xem lịch sử và theo dõi đơn\nFR-20..FR-22" as UC05
-  usecase "UC-06 Hủy đơn chưa trả\nFR-25 (Must)" as UC06
-  usecase "UC-07 Cập nhật trạng thái đơn\nFR-23, FR-24 (Must)" as UC07
-  usecase "Hoàn tiền đơn PAID\nFR-26 (ngoài bản nộp)" as Refund
-  usecase "Hàng đợi Barista\nFR-27 (ngoài bản nộp)" as Queue
-  usecase "UC-08 Xem điểm thưởng\nFR-19 (ngoài bản nộp)" as UC08
+  usecase "UC-06 Hủy đơn chưa trả\nFR-25 (Could)" as UC06
+  usecase "UC-07 Cập nhật trạng thái đơn\nFR-23, FR-24" as UC07
 }
 
 Guest --- UC01
 Guest --- UC02
 Guest --- UC03
+Guest --- UC09
 
 Customer --- UC04
 Customer --- UC05
 Customer --- UC06
-Customer --- UC08
 
 Barista --- UC03
 Barista --- UC07
-Barista --- Refund
-Barista --- Queue
 
 UC04 .> UC041 : <<include>>
 UC04 .> UC042 : <<include>>
-UC043 .> UC042 : <<extend>>
-UC044 .> UC042 : <<extend>>
 UC045 .> UC042 : <<extend>>
 UC03 .> UC04 : <<extend>>
 
 UC042 --- Pay
-Refund --- Pay
 
 note right of UC03
-  Extend UC-04 khi chưa có
-  phiên đăng nhập hoặc API trả 401 (FR-10).
-  Đã có đơn: đăng nhập lại cùng tài khoản,
-  tiếp tục orderId cũ, không tạo đơn mới.
+  Extend UC-04 khi chưa đăng nhập
+  hoặc API trả 401 (FR-10).
 end note
 
 note right of UC07
   Trạng thái đơn:
   PENDING, PAID, PAYMENT_FAILED,
   PREPARING, READY, COMPLETED,
-  CANCELLED. Minimum: 8 chuyển hợp lệ.
-  PAID -> CANCELLED chỉ khi triển khai FR-26.
+  CANCELLED. 8 chuyển hợp lệ.
 end note
-
-note right of UC043
-  Extend chỉ khi triển khai FR-17
-  và khách nhập mã giảm giá.
-end note
-
-note right of UC044
-  Extend chỉ khi triển khai FR-18
-  và thanh toán thành công.
-end note
-
-legend bottom
-  Minimum: luồng chính và API trạng thái.
-  FR-17/18/19/26/27 ngoài bản nộp; chỉ áp dụng khi được phê duyệt mở rộng.
-  E1/A3 tiếp tục đơn đã tạo: chỉ thanh toán, không chạy lại tạo đơn.
-endlegend
 
 @enduml
