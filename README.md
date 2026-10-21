@@ -2,7 +2,7 @@
 
 MVP Sprint 1 dùng **Next.js**, **NestJS** và **PostgreSQL**: xem menu, giá, tồn kho, loading/empty/error và API chi tiết sản phẩm. Giỏ hàng, tài khoản, thanh toán và PWA thuộc Task 5; nút thêm vào giỏ chưa thực hiện thao tác.
 
-Task 4 đang là bản nháp trên `a2/Task4`. Task 2–3 chưa có tạo phẩm bắt buộc trong checkout này, nên chưa đủ điều kiện merge/nghiệm thu. Xem [checkpoint Task 4](docs/checkpoints/2026-10-19-task4.md) để biết kiểm chứng và phần còn thiếu. Nhóm phải đọc, hiểu và giải thích được code khi vấn đáp.
+Task 4 đang review ở [draft PR #9](https://github.com/DuVinhLoi/BrewLite/pull/9). Đã đồng bộ Task 1–2 từ nhánh tích hợp; Task 3 còn thiếu tạo phẩm và branch protection chưa được xác minh, nên chưa đủ điều kiện merge/nghiệm thu. [Báo cáo kiểm tra Task 4](docs/evidence/ci/github-runs.md) có log CI thật xanh/đỏ ngày 2026-10-21; [checkpoint](docs/checkpoints/2026-10-19-task4.md) giữ lịch sử kiểm chứng. Nhóm phải đọc, hiểu và giải thích được code khi vấn đáp.
 
 ## Tài liệu và backlog
 
@@ -97,6 +97,6 @@ npm.cmd --prefix apps/web start
 
 [Workflow CI](.github/workflows/ci.yml) chạy khi mở/cập nhật PR vào `develop-Assignment2`: **Install → Lint → Unit Test → Build** cho cả hai app, cùng Node trong `.nvmrc`, một job tên `ci`. Không cần secret hay database cho job này.
 
-Quản trị viên còn phải bật branch protection yêu cầu check `ci` và một approval để chặn merge khi lỗi. Hướng dẫn/bằng chứng xanh-đỏ ở [hồ sơ CI](docs/evidence/ci/README.md); có workflow trong source chưa chứng minh GitHub đã bật các thiết lập này.
+Đã có [PR #9 CI xanh](https://github.com/DuVinhLoi/BrewLite/pull/9) và [PR #10 CI bắt lỗi test, đã đóng không merge](https://github.com/DuVinhLoi/BrewLite/pull/10); log ở [hồ sơ CI](docs/evidence/ci/README.md). Quản trị viên còn phải bật branch protection yêu cầu check `ci` và một approval để chặn merge khi lỗi. API GitHub hiện báo repo private cần gói hỗ trợ hoặc đổi visibility để dùng tính năng này; tài khoản kiểm tra không có quyền admin. Chưa xác nhận điều kiện chặn merge đã đạt.
 
 Docker Compose, `GET /health`, CD, deploy production, rollback và release thuộc Task 5. Chưa có URL production, workflow CD hoặc quy trình rollback đã kiểm chứng trong Sprint 1.
