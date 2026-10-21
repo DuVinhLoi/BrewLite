@@ -42,17 +42,18 @@ UC03 .> UC04 : <<extend>>
 UC042 --- Pay
 
 note right of UC03
-  Điều kiện extend: chưa có JWT
-  hợp lệ hoặc API trả 401 (E1).
-  Chưa có đơn: tạo sau đăng nhập.
-  Đã có đơn: cùng tài khoản tiếp tục
-  orderId cũ, không tạo lại đơn.
+  Điều kiện extend: khách chưa đăng nhập
+  hoặc phiên đăng nhập đã hết hạn (API trả 401).
+  Chưa có đơn: đăng nhập xong mới tạo đơn.
+  Đã có đơn: đăng nhập lại đúng tài khoản
+  rồi trả tiếp đơn cũ, không tạo đơn mới.
 end note
 
 note right of UC045
-  Điều kiện extend: đơn đang ở
-  PAYMENT_FAILED (ngoại lệ E3,
-  thay thế A3)
+  Điều kiện extend: lần thanh toán trước
+  bị từ chối, đơn đang PAYMENT_FAILED.
+  Khách bấm "Thử lại": trả lại cho đúng
+  đơn cũ, không tạo đơn mới.
 end note
 
 @enduml

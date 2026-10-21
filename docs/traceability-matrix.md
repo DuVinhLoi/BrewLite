@@ -20,7 +20,7 @@
 | Mã yêu cầu | Use-case/User Story | Thiết kế/Sơ đồ | Code/API | Test |
 |---|---|---|---|---|
 | FR-01 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /products` — `apps/api/src/catalog/`; `apps/web/src/components/menu/MenuScreen.tsx`, `ProductCard.tsx`; `apps/api/prisma/seed.ts` | `apps/api/test/products.e2e-spec.ts`: API-T01 (HTTP/provider giả); web: `src/components/menu/MenuScreen.test.tsx` UNIT-T04, `ProductCard.test.tsx` UNIT-T03; `src/lib/format.test.ts` UNIT-T01, `stock.test.ts` UNIT-T02. Seed đủ 8 món được kiểm riêng trên DB local; chưa kiểm DB trống tự động |
-| FR-02 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `apps/web/src/components/menu/MenuScreen.tsx`, `apps/web/src/lib/api.ts` | `apps/web/src/components/menu/MenuScreen.test.tsx`: UNIT-T04 loading, UNIT-T05 empty, UNIT-T06 mất mạng/retry, UNIT-T07 HTTP 503/retry; API-T04 tại `apps/api/test/products.e2e-spec.ts` kiểm API rỗng. Chưa đo ngưỡng loading 200 ms |
+| FR-02 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `apps/web/src/components/menu/MenuScreen.tsx`, `apps/web/src/lib/api.ts` | `apps/web/src/components/menu/MenuScreen.test.tsx`: UNIT-T04 loading, UNIT-T05 empty, UNIT-T06 mất mạng/retry, UNIT-T07 HTTP 503/retry; API-T04 tại `apps/api/test/products.e2e-spec.ts` kiểm API rỗng |
 | FR-03 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /products/:id` — `apps/api/src/catalog/catalog.controller.ts`, `catalog.service.ts`; UI chi tiết chờ Task 5 | `apps/api/test/products.e2e-spec.ts`: API-T02 (200), API-T03 (404 PRODUCT_NOT_FOUND). AC-F03.3 UI chưa hiện thực |
 | FR-04 | UC-01 Xem menu và chi tiết món | chờ Task 2 | dự kiến màn chi tiết trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
 | FR-05 | UC-02 Quản lý giỏ hàng | chờ Task 2 | dự kiến giỏ hàng phía client trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
@@ -34,7 +34,7 @@
 | FR-13 | UC-04.1 Tạo đơn hàng; UC-04 (ngoại lệ E2) | chờ Task 2 (Activity: nhánh hết hàng; Class: `Product.stock`) | dự kiến `POST /orders` trả 409; chờ Task 5 | chờ Task 4–5 |
 | FR-14 | UC-04.2 Thanh toán đơn hàng | chờ Task 2 (Sequence: gọi Payment Service; Class: `Payment`) | dự kiến `POST /payments`; chờ Task 5 | chờ Task 4–5 |
 | FR-15 | UC-04.2, UC-04.5; UC-04 (ngoại lệ E3, thay thế A3) | chờ Task 2 (Activity: nhánh thanh toán thất bại; Sequence: `alt` thất bại) | dự kiến `POST /payments` trả 402; chờ Task 5 | chờ Task 4–5 |
-| FR-16 | UC-04.2, UC-04.5; UC-04 (E4, E8b); chống thu trùng theo `orderId`, phục hồi AC-F16.7 | chờ Task 2 (Sequence: idempotency và phục hồi; Class: `Payment.idempotencyKey`), Task 3 (ADR 005) | dự kiến `POST /payments` với header `Idempotency-Key`, simulator theo mã `orderId`; chờ Task 5 | chờ Task 5 (integration gây lỗi sau simulator thành công, trước API commit; restart/retry) |
+| FR-16 | UC-04.2, UC-04.5; UC-04 (E4); replay theo chủ đơn/`orderId`/key/`paymentMethod` (BR-05) | chờ Task 2 (Sequence: idempotency; Class: `Payment.idempotencyKey`), Task 3 (ADR 005) | dự kiến `POST /payments` với header `Idempotency-Key`; chờ Task 5 | chờ Task 5 (integration gửi hai lần cùng key, AC-F16.1; key mới sau `PAID`, AC-F16.4) |
 | FR-17 | Won’t bản nộp: UC-04.3; A1/E5 | Task 2 bắt buộc lớp `Promotion`, không cần luồng áp mã | không hiện thực trong bản nộp | không có AC (gộp vào bảng Won’t, SRS mục 5.9) |
 | FR-18 | Won’t bản nộp: UC-04.4 | Task 2 bắt buộc lớp `LoyaltyTransaction`, không cần luồng ghi điểm | không hiện thực trong bản nộp | không có AC (gộp vào bảng Won’t, SRS mục 5.9) |
 | FR-19 | Won’t bản nộp: UC-08; phụ thuộc FR-18 | ngoài bản nộp | không hiện thực trong bản nộp | không có AC (gộp vào bảng Won’t, SRS mục 5.9) |
@@ -70,12 +70,12 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 | NFR-10 | Toàn hệ thống (web); kiểm web app manifest (AC-N10.1) | chờ Task 3 | dự kiến manifest trong `apps/web`; chờ Task 5 | chờ Task 4–5 |
 | NFR-11 | UC-01, UC-05; kiểm ba trạng thái loading/empty/error | chờ Task 3 | Menu: `apps/web/src/components/menu/MenuScreen.tsx`; màn khác chờ Task 5 | Menu: `apps/web/src/components/menu/MenuScreen.test.tsx` UNIT-T04–T07; chưa phủ màn Task 5 |
 | NFR-12 | Must: UC-01 đến UC-04; kiểm E2E Chromium | chờ Task 3 | dự kiến `apps/web`; chờ Task 5 | chờ Task 5 |
-| NFR-13 | UC-04 (ngoại lệ E2, E4, E8); kiểm transaction, đồng thời | chờ Task 2 (Sequence: transaction), chờ Task 3 (ADR 005) | dự kiến module orders, payments; chờ Task 5 | chờ Task 5 |
+| NFR-13 | UC-04 (ngoại lệ E2, E4); kiểm transaction, đồng thời | chờ Task 2 (Sequence: transaction), chờ Task 3 (ADR 005) | dự kiến module orders, payments; chờ Task 5 | chờ Task 5 |
 | NFR-14 | Triển khai; kiểm `docker compose up` trên máy sạch | chờ Task 3 (Deployment-01: vùng Local) | dự kiến `docker-compose.yml`, Dockerfile; chờ Task 5 | chờ Task 5 |
-| NFR-15 | Triển khai; kiểm `GET /health` 200/503 theo DB, `version`/SHA image và không cache (AC-N15.1–3) | chờ Task 3 (ADR, deployment: health check) | dự kiến `GET /health`; chờ Task 5 | chờ Task 5 |
+| NFR-15 | Triển khai; kiểm `GET /health` 200/503 theo DB (AC-N15.1–2) | chờ Task 3 (ADR, deployment: health check) | dự kiến `GET /health`; chờ Task 5 | chờ Task 5 |
 | NFR-16 | Triển khai; kiểm migration/seed tái tạo DB; minimum không seed khuyến mãi | chờ Task 3 (ADR 003) | `apps/api/prisma/schema.prisma`, `migrations/20261019000000_init/migration.sql`, `seed.ts` (8 món); tài khoản demo chờ Task 5 | DB local schema up to date, API đọc đủ 8 món; chưa chạy migration/seed hai lần trên DB trống, chưa đạt đầy đủ AC-N16.1–3 |
 | NFR-17 | Triển khai; kiểm pipeline CI xanh và đỏ | chờ Task 3 (Deployment-01: vùng CI) | `.github/workflows/ci.yml`, `.nvmrc`, `CONTRIBUTING.md` | [CI thật xanh PR #9, đỏ PR #10 và log](evidence/ci/github-runs.md), ngày 2026-10-21; Build bị skip khi test sai. Chưa xác minh branch protection chặn merge: repo private báo giới hạn gói, contributor không có admin. AC-N17.2 chưa đạt |
-| NFR-18 | Triển khai; kiểm pipeline CD chờ đúng SHA rồi smoke test; rollback kiểm SHA bản trước (AC-N18.2–3) | chờ Task 3 (ADR 004, Deployment-01) | dự kiến `.github/workflows/cd.yml`, `docs/deployment.md`; chờ Task 5 | chờ Task 5 |
+| NFR-18 | Triển khai; kiểm pipeline CD: smoke test chờ 200 có retry; rollback deploy lại image tag bản trước (AC-N18.2–3) | chờ Task 3 (ADR 004, Deployment-01) | dự kiến `.github/workflows/cd.yml`, `docs/deployment.md`; chờ Task 5 | chờ Task 5 |
 | NFR-19 | Triển khai; kiểm URL production sống và người ngoài nhóm chạy theo README | chờ Task 3 (Deployment-01) | dự kiến `README.md`, nền tảng production; chờ Task 5 | chờ Task 5 |
 | NFR-20 | Triển khai; kiểm log JSON mỗi yêu cầu | chờ Task 3 (architecture.md: logging) | dự kiến logger trong `apps/api`; chờ Task 5 | chờ Task 5 |
 

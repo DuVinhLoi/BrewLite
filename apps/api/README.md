@@ -32,4 +32,4 @@ npm.cmd run start:prod
 
 `prisma:migrate` chạy migration đã lưu bằng `prisma migrate deploy`; không dùng reset. Tài khoản, đơn/thanh toán, các lớp domain còn lại, `GET /health`, Docker và test tích hợp DB tự động thuộc Task 5. Kiến trúc/ADR Task 3 chưa được chốt trong checkout này.
 
-Phạm vi Task 5 theo baseline mới nhất: [SRS](../../docs/requirements/srs.md) và [kế hoạch A2](../../docs/planning/2026-10-15-assignment2-plan.md). Thanh toán mô phỏng phải chống thu trùng theo `orderId` và phục hồi sau restart (AC-F16.7); Barista có Postman collection (AC-F24.4); health check có version/SHA và không cache (AC-N15.1–3). Các mục này chưa được hiện thực trong Sprint 1.
+Phạm vi Task 5 theo baseline mới nhất: [SRS](../../docs/requirements/srs.md) và [kế hoạch A2](../../docs/planning/2026-10-15-assignment2-plan.md). Thanh toán mô phỏng không lưu trạng thái; API chống thu trùng bằng `Idempotency-Key` theo chủ đơn/`orderId`/key/`paymentMethod` (BR-05, FR-16); Barista có Postman collection (AC-F24.4); health check trả 200/503 theo DB (AC-N15.1–2). Các mục này chưa được hiện thực trong Sprint 1.

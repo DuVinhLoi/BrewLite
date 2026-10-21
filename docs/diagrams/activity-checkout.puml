@@ -125,7 +125,7 @@ if (Invalid request / unauthorized order?) then (yes - E6/E7)
   stop
 else (valid)
 endif
-:Look up SUCCESS by user + order + key + body;
+:Look up SUCCESS by owner + order + key + paymentMethod (BR-05);
 if (API SUCCESS replay? E4a) then (yes)
   :Return 200 original SUCCESS/paymentId;
   |Next.js UI|
@@ -148,7 +148,6 @@ else (PENDING)
 endif
 |Payment Service|
 :charge(orderId, Order.total, method);
-:Durably deduplicate successful charge by orderId (E8b);
 if (Charge successful?) then (no - E3)
   :Return DECLINED;
   |NestJS API|
@@ -162,14 +161,14 @@ if (Charge successful?) then (no - E3)
   :May retry with new method; no new Order;
   stop
 else (yes)
-  :Return original SUCCESS (even after simulator restart);
+  :Return SUCCESS;
   |NestJS API|
   :DB transaction: save one Payment SUCCESS;
   :Transition PENDING -> PAID; COMMIT;
   note right
-    E8b: If API dies before COMMIT, retry same
-    orderId/key; simulator returns ORIGINAL SUCCESS;
-    API completes this transaction without double charge.
+    E8b: If API stops before COMMIT, Order stays
+    PENDING; retry is a new attempt (accepted risk,
+    simulated money, SRS 3.4).
   end note
   :Return 201 SUCCESS, orderStatus PAID;
   |Next.js UI|

@@ -99,11 +99,11 @@ Luồng thành công nhất: Customer đã đăng nhập, thanh toán Ví, còn 
 | 7 | NestJS API | Tính giá từng dòng và `total` từ giá trong Database (BR-01) |
 | 8 | NestJS API, Database | Trong **một transaction**: kiểm tồn kho từng sản phẩm; giữ chỗ (trừ `stock`); tạo `Order` ở `PENDING` và các `OrderItem`; commit. Trả 201 với `id`, `status = PENDING`, `total` |
 | 9 | Next.js UI | Gửi `POST /payments` với `orderId`, `paymentMethod` (và `cardNumber` nếu là Thẻ); header `Idempotency-Key` |
-| 10 | NestJS API | Xác thực JWT; kiểm dữ liệu và quyền sở hữu đơn; tra `Idempotency-Key`: nếu cùng người dùng/đơn/key/body đã thành công thì trả lại kết quả theo E4a trước khi kiểm trạng thái. Chỉ yêu cầu mới kiểm đơn ở `PENDING` hoặc `PAYMENT_FAILED` (luồng chính chưa có kết quả thành công) |
+| 10 | NestJS API | Xác thực JWT; kiểm dữ liệu và quyền sở hữu đơn; tra `Idempotency-Key`: nếu cùng chủ đơn/`orderId`/key/`paymentMethod` (BR-05) đã thành công thì trả lại kết quả theo E4a trước khi kiểm trạng thái. Chỉ yêu cầu mới kiểm đơn ở `PENDING` hoặc `PAYMENT_FAILED` (luồng chính chưa có kết quả thành công) |
 | 11 | NestJS API | Số tiền cần thu `amount = total` (bản nộp không áp khuyến mãi) |
-| 12 | NestJS API → Payment Service | Gọi trừ tiền `amount` theo phương thức, kèm mã tham chiếu là `orderId`; simulator chống thu trùng theo mã này (SRS mục 3.4). Nếu đã thu thành công, nhận lại kết quả gốc để phục hồi ở bước 14, không thu thêm |
+| 12 | NestJS API → Payment Service | Gọi trừ tiền `amount` theo phương thức, kèm mã tham chiếu là `orderId` (SRS mục 3.4) |
 | 13 | Payment Service | Trả `SUCCESS` |
-| 14 | NestJS API, Database | Trong **một transaction**: lưu đúng một `Payment` `SUCCESS` cùng `Idempotency-Key` từ kết quả simulator (mã giao dịch, số tiền và phương thức gốc); đổi `Order` từ `PENDING` sang `PAID`; commit. Kết quả phục hồi E8b dùng cùng quy tắc, không tạo thêm giao dịch thành công cho đơn |
+| 14 | NestJS API, Database | Trong **một transaction**: lưu đúng một `Payment` `SUCCESS` cùng `Idempotency-Key` từ kết quả simulator (mã giao dịch, số tiền và phương thức gốc); đổi `Order` từ `PENDING` sang `PAID`; commit |
 | 15 | NestJS API | Trả 201 với `orderId`, `paymentId`, `status = SUCCESS`, `orderStatus = PAID`, `amount` |
 | 16 | Next.js UI | Hiển thị màn xác nhận (mã đơn, trạng thái "Đã thanh toán", món, tiền); xóa giỏ hàng; cung cấp nút "Theo dõi đơn". Use-case kết thúc thành công |
 
@@ -184,7 +184,7 @@ Ba nhánh bắt buộc của đề A2 §4.1 là **E1, E2, E3**; E4 là điều k
 
 Xảy ra khi khách bấm đúp, mất phản hồi rồi bấm lại, hoặc mạng tự gửi lại.
 
-- **E4a — lần đầu đã thành công:** Sau xác thực và kiểm quyền sở hữu, API thấy `Idempotency-Key` đã gắn với một `Payment` `SUCCESS` của đúng người dùng/đơn/body này (ưu tiên trước kiểm trạng thái đơn), **không** gọi Payment Service, trả 200 với nội dung kết quả cũ (cùng `paymentId`) (AC-F16.1). UI hiển thị màn xác nhận như bước 16.
+- **E4a — lần đầu đã thành công:** Sau xác thực và kiểm quyền sở hữu, API thấy `Idempotency-Key` đã gắn với một `Payment` `SUCCESS` của đúng chủ đơn/`orderId`/`paymentMethod` này (BR-05; ưu tiên trước kiểm trạng thái đơn), **không** gọi Payment Service, trả 200 với nội dung kết quả cũ (cùng `paymentId`) (AC-F16.1). UI hiển thị màn xác nhận như bước 16. Cùng key nhưng khác `paymentMethod` không phải replay: xử lý như yêu cầu mới, đơn đã `PAID` nên theo E4d.
 - **E4b:** Đã bỏ khỏi bản nộp (rút gọn, SRS mục 1.4). Giữ mã để không đổi số hiệu các luồng khác.
 - **E4c:** Đã bỏ khỏi bản nộp (rút gọn, SRS mục 1.4). Giữ mã để không đổi số hiệu các luồng khác.
 - **E4d — đơn đã `PAID`, key mới:** API trả 409 `ORDER_NOT_PAYABLE`, không gọi Payment Service, nên không trừ tiền lần hai (AC-F16.4).
@@ -203,14 +203,14 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 
 ### E7 — Đơn không thể thanh toán (tại bước 10)
 
-- **Kích hoạt:** `orderId` không tồn tại (404 `ORDER_NOT_FOUND`), thuộc người khác (403 `FORBIDDEN`), hoặc yêu cầu mới cho đơn đã `PAID`/`PREPARING`/`READY`/`COMPLETED`/`CANCELLED` (409 `ORDER_NOT_PAYABLE`; replay thành công đúng người dùng/đơn/key/body được xử lý trước theo E4a) (AC-F14.3).
+- **Kích hoạt:** `orderId` không tồn tại (404 `ORDER_NOT_FOUND`), thuộc người khác (403 `FORBIDDEN`), hoặc yêu cầu mới cho đơn đã `PAID`/`PREPARING`/`READY`/`COMPLETED`/`CANCELLED` (409 `ORDER_NOT_PAYABLE`; replay thành công đúng chủ đơn/`orderId`/key/`paymentMethod` được xử lý trước theo E4a) (AC-F14.3).
 - **Phản ứng:** không gọi Payment Service; UI hiển thị thông báo tương ứng và dẫn khách về lịch sử đơn.
 - **Yêu cầu:** FR-14, NFR-05.
 
 ### E8 — Lỗi hệ thống (tại bước 10 đến 15)
 
 - **E8a — server đã commit thành công nhưng client mất phản hồi:** UI hiển thị "Có lỗi xảy ra, vui lòng thử lại". Retry cùng `orderId`/key được trả kết quả đã lưu theo E4a, không gọi Payment Service lần nữa.
-- **E8b — chưa biết kết quả hoặc API dừng trước commit bước 14:** UI giữ `orderId`/key và báo lỗi như E8a. Không suy ra an toàn chỉ từ cache của API: nếu simulator đã thành công ở bước 13, lần gọi lại với cùng `orderId` phải trả kết quả thành công gốc từ nơi lưu bền vững, không thu thêm; API hoàn tất transaction bước 14 (AC-F16.7). Nếu simulator chưa ghi nhận thành công, tiếp tục lần thử theo quy ước mục 3.4 của SRS. ADR 005 chốt cơ chế phục hồi này; không cam kết cơ chế phục hồi của cổng thanh toán thật.
+- **E8b — chưa biết kết quả hoặc API dừng trước commit bước 14:** UI giữ `orderId`/key và báo lỗi như E8a. Đơn vẫn `PENDING` nên lần thử lại được xử lý như yêu cầu mới (gọi Payment Service lần nữa). Rủi ro thu trùng được chấp nhận vì Payment Service là mô phỏng, không thu tiền thật (SRS mục 3.4); bản nộp không có cơ chế phục hồi riêng.
 - E8a/E8b chỉ áp dụng khi đã biết `orderId`; không gọi lại `POST /orders`. Nếu mất phản hồi tạo đơn và chưa biết mã đơn thì theo SRS mục 8.6.
 - **Yêu cầu:** NFR-13, FR-16.
 
@@ -258,7 +258,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 | E5 | Ngoài bản nộp (FR-17 Won’t) | — | — |
 | E6 | Dữ liệu không hợp lệ | FR-12, FR-14 | NFR-06 |
 | E7 | Đơn không thể thanh toán | FR-14 | NFR-05 |
-| E8 | Mất phản hồi sau commit (E8a), phục hồi trước commit (E8b) | FR-16 (AC-F16.1, AC-F16.7) | NFR-13 |
+| E8 | Mất phản hồi sau commit (E8a); dừng trước commit là rủi ro chấp nhận (E8b) | FR-16 (AC-F16.1) | NFR-13 |
 | Trạng thái đơn | Chuyển trạng thái trong use-case | FR-23 | — |
 
 ## 10. Gợi ý test từ đặc tả
@@ -273,6 +273,5 @@ Mỗi luồng chuyển thành test bằng chính tiêu chí chấp nhận trong 
 - **E2:** integration test đặt quá tồn (AC-F13.1) và đặt đồng thời (AC-F13.3).
 - **E3 và A3:** integration test thẻ `4000000000000002` rồi thẻ `4242424242424242` cùng `orderId` (AC-F15.1, AC-F15.5).
 - **E4:** integration test gửi hai lần cùng key, đếm số lần gọi Payment Service và số `Payment` (AC-F16.1).
-- **E8b:** integration test dừng API sau simulator thành công nhưng trước commit bước 14, khởi động lại rồi retry cùng đơn/key; simulator không ghi nhận thêm lần thu, API có đúng một `Payment` `SUCCESS`, đơn `PAID` (AC-F16.7).
 - **A5 (chỉ khi làm FR-25):** API test hủy đơn `PENDING`/`PAYMENT_FAILED` và kiểm `stock` được hoàn lại (AC-F25.1).
 - **Máy trạng thái:** unit test 49 cặp: 8 hợp lệ, 41 bị từ chối, bao gồm từ chối PAID → CANCELLED (AC-F23.1).
