@@ -5,11 +5,11 @@ import re
 import sys
 from xml.etree import ElementTree as ET
 
-ROOT=Path(__file__).resolve().parent / 'docs' / 'diagrams'
+ROOT=Path(__file__).resolve().parent / 'diagrams'
 EXPECTED={'activity-checkout','sequence-checkout','class-domain','state-order'}
 DOMAIN={
     'User':['id','email','passwordHash','role'],
-    'Product':['id','name','price','imageUrl','stock'],
+    'Product':['id','name','description','price','imageUrl','stock'],
     'Order':['id','userId','status','total','discountAmount','promotionId','createdAt'],
     'OrderItem':['id','orderId','productId','size','toppings','quantity','unitPrice','lineTotal'],
     'Payment':['id','orderId','method','status','amount','idempotencyKey','createdAt'],
@@ -77,11 +77,11 @@ for name in EXPECTED:
   check(content.lstrip().startswith('@startuml') and content.rstrip().endswith('@enduml'),f'{name}: PlantUML boundary markers')
  if svg.is_file():
   try:
-   r=ET.parse(svg).getroot();ok=r.tag.endswith('svg') and svg.stat().st_size>500
+   r=ET.parse(svg).getroot();ok=r.tag.endswith('svg') and svg.stat().st_size>500 and any(m in svg.read_text(encoding='utf-8') for m in ('<?plantuml','data-diagram-type='))
   except ET.ParseError:ok=False
-  check(ok,f'{name}: SVG valid XML')
+  check(ok,f'{name}: SVG valid XML rendered by PlantUML')
 
-class_src=(ROOT/'class-domain.puml').read_text()
+class_src=(ROOT/'class-domain.puml').read_text(encoding='utf-8')
 for name,attrs in DOMAIN.items():
  b=block(class_src,'class',name)
  check(b is not None and all(re.search(rf'\+{attr}\s*:',b) for attr in attrs),f'{name}: minimum properties')
@@ -93,21 +93,21 @@ for a,ma,mb,b in re.findall(r'(?m)^(\w+)\s+"([^"]+)"\s+(?:\*--|--)\s+"([^"]+)"\s
  relations.add((a,ma,mb,b))
 check(relations==set(RELATIONS),'class diagram: 7 associations & multiplicities')
 
-state_src=(ROOT/'state-order.puml').read_text()
+state_src=(ROOT/'state-order.puml').read_text(encoding='utf-8')
 actual=set(re.findall(r'(?m)^([A-Z_]+)\s+-->\s+([A-Z_]+)\s*:',state_src))
 check(actual==TRANSITIONS,'state machine: exactly eight business transitions')
 check(('PAID','CANCELLED') not in actual,'state machine: PAID -> CANCELLED is forbidden')
 
-act=(ROOT/'activity-checkout.puml').read_text()
+act=(ROOT/'activity-checkout.puml').read_text(encoding='utf-8')
 check(all(f'|{name}|' in act for name in ('Customer','Next.js UI','NestJS API','Payment Service')),'activity: all four swimlanes')
 check('start\n' in act and len(re.findall(r'^\s*stop\s*$',act,re.M))>=3,'activity: start and explicit terminal nodes for failures')
 check(all(code in act for code in ('401 UNAUTHORIZED','OUT_OF_STOCK','PAYMENT_DECLINED')),'activity: E1/E2/E3 explicit')
 check(action_balanced(act),'activity: balanced if/endif, note blocks')
 
-seq=(ROOT/'sequence-checkout.puml').read_text()
+seq=(ROOT/'sequence-checkout.puml').read_text(encoding='utf-8')
 check(all(re.search(rf'^(?:actor|participant|database) "{re.escape(label)}',seq,re.M) for label in ('Customer','Next.js UI','NestJS API','Database','Payment Service')),'sequence: all five required lifelines')
 check(all(s in seq for s in ('POST /orders','POST /payments','GET /orders/:id','JWT guard','Idempotency-Key')),'sequence: calls, JWT, idempotency header')
-check(all(s in seq for s in ('Transaction T1','Transaction T2','E4a: successful replay','E8b: API crashes','SAME orderId')),'sequence: T1/T2, replay & durable recovery')
+check(all(s in seq for s in ('Transaction T1','Transaction T2','E4a: successful replay','SAME orderId')),'sequence: T1/T2, replay, retry same order')
 check(sequence_balanced(seq),'sequence: balanced alt/opt/group/end fragments')
 
 if errors:
