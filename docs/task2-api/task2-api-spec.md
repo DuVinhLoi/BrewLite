@@ -2,7 +2,7 @@
 
 ## Mục tiêu
 
-Cung cấp API cho màn hình menu của ứng dụng BrewLite. API trả về danh sách sản phẩm đang còn hàng để frontend hiển thị trên màn hình menu.
+API này phục vụ màn hình menu của ứng dụng BrewLite. Backend NestJS trả về danh sách sản phẩm hiện có dưới dạng JSON để frontend hiển thị menu.
 
 ## Endpoint
 
@@ -10,7 +10,7 @@ Cung cấp API cho màn hình menu của ứng dụng BrewLite. API trả về d
 
 - Method: `GET`
 - Route: `/products`
-- Mô tả: Trả về danh sách các sản phẩm hiện có để khách hàng chọn.
+- Mô tả: Trả về danh sách sản phẩm đang có sẵn để khách hàng chọn.
 
 ## Response thành công
 
@@ -19,19 +19,19 @@ Status: `200 OK`
 ```json
 [
   {
-    "id": "prod_001",
+    "id": "1",
     "name": "Cà phê đen",
     "price": 29000,
     "image": "https://example.com/images/black-coffee.jpg"
   },
   {
-    "id": "prod_002",
+    "id": "2",
     "name": "Cappuccino",
     "price": 39000,
     "image": "https://example.com/images/cappuccino.jpg"
   },
   {
-    "id": "prod_003",
+    "id": "3",
     "name": "Latte",
     "price": 45000,
     "image": "https://example.com/images/latte.jpg"
@@ -39,34 +39,34 @@ Status: `200 OK`
 ]
 ```
 
-## Cấu trúc dữ liệu
+## Dữ liệu trả về
 
-Mỗi phần tử trong danh sách chứa các trường:
+Mỗi sản phẩm bao gồm:
 
 - `id`: mã sản phẩm
 - `name`: tên sản phẩm
-- `price`: giá sản phẩm (đơn vị VND)
-- `image`: URL ảnh sản phẩm
+- `price`: giá tiền
+- `image`: đường dẫn hình ảnh
 
-## Điều kiện trả về
+## Điều kiện hiển thị
 
-- Chỉ trả về các sản phẩm có sẵn để bán.
-- Nếu không có sản phẩm nào, trả về `[]`.
-- Nếu dữ liệu được lưu trong database, nên lọc `stock > 0`.
+- Chỉ trả về các sản phẩm còn hàng hoặc đang có sẵn để bán.
+- Nếu không có sản phẩm nào, có thể trả về `[]`.
+- Dữ liệu có thể lấy từ mock data hoặc từ cơ sở dữ liệu PostgreSQL.
 
-## Error handling
+## Lỗi
 
 ### 400 Bad Request
 
-Dùng khi request sai định dạng hoặc dữ liệu không hợp lệ.
+Dùng khi request không hợp lệ hoặc sai định dạng.
 
 ### 500 Internal Server Error
 
-Dùng khi lỗi server hoặc lỗi kết nối cơ sở dữ liệu.
+Dùng khi lỗi server hoặc lỗi kết nối CSDL.
 
 ## Ghi chú kỹ thuật
 
 - Backend: NestJS
 - Database: PostgreSQL
-- Dữ liệu lưu trong bảng `Product`
-- API này dùng cho màn hình menu và là đầu vào cho các chức năng tiếp theo như chọn size, topping, giỏ hàng và đặt đơn.
+- Dữ liệu sản phẩm có thể lưu trong bảng `Product`
+- API này là đầu vào cho màn hình menu, giúp người dùng chọn món trước khi thêm vào giỏ hàng.

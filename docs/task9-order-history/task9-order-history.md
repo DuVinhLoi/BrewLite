@@ -2,28 +2,24 @@
 
 ## Mục tiêu
 
-Sau khi khách hàng đặt đơn thành công, hệ thống cần:
-
-1. Hiển thị màn hình xác nhận đơn hàng.
-2. Cập nhật trạng thái đơn hàng.
-3. Cung cấp API để xem lịch sử đơn hàng của chính người dùng đang đăng nhập.
+Sau khi khách hàng đặt đơn thành công, hệ thống cần hiển thị màn hình xác nhận đơn và cho phép người dùng xem lịch sử đơn hàng của chính mình.
 
 ## 1. Màn hình xác nhận đơn
 
 ### Mục đích
 
-Màn hình xác nhận cho phép khách hàng xem thông tin đơn hàng sau khi thanh toán hoặc sau khi đặt đơn thành công.
+Màn hình này giúp người dùng kiểm tra thông tin đơn sau khi thanh toán hoặc đặt hàng thành công.
 
-### Thông tin cần hiển thị
+### Thông tin hiển thị
 
 - mã đơn hàng,
 - trạng thái đơn hàng,
 - tổng tiền,
 - thời gian đặt,
 - phương thức thanh toán,
-- các mặt hàng trong đơn.
+- danh sách món đã đặt.
 
-### Ví dụ JSON
+### Ví dụ JSON xác nhận đơn
 
 ```json
 {
@@ -79,7 +75,7 @@ Status: `200 OK`
 
 ## 4. Trạng thái đơn hàng gợi ý
 
-- `PENDING`: đơn vừa tạo
+- `PENDING`: đơn vừa được tạo
 - `PAID`: đã thanh toán
 - `PREPARING`: đang pha chế
 - `READY`: đã sẵn sàng giao/nhận
@@ -90,18 +86,18 @@ Status: `200 OK`
 ## 5. Bảo mật
 
 - Chỉ người dùng đã đăng nhập mới được xem đơn hàng của mình.
-- Backend cần kiểm tra JWT token.
+- Backend cần kiểm tra JWT token trước khi trả dữ liệu.
 - Không cho phép truy cập đơn hàng của người dùng khác.
 
 ## 6. Cấu hình chạy local
 
-### Chạy Docker Compose
+### Docker Compose
 
 ```bash
 docker compose up --build
 ```
 
-Docker Compose cần chạy các service:
+Các service cần chạy:
 
 - frontend
 - backend
@@ -109,4 +105,4 @@ Docker Compose cần chạy các service:
 
 ## 7. Kết luận
 
-Task 9 tập trung vào trải nghiệm sau khi đặt hàng: xác nhận đơn và lịch sử đơn hàng. Đây là phần quan trọng để khách hàng biết trạng thái đơn, theo dõi tiến độ và kiểm tra thông tin thanh toán.
+Task 9 tập trung vào trải nghiệm sau khi đặt hàng: xác nhận đơn và lịch sử đơn hàng. Đây là phần quan trọng để khách hàng theo dõi trạng thái đơn và nắm rõ thông tin thanh toán.
