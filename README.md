@@ -1,6 +1,6 @@
 # BrewLite — đặt cà phê không tiền mặt (BTL Công nghệ Phần mềm, SGU)
 
-> Khách chọn món → giỏ hàng → thanh toán Ví/Thẻ → nhận mã đơn tại quầy. Spec đầy đủ: `docs/BrewLite-CongNghePhanMem-fixed.md`, Product Backlog (10 user story + tiêu chí chấp nhận): `docs/product-backlog.md`, quy trình Scrum: `docs/scrum-process.md`.
+> Khách chọn món → giỏ hàng → thanh toán Ví/Thẻ → nhận mã đơn tại quầy. Spec đầy đủ: `docs/BrewLite-CongNghePhanMem-fixed.md`, sơ đồ activity: `docs/activity-diagrams.md`, class diagram: `docs/class-diagrams.md`, Product Backlog (10 user story + tiêu chí chấp nhận): `docs/product-backlog.md`, quy trình Scrum: `docs/scrum-process.md`.
 
 | Thành phần | Công nghệ | Chạy local |
 |---|---|---|

@@ -5,6 +5,8 @@ paths:
   - "frontend/src/**"
   - "docs/BrewLite-CongNghePhanMem-fixed.md"
   - "docs/product-backlog.md"
+  - "docs/activity-diagrams.md"
+  - "docs/class-diagrams.md"
 ---
 
 # Đồng bộ đề, code và Product Backlog
@@ -13,7 +15,7 @@ Ba nguồn, theo thứ tự ưu tiên:
 
 1. **Đề** `docs/BrewLite-CongNghePhanMem-fixed.md`: §8 (10 task), §9 (Task 10, State Machine §9.1), §12 (API, 5 thực thể).
 2. **Code** `backend/src`, `frontend/src`: làm đúng đề.
-3. **Product Backlog** `docs/product-backlog.md` (10 user story US-01…US-10, tiêu chí chấp nhận và cột "Bằng chứng"): mô tả đúng code.
+3. **Product Backlog** `docs/product-backlog.md` (10 user story US-01…US-10, tiêu chí chấp nhận và cột "Bằng chứng"), `docs/activity-diagrams.md` (AD1, AD2) và `docs/class-diagrams.md` (CD1–CD4): mô tả đúng code.
 
 Code lệch đề thì sửa code. Backlog lệch code thì sửa backlog. Chưa rõ bên nào đúng thì hỏi người dùng trước khi sửa.
 
@@ -23,6 +25,8 @@ Hành vi là: endpoint, guard / vai trò, chuyển trạng thái, mã HTTP, th�
 
 - tiêu chí chấp nhận của story liên quan trong `docs/product-backlog.md`;
 - cột "Bằng chứng" (endpoint, file, tên test) nếu file hoặc test đổi tên hay bị xóa;
+- `activity-diagrams.md` khi đổi nhánh rẽ, thứ tự bước hoặc endpoint trong luồng đặt món – thanh toán (AD1) hay luồng nhân viên xử lý hàng đợi (AD2);
+- `class-diagrams.md` khi đổi `backend/prisma/schema.prisma`, `backend/src/contracts/*.ts`, hoặc chữ ký public của controller / service / repo;
 - test chứng minh hành vi mới.
 
 ## Backlog khớp đề và code
@@ -42,6 +46,7 @@ Hành vi là: endpoint, guard / vai trò, chuyển trạng thái, mã HTTP, th�
 ## Xong khi
 
 - `cd backend && npx jest` và `cd frontend && npx vitest run` xanh. Schema Prisma đổi thì chạy `npx prisma generate` trong `backend/` trước.
+- Mọi khối PlantUML đã sửa render được, không ra ảnh "Syntax Error".
 - Grep tên hàm, endpoint, mã lỗi vừa đổi trong `docs/product-backlog.md` và `README.md`: không còn chỗ nào tả hành vi cũ.
 
 Viết tiếng Việt, cùng văn phong các file trong `docs/`.
