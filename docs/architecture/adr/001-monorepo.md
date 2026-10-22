@@ -1,7 +1,7 @@
 # ADR-001: Một repo duy nhất cho web và API
 
 - Trạng thái: Accepted (2026-10-21)
-- Liên quan: A2 §5.1, NFR-01, NFR-03, FR-01, FR-02
+- Liên quan: A2 §5.1, NFR-17, NFR-18
 
 ## Bối cảnh
 

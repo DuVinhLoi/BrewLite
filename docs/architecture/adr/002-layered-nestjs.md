@@ -1,7 +1,7 @@
 # ADR-002: Kiến trúc NestJS theo lớp domain
 
 - Trạng thái: Accepted (2026-10-21)
-- Liên quan: A2 §5.1, FR-01, FR-02, FR-03
+- Liên quan: A2 §5.1, FR-11–16, NFR-01, NFR-03, NFR-04, NFR-05, NFR-06, NFR-13
 
 ## Bối cảnh
 
