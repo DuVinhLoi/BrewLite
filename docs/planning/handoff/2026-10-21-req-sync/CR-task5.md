@@ -2,7 +2,21 @@
 
 > Chỉ mục: [`README.md`](README.md). Branch: **`feat/assignment2-task5-delivery`** (quyết định P2). Branch `feat/assignment2-task5` ngừng dùng, không merge.
 >
-> CR-5.1 đến CR-5.3 là **sửa code**. Theo `.claude/rules/doc-code-sync.md`, code chỉ viết khi người dùng yêu cầu rõ, và nhóm phải giải thích được. CR-5.1 cần nhóm chốt D3 trước.
+> CR-5.1 đến CR-5.3 là **sửa code**. Theo `.claude/rules/doc-code-sync.md`, code chỉ viết khi người dùng yêu cầu rõ, và nhóm phải giải thích được. D3 đã chốt 2026-10-22.
+
+## Phân công Task 5 (chốt 2026-10-22)
+
+| Pha | Ai | Việc |
+|---|---|---|
+| A | Chủ Task 5 | CR-5.0 lần 1 (sync ngay, không chờ PR #9); dựng Render, Vercel, deploy tay một lần để có URL (CR-5.3, phần cấu hình nền tảng). Xong thì báo Người 1–3 |
+| B | Người 1 | [`card-task5-p1.md`](card-task5-p1.md): số lượng, giới hạn tồn kho, "20 món" |
+| B | Người 2 | [`card-task5-p2.md`](card-task5-p2.md): xác nhận xóa, thành tiền từng dòng, PWA manifest (NFR-10) |
+| B | Người 3 | [`card-task5-p3.md`](card-task5-p3.md): tóm tắt đơn, lỗi tại ô thẻ, bỏ 502 ở web |
+| B | Chủ Task 5 | CR-5.1, CR-5.2 (phần API), CR-5.3 (CD, Dockerfile), CR-5.4 |
+| C | Chủ Task 5 | Review và merge PR của Người 1–3 vào branch delivery; CR-5.0 lần 2 sau khi PR #9 merge; CR-5.5 (ma trận, chép mã test từ mô tả PR của Người 1–3); CR-5.6; mở PR vào `develop-Assignment2` |
+| D | Chủ Task 5 | Tag `a2-v*`, smoke test, diễn tập rollback, release notes |
+
+Người 1–3 chỉ sửa file trong card của mình. Chủ Task 5 không sửa các file đó trong Pha B, và là người duy nhất sửa `docs/traceability-matrix.md`.
 
 ## Vì sao cần làm
 
@@ -15,17 +29,24 @@ Branch delivery tách từ baseline SRS cũ (`0130ae0`), trước PR #11. Code c
 - image API gắn tag `$GITHUB_SHA`; CD chạy khi có tag `a2-v*`;
 - `tests/e2e/checkout.spec.ts` và `tests/postman/BrewLite-Sprint2.postman_collection.json` không dùng thẻ `…0119` (đã `git grep`).
 
-**Allowed paths:** `apps/api/src/checkout/`, `apps/api/test/checkout*.ts`, `apps/api/prisma/migrations/` (một migration mới, CR-5.1), `apps/api/Dockerfile`, `apps/api/README.md`, `apps/web/src/components/shop/CheckoutScreen.tsx`, `apps/web/README.md`, `.github/workflows/cd.yml`, `scripts/deploy.sh` (xóa), `docker-compose.production.yml` (xóa), `README.md`, `docs/deployment.md`, `docs/task5/`, `docs/traceability-matrix.md` (cột Code/API, Test), `tests/`, `docs/planning/handoff/2026-10-21-req-sync/report-task5.md`.
+**Allowed paths (chủ Task 5):** `apps/api/src/checkout/`, `apps/api/test/checkout*.ts`, `apps/api/prisma/migrations/` (một migration mới, CR-5.1), `apps/api/Dockerfile`, `apps/api/README.md`, `apps/web/README.md`, `.github/workflows/cd.yml`, `scripts/deploy.sh` (xóa), `docker-compose.production.yml` (xóa), `README.md`, `docs/deployment.md`, `docs/task5/`, `docs/traceability-matrix.md` (cột Code/API, Test), `tests/`, `docs/planning/handoff/2026-10-21-req-sync/report-task5.md`.
 
 ## CR-5.0: Lấy baseline mới
 
-1. **Chờ PR #9 (Task 4) merge** (README mục 2). Branch delivery đã chứa commit Task 4 `f1b856a`, nhưng chưa có các commit sau đó của PR #9.
-2. `git switch feat/assignment2-task5-delivery && git pull origin develop-Assignment2`.
-3. Xung đột dự kiến (đã thử với `develop-Assignment2` @ `040dd25`: `apps/api/README.md`, `apps/web/README.md`, `docs/traceability-matrix.md`; sau khi PR #9 merge có thể thêm `README.md`). Giải bằng skill `resolving-merge-conflicts`:
+Làm **hai lần**:
+
+- **Lần 1 (Pha A, ngay):** để Người 1–3 tách branch từ nền đã theo SRS mới. Branch delivery đang chậm `develop-Assignment2` 33 commit (đo tại `b67dc92`).
+- **Lần 2 (Pha C, sau khi PR #9 merge):** lấy các commit sau `f1b856a` của PR #9. Đã thử `git merge-tree` giữa `a2/Task4` và branch delivery: chỉ xung đột `README.md` và `docs/traceability-matrix.md`.
+
+Mỗi lần:
+
+1. `git switch feat/assignment2-task5-delivery && git pull origin develop-Assignment2`.
+2. Xung đột dự kiến ở lần 1 (đã thử tại `b67dc92`): `apps/api/README.md`, `apps/web/README.md`, `docs/traceability-matrix.md`. Giải bằng skill `resolving-merge-conflicts`:
    - **`docs/requirements/*`:** không xung đột. Sau khi pull, đây là nguồn sự thật.
    - **`apps/api/README.md`, `apps/web/README.md`, `README.md`:** giữ mô tả của Task 5 (code mới nhất), rồi sửa theo CR-5.4 và CR-5.5.
    - **`docs/traceability-matrix.md`:** cột Mã yêu cầu, Use-case, Thiết kế lấy theo `develop-Assignment2`; cột Code/API, Test lấy của Task 5, rồi sửa theo CR-5.5.
-4. Commit merge. Chạy `python docs/validate_task2.py` (PASS).
+3. Commit merge. Chạy `python docs/validate_task2.py` (PASS), `npm --prefix apps/api test`, `npm --prefix apps/web test`. Push branch delivery.
+4. Lần 1: báo Người 1–3 tách branch từ commit vừa push.
 
 ## CR-5.1: Replay thanh toán theo D2, D3
 
@@ -52,7 +73,7 @@ Branch delivery tách từ baseline SRS cũ (`0130ae0`), trước PR #11. Code c
 
 - `apps/api/src/checkout/payment.ts:1-4`: bỏ nhánh thẻ kết thúc `0119`; kiểu trả về còn `'SUCCESS' | 'DECLINED'`.
 - `apps/api/src/checkout/checkout.service.ts:93-94`: chỉ còn `PAYMENT_DECLINED` (402).
-- `apps/web/src/components/shop/CheckoutScreen.tsx:77`: `[402, 502].includes(err.status)` → `err.status === 402`.
+- `apps/web/src/components/shop/CheckoutScreen.tsx:77` (bỏ 502 ở web): chuyển sang Người 3, [`card-task5-p3.md`](card-task5-p3.md) bước P3-4.
 - `apps/api/test/checkout.integration-spec.ts:96`: bỏ bước kỳ vọng 502; đổi tên INT-S2-07 bỏ "timeout is persisted".
 - `apps/api/test/checkout.spec.ts:29-31`: bỏ test `UNAVAILABLE`.
 - Giữ `SERVICE_UNAVAILABLE` trong `apps/api/src/common/api-exception.filter.ts:19`: dùng cho 503 của `/health`.
