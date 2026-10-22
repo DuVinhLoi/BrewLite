@@ -1,0 +1,43 @@
+@startuml deployment
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+actor User
+rectangle "Browser / PWA" as Browser
+rectangle "Vercel
+Next.js Frontend
+" as Web
+rectangle "Render
+NestJS API
+" as Api
+database "PostgreSQL
+User / Product / Order / Payment" as Db
+rectangle "Payment Simulator
+charge/refund" as Sim
+rectangle "GitHub Actions
+CI/CD" as Ci
+
+User --> Browser
+Browser --> Web
+Web --> Api : HTTPS
+Api --> Db : Prisma / SQL
+Api --> Sim : charge / refund
+Ci --> Web : build + deploy
+Ci --> Api : build + deploy
+Ci --> Db : smoke / migrate
+
+note right of Api
+  GET /health
+  GET /products
+  POST /orders
+  POST /payments
+  GET /orders/me
+end note
+
+note bottom of Ci
+  smoke test: /health, /products, web home
+  retry <= 10 minutes
+end note
+@enduml

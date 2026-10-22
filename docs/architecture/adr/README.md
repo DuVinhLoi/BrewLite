@@ -1,22 +1,19 @@
-# docs/architecture/adr — Architecture Decision Records
+# ADR index
 
-Thư mục này **chưa có ADR**. Đề A2 §5.1: mỗi quyết định kiến trúc quan trọng ghi thành một ADR ngắn.
+Thư mục này chứa các Architecture Decision Records (ADR) của Task 3, được đồng bộ với lịch sử chung của nhánh `develop-Assignment2` và đã được cập nhật ngày `2026-10-21`.
 
-## Đặt tên và mẫu
+## Danh sách ADR
 
-- Tên file: `NNN-ten-quyet-dinh.md`, đánh số tăng dần (ví dụ `001-monorepo.md`).
-- Mỗi ADR gồm: Trạng thái (Proposed / Accepted / Superseded), Bối cảnh, Quyết định, Các phương án đã cân nhắc, Hệ quả (ưu điểm, hạn chế, trade-off).
-- Đổi quyết định thì thêm ADR mới và đánh dấu ADR cũ là Superseded, không xóa.
-- Mọi thay đổi ADR đi qua pull request, nêu lý do trong mô tả PR (đề A2 §6.2).
+| File | Nội dung | Trạng thái |
+|---|---|---|
+| `001-monorepo.md` | Một repo duy nhất cho web và API | Accepted |
+| `002-layered-nestjs.md` | NestJS chia theo module và lớp service/repository | Accepted |
+| `003-containerization.md` | Container hóa với PostgreSQL và môi trường dev/test | Accepted |
+| `004-vercel-render.md` | Triển khai production trên Vercel và Render | Accepted |
+| `005-idempotency-and-optimistic-lock.md` | Idempotency-Key và chống bán vượt tồn kho | Accepted |
 
-## ADR đề xuất (nhóm tự viết và tự chốt)
+## Nguyên tắc
 
-| File | Quyết định |
-|---|---|
-| `001-monorepo.md` | Một repo, `apps/web` + `apps/api` |
-| `002-layered-nestjs.md` | NestJS chia module theo domain, phân lớp controller / service / repository |
-| `003-prisma-migrations.md` | ORM và cách quản lý migration, seed |
-| `004-hosting-vercel-render.md` | Nền tảng production; chờ `/health.version` đúng SHA image trước smoke test; ngày tạo/hết hạn DB so với lịch chấm |
-| `005-idempotency-and-optimistic-lock.md` | Idempotency-Key ở API; simulator chống thu trùng theo `orderId`, lưu kết quả thành công bền vững qua restart và phục hồi E8b (SRS mục 3.4, AC-F16.7); khóa lạc quan hoặc transaction cho tồn kho |
-
-Nội dung gợi ý cho từng ADR: `docs/planning/2026-10-15-assignment2-plan.md`, Task 3.
+- Mỗi ADR phải ghi rõ: bối cảnh, quyết định, hệ quả, phương án đã loại bỏ.
+- Không xóa ADR cũ nếu có quyết định mới thay thế; thêm ADR mới và ghi rõ trạng thái.
+- Chỉ các thay đổi liên quan đến kiến trúc mới được phép nằm trong thư mục này.
