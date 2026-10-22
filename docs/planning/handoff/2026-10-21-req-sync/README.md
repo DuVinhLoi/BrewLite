@@ -10,7 +10,7 @@
 |---|---|---|
 | D1 | `Product.description` có trong SRS 3.6 và class diagram | `docs/requirements/srs.md` §3.6; `docs/diagrams/class-domain.puml` |
 | D2 | Replay thanh toán khi cùng **chủ đơn + `orderId` + `Idempotency-Key` + `paymentMethod`**; `cardNumber` không dùng để so. Cùng key nhưng khác `paymentMethod` sau khi `PAID` → 409 `ORDER_NOT_PAYABLE` | `srs.md` BR-05, AC-F14.3, AC-F16.1 |
-| D3 | **Đề xuất, nhóm chốt trước khi code CR-5.1.** Cùng key dùng cho **đơn khác** là yêu cầu mới (BR-05 so cả `orderId`): đơn `PENDING`/`PAYMENT_FAILED` thì thanh toán bình thường. Hệ quả: bỏ unique index `payments_success_key_per_user ("userId","idempotencyKey")` bằng migration mới; index `payments_one_success_per_order` vẫn chặn thu trùng một đơn | `srs.md` BR-05; CR-task5 mục CR-5.1 |
+| D3 | **Đã chốt 2026-10-22.** Cùng key dùng cho **đơn khác** là yêu cầu mới (BR-05 so cả `orderId`): đơn `PENDING`/`PAYMENT_FAILED` thì thanh toán bình thường. Hệ quả: bỏ unique index `payments_success_key_per_user ("userId","idempotencyKey")` bằng migration mới; index `payments_one_success_per_order` vẫn chặn thu trùng một đơn | `srs.md` BR-05; CR-task5 mục CR-5.1 |
 | C1 | Bỏ AC-F16.7/E8b. Simulator không lưu trạng thái; API dừng giữa bước 13 và 14 là rủi ro chấp nhận | `srs.md` §1.4 (6), §3.4 |
 | C2 | Bỏ AC-N15.3. `/health` trả `{status, database}`; smoke test `/health`, `/products`, trang web, retry tới khi 200, **tối đa 10 phút**; rollback = deploy lại image tag SHA bản trước rồi smoke lại | `srs.md` §1.4 (7), AC-N15.1–2, AC-N18.2–3 |
 | C3 | Bỏ 502 khi Payment Service quá 5 giây (AC-F15.2) và 422 `IDEMPOTENCY_KEY_REUSED` (AC-F16.3). Thanh toán chỉ còn 402 `PAYMENT_DECLINED` | `srs.md` §1.4 (5), §3.2 |
@@ -28,10 +28,14 @@ Lý do của D1–C2: kế hoạch [`../../2026-10-21-req-sync-sprint2-scope-pla
   Task 2  pull develop-Assignment2, kiểm sơ đồ       → card-task2.md (T2-1..T2-4)
   Task 3  branch mới từ develop-Assignment2          → card-task3.md (B0–B9)
   Task 4  pull develop-Assignment2, áp CR-task4      → CR-task4.md
-Đợt 2 (tuần tự, đề A2 §1: task trước phải có trên repo)
-  merge PR Task 3  →  merge PR #9 (Task 4)
-Đợt 3
-  Task 5  pull develop-Assignment2, áp CR-task5, mở PR → CR-task5.md
+  Task 5  Pha A: sync branch delivery lần 1, dựng Render/Vercel → CR-task5.md
+Đợt 2 (song song; Người 1–3 chỉ bắt đầu khi Pha A xong)
+  Task 5  Pha B: Người 1, 2, 3 mở PR vào branch delivery → card-task5-p1/p2/p3.md
+          chủ Task 5 sửa API, CD, tài liệu (CR-5.1..5.4)
+  merge PR Task 3  →  merge PR #9 (Task 4)   (tuần tự, đề A2 §1)
+Đợt 3 (sau khi PR #9 merge)
+  Task 5  Pha C: merge PR Người 1–3, sync lần 2, ma trận, mở PR vào develop-Assignment2
+  Task 5  Pha D: tag a2-v*, smoke, diễn tập rollback
 Đợt 4 (tuần tự, cùng sửa ma trận; NFR-05, NFR-13 chung một ô)
   Task 2  T2-M: điền 25 ô "chờ Task 2" (PR riêng)
   Task 3  B10: điền 19 ô "chờ Task 3" (PR riêng)
@@ -46,7 +50,10 @@ Chỉ người tích hợp (Integrator) merge, và chỉ khi người dùng đ�
 | 2 | `a2/task-2-diagrams` | [`card-task2.md`](card-task2.md) | `docs/diagrams/*.puml`; `docs/traceability-matrix.md` (T2-M) |
 | 3 | `a2/task-3-architecture` (tạo mới từ `origin/develop-Assignment2`) | [`card-task3.md`](card-task3.md) | `srs.md` §1.4, §3.4, NFR-15, NFR-18; `docs/diagrams/class-domain.puml`; [`CR-task5.md`](CR-task5.md) mục CR-5.3 (cách deploy mà ADR phải mô tả) |
 | 4 | `a2/Task4` (PR #9) | [`CR-task4.md`](CR-task4.md) | `docs/traceability-matrix.md` |
-| 5 | `feat/assignment2-task5-delivery` | [`CR-task5.md`](CR-task5.md) | `srs.md` BR-05, FR-14–16, NFR-15, NFR-18; ADR-003, ADR-004, ADR-005 sau khi Task 3 merge |
+| 5 (chủ) | `feat/assignment2-task5-delivery` | [`CR-task5.md`](CR-task5.md) | `srs.md` BR-05, FR-14–16, NFR-15, NFR-18; ADR-003, ADR-004, ADR-005 sau khi Task 3 merge |
+| 5 (Người 1) | `a2/task5-p1-quantity` | [`card-task5-p1.md`](card-task5-p1.md) | `srs.md` FR-05 |
+| 5 (Người 2) | `a2/task5-p2-cart-pwa` | [`card-task5-p2.md`](card-task5-p2.md) | `srs.md` FR-06, FR-07, NFR-10 |
+| 5 (Người 3) | `a2/task5-p3-checkout` | [`card-task5-p3.md`](card-task5-p3.md) | `uc-checkout.md` bước 2; `srs.md` FR-14 |
 
 ## 4. Quy tắc chung cho mọi agent
 
@@ -71,5 +78,4 @@ Chỉ người tích hợp (Integrator) merge, và chỉ khi người dùng đ�
 
 ## 6. Việc mở ngoài các card
 
-- `a2/task-1-requirements` có 3 commit chưa có PR (`89d3276`, `bbd6d80`, `1bab022`: thay `use-case-overview.svg` bằng bản xuất draw.io, sửa ghi chú UC-04). Chủ Task 1 quyết định mở PR hay bỏ; nếu mở thì chạy `python docs/validate_task2.py` trên branch đó trước.
 - Branch protection (AC-N17.2) là việc của chủ repo.
