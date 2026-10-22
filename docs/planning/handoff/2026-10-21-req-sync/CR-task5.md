@@ -1,115 +1,120 @@
-# CR-task5: đồng bộ Task 5 (`feat/assignment2-task5-delivery`) với develop
+# CR-task5: đồng bộ Task 5 (`feat/assignment2-task5-delivery`) với `develop-Assignment2`
 
 > Chỉ mục: [`README.md`](README.md). Branch: **`feat/assignment2-task5-delivery`** (quyết định P2). Branch `feat/assignment2-task5` ngừng dùng, không merge.
 >
-> CR-5.1 đến CR-5.3 là **sửa code**. Theo `.claude/rules/doc-code-sync.md`, code chỉ viết khi người dùng yêu cầu rõ, và nhóm phải giải thích được.
+> CR-5.1 đến CR-5.3 là **sửa code**. Theo `.claude/rules/doc-code-sync.md`, code chỉ viết khi người dùng yêu cầu rõ, và nhóm phải giải thích được. CR-5.1 cần nhóm chốt D3 trước.
 
 ## Vì sao cần làm
 
-Branch delivery tách từ baseline SRS cũ (`0130ae0`). Bản SRS đó còn AC-F15.2 (502 khi Payment Service quá 5 giây) và AC-F16.3 (422 `IDEMPOTENCY_KEY_REUSED`). SRS hiện tại đã bỏ hai tiêu chí này (`srs.md` §1.4, thay đổi 5) và thêm D1, D2, C1, C2 (PR #11). Nền tảng đã chốt là Vercel + Render (P1), trong khi CD hiện tại deploy bằng SSH lên VPS.
+Branch delivery tách từ baseline SRS cũ (`0130ae0`), trước PR #11. Code còn 422 `IDEMPOTENCY_KEY_REUSED` và 502 `PAYMENT_SERVICE_UNAVAILABLE` (C3), so replay có cả `cardNumber` (D2), và CD deploy bằng SSH lên VPS (P1).
 
 **Đã khớp, giữ nguyên:**
 - `/health` trả `{status, database}`, 503 kèm `status: 'error'` (C2);
 - `Product.description` (D1);
 - không có cột `version` hay idempotency cho `POST /orders`;
-- image API gắn tag `$GITHUB_SHA`;
-- CD chạy khi có tag `a2-v*`.
+- image API gắn tag `$GITHUB_SHA`; CD chạy khi có tag `a2-v*`;
+- `tests/e2e/checkout.spec.ts` và `tests/postman/BrewLite-Sprint2.postman_collection.json` không dùng thẻ `…0119` (đã `git grep`).
+
+**Allowed paths:** `apps/api/src/checkout/`, `apps/api/test/checkout*.ts`, `apps/api/prisma/migrations/` (một migration mới, CR-5.1), `apps/api/Dockerfile`, `apps/api/README.md`, `apps/web/src/components/shop/CheckoutScreen.tsx`, `apps/web/README.md`, `.github/workflows/cd.yml`, `scripts/deploy.sh` (xóa), `docker-compose.production.yml` (xóa), `README.md`, `docs/deployment.md`, `docs/task5/`, `docs/traceability-matrix.md` (cột Code/API, Test), `tests/`, `docs/planning/handoff/2026-10-21-req-sync/report-task5.md`.
 
 ## CR-5.0: Lấy baseline mới
 
 1. **Chờ PR #9 (Task 4) merge** (README mục 2). Branch delivery đã chứa commit Task 4 `f1b856a`, nhưng chưa có các commit sau đó của PR #9.
 2. `git switch feat/assignment2-task5-delivery && git pull origin develop-Assignment2`.
-3. Xung đột dự kiến (thử với develop hiện tại: `apps/api/README.md`, `apps/web/README.md`, `docs/traceability-matrix.md`; sau khi PR #9 merge có thể thêm `README.md`). Giải bằng skill `resolving-merge-conflicts`:
-   - **`docs/requirements/*`:** không có xung đột (branch không sửa). Sau khi pull, đây là nguồn sự thật mới.
-   - **`apps/api/README.md`, `apps/web/README.md`, `README.md`:** giữ mô tả của Task 5 (code mới nhất). Bỏ mọi câu nhắc AC-F16.7, `version`/SHA ở `/health`, VPS/SSH.
-   - **`docs/traceability-matrix.md`:**
-     - cột Mã yêu cầu, Use-case, Thiết kế lấy theo develop;
-     - cột Code/API, Test lấy của Task 5 cho các dòng Task 5 đã hiện thực;
-     - các dòng FR-16, NFR-13, NFR-15, NFR-18 giữ câu chữ của develop, chỉ điền thêm đường dẫn code/test.
-4. Chạy `python docs/validate_task2.py` (PASS) và các test ở CR-5.4.
+3. Xung đột dự kiến (đã thử với `develop-Assignment2` @ `040dd25`: `apps/api/README.md`, `apps/web/README.md`, `docs/traceability-matrix.md`; sau khi PR #9 merge có thể thêm `README.md`). Giải bằng skill `resolving-merge-conflicts`:
+   - **`docs/requirements/*`:** không xung đột. Sau khi pull, đây là nguồn sự thật.
+   - **`apps/api/README.md`, `apps/web/README.md`, `README.md`:** giữ mô tả của Task 5 (code mới nhất), rồi sửa theo CR-5.4 và CR-5.5.
+   - **`docs/traceability-matrix.md`:** cột Mã yêu cầu, Use-case, Thiết kế lấy theo `develop-Assignment2`; cột Code/API, Test lấy của Task 5, rồi sửa theo CR-5.5.
+4. Commit merge. Chạy `python docs/validate_task2.py` (PASS).
 
-## CR-5.1: Replay thanh toán theo D2 (`apps/api/src/checkout/checkout.service.ts:73-82`)
+## CR-5.1: Replay thanh toán theo D2, D3
 
-| Hiện tại | Đổi thành | Căn cứ |
-|---|---|---|
-| Dòng 73: `fingerprint` băm `[orderId, paymentMethod, cardNumber]` | Băm `[orderId, paymentMethod]` | D2: `cardNumber` không dùng để so |
-| Dòng 79: tìm `payment` theo `{ userId, idempotencyKey, status: 'SUCCESS' }` | Tìm theo `{ userId, orderId, idempotencyKey, status: 'SUCCESS' }` | D2, BR-05: so theo cả `orderId` |
-| Dòng 81: `fingerprint` khác → 422 `IDEMPOTENCY_KEY_REUSED` | Bỏ lỗi 422. `fingerprint` khác thì **không** replay mà đi tiếp tới kiểm trạng thái; đơn đã `PAID` → 409 `ORDER_NOT_PAYABLE` | AC-F16.1 (câu cuối), AC-F16.4; SRS §3.2 không có 422 |
+`apps/api/src/checkout/checkout.service.ts`:
 
-Test cần có (thêm hoặc sửa trong `apps/api/test/checkout.integration-spec.ts`; viết test đỏ trước theo skill `mattpocock-skills:tdd`):
+| Dòng | Hiện tại | Đổi thành | Căn cứ |
+|---|---|---|---|
+| 73 | `fingerprint` băm `[orderId, paymentMethod, input.cardNumber ?? null]` | Băm `[orderId, paymentMethod]` | D2: `cardNumber` không dùng để so |
+| 79 | tìm `payment` theo `{ userId, idempotencyKey: key, status: 'SUCCESS' }` | Tìm theo `{ userId, orderId, idempotencyKey: key, status: 'SUCCESS' }` | D2, BR-05: so cả `orderId` |
+| 81 | `fingerprint` khác → 422 `IDEMPOTENCY_KEY_REUSED` | Bỏ lỗi 422. `fingerprint` khác thì không replay, đi tiếp tới kiểm trạng thái; đơn đã `PAID` → 409 `ORDER_NOT_PAYABLE` | AC-F16.1 (câu cuối), C3 |
 
-- `same key + same method replays`: lần hai trả 200, cùng `paymentId`, simulator gọi 1 lần, DB có đúng 1 `Payment` `SUCCESS` (AC-F16.1).
+**Migration (D3).** `apps/api/prisma/migrations/20261021000000_sprint2/migration.sql:93` có `CREATE UNIQUE INDEX payments_success_key_per_user ON payments ("userId", "idempotencyKey") WHERE status = 'SUCCESS'`. Sau khi dòng 79 so cả `orderId`, dùng lại key cho đơn khác sẽ thu tiền rồi vi phạm index này (500). Thêm migration mới `DROP INDEX payments_success_key_per_user;`. Không sửa migration cũ. Index `payments_one_success_per_order` (dòng 92) vẫn bảo đảm mỗi đơn một `Payment SUCCESS`.
+
+**Test** trong `apps/api/test/checkout.integration-spec.ts` (viết test đỏ trước theo skill `mattpocock-skills:tdd`):
+
+- INT-S2-03 dòng 69: `await pay(second.id, key).expect(422)` → `.expect(201)`, và dòng 70 kỳ vọng đơn thứ hai `PAID` (D3).
+- `same key + same method replays`: lần hai 200, cùng `paymentId`, DB có đúng 1 `Payment SUCCESS` (AC-F16.1).
 - `same key + same method + different card number replays`: CARD `4242424242424242` rồi CARD `5555555555554444`, cùng key → 200 replay (D2).
-- `same key + different method after PAID returns 409`: WALLET thành công rồi CARD cùng key → 409 `ORDER_NOT_PAYABLE`, simulator không được gọi (D2).
-- `new key after PAID returns 409` (AC-F16.4).
-- `failed attempt does not lock key`: thẻ `4000000000000002` rồi `4242424242424242` cùng key → 201, đơn `PAID` (AC-F15.5, AC-F16.5).
+- `same key + different method after PAID returns 409`: WALLET thành công rồi CARD cùng key → 409 `ORDER_NOT_PAYABLE`, không thêm `Payment` (AC-F16.1).
+- `new key after PAID returns 409` (AC-F16.4; đã có ở INT-S2-03 dòng 67).
+- `failed attempt does not lock key`: đã có ở INT-S2-04 (AC-F15.5, AC-F16.5).
 
-Bỏ mọi test đang kỳ vọng 422 `IDEMPOTENCY_KEY_REUSED`.
+## CR-5.2: Bỏ nhánh `UNAVAILABLE` / 502 (C3)
 
-## CR-5.2: Bỏ nhánh `UNAVAILABLE` / 502
-
-- `apps/api/src/checkout/payment.ts:2-4`: bỏ nhánh thẻ kết thúc `0119` (chờ 5,1 giây rồi trả `UNAVAILABLE`). Kiểu trả về còn `'SUCCESS' | 'DECLINED'`.
+- `apps/api/src/checkout/payment.ts:1-4`: bỏ nhánh thẻ kết thúc `0119`; kiểu trả về còn `'SUCCESS' | 'DECLINED'`.
 - `apps/api/src/checkout/checkout.service.ts:93-94`: chỉ còn `PAYMENT_DECLINED` (402).
-- Test: bỏ `apps/api/test/checkout.integration-spec.ts:96` (kỳ vọng 502) và `apps/api/test/checkout.spec.ts:29`. Gỡ thẻ `…0119` khỏi `tests/postman/BrewLite-Sprint2.postman_collection.json` và `tests/e2e/checkout.spec.ts` nếu có.
-- **Căn cứ:** SRS §1.4 (5) bỏ "timeout Payment Service"; §3.2 không có 502. Nếu nhóm muốn giữ 502 thì phải sửa SRS trước, trong một PR riêng.
+- `apps/web/src/components/shop/CheckoutScreen.tsx:77`: `[402, 502].includes(err.status)` → `err.status === 402`.
+- `apps/api/test/checkout.integration-spec.ts:96`: bỏ bước kỳ vọng 502; đổi tên INT-S2-07 bỏ "timeout is persisted".
+- `apps/api/test/checkout.spec.ts:29-31`: bỏ test `UNAVAILABLE`.
+- Giữ `SERVICE_UNAVAILABLE` trong `apps/api/src/common/api-exception.filter.ts:19`: dùng cho 503 của `/health`.
 
 ## CR-5.3: CD theo P1 (Vercel + Render), bỏ VPS
 
-**Xóa:**
-- `scripts/deploy.sh`, `docker-compose.production.yml` (chỉ dùng cho VPS);
-- các secret `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_HOST`, `DEPLOY_USER` trong tài liệu.
+**Xóa:** `scripts/deploy.sh`, `docker-compose.production.yml`.
 
-**`.github/workflows/cd.yml`:**
+**`.github/workflows/cd.yml`** (hiện có job `quality`, `publish`, `deploy`; job `deploy` dùng SSH ở dòng 56–73):
 
 | Job | Nội dung |
 |---|---|
-| `quality` | Giữ nguyên (`uses: ./.github/workflows/ci.yml`) |
-| `publish` | Chỉ build và push image **API** `ghcr.io/<repo>-api:$GITHUB_SHA`. Bỏ build/push image web, vì Vercel tự build Next.js |
-| `deploy-api` | `curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL&imgURL=<url-encoded ghcr.io/<repo>-api:$GITHUB_SHA>"`. Secret `RENDER_DEPLOY_HOOK_URL`. Kiểm lại tài liệu Render về tham số `imgURL` cho service chạy từ image trước khi viết |
-| `deploy-web` | Vercel CLI với phiên bản cố định: `vercel pull --yes --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`. Secret `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (ADR-004) |
-| `smoke` | `needs: [deploy-api, deploy-web]`. `curl --fail --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors` cho `$API_URL/health`, `$API_URL/products`, `$WEB_URL/` (tối đa 10 phút, AC-N18.2) |
-| rollback khi lỗi | In hướng dẫn trỏ `docs/deployment.md` (giữ bước hiện có) |
+| `quality` | Giữ nguyên |
+| `publish` | Chỉ build và push `"$IMAGE-api:$GITHUB_SHA"` (= `ghcr.io/duvinhloi/brewlite-api:<sha>`). Bỏ dòng 38, 40, 42, 44 (image web và kiểm `PUBLIC_API`), vì Vercel tự build Next.js |
+| `deploy-api` | `curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL&imgURL=<url-encoded image:$GITHUB_SHA>"`, secret `RENDER_DEPLOY_HOOK_URL`. Đọc tài liệu Render về tham số `imgURL` cho service chạy từ image trước khi viết |
+| `deploy-web` | Vercel CLI phiên bản cố định: `vercel pull --yes --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`. Secret `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` |
+| `smoke` | `needs: [deploy-api, deploy-web]`. Ba lệnh `curl` dòng 80–82 đổi `--retry 6 --retry-max-time 120 --retry-connrefused --retry-delay 5` thành `--retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors` (AC-N18.2) |
+| rollback | Giữ bước `if: failure()`; sửa câu in ra trỏ mục rollback mới của `docs/deployment.md` |
 
-**API image (`apps/api/Dockerfile`, dòng cuối):** đổi `CMD ["node", "dist/main.js"]` thành `CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]` (ADR-003: chạy migration khi container khởi động; migration chỉ cộng thêm nên rollback image an toàn). `docker-compose.yml` local vẫn chạy được, vì migrate deploy idempotent.
+**`apps/api/Dockerfile`, dòng cuối:** `CMD ["node", "dist/main.js"]` → `CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]` (ADR-003). `docker-compose.yml` local vẫn chạy vì `migrate deploy` idempotent.
 
-**Cấu hình nền tảng (người làm; dùng skill `wizard` để tạo script hướng dẫn):**
+**Cấu hình nền tảng (người làm; dùng skill `wizard`):**
 - **Render Postgres:** ghi ngày tạo và ngày hết hạn gói free vào `docs/deployment.md`; API chỉ dùng **Internal Database URL** (NFR-08).
-- **Render Web Service (Docker image):**
-  - image `ghcr.io/<repo>-api:<sha>`; nếu package GHCR private thì thêm credential registry;
-  - Health Check Path `/health`;
-  - env `DATABASE_URL` (internal), `JWT_SECRET` (≥ 32 ký tự), `CORS_ORIGINS` = URL Vercel production; tắt auto-deploy;
-  - lấy Deploy Hook URL để đặt vào secret.
-- **Vercel project:** Root Directory `apps/web`; env production `NEXT_PUBLIC_API_URL` = URL Render API (HTTPS); tắt Git auto-deploy (ADR-004).
-- **GitHub:** environment `production` với các secret ở bảng trên; biến `PRODUCTION_API_URL`, `PRODUCTION_WEB_URL`.
+- **Render Web Service (image):** `ghcr.io/duvinhloi/brewlite-api:<sha>` (package private thì thêm credential registry); Health Check Path `/health`; env `DATABASE_URL` (internal), `JWT_SECRET` (≥ 32 ký tự), `CORS_ORIGINS` = URL Vercel production; tắt auto-deploy; lấy Deploy Hook URL.
+- **Vercel project:** Root Directory `apps/web`; env production `NEXT_PUBLIC_API_URL` = URL Render API (HTTPS); tắt Git auto-deploy.
+- **GitHub environment `production`:** secret `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`; biến `PRODUCTION_API_URL`, `PRODUCTION_WEB_URL`. Xóa `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`.
 
-**`docs/deployment.md`:** viết lại phần production cho Vercel + Render:
-- sơ đồ (trỏ `docs/architecture/deployment.svg` sau khi Task 3 merge);
-- danh sách secret, chỉ ghi tên;
-- deploy bằng tag `a2-v*`;
-- **rollback:** gọi deploy hook Render với `imgURL` = image tag SHA bản trước, `vercel rollback` (hoặc promote deployment trước), rồi chạy lại smoke test (AC-N18.3);
-- ghi lại một lần diễn tập rollback.
-- Bỏ câu "chuẩn bị cho VPS Linux + Docker Compose".
+## CR-5.4: Tài liệu deploy
 
-## CR-5.4: Kiểm trước khi mở PR
+- **`docs/deployment.md`:** viết lại dòng 3 và mục "Production đề xuất: VPS…" (dòng 28–54) cho Vercel + Render: trỏ `docs/architecture/deployment.svg`; tên secret (không ghi giá trị); deploy bằng tag `a2-v*`; **rollback** = gọi deploy hook Render với `imgURL` là image SHA bản trước, `vercel rollback` (hoặc promote deployment trước), rồi chạy lại smoke (AC-N18.3); ghi một lần diễn tập rollback.
+- **`README.md`:** dòng 83 bỏ "`4000000000000119` timeout sau 5 giây"; dòng 138 thay lệnh `deploy.sh` bằng cách rollback ở `docs/deployment.md`.
+- **`docs/task5/implementation.md:40`:** VPS → Vercel + Render.
+- **`docs/task5/verification.md`:** dòng 55–56, 92–93, 172, 179 bỏ `deploy.sh`, `docker-compose.production.yml`, secret SSH, VPS; ghi bằng chứng CD mới khi có. Dòng 68, 73 ("phục hồi PAID" khi reload) là luồng UI hợp lệ, giữ.
+
+## CR-5.5: README app và ma trận
+
+- `apps/api/README.md:21`: bỏ "simulator chống thu trùng theo `orderId`, kết quả thành công còn sau restart để phục hồi E8b (… AC-F16.7)"; thay bằng "API replay theo chủ đơn/`orderId`/key/`paymentMethod` (BR-05, FR-16); simulator không lưu trạng thái".
+- `apps/api/README.md:29`: bỏ "thêm `version` từ `APP_VERSION` của image và không cache" và vế "CD chờ…" ở cuối dòng.
+- `docs/traceability-matrix.md` (dòng sau khi giải xung đột):
+  - FR-15, cột Code/API: "trả 402/502" → "trả 402"; cột Test: bỏ "timeout".
+  - FR-16, cột Test: "reused/new key" → "new key, different method, key on other order".
+  - NFR-18, cột Code/API: `scripts/deploy.sh` → `apps/api/Dockerfile` (migrate khi khởi động); cột Test: ghi kết quả smoke và rollback thật khi có.
+  - Các dòng Task 5 khác: ghi đường dẫn code và mã test vào cột Code/API, Test.
+
+## CR-5.6: Kiểm trước khi mở PR
+
+Chạy sau khi commit:
 
 ```text
 npm --prefix apps/api run lint && npm --prefix apps/api test && npm --prefix apps/api run build
 npm --prefix apps/api run test:integration
 npm --prefix apps/web run lint && npm --prefix apps/web run typecheck && npm --prefix apps/web test && npm --prefix apps/web run build
 python docs/validate_task2.py
-git grep -n "IDEMPOTENCY_KEY_REUSED\|PAYMENT_SERVICE_UNAVAILABLE\|0119\|deploy.sh\|DEPLOY_SSH_KEY\|APP_VERSION" -- apps tests .github docs/deployment.md README.md
+git diff --check origin/develop-Assignment2...HEAD
+git grep -n -E "<<<<<<<|>>>>>>>|IDEMPOTENCY_KEY_REUSED|PAYMENT_SERVICE_UNAVAILABLE|'UNAVAILABLE'|0119|402, 502|\b422\b|E8b|AC-F16\.7|APP_VERSION|deploy\.sh|docker-compose\.production|DEPLOY_(HOST|USER|SSH_KEY|KNOWN_HOSTS)|\bVPS\b|timeout sau 5 giây|retry-max-time 120|cardNumber \?\? null|userId: user\.sub, idempotencyKey|402/502|reused/new key" -- apps tests .github README.md docs/deployment.md docs/task5 docs/traceability-matrix.md ':!**/package-lock.json'
 ```
 
-- Lệnh `git grep` cuối không được ra dòng nào.
-- `test:integration` cần Postgres. Chạy theo hướng dẫn trong `README.md` gốc của branch, **không** chạy `docker compose` khi cổng 5432/3000 đang được người khác dùng.
-
-## CR-5.5: Truy vết và tài liệu Task 5
-
-- Ghi đường dẫn code và mã test vào cột Code/API và Test của `docs/traceability-matrix.md` theo `FR-xx`/`NFR-xx`, chỉ các dòng Task 5 làm.
-- `docs/task5/*.md` (implementation, verification, release notes, review/retro) giữ lại. Sửa các chỗ nhắc VPS, 502, 422.
-- Mô tả PR (skill `mattpocock-skills:pr`) liệt kê: D2, bỏ 502/422, chuyển CD sang Vercel + Render, link báo cáo smoke và rollback.
+- Lệnh `git grep` cuối ra 0 dòng.
+- `test:integration` cần Postgres. Chạy theo `README.md` gốc của branch; **không** chạy `docker compose` khi cổng 5432/3000 đang có người dùng.
+- Ghi `report-task5.md` (output từng lệnh), mở PR bằng skill `mattpocock-skills:pr`: liệt kê D2, D3, C3, chuyển CD sang Vercel + Render, link báo cáo smoke và rollback.
 
 ## Ngoài CR này
 
-- `Payment.userId` và `Payment.fingerprint` là cột kỹ thuật, không có trong class diagram domain. Có thể giữ; nếu Task 2 muốn thể hiện thì sửa class diagram trong PR riêng.
-- Branch `thien35` và các branch `frontend/` + `backend/`: không merge. Muốn dùng lại giao diện thì chép có chọn lọc vào `apps/web` qua PR riêng.
+- `Payment.userId` và `Payment.fingerprint` là cột kỹ thuật, không có trong class diagram domain. Giữ; muốn thể hiện thì Task 2 sửa class diagram trong PR riêng.
+- `docs/checkpoints/*` là nhật ký lịch sử, giữ nguyên.
