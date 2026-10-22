@@ -16,7 +16,7 @@ Tài liệu gồm **4 biểu đồ lớp**, mỗi biểu đồ một khối Plan
 
 - Chỉ vẽ **backend** (NestJS + Prisma). Không vẽ frontend (Next.js).
 - CD1 là mô hình khái niệm của dữ liệu, không có phương thức. CD2–CD4 là lớp thiết kế, chỉ ghi phương thức `public`.
-- Đối chiếu đề: `docs/BrewLite-CongNghePhanMem-fixed.md` §12.2 (5 thực thể), §9 (idempotency, optimistic locking, State Machine §9.1). Hành vi từng bước của các phương thức xem `docs/user-sequence-specifications.md` (mục C và ma trận Phần III của từng UC).
+- Đối chiếu đề: `docs/BrewLite-CongNghePhanMem-fixed.md` §12.2 (5 thực thể), §9 (idempotency, optimistic locking, State Machine §9.1). Hành vi từng bước và tiêu chí chấp nhận: `docs/product-backlog.md`.
 - Tên lớp, phương thức, chữ ký lấy trực tiếp từ code; đổi code thì sửa lại tài liệu này (xem `.claude/rules/doc-code-sync.md`).
 
 ## Quy ước ký hiệu

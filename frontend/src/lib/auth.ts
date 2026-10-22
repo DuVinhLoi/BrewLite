@@ -1,6 +1,6 @@
 // ============================================================
-// FEATURE: Phiên đăng nhập của tab + vai trò phía FE (mở rộng §3.2). Role chỉ để điều hướng / ẩn hiện;
-// quyền thật do backend chặn (JwtAuthGuard + RolesGuard).
+// FEATURE: Phiên đăng nhập của tab + vai trò phía FE. Web chỉ phục vụ khách: role dùng để từ chối tài khoản nhân viên
+// lúc đăng nhập (lib/login.ts); quyền thật do backend chặn (JwtAuthGuard + RolesGuard).
 // ============================================================
 
 export type Role = 'CUSTOMER' | 'BARISTA' | 'ADMIN';
@@ -10,7 +10,7 @@ export const TOKEN_KEY = 'brewlite-token';
 export const ROLE_LABEL: Record<Role, string> = { CUSTOMER: 'Khách', BARISTA: 'Quầy', ADMIN: 'Quản trị' };
 
 // Mỗi tab một phiên: token nằm trong sessionStorage của tab. localStorage dùng chung mọi tab cùng origin nên
-// đăng nhập barista ở tab 2 từng ghi đè phiên khách ở tab 1. Reload vẫn giữ phiên; tab mở mới bằng URL phải đăng nhập lại.
+// đăng nhập tài khoản khác ở tab 2 từng ghi đè phiên khách ở tab 1. Reload vẫn giữ phiên; tab mở mới bằng URL phải đăng nhập lại.
 const tabStore = (): Storage | null => (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
 
 export const getToken = (): string | null => tabStore()?.getItem(TOKEN_KEY) ?? null;
@@ -49,9 +49,6 @@ export function sessionFromToken(token: string | null): SessionInfo | null {
   return { email: typeof payload.email === 'string' ? payload.email : '', role };
 }
 
-/** BARISTA và ADMIN là nhân viên (vào được Quầy); giao diện chỉ ẩn/hiện, quyền thật do backend chặn. */
-export const isStaff = (role: Role | null): boolean => role === 'BARISTA' || role === 'ADMIN';
-
 export const roleFromToken = (token: string | null): Role | null => sessionFromToken(token)?.role ?? null;
 
 /** Mã tài khoản (claim `sub`) của token; token thiếu, hỏng hoặc không có sub → null, không ném lỗi. */
@@ -59,6 +56,3 @@ export function userIdFromToken(token: string | null): string | null {
   const sub = payloadOf(token)?.sub;
   return typeof sub === 'string' && sub ? sub : null;
 }
-
-const HOME: Record<Role, string> = { CUSTOMER: '/', BARISTA: '/barista', ADMIN: '/admin' };
-export const homeFor = (role: Role): string => HOME[role];

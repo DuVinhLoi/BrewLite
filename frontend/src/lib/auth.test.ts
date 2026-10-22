@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { ROLE_LABEL, TOKEN_KEY, clearToken, getToken, homeFor, isStaff, roleFromToken, saveToken, sessionFromToken, userIdFromToken } from './auth';
+import { ROLE_LABEL, TOKEN_KEY, clearToken, getToken, roleFromToken, saveToken, sessionFromToken, userIdFromToken } from './auth';
 
 // JWT giả: chỉ phần payload quan trọng (frontend không kiểm chữ ký, server mới là nơi chặn quyền)
 const fakeJwt = (payload: object | null) =>
@@ -36,12 +36,6 @@ describe('userIdFromToken (sub của JWT, dùng để biết phiên thanh toán 
   });
 });
 
-test('homeFor: barista → /barista, admin → /admin, khách → /', () => {
-  expect(homeFor('BARISTA')).toBe('/barista');
-  expect(homeFor('ADMIN')).toBe('/admin');
-  expect(homeFor('CUSTOMER')).toBe('/');
-});
-
 // sessionStorage riêng của từng tab; localStorage (storage giả của vitest.setup.ts) dùng chung như các tab cùng origin
 class TabStorage {
   private data = new Map<string, string>();
@@ -73,7 +67,7 @@ describe('mỗi tab một phiên đăng nhập (sessionStorage)', () => {
     localStorage.removeItem(TOKEN_KEY);
   });
 
-  test('đăng nhập barista ở tab 2 không đổi phiên khách ở tab 1 (reload tab 1 vẫn là khách)', () => {
+  test('đăng nhập tài khoản khác ở tab 2 không đổi phiên khách ở tab 1 (reload tab 1 vẫn là khách)', () => {
     const tab1 = new TabStorage();
     const tab2 = new TabStorage();
     useTab(tab1);
@@ -120,14 +114,5 @@ describe('sessionFromToken', () => {
 
   test('nhãn vai trò tiếng Việt cho header', () => {
     expect(ROLE_LABEL).toEqual({ CUSTOMER: 'Khách', BARISTA: 'Quầy', ADMIN: 'Quản trị' });
-  });
-});
-
-describe('isStaff (một nơi định nghĩa: BARISTA và ADMIN là nhân viên)', () => {
-  test('BARISTA và ADMIN là nhân viên; CUSTOMER và chưa đăng nhập thì không', () => {
-    expect(isStaff('BARISTA')).toBe(true);
-    expect(isStaff('ADMIN')).toBe(true);
-    expect(isStaff('CUSTOMER')).toBe(false);
-    expect(isStaff(null)).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 // ============================================================
-// FEATURE: Hằng số khuyến mãi / tích điểm (UC05a voucher, UC09 điểm thưởng).
+// FEATURE: Hằng số khuyến mãi / tích điểm (US-10: voucher, điểm thưởng).
 // PHẢI KHỚP backend/src/payment/payment.service.ts (cùng tên, cùng giá trị): lib/promo.test.ts đọc file đó và đối chiếu.
 // ============================================================
 

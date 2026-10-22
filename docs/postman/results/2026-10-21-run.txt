@@ -1,0 +1,472 @@
+
+Running your collection...
+postman
+
+BrewLite API — minh chứng 10 task
+
+Folder 00 Chuẩn bị (đăng ký khách smoke, đăng nhập quầy/quản trị)
+Sub-folder Đăng ký khách A (@smoke.test)
+
+  POST http://localhost:3000/auth/register [201 Created, 334 B, 108 ms]
+  Pass  HTTP 201
+
+Sub-folder Đăng nhập khách A
+
+  POST http://localhost:3000/auth/login [200 OK, 634 B, 64 ms]
+  Pass  HTTP 200
+
+Sub-folder Đăng ký khách B (@smoke.test)
+
+  POST http://localhost:3000/auth/register [201 Created, 334 B, 62 ms]
+  Pass  HTTP 201
+
+Sub-folder Đăng nhập khách B
+
+  POST http://localhost:3000/auth/login [200 OK, 634 B, 63 ms]
+  Pass  HTTP 200
+
+Sub-folder Đăng nhập quầy (barista demo)
+
+  POST http://localhost:3000/auth/login [200 OK, 566 B, 62 ms]
+  Pass  HTTP 200
+  Pass  role BARISTA
+
+Sub-folder Đăng nhập quản trị (admin demo)
+
+  POST http://localhost:3000/auth/login [200 OK, 552 B, 63 ms]
+  Pass  HTTP 200
+  Pass  role ADMIN
+
+Folder Task 01 — Khởi tạo dự án và cấu trúc
+Sub-folder T01.1 Frontend Next.js trả trang (Hello)
+
+  GET http://localhost:3001/ [200 OK, 4.73 KB, 100 ms]
+  Pass  HTTP 200
+  Pass  Trả HTML
+  Pass  Có chữ BrewLite
+
+Sub-folder T01.2 Backend NestJS trả JSON
+
+  GET http://localhost:3000/products [200 OK, 656 B, 4 ms]
+  Pass  HTTP 200
+  Pass  Trả JSON
+
+Folder Task 02 — API danh sách sản phẩm
+Sub-folder T02.1 GET /products: menu có id, name, price, imageUrl
+
+  GET http://localhost:3000/products [200 OK, 656 B, 5 ms]
+  Pass  HTTP 200
+  Pass  Là mảng không rỗng
+  Pass  Mỗi món có id, name, price, imageUrl
+  Pass  Không có món hết hàng (stock = 0)
+
+Sub-folder T02.2 GET /products/:id: chi tiết một món
+
+  GET http://localhost:3000/products/p2 [200 OK, 352 B, 5 ms]
+  Pass  HTTP 200
+  Pass  Đúng món đã chọn
+
+Sub-folder T02.3 GET /products/:id không tồn tại → 404
+
+  GET http://localhost:3000/products/khong-ton-tai [404 Not Found, 324 B, 4 ms]
+  Pass  HTTP 404
+
+Folder Task 03 — Trang Menu (Frontend)
+Sub-folder T03.1 Trang Menu / trả HTML
+
+  GET http://localhost:3001/ [200 OK, 4.73 KB, 7 ms]
+  Pass  HTTP 200
+
+Sub-folder T03.2 Ảnh của món (imageUrl) tải được
+
+  GET http://localhost:3001/images/americano.svg/ [200 OK, 852 B, 9 ms]
+  Pass  HTTP 200
+  Pass  Là ảnh SVG
+
+Folder Task 04 — Chi tiết và tùy chọn sản phẩm
+Sub-folder T04.1 Đơn size L + Trân châu + Kem cheese: giá = gốc + 10.000 + 13.000
+
+  POST http://localhost:3000/orders [201 Created, 549 B, 16 ms]
+  Pass  HTTP 201
+  Pass  unitPrice = 63000
+  Pass  total = 63000
+
+Sub-folder T04.2 Size S, không topping: giá = giá gốc
+
+  POST http://localhost:3000/orders [201 Created, 523 B, 9 ms]
+  Pass  HTTP 201
+  Pass  total = giá gốc
+
+Sub-folder T04.3 Topping không có trong bảng giá → 400
+
+  POST http://localhost:3000/orders [400 Bad Request, 337 B, 5 ms]
+  Pass  HTTP 400
+  Pass  Báo Unknown topping
+
+Folder Task 05 — Giỏ hàng
+Sub-folder T05.1 Giỏ 2 dòng: total = tổng các dòng
+
+  POST http://localhost:3000/orders [201 Created, 617 B, 9 ms]
+  Pass  HTTP 201
+  Pass  total = tổng quantity × unitPrice
+  Pass  total = 2 × (gốc + 5.000) + (gốc + 6.000)
+
+Sub-folder T05.2 Giỏ 21 dòng (quá 20) → 400
+
+  POST http://localhost:3000/orders [400 Bad Request, 356 B, 5 ms]
+  Pass  HTTP 400
+
+Sub-folder T05.3 Một dòng 100 ly (quá 99) → 400
+
+  POST http://localhost:3000/orders [400 Bad Request, 357 B, 4 ms]
+  Pass  HTTP 400
+
+Folder Task 06 — API tạo đơn hàng
+Sub-folder T06.1 Không kèm token → 401
+
+  POST http://localhost:3000/orders [401 Unauthorized, 325 B, 3 ms]
+  Pass  HTTP 401
+
+Sub-folder T06.2 Giỏ rỗng → 400
+
+  POST http://localhost:3000/orders [400 Bad Request, 351 B, 4 ms]
+  Pass  HTTP 400
+
+Sub-folder T06.3 Size XL (ngoài S/M/L) → 400
+
+  POST http://localhost:3000/orders [400 Bad Request, 371 B, 4 ms]
+  Pass  HTTP 400
+
+Sub-folder T06.4 Món không tồn tại → 404
+
+  POST http://localhost:3000/orders [404 Not Found, 324 B, 4 ms]
+  Pass  HTTP 404
+
+Sub-folder T06.5 Tạo đơn hợp lệ → 201 PENDING, có mã đơn; giá client gửi bị bỏ qua
+
+  POST http://localhost:3000/orders [201 Created, 523 B, 9 ms]
+  Pass  HTTP 201
+  Pass  Có mã đơn (id)
+  Pass  status PENDING
+  Pass  Giá do server tính (gốc + 5.000), không phải 1
+
+Sub-folder T06.6 Token quầy (BARISTA) tạo đơn khách → 403
+
+  POST http://localhost:3000/orders [403 Forbidden, 324 B, 3 ms]
+  Pass  HTTP 403
+
+Folder Task 07 — Đăng ký / Đăng nhập (JWT)
+Sub-folder T07.1 Đăng ký mới → 201, không trả passwordHash
+
+  POST http://localhost:3000/auth/register [201 Created, 334 B, 63 ms]
+  Pass  HTTP 201
+  Pass  Có id và email
+  Pass  Không lộ password / passwordHash
+
+Sub-folder T07.2 Đăng ký trùng email (khác hoa/thường) → 409
+
+  POST http://localhost:3000/auth/register [409 Conflict, 329 B, 4 ms]
+  Pass  HTTP 409
+
+Sub-folder T07.3 Email sai định dạng / mật khẩu < 6 ký tự → 400
+
+  POST http://localhost:3000/auth/register [400 Bad Request, 392 B, 3 ms]
+  Pass  HTTP 400
+
+Sub-folder T07.4 Đăng nhập đúng → 200, có JWT
+
+  POST http://localhost:3000/auth/login [200 OK, 634 B, 60 ms]
+  Pass  HTTP 200
+  Pass  accessToken là JWT 3 phần
+  Pass  role CUSTOMER
+
+Sub-folder T07.5 Sai mật khẩu → 401 Invalid credentials
+
+  POST http://localhost:3000/auth/login [401 Unauthorized, 332 B, 60 ms]
+  Pass  HTTP 401
+  Pass  message = Invalid credentials
+
+Sub-folder T07.6 Email không tồn tại → 401, cùng thông điệp
+
+  POST http://localhost:3000/auth/login [401 Unauthorized, 332 B, 3 ms]
+  Pass  HTTP 401
+  Pass  Cùng thông điệp với sai mật khẩu
+
+Sub-folder T07.7 Token giả → 401
+
+  GET http://localhost:3000/orders/me [401 Unauthorized, 325 B, 3 ms]
+  Pass  HTTP 401
+
+Folder Task 08 — Thanh toán không tiền mặt
+Sub-folder T08.1 Thanh toán Ví (WALLET) → 201 PAID
+
+  POST http://localhost:3000/payments [201 Created, 441 B, 14 ms]
+  Pass  HTTP 201
+  Pass  status PAID
+  Pass  Đúng đơn
+  Pass  Có paymentId (biên lai)
+
+Sub-folder T08.2 GET /orders/:id sau khi trả → PAID
+
+  GET http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [200 OK, 497 B, 4 ms]
+  Pass  HTTP 200
+  Pass  status PAID
+
+Sub-folder T08.3 Tạo đơn 2 (PENDING) để thử nhánh lỗi
+
+  POST http://localhost:3000/orders [201 Created, 523 B, 9 ms]
+  Pass  HTTP 201
+  Pass  PENDING
+
+Sub-folder T08.4 Thanh toán Thẻ (CARD) bị cổng giả từ chối → 400 Payment failed
+
+  POST http://localhost:3000/payments [400 Bad Request, 325 B, 9 ms]
+  Pass  HTTP 400 (cần MOCK_GATEWAY_DECLINE_METHOD=CARD)
+  Pass  message = Payment failed
+
+Sub-folder T08.5 Đơn 2 ở trạng thái PAYMENT_FAILED
+
+  GET http://localhost:3000/orders/7656ba47-c03b-4b6a-9915-cb448a0ea419 [200 OK, 508 B, 4 ms]
+  Pass  HTTP 200
+  Pass  status PAYMENT_FAILED
+
+Sub-folder T08.6 Thử lại bằng Ví → 201 PAID, cùng đơn cũ
+
+  POST http://localhost:3000/payments [201 Created, 441 B, 14 ms]
+  Pass  HTTP 201
+  Pass  PAID trên đơn cũ (không tạo đơn mới)
+
+Sub-folder T08.7 Thiếu Idempotency-Key → 400
+
+  POST http://localhost:3000/payments [400 Bad Request, 334 B, 4 ms]
+  Pass  HTTP 400
+  Pass  message = Missing Idempotency-Key
+
+Sub-folder T08.8 Phương thức ngoài Ví/Thẻ (CASH) → 400
+
+  POST http://localhost:3000/payments [400 Bad Request, 377 B, 7 ms]
+  Pass  HTTP 400
+
+Folder Task 09 — Xác nhận, lịch sử đơn và bàn giao
+Sub-folder T09.1 Xác nhận: GET /orders/:id có mã đơn và trạng thái
+
+  GET http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [200 OK, 497 B, 4 ms]
+  Pass  HTTP 200
+  Pass  Có id, status, total, items
+
+Sub-folder T09.2 GET /orders/me: lịch sử của mình, mới nhất trước
+
+  GET http://localhost:3000/orders/me [200 OK, 1.74 KB, 8 ms]
+  Pass  HTTP 200
+  Pass  Có các đơn vừa tạo
+  Pass  Sắp xếp createdAt giảm dần
+  Pass  Mỗi dòng món có productName
+
+Sub-folder T09.3 Khách B không thấy đơn của khách A trong lịch sử
+
+  GET http://localhost:3000/orders/me [200 OK, 249 B, 4 ms]
+  Pass  HTTP 200
+  Pass  Lịch sử khách B không chứa đơn của A
+
+Sub-folder T09.4 Khách B xem đơn của khách A → 403
+
+  GET http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [403 Forbidden, 321 B, 4 ms]
+  Pass  HTTP 403
+
+Sub-folder T09.5 Mã đơn không tồn tại → 404
+
+  GET http://localhost:3000/orders/khong-ton-tai [404 Not Found, 322 B, 5 ms]
+  Pass  HTTP 404
+
+Sub-folder T09.6 Bàn giao: frontend (:3001) và backend (:3000) cùng chạy từ docker compose
+
+  GET http://localhost:3001/history [200 OK, 3.17 KB, 12 ms]
+  Pass  HTTP 200
+  Pass  Trang /history trả HTML
+
+Folder Task 10 — Nghiệp vụ backend / (a) Order State Machine
+Sub-folder T10a.1 Khách tự tiến đơn PREPARING → 403
+
+  PATCH http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [403 Forbidden, 336 B, 4 ms]
+  Pass  HTTP 403
+  Pass  message = Only staff can advance orders
+
+Sub-folder T10a.2 Nhảy cóc PAID → READY → 400 Invalid transition
+
+  PATCH http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [400 Bad Request, 343 B, 4 ms]
+  Pass  HTTP 400
+  Pass  Invalid transition PAID -> READY
+
+Sub-folder T10a.3 Quầy PAID → PREPARING → 200
+
+  PATCH http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [200 OK, 502 B, 8 ms]
+  Pass  HTTP 200
+  Pass  PREPARING
+
+Sub-folder T10a.4 Khách hủy đơn đang PREPARING → 400
+
+  PATCH http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [400 Bad Request, 352 B, 5 ms]
+  Pass  HTTP 400
+  Pass  Invalid transition
+
+Sub-folder T10a.5 Quầy PREPARING → READY → 200
+
+  PATCH http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [200 OK, 498 B, 7 ms]
+  Pass  HTTP 200
+  Pass  READY
+
+Sub-folder T10a.6 Quầy READY → COMPLETED → 200
+
+  PATCH http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [200 OK, 502 B, 8 ms]
+  Pass  HTTP 200
+  Pass  COMPLETED
+
+Sub-folder T10a.7 COMPLETED → CANCELLED → 400 (trạng thái kết thúc)
+
+  PATCH http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [400 Bad Request, 352 B, 5 ms]
+  Pass  HTTP 400
+  Pass  Invalid transition COMPLETED -> CANCELLED
+
+Sub-folder T10a.8 Đơn vẫn COMPLETED sau khi bị chặn
+
+  GET http://localhost:3000/orders/0a756e73-c7fd-47d7-9589-0f2b4bb79af9 [200 OK, 502 B, 4 ms]
+  Pass  HTTP 200
+  Pass  COMPLETED
+
+Sub-folder T10a.9 Hàng đợi quầy GET /orders?status=PAID có đơn 2
+
+  GET http://localhost:3000/orders?status=PAID [200 OK, 526 B, 6 ms]
+  Pass  HTTP 200
+  Pass  Đơn 2 (PAID) nằm trong hàng đợi
+
+Sub-folder T10a.10 Quầy hủy đơn PAID → 200 CANCELLED (hoàn tiền, hoàn kho)
+
+  PATCH http://localhost:3000/orders/7656ba47-c03b-4b6a-9915-cb448a0ea419 [200 OK, 502 B, 10 ms]
+  Pass  HTTP 200
+  Pass  CANCELLED
+
+Folder Task 10 — Nghiệp vụ backend / (b) Idempotency-Key
+Sub-folder T10b.1 Ghi lại tồn kho trước (admin)
+
+  GET http://localhost:3000/admin/products [200 OK, 655 B, 3 ms]
+  Pass  HTTP 200
+
+Sub-folder T10b.2 POST /orders lần 1 với key K → 201
+
+  POST http://localhost:3000/orders [201 Created, 560 B, 9 ms]
+  Pass  HTTP 201
+  Pass  isCached false
+
+Sub-folder T10b.3 POST /orders lần 2 cùng key K → 200, cùng đơn
+
+  POST http://localhost:3000/orders [200 OK, 554 B, 5 ms]
+  Pass  HTTP 200
+  Pass  Trả lại đúng đơn cũ, isCached true
+
+Sub-folder T10b.4 Ghi lại điểm thưởng trước khi trả
+
+  GET http://localhost:3000/users/me [200 OK, 366 B, 5 ms]
+  Pass  HTTP 200
+
+Sub-folder T10b.5 POST /payments lần 1 với key P → 201
+
+  POST http://localhost:3000/payments [201 Created, 441 B, 11 ms]
+  Pass  HTTP 201
+  Pass  isCached false
+
+Sub-folder T10b.6 POST /payments lần 2 cùng key P → 200, cùng biên lai
+
+  POST http://localhost:3000/payments [200 OK, 435 B, 5 ms]
+  Pass  HTTP 200
+  Pass  Cùng paymentId, isCached true
+
+Sub-folder T10b.7 Điểm thưởng chỉ cộng 1 lần
+
+  GET http://localhost:3000/users/me [200 OK, 367 B, 4 ms]
+  Pass  HTTP 200
+  Pass  loyaltyPoints = trước + điểm của 1 lần trả
+
+Sub-folder T10b.8 Tồn kho chỉ trừ 1 lần (2 ly)
+
+  GET http://localhost:3000/admin/products [200 OK, 655 B, 4 ms]
+  Pass  HTTP 200
+  Pass  stock = trước − 2
+
+Sub-folder T10b.9 Khách B dùng lại key của khách A → 422
+
+  POST http://localhost:3000/orders [422 Unprocessable Entity, 374 B, 4 ms]
+  Pass  HTTP 422
+
+Folder Task 10 — Nghiệp vụ backend / (c) Tồn kho và optimistic locking
+Sub-folder T10c.1 Chỉnh kho với version lệch → 409 Stock changed
+
+  PATCH http://localhost:3000/admin/products/p2/stock [409 Conflict, 326 B, 4 ms]
+  Pass  HTTP 409
+  Pass  message = Stock changed, reload
+
+Sub-folder T10c.2 Trừ kho quá số còn lại → 400, kho không âm
+
+  PATCH http://localhost:3000/admin/products/p2/stock [400 Bad Request, 335 B, 4 ms]
+  Pass  HTTP 400
+  Pass  message = Stock cannot be negative
+
+Sub-folder T10c.3 Khách gọi API kho → 403
+
+  GET http://localhost:3000/admin/products [403 Forbidden, 324 B, 2 ms]
+  Pass  HTTP 403
+
+Folder Task 10 — Nghiệp vụ backend / (d) Voucher BREWLITE10 và điểm thưởng
+Sub-folder T10d.1 Tạo đơn mới
+
+  POST http://localhost:3000/orders [201 Created, 535 B, 9 ms]
+  Pass  HTTP 201
+
+Sub-folder T10d.2 Ghi lại điểm trước khi trả
+
+  GET http://localhost:3000/users/me [200 OK, 367 B, 4 ms]
+  Pass  HTTP 200
+
+Sub-folder T10d.3 Trả với BREWLITE10 → giảm 10%, điểm đúng công thức
+
+  POST http://localhost:3000/payments [201 Created, 444 B, 13 ms]
+  Pass  HTTP 201
+  Pass  discount = floor(total × 0.1) = 5800
+  Pass  amount = total − discount = 52200
+  Pass  loyaltyPointsEarned = floor(amount × 0.1 / 1000) = 5
+
+Sub-folder T10d.4 GET /users/me: điểm tích lũy đã cộng
+
+  GET http://localhost:3000/users/me [200 OK, 367 B, 3 ms]
+  Pass  HTTP 200
+  Pass  loyaltyPoints = 22
+
+Sub-folder T10d.5 Mã sai không được giảm
+
+  POST http://localhost:3000/orders [201 Created, 523 B, 8 ms]
+  Pass  HTTP 201
+
+Sub-folder T10d.6 Trả với mã SAIMA → discount 0
+
+  POST http://localhost:3000/payments [201 Created, 441 B, 11 ms]
+  Pass  HTTP 201
+  Pass  discount = 0
+
+----------------------------------------------------------------------
+|                         |            executed |             failed |
+--------------------------+---------------------+---------------------
+|              iterations |                   1 |                  0 |
+--------------------------+---------------------+---------------------
+|                requests |                  74 |                  0 |
+--------------------------+---------------------+---------------------
+|            test-scripts |                  74 |                  0 |
+--------------------------+---------------------+---------------------
+|      prerequest-scripts |                  86 |                  0 |
+--------------------------+---------------------+---------------------
+|              assertions |                 137 |                  0 |
+----------------------------------------------------------------------
+| total run duration: 7.5 s                                          |
+----------------------------------------------------------------------
+| total data received: 25.62 KB (approx)                             |
+----------------------------------------------------------------------
+| average response time: 14 ms [min: 2 ms, max: 108 ms, s.d.: 23 ms] |
+----------------------------------------------------------------------

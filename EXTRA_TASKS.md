@@ -1,3 +1,5 @@
+> **Ghi chú lịch sử.** Tài liệu bàn giao của nhánh `develop`. Trên nhánh `develop-agile`, các tài liệu UC / sequence và giao diện Barista/Admin (`/barista`, `/admin`) không còn; nhân viên thao tác qua Swagger `/docs`, backlog hiện hành là `docs/product-backlog.md`.
+
 # EXTRA_TASKS — handover note to teammates (branch develop)
 
 Các task thuộc phạm vi teammate đã implement sẵn trên nhánh này để demo

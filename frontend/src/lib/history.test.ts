@@ -13,7 +13,7 @@ const item = (over: Partial<HistoryItem> = {}): HistoryItem => ({
   ...over,
 });
 
-// UC07: dòng món trong lịch sử hiện tên món do backend gắn, không còn 8 ký tự đầu của mã món.
+// US-09: dòng món trong lịch sử hiện tên món do backend gắn, không còn 8 ký tự đầu của mã món.
 // Nét mực (ui-visual-plan.md §6 mục 10): bỏ em-dash; đơn giá nằm ở phần tử riêng của HistoryView, itemLine chỉ còn phần chữ.
 describe('itemLine', () => {
   test('hiện số lượng, tên món, size; không lộ mã món, không có giá và em-dash', () => {

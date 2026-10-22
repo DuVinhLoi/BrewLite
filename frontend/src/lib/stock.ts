@@ -1,5 +1,5 @@
 // ============================================================
-// FEATURE: Nhãn tồn kho dùng chung cho menu khách (ProductCard) và màn Kho (admin). Hàm thuần, không gọi mạng.
+// FEATURE: Nhãn tồn kho cho menu khách (ProductCard). Hàm thuần, không gọi mạng.
 // ============================================================
 export const LOW_STOCK = 3;
 

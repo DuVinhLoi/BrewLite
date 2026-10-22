@@ -1,5 +1,5 @@
 // ============================================================
-// FEATURE: Biên lai và lịch sử tự cập nhật trạng thái đơn (UC07): hỏi lại backend mỗi 3 giây đến khi đơn xong.
+// FEATURE: Biên lai và lịch sử tự cập nhật trạng thái đơn (US-09): hỏi lại backend mỗi 3 giây đến khi đơn xong.
 // startPolling là lõi không phụ thuộc React (test bằng fake timers); usePolling / useOrderPoll chỉ nối lõi vào useState / useEffect.
 // ============================================================
 

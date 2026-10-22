@@ -49,22 +49,12 @@ export const HAPPY_PATH: OrderStatus[] = ['PENDING', 'PAID', 'PREPARING', 'READY
 
 export const isOrderStatus = (s: string): s is OrderStatus => (ORDER_STATUSES as string[]).includes(s);
 
-// UC06 KB2/KB3: khách hủy được khi chưa vào quầy (PENDING, PAYMENT_FAILED, PAID); PREPARING trở đi backend trả 400.
+// US-10: khách hủy được khi chưa vào quầy (PENDING, PAYMENT_FAILED, PAID); PREPARING trở đi backend trả 400.
 export const canCancel = (s: string): boolean => isOrderStatus(s) && TRANSITIONS[s].includes('CANCELLED');
 
 // Trạng thái cuối: không còn mũi tên đi ra (COMPLETED, CANCELLED). Biên lai và lịch sử tự cập nhật đến khi đơn tới đây
 // (lib/use-order-poll.ts). Trạng thái lạ → false: cứ hỏi tiếp thay vì tin là xong.
 export const isTerminal = (s: string): boolean => isOrderStatus(s) && TRANSITIONS[s].length === 0;
-
-// Bước tiếp theo ở quầy (UC09–UC11, màn /barista): PAID → PREPARING → READY → COMPLETED.
-// PENDING/PAYMENT_FAILED không có bước kế ở đây (bước kế của chúng là thanh toán / thử lại, không phải quầy).
-const COUNTER_NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
-  PAID: 'PREPARING',
-  PREPARING: 'READY',
-  READY: 'COMPLETED',
-};
-
-export const nextStatus = (s: string): OrderStatus | null => (isOrderStatus(s) ? COUNTER_NEXT[s] ?? null : null);
 
 export interface TrackStep {
   status: OrderStatus;

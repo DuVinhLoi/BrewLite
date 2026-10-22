@@ -3,7 +3,7 @@ import { ApiPaymentGateway } from './api-gateway';
 import { PaymentError } from './types';
 import { clearToken, saveToken } from '../auth';
 
-// UC06 KB1: thử lại sau lỗi trừ tiền phải trả tiếp ĐƠN CŨ (PAYMENT_FAILED -> PENDING),
+// US-08: thử lại sau lỗi trừ tiền phải trả tiếp ĐƠN CŨ (PAYMENT_FAILED -> PENDING),
 // không tạo đơn mới — gateway trả orderId trong lỗi để UI giữ lại.
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });

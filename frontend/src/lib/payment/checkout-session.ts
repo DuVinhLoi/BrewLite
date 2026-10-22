@@ -2,7 +2,7 @@ import { getToken, userIdFromToken } from '../auth';
 import { PaymentError, newIdempotencyKey, type CartLine } from './types';
 
 // ============================================================
-// FEATURE: Phiên thanh toán của tab (UC06 KB1 + phương án A): mã đơn + key tạo đơn + key trả tiền,
+// FEATURE: Phiên thanh toán của tab (US-08, phương án A): mã đơn + key tạo đơn + key trả tiền,
 // gắn với đúng nội dung giỏ và đúng tài khoản. Lưu sessionStorage nên reload, hoặc "Quay lại giỏ" rồi vào lại,
 // vẫn trả tiếp đúng đơn đó với đúng key (không tạo đơn mới, không trừ tiền 2 lần). Giỏ đổi thì bỏ, tạo phiên mới.
 // Hết phiên đăng nhập giữa lúc trả tiền: đăng nhập lại cùng tài khoản thì giữ phiên (clearCheckoutIfOtherUser).

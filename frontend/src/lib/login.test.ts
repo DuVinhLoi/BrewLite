@@ -6,15 +6,18 @@ import {
   NETWORK_ERROR,
   POINTS_SENTENCE,
   REGISTER_OK_NOTICE,
+  STAFF_LOGIN_MESSAGE,
+  SWAGGER_URL,
   afterRegister,
   authErrorMessage,
+  staffLoginMessage,
   switchMode,
   type LoginFormState,
 } from './login';
 import { formatVND } from './pricing';
 import { VND_FOR_ONE_POINT } from './promo';
 
-// Trang /login (UC03): câu lỗi tiếng Việt thay cho câu tiếng Anh của backend, và chuyển trạng thái form sau đăng ký.
+// Trang /login (US-07): câu lỗi tiếng Việt thay cho câu tiếng Anh của backend, và chuyển trạng thái form sau đăng ký.
 describe('authErrorMessage', () => {
   test('các câu cố định đúng chữ đã chốt', () => {
     expect(EMAIL_TAKEN).toBe('Email đã được đăng ký.');
@@ -94,5 +97,19 @@ describe('POINTS_SENTENCE', () => {
   test('tính từ VND_FOR_ONE_POINT và formatVND, không viết cứng số tiền', () => {
     expect(POINTS_SENTENCE).toBe(`Mỗi ${formatVND(VND_FOR_ONE_POINT)} thanh toán được cộng 1 điểm tích lũy vào hồ sơ của bạn.`);
     expect(POINTS_SENTENCE).toContain('Mỗi 10.000đ thanh toán được cộng 1 điểm');
+  });
+});
+
+describe('staffLoginMessage (web chỉ phục vụ khách)', () => {
+  test('BARISTA và ADMIN: câu chỉ sang Swagger /docs', () => {
+    expect(SWAGGER_URL).toBe('http://localhost:3000/docs');
+    expect(STAFF_LOGIN_MESSAGE).toBe('Tài khoản nhân viên thao tác qua Swagger: http://localhost:3000/docs');
+    expect(staffLoginMessage('BARISTA')).toBe(STAFF_LOGIN_MESSAGE);
+    expect(staffLoginMessage('ADMIN')).toBe(STAFF_LOGIN_MESSAGE);
+  });
+
+  test('CUSTOMER và token không đọc được: null (đăng nhập bình thường)', () => {
+    expect(staffLoginMessage('CUSTOMER')).toBeNull();
+    expect(staffLoginMessage(null)).toBeNull();
   });
 });

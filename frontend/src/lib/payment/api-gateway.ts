@@ -58,7 +58,7 @@ export class ApiPaymentGateway implements PaymentGateway {
     if (!orderId) {
       throw new Error('Thiếu orderId: cần Task 6 (POST /orders) tạo đơn trước khi gọi POST /payments.');
     }
-    // Từ đây đơn đã tồn tại: mọi lỗi mang orderId để UI thử lại đúng đơn này (UC06 KB1)
+    // Từ đây đơn đã tồn tại: mọi lỗi mang orderId để UI thử lại đúng đơn này (US-08)
     const token = getToken();
     let res: Response;
     try {

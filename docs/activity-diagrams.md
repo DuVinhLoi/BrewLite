@@ -3,7 +3,7 @@
 
 > **Dự án:** BrewLite – Ứng dụng đặt cà phê không tiền mặt  
 > **Môn học:** Công nghệ Phần mềm (Bài tập lớn 10 Task Agile Scrum)  
-> **Tài liệu tham chiếu:** [BrewLite-CongNghePhanMem-fixed.md](BrewLite-CongNghePhanMem-fixed.md) (đề), [use-case-specifications.md](use-case-specifications.md) (đặc tả Use Case), [user-sequence-specifications.md](user-sequence-specifications.md) (sequence chi tiết từng UC)  
+> **Tài liệu tham chiếu:** [BrewLite-CongNghePhanMem-fixed.md](BrewLite-CongNghePhanMem-fixed.md) (đề), [product-backlog.md](product-backlog.md) (user story và tiêu chí chấp nhận)  
 > **Phạm vi:** 2 biểu đồ hoạt động ở mức nghiệp vụ. **AD1** là luồng khách đặt món và thanh toán không tiền mặt (đề §5; UC01–UC07, UC05a). **AD2** là luồng nhân viên xử lý hàng đợi quầy (UC08–UC12, mở rộng ngoài đề §3.2). Hai biểu đồ vẽ theo **mã nguồn hiện tại**: đề là nguồn yêu cầu, code là nguồn để vẽ.
 
 ---
@@ -27,7 +27,7 @@ Mỗi biểu đồ có 3 mục: **A. Bối cảnh**, **B. Sơ đồ (PlantUML)**
 
 ### A. Bối cảnh
 Đây là luồng chính (happy path) của MVP ở đề §5: mở app, xem menu, chọn món (size, topping), thêm vào giỏ, xem giỏ, đăng nhập nếu chưa, thanh toán không tiền mặt, nhận mã đơn rồi nhận đồ uống. Giỏ hàng nằm ở máy khách (UC02); **đơn chỉ được tạo trong lần bấm "Xác nhận trả"** (UC04 rồi UC05 liền nhau, sau bước áp mã giảm giá UC05a), nên bước đăng nhập của đề §5 trong code là bước chặn khi bấm trả: chưa có token thì `POST /orders` trả 401 và khách được đưa về `/login?next=/cart` (UC03).
-Nhánh lỗi của đề §5 ("hủy / thanh toán lỗi, về giỏ") là `PAYMENT_FAILED`: khách bấm trả lại với cùng khóa chống trùng (UC06 KB1), hoặc hủy đơn ở `/history` (UC06 KB2). Chi tiết từng bước xem sequence §2.1–§2.6 trong [user-sequence-specifications.md](user-sequence-specifications.md).
+Nhánh lỗi của đề §5 ("hủy / thanh toán lỗi, về giỏ") là `PAYMENT_FAILED`: khách bấm trả lại với cùng khóa chống trùng (UC06 KB1), hoặc hủy đơn ở `/history` (UC06 KB2).
 
 ### B. Sơ đồ (PlantUML)
 ```plantuml
@@ -155,7 +155,7 @@ repeat
   :Tự làm mới trạng thái đơn mỗi 3 giây;
   note right
     GET /orders/:id
-    Barista xử lý đơn ở AD2
+    Nhân viên xử lý đơn ở AD2
   end note
 repeat while (Chưa COMPLETED và chưa CANCELLED?) is (chưa) not (xong)
 if (Đơn COMPLETED?) then (có)
@@ -165,7 +165,7 @@ else (CANCELLED)
   |Khách hàng|
   :Biên lai hiện "Đã hủy";
   note right
-    Đơn PAID bị hủy (Barista ở AD2, hoặc khách ở Lịch sử):
+    Đơn PAID bị hủy (nhân viên ở AD2, hoặc khách ở Lịch sử):
     server đã hoàn tiền và hoàn kho
   end note
 endif
@@ -197,16 +197,16 @@ stop
 | Kẹt kho hoặc lỗi ghi → hoàn tiền, `PAYMENT_FAILED` | 409 `Out of stock` (hoặc 404 / 500 theo lỗi gốc) | `payment.service.ts:pay` (`catch` sau `runInTransaction`: `gateway.refund` rồi `updateStatus(PAYMENT_FAILED)`); FE `api-gateway.ts:paymentErrorMessage` ("Món đã hết hàng, tiền đã được hoàn lại") |
 | Trả biên lai: mã đơn, giảm giá, điểm cộng | `POST /payments` 201 | `payment.service.ts:pay` (kết quả), FE `api-gateway.ts:pay` → `PaymentResult`; `frontend/src/components/PaymentSuccess.tsx:PaymentReceipt` ("Mã đơn", "+N điểm tích lũy", "Đã giảm") |
 | Tự làm mới trạng thái đơn mỗi 3 giây | `GET /orders/:id` 200 / 403 đơn người khác / 404 | `backend/src/order/order.controller.ts:byId` → `OrderService.getById`; FE `frontend/src/lib/use-order-poll.ts:useOrderPoll` (`POLL_INTERVAL_MS = 3000`), `api.ts:getOrder`, `frontend/src/components/OrderStatusTrack.tsx` |
-| Đơn `COMPLETED`: nhận đồ uống | không gọi API | trạng thái do Barista đặt (AD2); `lib/order-status.ts` (`isTerminal`) dừng poll ở `COMPLETED` / `CANCELLED` |
+| Đơn `COMPLETED`: nhận đồ uống | không gọi API | trạng thái do nhân viên đặt (AD2); `lib/order-status.ts` (`isTerminal`) dừng poll ở `COMPLETED` / `CANCELLED` |
 | Đơn `CANCELLED`: biên lai hiện "Đã hủy" | không gọi API | `lib/order-status.ts` (`STATUS_LABEL`, nhãn "Đã hủy"), `PaymentSuccess.tsx:receiptStatus`; hoàn tiền và hoàn kho do server làm lúc hủy đơn `PAID` (`payment.service.ts:cancel`), giao diện không có câu hoàn tiền |
 
 ---
 
-## AD2. BARISTA XỬ LÝ HÀNG ĐỢI (UC08–UC12)
+## AD2. NHÂN VIÊN XỬ LÝ HÀNG ĐỢI QUA API (US-10)
 
 ### A. Bối cảnh
-Phân hệ quầy là **mở rộng ngoài đề §3.2** nhưng có trên biểu đồ Use Case Bản 1: nhân viên đăng nhập, vào `/barista`, xem hàng đợi 3 cột (UC08), rồi lần lượt đẩy từng đơn theo Order State Machine đề §9.1: `PAID → PREPARING → READY → COMPLETED` (UC09–UC11) hoặc hủy đơn `PAID` vì hết nguyên liệu (UC12, hoàn tiền qua cổng rồi hoàn kho). Admin kế thừa Barista (`Admin --|> Barista` ở Use Case Bản 1) nên đi cùng luồng này; khách hàng gọi các API quầy bị 403.
-Vòng `repeat` là một phiên làm việc ở quầy: sau mỗi thao tác, hàng đợi được tải lại và tự tải lại mỗi 5 giây cho tới khi hết đơn. Chi tiết xem sequence §2.7 trong [user-sequence-specifications.md](user-sequence-specifications.md).
+Phân hệ quầy là **mở rộng ngoài đề §3.2**. Web **không có màn hình quầy hay quản trị**: nhân viên (BARISTA, hoặc ADMIN kế thừa quyền Barista) gọi API trực tiếp, nhóm kiểm bằng Postman (`docs/postman/`, thư mục Task 10). Nhân viên lấy token bằng `POST /auth/login`, xem hàng đợi `GET /orders?status=PAID,PREPARING,READY`, rồi lần lượt đẩy từng đơn theo Order State Machine đề §9.1: `PAID → PREPARING → READY → COMPLETED`, hoặc hủy đơn `PAID` vì hết nguyên liệu (hoàn tiền qua cổng rồi hoàn kho). Khách hàng gọi các API quầy bị 403.
+Vòng `repeat` là một phiên làm việc: sau mỗi thao tác nhân viên gọi lại `GET /orders?status=...` cho tới khi hết đơn. Tiêu chí chấp nhận: US-10 trong [product-backlog.md](product-backlog.md).
 
 ### B. Sơ đồ (PlantUML)
 ```plantuml
@@ -225,42 +225,44 @@ skinparam NoteBorderColor #b8860b
 skinparam SwimlaneBorderColor #5b6b8c
 skinparam SwimlaneTitleFontColor #1f2937
 
-|Barista / Admin|
+|Nhân viên (Postman)|
 start
-:Đăng nhập tài khoản nhân viên;
+:Đăng nhập tài khoản BARISTA hoặc ADMIN;
 |Hệ thống BrewLite|
-:Xác thực và chuyển tới trang Quầy;
+:Cấp token;
 note right
-  POST /auth/login: 200
-  Barista về /barista; Admin về /admin, bấm "Quầy" để vào
+  POST /auth/login: 200, sai thông tin 401
+  Web từ chối tài khoản nhân viên: không lưu phiên
 end note
-if (Vai trò là BARISTA hoặc ADMIN?) then (không phải)
-  :Hiện "Trang này dành cho tài khoản quầy";
-  note right
-    Giao diện chặn, không gọi API
-    Gọi GET /orders bằng token khách: 403 Insufficient role
-  end note
-  stop
-else (đúng)
-endif
 repeat
+  |Nhân viên (Postman)|
   :Tải hàng đợi: Chờ pha, Đang pha, Sẵn sàng;
+  |Hệ thống BrewLite|
+  if (Token là BARISTA hoặc ADMIN?) then (không phải)
+    :Từ chối;
+    note right
+      GET /orders bằng token khách: 403 Insufficient role
+      Không token: 401
+    end note
+    stop
+  else (đúng)
+    :Trả hàng đợi, đơn cũ nhất trước;
+    note right
+      GET /orders?status=PAID,PREPARING,READY: 200
+      Trạng thái lạ: 400
+    end note
+  endif
+  |Nhân viên (Postman)|
+  :Chọn một đơn và gửi thao tác;
   note right
-    GET /orders?status=PAID,PREPARING,READY: 200, cũ nhất trước
-    401: về /login?next=/barista
-    403: ngừng tự tải lại
-  end note
-  |Barista / Admin|
-  :Chọn một đơn và bấm nút của cột;
-  note right
-    Chờ pha: Nhận pha, Hủy (hết nguyên liệu)
-    Đang pha: Pha xong
-    Sẵn sàng: Đã giao
+    PAID: tiến PREPARING, hoặc hủy (hết nguyên liệu)
+    PREPARING: tiến READY
+    READY: tiến COMPLETED
   end note
   |Hệ thống BrewLite|
   if (Thao tác?) then (Hủy hết nguyên liệu)
     if (Đơn đang PAID?) then (không)
-      :Từ chối, báo lỗi trên màn Quầy;
+      :Từ chối, trả lỗi;
       note right
         PENDING hoặc PAYMENT_FAILED: 403
         PREPARING trở đi: 400 Invalid transition
@@ -284,7 +286,7 @@ repeat
     endif
   else (Tiến đơn)
     if (Đúng bước kế của máy trạng thái?) then (sai, nhảy cóc hoặc đi lùi)
-      :Từ chối, báo lỗi trên màn Quầy;
+      :Từ chối, trả lỗi;
       note right
         PATCH /orders/:id (status PREPARING, READY, COMPLETED)
         400 Invalid transition; đơn không tồn tại: 404
@@ -297,8 +299,7 @@ repeat
       end note
     endif
   endif
-  :Tải lại hàng đợi ngay;
-  |Barista / Admin|
+  |Nhân viên (Postman)|
 repeat while (Còn đơn trong hàng đợi?) is (còn) not (hết)
 stop
 @enduml
@@ -308,16 +309,14 @@ stop
 
 | Nút / nhánh trên sơ đồ | Endpoint và mã HTTP | `file:hàm` trong code |
 | :--- | :--- | :--- |
-| Đăng nhập tài khoản nhân viên, chuyển tới trang Quầy | `POST /auth/login` 200; sai thông tin 401 | `backend/src/auth/auth.controller.ts`; FE `frontend/src/app/login/page.tsx:submit`, `frontend/src/lib/session.ts:postLoginTarget`, `frontend/src/lib/auth.ts:homeFor` (`BARISTA` → `/barista`, `ADMIN` → `/admin`) |
-| Vai trò không phải BARISTA / ADMIN | không gọi API; gọi tay `GET /orders` 403 `Insufficient role` | `frontend/src/components/BaristaView.tsx` (nhánh `!staff`), `frontend/src/lib/barista.ts:isStaff`; `backend/src/auth/roles.guard.ts` |
-| Tải hàng đợi | `GET /orders?status=PAID,PREPARING,READY` 200; trạng thái lạ 400; 401; 403 | `backend/src/order/order.controller.ts:queue` (`@Roles(Role.BARISTA, Role.ADMIN)`) → `OrderService.listQueue` → `findByStatuses` (`createdAt` tăng dần); FE `frontend/src/lib/barista.ts:fetchQueue`, `groupQueue`, `POLL_MS = 5000`; `frontend/src/app/barista/page.tsx:load` |
-| Chọn đơn, bấm nút của cột | không gọi API đến khi bấm | `frontend/src/lib/barista.ts:cardActions`, `ACTION_LABEL`; `BaristaView.tsx` |
-| Thao tác: Tiến đơn | `PATCH /orders/:id` `{ status: "PREPARING" \| "READY" \| "COMPLETED" }` 200; khách 403; không có đơn 404 | `backend/src/payment/payment.controller.ts:update` → `PaymentService.advanceOrder` (`isStaff`); FE `frontend/src/lib/api.ts:advanceOrder`, `frontend/src/app/barista/page.tsx:act` |
-| Đúng bước kế của máy trạng thái? | 400 `Invalid transition A -> B` | `backend/src/state-machine/order-state.machine.ts:assertTransition` (bảng `ALLOWED`); FE dịch lỗi ở `api.ts:transitionError` |
+| Đăng nhập tài khoản nhân viên | `POST /auth/login` 200; sai thông tin 401 | `backend/src/auth/auth.controller.ts`; web từ chối nhân viên ở `frontend/src/lib/login.ts:staffLoginMessage`, `frontend/src/app/login/page.tsx` |
+| Token là BARISTA hoặc ADMIN? | `GET /orders` 403 `Insufficient role` nếu là khách; 401 nếu thiếu token | `backend/src/auth/roles.guard.ts` |
+| Tải hàng đợi | `GET /orders?status=PAID,PREPARING,READY` 200; trạng thái lạ 400 | `backend/src/order/order.controller.ts:queue` (`@Roles(Role.BARISTA, Role.ADMIN)`) → `OrderService.listQueue` → `findByStatuses` (`createdAt` tăng dần) |
+| Thao tác: Tiến đơn | `PATCH /orders/:id` `{ status: "PREPARING" \| "READY" \| "COMPLETED" }` 200; khách 403; không có đơn 404 | `backend/src/payment/payment.controller.ts:update` → `PaymentService.advanceOrder` (`isStaff`) |
+| Đúng bước kế của máy trạng thái? | 400 `Invalid transition A -> B` | `backend/src/state-machine/order-state.machine.ts:assertTransition` (bảng `ALLOWED`) |
 | Đổi trạng thái đơn | `PATCH /orders/:id` 200 | `payment.service.ts:advanceOrder` (`orders.updateStatus` dưới khóa `order:<orderId>`) |
-| Thao tác: Hủy hết nguyên liệu | `PATCH /orders/:id` `{ status: "CANCELLED" }` | `payment.controller.ts:update` → `PaymentService.cancelOrderAs` → `cancelOrder`; FE `api.ts:cancelOrder`, hộp xác nhận ở `barista/page.tsx` (`window.confirm`) |
+| Thao tác: Hủy hết nguyên liệu | `PATCH /orders/:id` `{ status: "CANCELLED" }` | `payment.controller.ts:update` → `PaymentService.cancelOrderAs` → `cancelOrder` |
 | Đơn đang PAID? (không) | 403 `Staff can only cancel paid orders` (PENDING, PAYMENT_FAILED); 400 `Invalid transition` (PREPARING trở đi) | `payment.service.ts:cancelOrderAs` (nhánh `isStaff`), `assertTransition` |
 | Cộng các biên lai SUCCESS của đơn | không có endpoint | `payment.service.ts:cancel` (`payments.findAllByOrderId`, lọc `status === 'SUCCESS'`) |
 | Hoàn đúng số tiền đã thu (ngoài transaction) | gọi nội bộ | `payment.service.ts:cancel` → `mock-payment-gateway.service.ts:refund` |
 | Hoàn kho mọi món, đặt đơn CANCELLED | `PATCH /orders/:id` 200 | `payment.service.ts:cancel` trong `orders.runInTransaction`: `products.restoreStock`, `orders.updateStatus(CANCELLED)` |
-| Tải lại hàng đợi ngay | `GET /orders?status=PAID,PREPARING,READY` | `barista/page.tsx:act` gọi `load()` sau mỗi PATCH; vòng tự tải lại `setInterval(load, POLL_MS)` |

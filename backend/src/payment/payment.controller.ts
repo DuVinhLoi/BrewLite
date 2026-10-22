@@ -1,4 +1,5 @@
 import { Body, Controller, Headers, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -8,11 +9,14 @@ import { Role } from '../contracts/user.contract';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 
+@ApiTags('orders')
+@ApiBearerAuth()
 @Controller()
 export class PaymentController {
   constructor(private payments: PaymentService) {}
 
   @Post('payments')
+  @ApiHeader({ name: 'Idempotency-Key', required: true, description: 'Bắt buộc; gửi lại cùng key thì trả kết quả cũ (200)' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CUSTOMER)
   async pay(@Body() dto: CreatePaymentDto, @Headers('idempotency-key') key: string, @Req() req: any, @Res({ passthrough: true }) res: any) {

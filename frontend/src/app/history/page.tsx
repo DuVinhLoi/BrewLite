@@ -18,7 +18,7 @@ export default function HistoryPage() {
     setToken(getToken());
   }, []);
 
-  // Tự cập nhật (UC07): GET /orders/me mỗi 3 giây đến khi không còn đơn PAID / PREPARING / READY (R14). Chưa có token thì không gọi API.
+  // Tự cập nhật (US-09): GET /orders/me mỗi 3 giây đến khi không còn đơn PAID / PREPARING / READY (R14). Chưa có token thì không gọi API.
   // data là state của lõi poll: lúc làm mới (sau khi hủy, "Thử lại") danh sách cũ vẫn ở đó đến khi có danh sách mới.
   const { data, error, refresh } = usePolling(() => (token ? () => getMyOrders(token) : undefined), (list) => !needsPolling(list), POLL_INTERVAL_MS, [token]);
   const orders = useMemo(() => (data ? sortNewestFirst(data) : undefined), [data]);
@@ -38,7 +38,7 @@ export default function HistoryPage() {
     }
   }
 
-  // UC06 KB2/KB3: PATCH /orders/:id CANCELLED; đơn PAID có hoàn tiền nên hỏi xác nhận trước
+  // Hủy đơn (US-10): PATCH /orders/:id CANCELLED; đơn PAID có hoàn tiền nên hỏi xác nhận trước
   function onCancel(o: HistoryOrder) {
     if (o.status === 'PAID' && !window.confirm('Đơn đã thanh toán. Hủy đơn sẽ hoàn tiền và hoàn lại kho. Bạn chắc chắn muốn hủy?')) return;
     return act(o, (t) => cancelOrder(o.id, t));

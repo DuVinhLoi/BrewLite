@@ -51,7 +51,7 @@ function errorDetail(data: unknown): string | undefined {
 }
 
 // PATCH /orders/:id { status } kèm Bearer JWT; ném ApiError với thông điệp tiếng Việt cho UI hiển thị.
-// Dùng chung cho nút Hủy và các nút ở quầy; verb là cụm động từ trong thông báo lỗi.
+// Hiện chỉ nút Hủy (khách) gọi; verb là cụm động từ trong thông báo lỗi.
 // 401: xóa token và về /login (lib/session.ts) trước khi ném lỗi.
 async function patchOrderStatus(orderId: string, status: string, token: string, verb: string): Promise<void> {
   let res: Response;
@@ -88,11 +88,6 @@ function transitionError(status: number, detail: string | undefined, verb: strin
 export const cancelOrder = (orderId: string, token: string): Promise<void> =>
   patchOrderStatus(orderId, 'CANCELLED', token, 'hủy đơn');
 
-// Màn quầy (/barista): Barista/Admin tiến đơn PAID → PREPARING → READY → COMPLETED bằng PATCH /orders/:id;
-// backend kiểm vai trò và assertTransition.
-export const advanceOrder = (orderId: string, status: string, token: string): Promise<void> =>
-  patchOrderStatus(orderId, status, token, 'chuyển trạng thái đơn');
-
 // GET /users/me (mở rộng ngoài đề §12.1): hồ sơ người đang đăng nhập, gồm tổng điểm tích lũy mà JWT không mang.
 export interface Profile {
   id: string;
@@ -117,7 +112,7 @@ export async function getProfile(token: string): Promise<Profile> {
   return (await res.json()) as Profile;
 }
 
-// GET /orders/me (UC07): lịch sử đơn của người đang đăng nhập, mỗi dòng món kèm productName.
+// GET /orders/me (US-09): lịch sử đơn của người đang đăng nhập, mỗi dòng món kèm productName.
 // Câu lỗi (trừ 401) là thông điệp backend hoặc câu có mã HTTP; trang /history ghép sau "Không tải được lịch sử: ".
 // 401: xóa token và về /login (lib/session.ts) trước khi ném lỗi.
 export async function getMyOrders(token: string): Promise<HistoryOrder[]> {

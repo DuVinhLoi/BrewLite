@@ -12,7 +12,7 @@ async function main() {
       create: { id: 'u1', email: 'demo@brewlite.vn', passwordHash: await bcrypt.hash('demo1234', 10), loyaltyPoints: 0, role: 'CUSTOMER' },
       update: { email: 'demo@brewlite.vn', passwordHash: await bcrypt.hash('demo1234', 10), role: 'CUSTOMER' },
     });
-    // Mở rộng ngoài đề (§3.2): tài khoản quầy + quản trị cho demo /barista, /admin
+    // Mở rộng ngoài đề (§3.2): tài khoản quầy + quản trị, thao tác qua Swagger /docs (web không có màn cho hai vai trò này)
     for (const s of [
       { id: 'staff-barista', email: 'barista@brewlite.vn', password: 'barista1234', role: 'BARISTA' },
       { id: 'staff-admin', email: 'admin@brewlite.vn', password: 'admin1234', role: 'ADMIN' },
