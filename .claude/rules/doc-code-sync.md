@@ -30,7 +30,7 @@ Hành vi là: endpoint, guard / vai trò, chuyển trạng thái, mã HTTP, th�
 - Chỉ có story nằm trong đề: US-*n* ứng 1–1 với Task *n* của đề §8. Cần thêm story thì hỏi người dùng trước.
 - Mỗi tiêu chí chấp nhận phải kiểm chứng được (lệnh, endpoint, mã HTTP hoặc test). Tiêu chí lấy từ đề §4.1, §4.3, §8, §9; story thanh toán giữ nguyên văn đề §4.3.
 - Mọi đường dẫn file và tên test trong cột "Bằng chứng" phải tồn tại. Grep lại sau khi đổi tên hoặc xóa.
-- Web không có giao diện cho BARISTA / ADMIN. Hành vi của họ (`PATCH /orders/:id`, `GET /orders?status=`, `/admin/products`) chỉ qua Swagger `/docs`, không thêm màn hình.
+- Web không có giao diện cho BARISTA / ADMIN. Hành vi của họ (`PATCH /orders/:id`, `GET /orders?status=`, `/admin/products`) chỉ qua API, nhóm kiểm bằng Postman (`docs/postman/`), không thêm màn hình. Không dùng Swagger để test hay làm minh chứng.
 - Tham chiếu đề bằng số mục, ví dụ `đề §9.1`.
 
 ## Phạm vi

@@ -14,7 +14,7 @@
 ```bash
 cp .env.example .env   # tùy chọn: compose đã có mặc định dev
 docker compose up --build
-# Frontend http://localhost:3001, Backend http://localhost:3000/products, Swagger http://localhost:3000/docs
+# Frontend http://localhost:3001, Backend http://localhost:3000/products; test API bằng Postman: docs/postman/
 ```
 
 Frontend trong compose là bản production (`next build` rồi `next start`), không có hot reload: sửa mã frontend thì chạy lại `docker compose up -d --build frontend` (hoặc `docker compose up -d --build` để dựng lại backend và frontend; db dùng image `postgres:16` nên không có gì để dựng). `NEXT_PUBLIC_API_URL` và `NEXT_PUBLIC_PAYMENT_MODE` được nhúng lúc `next build` (qua `args:` của service `frontend`), nên đổi một trong hai trong `.env` thì phải chạy `docker compose up -d --build frontend`; `up` không kèm `--build` không đổi gì. Muốn hot reload, chạy rời bằng `npm run dev` như dưới.
@@ -54,13 +54,13 @@ Cả 10 task đã có trên nhánh này; mỗi task ứng 1 user story US-01…U
 ## API (7 endpoint tối thiểu + 6 mở rộng) và Entity (5)
 
 Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`. Các endpoint khách (`POST /orders`, `POST /payments`, `GET /orders/me`, cùng `GET /orders/:id` và `GET /users/me` bên dưới) chỉ dành cho CUSTOMER (`@Roles(CUSTOMER)`): token BARISTA/ADMIN nhận 403 `Insufficient role`. Web không có giao diện cho nhân viên: đăng nhập tài khoản nhân viên trên web chỉ hiện câu hướng dẫn sang Swagger và không lưu phiên.
-Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn, chỉ CUSTOMER), `GET /users/me` (hồ sơ + tổng điểm tích lũy, trang `/profile`, chỉ CUSTOMER). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2, **chỉ gọi qua Swagger `/docs`, không có màn hình**): `GET /orders?status=PAID,PREPARING,READY` (BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
+Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn, chỉ CUSTOMER), `GET /users/me` (hồ sơ + tổng điểm tích lũy, trang `/profile`, chỉ CUSTOMER). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2, **chỉ gọi qua API, nhóm kiểm bằng Postman, không có màn hình**): `GET /orders?status=PAID,PREPARING,READY` (BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
 `Product(stock,version)`, `User(loyaltyPoints, role)`, `Order(idempotencyKey unique)`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
 Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
 
 ## Giao diện
 
-Giao diện theo phong cách "nét mực" (font Fraunces + Be Vietnam Pro, bộ hình minh họa SVG ở `frontend/public/doodles` và `frontend/public/images`). 9 màn: Header, Menu, Chi tiết món, Giỏ hàng (`/cart`), Thanh toán, Đặt hàng thành công (biên lai), Đăng nhập / Đăng ký (`/login`), Hồ sơ (`/profile`) và Lịch sử (`/history`). Thanh toán và biên lai nằm trong `/cart`. Barista và Admin không có màn hình trên web, họ dùng Swagger `/docs`.
+Giao diện theo phong cách "nét mực" (font Fraunces + Be Vietnam Pro, bộ hình minh họa SVG ở `frontend/public/doodles` và `frontend/public/images`). 9 màn: Header, Menu, Chi tiết món, Giỏ hàng (`/cart`), Thanh toán, Đặt hàng thành công (biên lai), Đăng nhập / Đăng ký (`/login`), Hồ sơ (`/profile`) và Lịch sử (`/history`). Thanh toán và biên lai nằm trong `/cart`. Barista và Admin không có màn hình trên web, họ gọi API (nhóm dùng Postman).
 
 **Chưa có ảnh chụp màn hình.** Đợt làm giao diện chạy trong môi trường không có trình duyệt nên chưa ai nhìn các màn bằng mắt và chưa chụp ảnh. Việc kiểm hình ảnh còn lại (1280, 1024, 760 và 360px) và kết quả kiểm thử cuối: `docs/develop-status-report.md` mục 8.
 
@@ -69,16 +69,16 @@ Giao diện theo phong cách "nét mực" (font Fraunces + Be Vietnam Pro, bộ 
 ```bash
 cp .env.example .env   # hoặc bỏ qua: compose đã có default dev sẵn
 docker compose up --build
-# Frontend http://localhost:3001, Backend http://localhost:3000, Swagger http://localhost:3000/docs
+# Frontend http://localhost:3001, Backend http://localhost:3000; test API bằng Postman: docs/postman/
 ```
 
 Tài khoản demo (seed sẵn trong `backend/prisma/seed.ts`):
 
 | Vai trò | Email | Mật khẩu | Dùng ở đâu |
 |---|---|---|---|
-| Khách | `demo@brewlite.vn` | `demo1234` | web `:3001` (và Swagger) |
-| Quầy (Barista) | `barista@brewlite.vn` | `barista1234` | chỉ Swagger `/docs` (web từ chối) |
-| Quản trị (Admin) | `admin@brewlite.vn` | `admin1234` | chỉ Swagger `/docs` (web từ chối) |
+| Khách | `demo@brewlite.vn` | `demo1234` | web `:3001` (và Postman) |
+| Quầy (Barista) | `barista@brewlite.vn` | `barista1234` | chỉ API qua Postman (web từ chối) |
+| Quản trị (Admin) | `admin@brewlite.vn` | `admin1234` | chỉ API qua Postman (web từ chối) |
 
 1. Mở `:3001`, đăng nhập tài khoản khách (bảng trên).
 2. Menu → bấm món mở modal chọn size/topping → thêm vào giỏ.
@@ -97,7 +97,7 @@ Cổng thanh toán là bản giả nên mặc định luôn thành công. Muốn
 
 ### Dữ liệu demo
 
-- Đơn, biên lai, điểm thưởng và tồn kho nằm trong volume `brewlite_pgdata`, giữ nguyên qua `docker compose restart`, `down` rồi `up` (không có `-v`). Đăng nhập lại tài khoản demo vẫn thấy lịch sử các buổi trước; `GET /orders?status=` (Swagger, tài khoản barista) vẫn liệt kê đơn khách đã trả mà chưa giao.
+- Đơn, biên lai, điểm thưởng và tồn kho nằm trong volume `brewlite_pgdata`, giữ nguyên qua `docker compose restart`, `down` rồi `up` (không có `-v`). Đăng nhập lại tài khoản demo vẫn thấy lịch sử các buổi trước; `GET /orders?status=` (Postman, tài khoản barista) vẫn liệt kê đơn khách đã trả mà chưa giao.
 - Smoke test hoặc thử API bằng curl trên stack này: đăng ký tài khoản email đuôi `@smoke.test`, không dùng tài khoản demo. Xong thì dọn: `docker compose exec backend npm run smoke:clean` (xóa các tài khoản `@smoke.test` cùng đơn, biên lai của họ, hoàn kho các đơn đã trừ kho).
 - Làm lại từ đầu (DB trống, chỉ có 3 tài khoản demo và 4 món): `docker compose down -v` rồi `docker compose up -d --build`. Lệnh này xóa mọi đơn và lịch sử.
 
@@ -109,10 +109,10 @@ Cổng thanh toán là bản giả nên mặc định luôn thành công. Muốn
 
 ## Demo State Machine (đề §9 + §9.1, tiêu chí a)
 
-Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện khách: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua chấm mực kèm dấu ✓, bước hiện tại chấm cam và chữ đậm, bước sau chấm trắng; `Thanh toán lỗi` đỏ, `Đã hủy` xám) và **tự cập nhật mỗi 3 giây** (biên lai gọi `GET /orders/:id` đến khi đơn `COMPLETED` / `CANCELLED`; `/history` gọi `GET /orders/me` đến khi không còn đơn `PAID` / `PREPARING` / `READY`). Khách chỉ xem và hủy đơn của mình (nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy, `PREPARING` trở đi backend chặn 400); khách không tự tiến đơn (403). Tiến đơn là việc của nhân viên quầy (ngoài MVP theo đề §3.2) và **thao tác qua Swagger**, vì web không có màn quầy:
+Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện khách: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua chấm mực kèm dấu ✓, bước hiện tại chấm cam và chữ đậm, bước sau chấm trắng; `Thanh toán lỗi` đỏ, `Đã hủy` xám) và **tự cập nhật mỗi 3 giây** (biên lai gọi `GET /orders/:id` đến khi đơn `COMPLETED` / `CANCELLED`; `/history` gọi `GET /orders/me` đến khi không còn đơn `PAID` / `PREPARING` / `READY`). Khách chỉ xem và hủy đơn của mình (nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy, `PREPARING` trở đi backend chặn 400); khách không tự tiến đơn (403). Tiến đơn là việc của nhân viên quầy (ngoài MVP theo đề §3.2) và **thao tác qua Postman**, vì web không có màn quầy:
 
 1. Khách `demo@brewlite.vn` (demo) đặt và trả một đơn trên web (đơn sang `PAID`), lấy mã đơn từ biên lai; mở `/history` xem thanh tiến trình.
-2. Mở http://localhost:3000/docs. `POST /auth/login` bằng `barista@brewlite.vn` (mật khẩu demo ở bảng trên), sao chép `accessToken`, bấm **Authorize** và dán token.
+2. Trong Postman, import `docs/postman/BrewLite.postman_collection.json`. `POST /auth/login` bằng `barista@brewlite.vn` (mật khẩu demo ở bảng trên), sao chép `accessToken`, ở tab **Authorization** chọn **Bearer Token** và dán token. (Chạy cả thư mục `Task 10 / (a)` thì collection tự làm các bước này trên đơn của khách `@smoke.test`.)
 3. `PATCH /orders/{id}` với body `{ "status": "PREPARING" }`, rồi `READY`, rồi `COMPLETED`: cả ba trả 200.
 4. Thử `PATCH` sang `CANCELLED` trên đơn đã `COMPLETED`: phải trả 400 `Invalid transition COMPLETED -> CANCELLED`.
 5. Quay lại `/history` của khách (mở sẵn từ trước cũng được): trong khoảng 3 giây thanh tiến trình tự chuyển, không cần tải lại trang.
