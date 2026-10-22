@@ -226,3 +226,53 @@ Used executing-plans, UML, domain-modeling, api-engineer (existing contract only
 Only documentation and diagram checks were run. No API/web runtime, live deploy, CORS configuration, performance benchmark, production database or rollback drill was executed. These are Task 4/5 delivery evidence, not Task 3 claims. Render limitations and DB-access details were verified from official docs linked in ADR-004.
 
 Remaining external work: Task 4 matrix conflict; Task 2 T2-M then Task 3 B10 matrix PR; Task 5 implementation and production evidence. This branch has no matrix contribution and does not merge or clean up another worker's branch/worktree.
+
+## Published PR and final branch checks
+
+PR: [#19](https://github.com/DuVinhLoi/BrewLite/pull/19), targeting `develop-Assignment2`. Published through the PR skill. GitHub reports OPEN, MERGEABLE and CLEAN; no GitHub status checks are attached to this documentation branch at this snapshot. Do not interpret the empty check list as runtime CI evidence.
+
+The following outputs were captured at pushed commit `a72ed83`; a final report-only commit records them without changing architecture or matrix content.
+
+```text
+$ gh pr view 19 --json number,url,state,baseRefName,headRefName,mergeable,mergeStateStatus,statusCheckRollup
+{"baseRefName":"develop-Assignment2","headRefName":"a2/task-3-architecture","mergeStateStatus":"CLEAN","mergeable":"MERGEABLE","number":19,"state":"OPEN","statusCheckRollup":[],"url":"https://github.com/DuVinhLoi/BrewLite/pull/19"}
+exit: 0
+```
+
+```text
+$ git diff --name-only origin/develop-Assignment2...HEAD
+docs/architecture/README.md
+docs/architecture/adr/001-monorepo.md
+docs/architecture/adr/002-layered-nestjs.md
+docs/architecture/adr/003-containerization.md
+docs/architecture/adr/004-vercel-render.md
+docs/architecture/adr/005-idempotency-and-optimistic-lock.md
+docs/architecture/adr/README.md
+docs/architecture/architecture.md
+docs/architecture/deployment.puml
+docs/architecture/deployment.svg
+docs/planning/handoff/2026-10-21-req-sync/report-task3.md
+exit: 0
+```
+
+```text
+$ git diff --check origin/develop-Assignment2...HEAD
+(no output)
+exit: 0
+```
+
+```text
+$ git status -sb
+## a2/task-3-architecture...origin/a2/task-3-architecture
+exit: 0
+```
+
+```text
+$ git merge-tree --write-tree --name-only origin/a2/Task4 HEAD
+3cc1caf2bae4b6012b5803d43451489598e2e2c7
+docs/traceability-matrix.md
+
+Auto-merging docs/traceability-matrix.md
+CONFLICT (content): Merge conflict in docs/traceability-matrix.md
+exit: 1
+```
