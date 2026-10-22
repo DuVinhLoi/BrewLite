@@ -7,6 +7,7 @@ Thư mục này chứa kiến trúc tổng thể cho BrewLite Assignment 2, bao 
 - `architecture.md`: tổng quan kiến trúc hệ thống theo phân lớp và deployment view
 - `adr/`: các quyết định kiến trúc quan trọng dưới dạng ADR
 - `deployment.puml`: sơ đồ triển khai production-style
+- `deployment.svg`: bản render SVG của deployment diagram
 
 ## Cấu trúc
 
@@ -19,6 +20,7 @@ Thư mục này chứa kiến trúc tổng thể cho BrewLite Assignment 2, bao 
 | `adr/004-vercel-render.md` | Nền tảng production: Vercel + Render |
 | `adr/005-idempotency-and-optimistic-lock.md` | Idempotency và chống bán vượt tồn kho |
 | `deployment.puml` | Sơ đồ triển khai container / service |
+| `deployment.svg` | SVG render của deployment diagram |
 
 ## Mục tiêu
 
