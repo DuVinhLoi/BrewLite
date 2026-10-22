@@ -2,7 +2,7 @@
 
 > **Agent đọc file này trước.** Tìm dòng task của mình ở mục 3, mở đúng file card, làm theo thứ tự trong card. Không đọc các card của task khác trừ khi card của mình trỏ tới.
 >
-> **Nguồn duy nhất:** đọc card từ branch `a2/req-sync-change-requests` (ví dụ `git show origin/a2/req-sync-change-requests:docs/planning/handoff/2026-10-21-req-sync/card-task3.md`). Không chép thư mục này vào branch task; mỗi task chỉ tạo file `report-task<N>.md` của mình. Mục "Card B/C" trong `docs/planning/2026-10-21-req-sync-sprint2-scope-plan.md` đã được thay bằng các card ở đây.
+> **Nguồn duy nhất:** đọc card trên `develop-Assignment2`. Trước khi PR handoff merge, đọc trên branch `a2/req-sync-change-requests` (ví dụ `git show origin/a2/req-sync-change-requests:docs/planning/handoff/2026-10-21-req-sync/card-task3.md`). Không chép thư mục này vào branch task; mỗi task chỉ tạo file `report-task<N>.md` của mình. Mục "Card B/C" trong `docs/planning/2026-10-21-req-sync-sprint2-scope-plan.md` đã được thay bằng các card ở đây.
 
 ## 1. Quyết định
 
