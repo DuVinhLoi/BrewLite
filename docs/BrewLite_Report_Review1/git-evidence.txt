@@ -1,9 +1,38 @@
 BrewLite Review 1 - Git evidence - 2026-10-23
 No fetch performed. Contains-ref is not proof of branch of creation.
-E:/CNPM/BrewLite/.worktrees/develop-agile
-f6caead98e05dcf67ec2948726f3a4324f1c480d
-?? docs/Assigment_template_SGU/
-?? docs/BrewLite_Report_Review1/
+Worktree: /e/CNPM/BrewLite/.worktrees/develop-agile
+Branch: develop-agile
+HEAD: 5ffed8c31a6a8bc72e76223e91efe2ee866ba2f6
+
+=== Member assignment (provided by the team) ===
+Bao Tin: Task 1, 6 | Phu: Task 2, 9 | Bao Thien: Task 3, 5 | Loi: Task 4, 7 | Thuan: Task 8, 10
+
+=== Account mapping ===
+Thuan = Thuan-Test + Tran Vinh Thuan (ThuanTran260) + Thuan-Lap + Thuan-AFK666 (merged)
+Bao Tin = Saturlen | Bao Thien = baothien-s | Phu = phu0111 + phu | Loi = DuVinhLoi
+
+=== Commits per author (git log --all, merges included) ===
+    333 Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
+    103 Thuan-Lap <181353273+Thuan-AFK666@users.noreply.github.com>
+     15 DuVinhLoi <enderstve097@gmail.com>
+     14 Trần Vĩnh Thuận <241057594+ThuanTran260@users.noreply.github.com>
+     12 Saturlen <tranbaotin5509@gmail.com>
+     10 baothien-s <baothien3124410339@gmail.com>
+      7 phu0111 <thanhphunas@gmail.com>
+      2 Thuan-AFK666 <181353273+Thuan-AFK666@users.noreply.github.com>
+      2 phu <thanhphunas@gmail.com>
+
+=== Commits per author (git log --all --no-merges) ===
+    303 Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
+     89 Thuan-Lap <181353273+Thuan-AFK666@users.noreply.github.com>
+     11 DuVinhLoi <enderstve097@gmail.com>
+      8 baothien-s <baothien3124410339@gmail.com>
+      7 Saturlen <tranbaotin5509@gmail.com>
+      7 phu0111 <thanhphunas@gmail.com>
+      2 Trần Vĩnh Thuận <241057594+ThuanTran260@users.noreply.github.com>
+      2 phu <thanhphunas@gmail.com>
+
+=== Branches ===
 + a2/Task4                                       0030c2a (E:/CNPM/BrewLite/.worktrees/task4) [origin/a2/Task4] docs(planning): add Task 4 sync report
   a2/req-sync-sprint2-scope                      622c32b [origin/a2/req-sync-sprint2-scope: gone] docs(requirements): define payment replay identity, add Product.description, drop E8b recovery and SHA health check
 + a2/task-1-requirements                         1bab022 (E:/CNPM/BrewLite/.worktrees/task1-finalize) [origin/a2/task-1-requirements] docs(requirements): draw Customer-Guest generalization as solid line
@@ -14,10 +43,10 @@ f6caead98e05dcf67ec2948726f3a4324f1c480d
   backup/ui-plan-before-squash                   9c7ad6b docs: checkpoint 5 UI (so lieu cuoi, chua kiem, cau hoi mo, toan bo ruling) + cap nhat ban giao
   chore/pg-test-plantuml-scrum                   7cad02f docs: nháp hồ sơ quy trình Scrum — Sprint Backlog 3 sprint, burndown từ git, khung Retrospective
 + claude/swagger-barista-admin-api-3b618c        bf75474 (E:/CNPM/BrewLite/.claude/worktrees/swagger-barista-admin-api-3b618c) fix(web): derive Swagger link from NEXT_PUBLIC_API_URL
-  claude/worktree-agile-2acb20                   bf75474 [origin/develop-agile: behind 33] fix(web): derive Swagger link from NEXT_PUBLIC_API_URL
+  claude/worktree-agile-2acb20                   bf75474 [origin/develop-agile: behind 45] fix(web): derive Swagger link from NEXT_PUBLIC_API_URL
 + develop                                        dff84c0 (E:/CNPM/BrewLite) [origin/develop: behind 27] merge: docs/sync-task4-task7 (sync UC01 product detail and auth changes from PR #4)
 + develop-Assignment2                            b67dc92 (E:/CNPM/BrewLite/.worktrees/develop-assignment2) [origin/develop-Assignment2: behind 17] Merge pull request #13 from DuVinhLoi/a2/req-sync-change-requests
-* develop-agile                                  f6caead [origin/develop-agile] Merge pull request #17 from DuVinhLoi/a1/task-6
+* develop-agile                                  5ffed8c [origin/develop-agile] docs: add Review 1 report with member assignment and git evidence
   develop-clean                                  abd3b35 docs: bang anh xa hash co Co-Authored-By sang hash moi (develop da viet lai)
   docs/status-note-p1                            32382d8 docs: status report — HEAD b290706, so test 62/46, docs UC05 401/403 + PlantUML 8/8, hash commit lam bang chung
   docs/sync-task4-task7                          231f0f6 docs: sync UC01 product detail and auth changes from task 4-7
@@ -40,13 +69,143 @@ f6caead98e05dcf67ec2948726f3a4324f1c480d
   remotes/origin/a2/task5-ui-cards               26bbe7a docs(planning): add Task 5 UI cards for three contributors and phase the delivery work
   remotes/origin/develop                         344018b docs: add Vercel + GitHub Actions CI/CD plan
   remotes/origin/develop-Assignment2             f92b188 Merge pull request #9 from DuVinhLoi/a2/Task4
-  remotes/origin/develop-agile                   f6caead Merge pull request #17 from DuVinhLoi/a1/task-6
+  remotes/origin/develop-agile                   5ffed8c docs: add Review 1 report with member assignment and git evidence
   remotes/origin/feat/a2task-3-architecture      0f45132 add documents for comparing each task from task 3
   remotes/origin/feat/assignment2-task5-delivery 6041b5f docs: record Task 5 phase A sync and hosting prerequisites
   remotes/origin/feat/task4-task7                32831dc feat: complete product detail and JWT authentication tasks
   remotes/origin/feature/task-8-10-payment-order 81a1f4e chore(task-8-10): add initial Postgres migration (5 tables, idempotencyKey unique)
   remotes/origin/main                            3bb4e02 Add assignment2.md
   remotes/origin/thien35                         ae0b634 style(frontend): match develop-agile UI on thien35
+
+=== Own commit of each member, per task ===
+Task 1, 6 (Bao Tin): 44e3784 | Task 2, 9 (Phu): a358930 5d92e1f ed2e4ee | Task 3, 5 (Bao Thien): 9ea0933
+Task 4, 7 (Loi): 32831dc | Task 8, 10 (Thuan): bd1adc3
+
+=== Supporting commits in the integration branch ===
+4518a94 ec19345 e2cfd1d c432dee ccf7a41 62837cc cace4c3 | merges: 862bf65 03cb553 eaf33f8 da34d1d
+
+=== 44e3784 ===
+commit 44e378481dafa25d24dfb930271cfa890bc7cf9d
+Author:     Saturlen <tranbaotin5509@gmail.com>
+AuthorDate: Tue Oct 13 17:22:08 2026 +0700
+Commit:     GitHub <noreply@github.com>
+CommitDate: Tue Oct 13 17:22:08 2026 +0700
+
+    Add files via upload
+
+ EXTRA_TASKS.md                                     |   12 +
+ README.md                                          |  136 +-
+ backend/Dockerfile                                 |    8 +
+ backend/jest.config.js                             |    5 +
+ backend/package-lock.json                          | 5964 ++++++++++++++++++++
+ backend/package.json                               |   31 +
+ backend/prisma/clean-smoke.ts                      |   34 +
+ .../migrations/20261007163647_init/migration.sql   |   78 +
+ .../20261009000000_user_role/migration.sql         |    2 +
+ .../migration.sql                                  |    3 +
+ backend/prisma/migrations/migration_lock.toml      |    3 +
+ backend/prisma/schema.prisma                       |   64 +
+ backend/prisma/seed.ts                             |   48 +
+ backend/src/app.module.ts                          |    9 +
+ backend/src/auth/auth.controller.ts                |   19 +
+ backend/src/auth/auth.module.ts                    |   40 +
+ backend/src/auth/auth.service.ts                   |   45 +
+ backend/src/auth/dto.ts                            |   18 +
+ backend/src/auth/jwt-auth.guard.ts                 |   23 +
+ backend/src/auth/roles.decorator.ts                |    6 +
+ backend/src/auth/roles.guard.ts                    |   17 +
+ backend/src/auth/user.controller.ts                |   19 +
+ backend/src/common/idempotency-key.ts              |    8 +
+ backend/src/contracts/order.contract.ts            |   42 +
+ backend/src/contracts/payment.contract.ts          |   22 +
+ backend/src/contracts/product.contract.ts          |   22 +
+ backend/src/contracts/transaction.contract.ts      |    4 +
+ backend/src/contracts/user.contract.ts             |   34 +
+ backend/src/main.ts                                |   17 +
+ backend/src/order/dto/create-order.dto.ts          |   32 +
+ backend/src/order/order.controller.ts              |   51 +
+ backend/src/order/order.module.ts                  |   28 +
+--- branches containing 44e3784:
+develop-agile
+main
+origin
+origin/a1task2-9
+origin/develop-agile
+origin/main
+--- ancestor of HEAD: yes
+
+=== 01cbe58 ===
+commit 01cbe58054e609cdb18ad270824a677ce00e116d
+Author:     Saturlen <tranbaotin5509@gmail.com>
+AuthorDate: Tue Oct 13 16:47:26 2026 +0700
+Commit:     GitHub <noreply@github.com>
+CommitDate: Tue Oct 13 16:47:26 2026 +0700
+
+    Add files via upload
+
+ scripts/demo-state-machine.sh | 104 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 104 insertions(+)
+--- branches containing 01cbe58:
+develop-agile
+main
+origin
+origin/a1task2-9
+origin/develop-agile
+origin/main
+--- ancestor of HEAD: yes
+
+=== a358930 ===
+commit a3589302831a713f77705eb4ee1c89e9c759558e
+Author:     phu0111 <thanhphunas@gmail.com>
+AuthorDate: Wed Oct 21 16:35:22 2026 +0700
+Commit:     phu0111 <thanhphunas@gmail.com>
+CommitDate: Wed Oct 21 16:35:22 2026 +0700
+
+    Add Task 2 and Task 9 as separate folders under the same branch
+
+ docs/task2-api/task2-api-spec.md                |  72 +++++++++++++++
+ docs/task9-order-history/task9-order-history.md | 112 ++++++++++++++++++++++++
+ 2 files changed, 184 insertions(+)
+--- branches containing a358930:
+develop-agile
+origin/a1task2-9
+origin/develop-agile
+--- ancestor of HEAD: yes
+
+=== 5d92e1f ===
+commit 5d92e1f315ce9f3d9fe9ba9876c99963d2ed9bf5
+Author:     phu0111 <thanhphunas@gmail.com>
+AuthorDate: Wed Oct 21 16:46:36 2026 +0700
+Commit:     phu0111 <thanhphunas@gmail.com>
+CommitDate: Wed Oct 21 16:46:36 2026 +0700
+
+    Finalize Task 2 and Task 9 API specification in the assigned branch
+
+ docs/task2-api/task2-api-spec.md                | 36 ++++++++++++-------------
+ docs/task9-order-history/task9-order-history.md | 24 +++++++----------
+ 2 files changed, 28 insertions(+), 32 deletions(-)
+--- branches containing 5d92e1f:
+develop-agile
+origin/a1task2-9
+origin/develop-agile
+--- ancestor of HEAD: yes
+
+=== ed2e4ee ===
+commit ed2e4ee24cf89a00624e37bd7d31b8aba368ca2c
+Author:     phu0111 <thanhphunas@gmail.com>
+AuthorDate: Wed Oct 21 16:33:42 2026 +0700
+Commit:     phu0111 <thanhphunas@gmail.com>
+CommitDate: Wed Oct 21 16:33:42 2026 +0700
+
+    Add Task 9 order confirmation and order history API documentation
+
+ docs/api/task9-order-history.md | 112 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 112 insertions(+)
+--- branches containing ed2e4ee:
+develop-agile
+origin/a1task2-9
+origin/develop-agile
+--- ancestor of HEAD: yes
 
 === 9ea0933 ===
 commit 9ea0933ecd9ca5a33f61ecd790791dca77f91073
@@ -89,151 +248,89 @@ CommitDate: Wed Oct 7 16:27:47 2026 +0700
  frontend/src/lib/payment/index.ts          |   4 +
  frontend/src/lib/payment/mock-gateway.ts   |  22 ++
  frontend/src/lib/payment/types.ts          |  35 ++
- frontend/src/lib/pricing.ts                |  48 +++
- frontend/src/lib/types.ts                  |  33 ++
- frontend/src/store/cart.ts                 | 105 ++++++
- frontend/tsconfig.json                     |  20 ++
- 28 files changed, 1777 insertions(+)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
+--- branches containing 9ea0933:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
 
-=== ec19345 ===
-commit ec193452911febb1111d18766b240b6a533e5542
-Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Wed Oct 7 23:43:33 2026 +0700
-Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-CommitDate: Wed Oct 7 23:43:33 2026 +0700
+=== 32831dc ===
+commit 32831dc4cc28598917680dc562c061b18bf85cf5
+Author:     DuVinhLoi <enderstve097@gmail.com>
+AuthorDate: Tue Oct 13 19:11:24 2026 +0700
+Commit:     DuVinhLoi <enderstve097@gmail.com>
+CommitDate: Tue Oct 13 19:11:24 2026 +0700
 
-    feat(task-2-6): products list-detail plus guarded orders create-and-history
+    feat: complete product detail and JWT authentication tasks
 
- backend/prisma/seed.ts                      | 11 +++++++
- backend/src/app.module.ts                   |  4 ++-
- backend/src/contracts/order.contract.ts     |  1 +
- backend/src/contracts/product.contract.ts   |  2 ++
- backend/src/order/dto/create-order.dto.ts   | 32 ++++++++++++++++++++
- backend/src/order/order.controller.ts       | 21 +++++++++++++
- backend/src/order/order.module.ts           | 29 ++++++++++++++++++
- backend/src/order/order.service.ts          | 33 ++++++++++++++++++++
- backend/src/prisma/prisma-order.repo.ts     | 18 +++++++++++
- backend/src/prisma/prisma-product.repo.ts   | 13 +++++---
- backend/src/product/product.controller.ts   | 17 +++++++++++
- backend/src/product/product.module.ts       | 23 ++++++++++++++
- backend/src/product/product.service.ts      | 17 +++++++++++
- backend/src/stubs/in-memory-order.repo.ts   |  6 ++++
- backend/src/stubs/in-memory-product.repo.ts |  4 +++
- backend/test/order-product.spec.ts          | 47 +++++++++++++++++++++++++++++
- 16 files changed, 273 insertions(+), 5 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== e2cfd1d ===
-commit e2cfd1d585f1249f4662ed3622b26d1d0db07766
-Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Wed Oct 7 23:45:29 2026 +0700
-Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-CommitDate: Wed Oct 7 23:45:29 2026 +0700
-
-    feat(task-9): history page, demo seed login, compose boot plus handover note
-
- .env.example                       |  7 +---
- EXTRA_TASKS.md                     | 12 ++++++
- README.md                          | 16 ++++++++
- backend/Dockerfile                 |  3 +-
- backend/prisma/seed.ts             |  5 ++-
- docker-compose.yml                 | 15 ++++---
- frontend/Dockerfile                |  4 ++
- frontend/src/app/history/page.tsx  | 83 ++++++++++++++++++++++++++++++++++++++
- frontend/src/components/Header.tsx |  3 ++
- 9 files changed, 135 insertions(+), 13 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
+ backend/src/auth/auth.module.ts                    |  10 +-
+ backend/src/auth/auth.service.ts                   |  33 +++--
+ backend/src/auth/dto.ts                            |   5 +
+ backend/src/auth/jwt-auth.guard.ts                 |   5 +-
+ backend/src/prisma/prisma-user.repo.ts             |   2 +-
+ backend/src/stubs/in-memory-user.repo.ts           |   2 +-
+ backend/test/task47-auth.spec.ts                   | 147 +++++++++++++++++++
+ docs/planning/2026-10-13-task4-task7-plan.md       |  12 ++
+ docs/task4-task7-report.md                         | 135 ++++++++++++++++++
+ frontend/src/components/ProductCard.tsx            |   2 +-
+ .../src/components/ProductDetailLoading.test.ts    |  49 +++++++
+ frontend/src/components/ProductDetailModal.tsx     | 155 ++++++++++++---------
+ frontend/src/lib/api.ts                            |  13 ++
+ frontend/src/lib/product-detail.test.ts            |  24 ++++
+ 14 files changed, 507 insertions(+), 87 deletions(-)
+--- branches containing 32831dc:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
 
 === bd1adc3 ===
 commit bd1adc30bad9d607a26b6d5f82d8338ec217a733
@@ -275,37 +372,37 @@ CommitDate: Wed Oct 7 10:54:40 2026 +0700
  backend/test/order-payment.integration.spec.ts     |   63 +
  backend/tsconfig.json                              |   14 +
  25 files changed, 5989 insertions(+)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
+--- branches containing bd1adc3:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
 
 === 4518a94 ===
 commit 4518a94c7407160b10735ae4a8a20947ebd37874
@@ -323,37 +420,146 @@ CommitDate: Wed Oct 7 20:11:55 2026 +0700
  docker-compose.yml  | 34 ++++++++++++++++++++++++++++++++++
  frontend/Dockerfile |  7 +++++++
  6 files changed, 98 insertions(+), 2 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
+--- branches containing 4518a94:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
+
+=== ec19345 ===
+commit ec193452911febb1111d18766b240b6a533e5542
+Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
+AuthorDate: Wed Oct 7 23:43:33 2026 +0700
+Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
+CommitDate: Wed Oct 7 23:43:33 2026 +0700
+
+    feat(task-2-6): products list-detail plus guarded orders create-and-history
+
+ backend/prisma/seed.ts                      | 11 +++++++
+ backend/src/app.module.ts                   |  4 ++-
+ backend/src/contracts/order.contract.ts     |  1 +
+ backend/src/contracts/product.contract.ts   |  2 ++
+ backend/src/order/dto/create-order.dto.ts   | 32 ++++++++++++++++++++
+ backend/src/order/order.controller.ts       | 21 +++++++++++++
+ backend/src/order/order.module.ts           | 29 ++++++++++++++++++
+ backend/src/order/order.service.ts          | 33 ++++++++++++++++++++
+ backend/src/prisma/prisma-order.repo.ts     | 18 +++++++++++
+ backend/src/prisma/prisma-product.repo.ts   | 13 +++++---
+ backend/src/product/product.controller.ts   | 17 +++++++++++
+ backend/src/product/product.module.ts       | 23 ++++++++++++++
+ backend/src/product/product.service.ts      | 17 +++++++++++
+ backend/src/stubs/in-memory-order.repo.ts   |  6 ++++
+ backend/src/stubs/in-memory-product.repo.ts |  4 +++
+ backend/test/order-product.spec.ts          | 47 +++++++++++++++++++++++++++++
+ 16 files changed, 273 insertions(+), 5 deletions(-)
+--- branches containing ec19345:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
+
+=== e2cfd1d ===
+commit e2cfd1d585f1249f4662ed3622b26d1d0db07766
+Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
+AuthorDate: Wed Oct 7 23:45:29 2026 +0700
+Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
+CommitDate: Wed Oct 7 23:45:29 2026 +0700
+
+    feat(task-9): history page, demo seed login, compose boot plus handover note
+
+ .env.example                       |  7 +---
+ EXTRA_TASKS.md                     | 12 ++++++
+ README.md                          | 16 ++++++++
+ backend/Dockerfile                 |  3 +-
+ backend/prisma/seed.ts             |  5 ++-
+ docker-compose.yml                 | 15 ++++---
+ frontend/Dockerfile                |  4 ++
+ frontend/src/app/history/page.tsx  | 83 ++++++++++++++++++++++++++++++++++++++
+ frontend/src/components/Header.tsx |  3 ++
+ 9 files changed, 135 insertions(+), 13 deletions(-)
+--- branches containing e2cfd1d:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
 
 === c432dee ===
 commit c432dee94fe423e776b1d006ab82c48b7e89850c
@@ -367,37 +573,37 @@ CommitDate: Wed Oct 7 21:10:45 2026 +0700
  frontend/src/components/ProductCard.tsx        |  6 ++
  frontend/src/components/ProductDetailModal.tsx | 81 ++++++++++++++++++++++++++
  2 files changed, 87 insertions(+)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
+--- branches containing c432dee:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
 
 === ccf7a41 ===
 commit ccf7a41f878639bb2d9736b04e2bb6dc667c45c5
@@ -424,427 +630,37 @@ CommitDate: Wed Oct 7 23:41:31 2026 +0700
  frontend/src/app/login/page.tsx            |  70 +++++++++++++
  frontend/src/components/Header.tsx         |   3 +
  15 files changed, 445 insertions(+), 4 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== 4b8d81d ===
-commit 4b8d81d757a5a95eac3464590edb798c0dadd605
-Author:     baothien-s <baothien3124410339@gmail.com>
-AuthorDate: Wed Oct 7 16:27:47 2026 +0700
-Commit:     baothien-s <baothien3124410339@gmail.com>
-CommitDate: Wed Oct 7 16:27:47 2026 +0700
-
-    feat(frontend): task 3 menu + task 5 cart with simple mock payment
-    
-    - Task 3: menu page calling GET /products with loading/empty/error states
-    
-    - Task 5: zustand cart (qty min 1, auto totals, badge, localStorage persist)
-    
-    - Simple checkout behind PaymentGateway seam (mock now, POST /payments later via NEXT_PUBLIC_PAYMENT_MODE=api)
-    
-    - next 14.2.35 + postcss override (audit fixes); pricing single-source matches payment-order contracts
-
- .gitignore                                 |   6 +
- frontend/.env.example                      |   4 +
- frontend/README.md                         |  49 +++
- frontend/next-env.d.ts                     |   5 +
- frontend/next.config.mjs                   |   6 +
- frontend/package-lock.json                 | 548 +++++++++++++++++++++++++++++
- frontend/package.json                      |  26 ++
- frontend/src/app/cart/page.tsx             | 149 ++++++++
- frontend/src/app/globals.css               |  14 +
- frontend/src/app/layout.tsx                |  20 ++
- frontend/src/app/page.tsx                  |  46 +++
- frontend/src/components/Header.tsx         |  72 ++++
- frontend/src/components/PaymentForm.tsx    | 125 +++++++
- frontend/src/components/PaymentSuccess.tsx |  66 ++++
- frontend/src/components/ProductCard.tsx    |  90 +++++
- frontend/src/components/ProductGrid.tsx    | 101 ++++++
- frontend/src/components/QtyStepper.tsx     |  63 ++++
- frontend/src/lib/api.ts                    |  43 +++
- frontend/src/lib/mock-products.ts          |  12 +
- frontend/src/lib/payment/api-gateway.ts    |  40 +++
- frontend/src/lib/payment/gateway.ts        |  25 ++
- frontend/src/lib/payment/index.ts          |   4 +
- frontend/src/lib/payment/mock-gateway.ts   |  22 ++
- frontend/src/lib/payment/types.ts          |  35 ++
- frontend/src/lib/pricing.ts                |  48 +++
- frontend/src/lib/types.ts                  |  33 ++
- frontend/src/store/cart.ts                 | 105 ++++++
- frontend/tsconfig.json                     |  20 ++
- 28 files changed, 1777 insertions(+)
-CONTAINING REFS:
-chore/pg-test-plantuml-scrum
-  docs/status-note-p1
-  feat/state-machine-visible
-  fix/backend-hardening
-  fix/review-3-bugs
-  fix/review-docs-code
-  remotes/origin/thien35
-Ancestor of report HEAD: False
-
-=== d1be546 ===
-commit d1be5463440b8afd84334be79fc681bccc6b0e02
-Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Wed Oct 7 10:54:40 2026 +0700
-Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-CommitDate: Wed Oct 7 10:54:40 2026 +0700
-
-    feat(task-8-10): mock payment with idempotency, state machine, optimistic-lock stock, loyalty
-    
-    - POST /payments (201 new, 200 idempotent hit) + PATCH /orders/:id cancel
-    - assertTransition full map, refund actual amount, compensating rollback on stock conflict
-    - contracts seam + in-memory stubs for standalone run, Prisma Payment adds status/discount/points
-    - tests: 14 state-machine (a) + 3 integration (b idempotent, c concurrent, cancel)
-
- .gitignore                                         |    1 +
- backend/jest.config.js                             |    5 +
- backend/package-lock.json                          | 5390 ++++++++++++++++++++
- backend/package.json                               |   26 +
- backend/prisma/schema.prisma                       |   61 +
- backend/src/app.module.ts                          |    5 +
- backend/src/contracts/order.contract.ts            |   30 +
- backend/src/contracts/payment.contract.ts          |   20 +
- backend/src/contracts/product.contract.ts          |   14 +
- backend/src/contracts/user.contract.ts             |   11 +
- backend/src/main.ts                                |   11 +
- backend/src/payment/dto/create-payment.dto.ts      |   18 +
- backend/src/payment/dto/update-order-status.dto.ts |    7 +
- .../src/payment/mock-payment-gateway.service.ts    |   19 +
- backend/src/payment/payment.controller.ts          |   23 +
- backend/src/payment/payment.module.ts              |   26 +
- backend/src/payment/payment.service.ts             |  103 +
- .../src/state-machine/order-state.machine.spec.ts  |   28 +
- backend/src/state-machine/order-state.machine.ts   |   18 +
- backend/src/stubs/in-memory-order.repo.ts          |   23 +
- backend/src/stubs/in-memory-payment.repo.ts        |   21 +
- backend/src/stubs/in-memory-product.repo.ts        |   29 +
- backend/src/stubs/in-memory-user.repo.ts           |   23 +
- backend/test/order-payment.integration.spec.ts     |   63 +
- backend/tsconfig.json                              |   14 +
- 25 files changed, 5989 insertions(+)
-CONTAINING REFS:
-chore/pg-test-plantuml-scrum
-  docs/status-note-p1
-  feat/state-machine-visible
-  feature/task-8-10-payment-order
-  fix/backend-hardening
-  fix/review-3-bugs
-  fix/review-docs-code
-  remotes/origin/feature/task-8-10-payment-order
-Ancestor of report HEAD: False
-
-=== 862bf65 ===
-commit 862bf65fcc6a55ded17167e0c62a4383651167ec
-Merge: 03cb553 d3e3edc
-Author:     Trần Vĩnh Thuận <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Wed Oct 7 20:05:50 2026 +0700
-Commit:     GitHub <noreply@github.com>
-CommitDate: Wed Oct 7 20:05:50 2026 +0700
-
-    Merge pull request #3 from DuVinhLoi/thien35
-    
-    'Thien35
-
- .gitignore                                 |   6 +-
- frontend/.env.example                      |   4 +
- frontend/README.md                         |  49 +++
- frontend/next-env.d.ts                     |   5 +
- frontend/next.config.mjs                   |   6 +
- frontend/package-lock.json                 | 548 +++++++++++++++++++++++++++++
- frontend/package.json                      |  26 ++
- frontend/src/app/cart/page.tsx             | 147 ++++++++
- frontend/src/app/globals.css               |  14 +
- frontend/src/app/layout.tsx                |  20 ++
- frontend/src/app/page.tsx                  |  44 +++
- frontend/src/components/Header.tsx         |  73 ++++
- frontend/src/components/PaymentForm.tsx    | 122 +++++++
- frontend/src/components/PaymentSuccess.tsx |  63 ++++
- frontend/src/components/ProductCard.tsx    |  85 +++++
- frontend/src/components/ProductGrid.tsx    | 101 ++++++
- frontend/src/components/QtyStepper.tsx     |  63 ++++
- frontend/src/lib/api.ts                    |  42 +++
- frontend/src/lib/mock-products.ts          |  10 +
- frontend/src/lib/payment/api-gateway.ts    |  40 +++
- frontend/src/lib/payment/gateway.ts        |  20 ++
- frontend/src/lib/payment/index.ts          |   3 +
- frontend/src/lib/payment/mock-gateway.ts   |  22 ++
- frontend/src/lib/payment/types.ts          |  35 ++
- frontend/src/lib/pricing.ts                |  45 +++
- frontend/src/lib/types.ts                  |  32 ++
- frontend/src/store/cart.ts                 | 105 ++++++
- frontend/tsconfig.json                     |  20 ++
- 28 files changed, 1749 insertions(+), 1 deletion(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== 03cb553 ===
-commit 03cb553d8922fb1309d1b80b7ce4f56a8423fb78
-Merge: 0743b79 60b9b22
-Author:     Thuan-AFK666 <181353273+Thuan-AFK666@users.noreply.github.com>
-AuthorDate: Wed Oct 7 16:55:18 2026 +0700
-Commit:     GitHub <noreply@github.com>
-CommitDate: Wed Oct 7 16:55:18 2026 +0700
-
-    Merge pull request #2 from DuVinhLoi/feature/task-8-10-payment-order
-    
-    Feature/task 8 10 payment order
-
- .gitignore                                         |    1 +
- .graphifyignore                                    |    4 +
- backend/jest.config.js                             |    5 +
- backend/package-lock.json                          | 5390 ++++++++++++++++++++
- backend/package.json                               |   26 +
- backend/prisma/schema.prisma                       |   62 +
- backend/src/app.module.ts                          |    5 +
- backend/src/contracts/order.contract.ts            |   32 +
- backend/src/contracts/payment.contract.ts          |   20 +
- backend/src/contracts/product.contract.ts          |   14 +
- backend/src/contracts/user.contract.ts             |   11 +
- backend/src/main.ts                                |   11 +
- backend/src/payment/dto/create-payment.dto.ts      |   18 +
- backend/src/payment/dto/update-order-status.dto.ts |    7 +
- .../src/payment/mock-payment-gateway.service.ts    |   19 +
- backend/src/payment/payment.controller.ts          |   23 +
- backend/src/payment/payment.module.ts              |   26 +
- backend/src/payment/payment.service.ts             |  103 +
- .../src/state-machine/order-state.machine.spec.ts  |   28 +
- backend/src/state-machine/order-state.machine.ts   |   18 +
- backend/src/stubs/in-memory-order.repo.ts          |   23 +
- backend/src/stubs/in-memory-payment.repo.ts        |   21 +
- backend/src/stubs/in-memory-product.repo.ts        |   29 +
- backend/src/stubs/in-memory-user.repo.ts           |   23 +
- backend/test/order-payment.integration.spec.ts     |   63 +
- backend/tsconfig.json                              |   14 +
- docs/BrewLite-CongNghePhanMem-fixed.md             |   15 +-
- docs/user-sequence-specifications.md               |  110 +-
- 28 files changed, 6077 insertions(+), 44 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== eaf33f8 ===
-commit eaf33f829e78948a578f9b65219e60a68e588c31
-Merge: 92ff320 32831dc
-Author:     DuVinhLoi <enderstve097@gmail.com>
-AuthorDate: Tue Oct 13 19:25:02 2026 +0700
-Commit:     GitHub <noreply@github.com>
-CommitDate: Tue Oct 13 19:25:02 2026 +0700
-
-    Merge pull request #4 from DuVinhLoi/feat/task4-task7
-    
-    feat: complete product detail and JWT authentication tasks
-
- backend/src/auth/auth.module.ts                    |  10 +-
- backend/src/auth/auth.service.ts                   |  33 +++--
- backend/src/auth/dto.ts                            |   5 +
- backend/src/auth/jwt-auth.guard.ts                 |   5 +-
- backend/src/prisma/prisma-user.repo.ts             |   2 +-
- backend/src/stubs/in-memory-user.repo.ts           |   2 +-
- backend/test/task47-auth.spec.ts                   | 147 +++++++++++++++++++
- docs/planning/2026-10-13-task4-task7-plan.md       |  12 ++
- docs/task4-task7-report.md                         | 135 ++++++++++++++++++
- frontend/src/components/ProductCard.tsx            |   2 +-
- .../src/components/ProductDetailLoading.test.ts    |  49 +++++++
- frontend/src/components/ProductDetailModal.tsx     | 155 ++++++++++++---------
- frontend/src/lib/api.ts                            |  13 ++
- frontend/src/lib/product-detail.test.ts            |  24 ++++
- 14 files changed, 507 insertions(+), 87 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  docs/sync-task4-task7
-+ feat/assignment2-task5-delivery
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-Ancestor of report HEAD: True
-
-=== 32831dc ===
-commit 32831dc4cc28598917680dc562c061b18bf85cf5
-Author:     DuVinhLoi <enderstve097@gmail.com>
-AuthorDate: Tue Oct 13 19:11:24 2026 +0700
-Commit:     DuVinhLoi <enderstve097@gmail.com>
-CommitDate: Tue Oct 13 19:11:24 2026 +0700
-
-    feat: complete product detail and JWT authentication tasks
-
- backend/src/auth/auth.module.ts                    |  10 +-
- backend/src/auth/auth.service.ts                   |  33 +++--
- backend/src/auth/dto.ts                            |   5 +
- backend/src/auth/jwt-auth.guard.ts                 |   5 +-
- backend/src/prisma/prisma-user.repo.ts             |   2 +-
- backend/src/stubs/in-memory-user.repo.ts           |   2 +-
- backend/test/task47-auth.spec.ts                   | 147 +++++++++++++++++++
- docs/planning/2026-10-13-task4-task7-plan.md       |  12 ++
- docs/task4-task7-report.md                         | 135 ++++++++++++++++++
- frontend/src/components/ProductCard.tsx            |   2 +-
- .../src/components/ProductDetailLoading.test.ts    |  49 +++++++
- frontend/src/components/ProductDetailModal.tsx     | 155 ++++++++++++---------
- frontend/src/lib/api.ts                            |  13 ++
- frontend/src/lib/product-detail.test.ts            |  24 ++++
- 14 files changed, 507 insertions(+), 87 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== a358930 ===
-commit a3589302831a713f77705eb4ee1c89e9c759558e
-Author:     phu0111 <thanhphunas@gmail.com>
-AuthorDate: Wed Oct 21 16:35:22 2026 +0700
-Commit:     phu0111 <thanhphunas@gmail.com>
-CommitDate: Wed Oct 21 16:35:22 2026 +0700
-
-    Add Task 2 and Task 9 as separate folders under the same branch
-
- docs/task2-api/task2-api-spec.md                |  72 +++++++++++++++
- docs/task9-order-history/task9-order-history.md | 112 ++++++++++++++++++++++++
- 2 files changed, 184 insertions(+)
-CONTAINING REFS:
-remotes/origin/a1task2-9
-Ancestor of report HEAD: False
-
-=== 5d92e1f ===
-commit 5d92e1f315ce9f3d9fe9ba9876c99963d2ed9bf5
-Author:     phu0111 <thanhphunas@gmail.com>
-AuthorDate: Wed Oct 21 16:46:36 2026 +0700
-Commit:     phu0111 <thanhphunas@gmail.com>
-CommitDate: Wed Oct 21 16:46:36 2026 +0700
-
-    Finalize Task 2 and Task 9 API specification in the assigned branch
-
- docs/task2-api/task2-api-spec.md                | 36 ++++++++++++-------------
- docs/task9-order-history/task9-order-history.md | 24 +++++++----------
- 2 files changed, 28 insertions(+), 32 deletions(-)
-CONTAINING REFS:
-remotes/origin/a1task2-9
-Ancestor of report HEAD: False
+--- branches containing ccf7a41:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
 
 === 62837cc ===
 commit 62837cc98b16800324c2dafb44822a3a05d5a62e
@@ -887,262 +703,37 @@ CommitDate: Thu Oct 8 22:54:31 2026 +0700
  frontend/src/lib/api.test.ts                   | 112 +++++++++++++++++
  frontend/src/lib/api.ts                        |  48 ++++++--
  frontend/src/lib/payment/api-gateway.test.ts   |  96 +++++++++++++++
- frontend/src/lib/payment/api-gateway.ts        |  46 ++++---
- frontend/src/lib/payment/types.ts              |  10 +-
- frontend/src/lib/pricing.ts                    |   2 +-
- 25 files changed, 625 insertions(+), 85 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== ee0dd1e ===
-commit ee0dd1e88f6b9261b3eaa9ec00831d3c7db72de2
-Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Wed Oct 7 23:13:51 2026 +0700
-Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-CommitDate: Wed Oct 7 23:14:21 2026 +0700
-
-    feat(task-8-10): wire Postgres via Prisma adapters (phase 2)
-    
-    - PrismaService + 4 repos implementing contracts, atomic updateMany version check
-    - PaymentModule picks Prisma when DATABASE_URL set, InMemory otherwise
-    - seed order-1042 demo, PG integration test (idempotent + concurrent)
-    - verified: 18/18 jest, live curl PAID 31500 + cached hit same payment
-
- .gitignore                                  |   2 +
- backend/package-lock.json                   | 429 +++++++++++++++++++++++++++-
- backend/package.json                        |   2 +
- backend/prisma/seed.ts                      |  33 +++
- backend/src/payment/payment.module.ts       |  32 ++-
- backend/src/prisma/prisma-order.repo.ts     |  41 +++
- backend/src/prisma/prisma-payment.repo.ts   |  46 +++
- backend/src/prisma/prisma-product.repo.ts   |  35 +++
- backend/src/prisma/prisma-user.repo.ts      |  29 ++
- backend/src/prisma/prisma.service.ts        |  13 +
- backend/test/pg-payment.integration.spec.ts |  55 ++++
- 11 files changed, 708 insertions(+), 9 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== 390907d ===
-commit 390907d5868626f65e3faba19d65757011db8577
-Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Wed Oct 7 21:12:58 2026 +0700
-Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-CommitDate: Wed Oct 7 21:12:58 2026 +0700
-
-    feat(frontend): voucher input plus two-step order-then-pay checkout
-
- frontend/src/app/cart/page.tsx          |  2 +-
- frontend/src/components/PaymentForm.tsx | 46 ++++++++++++++++++++++++++-------
- frontend/src/lib/payment/api-gateway.ts | 38 ++++++++++++++++++++-------
- frontend/src/lib/payment/types.ts       | 12 +++++++++
- 4 files changed, 79 insertions(+), 19 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== a227b3d ===
-commit a227b3d0a31d0bf135f09b8820443250eb36f878
-Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Thu Oct 8 14:25:30 2026 +0700
-Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-CommitDate: Thu Oct 8 14:25:30 2026 +0700
-
-    feat(payment-tx): wrap post-charge writes in atomic transaction via I*Repository seam
-    
-    - contracts: add TxContext + optional tx param + runInTransaction to all 4 I*Repository
-    - prisma: thread tx client through reads/writes, runInTransaction via \
-    - in-memory: serialized snapshot tx (shared registry + mutex) so concurrent
-      failing tx cannot wipe a concurrent commit (stock-never-negative intact)
-    - payment.service: deduct loop + PAID + loyalty + receipt in one tx; OOS refund
-      + PAYMENT_FAILED moved outside tx (rollback drops partial deducts)
-    - API behavior unchanged on success paths (voucher/loyalty math, idempotency,
-      refund-actual-collected, state guards)
-
- backend/src/contracts/order.contract.ts       | 11 ++--
- backend/src/contracts/payment.contract.ts     | 11 ++--
- backend/src/contracts/product.contract.ts     | 13 +++--
- backend/src/contracts/transaction.contract.ts |  4 ++
- backend/src/contracts/user.contract.ts        | 11 ++--
- backend/src/payment/payment.service.ts        | 72 ++++++++++++++++-----------
- backend/src/prisma/prisma-order.repo.ts       | 29 +++++++----
- backend/src/prisma/prisma-payment.repo.ts     | 25 +++++++---
- backend/src/prisma/prisma-product.repo.ts     | 29 +++++++----
- backend/src/prisma/prisma-user.repo.ts        | 25 +++++++---
- backend/src/stubs/in-memory-order.repo.ts     | 24 +++++++--
- backend/src/stubs/in-memory-payment.repo.ts   | 24 +++++++--
- backend/src/stubs/in-memory-product.repo.ts   | 26 ++++++++--
- backend/src/stubs/in-memory-tx.ts             | 38 ++++++++++++++
- backend/src/stubs/in-memory-user.repo.ts      | 24 +++++++--
- 15 files changed, 266 insertions(+), 100 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
-
-=== 23571d5 ===
-commit 23571d5cbd36ef53171c1268de0787afdcccbad0
-Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Thu Oct 8 14:31:21 2026 +0700
-Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-CommitDate: Thu Oct 8 14:31:21 2026 +0700
-
-    feat(order-advance): PATCH tien don PAID->PREPARING->READY->COMPLETED + GET detail owner-check
-    
-    PATCH /orders/:id mo rong khoi CANCELLED, gan JwtAuthGuard + owner-check (advanceOrder/cancelOrderAs moi, giu nguyen charge/refund). Them GET /orders/:id. Test: 13 case moi (happy-path, sai thu tu 400, 403 owner, 401 guard, DTO).
-
- backend/src/order/order.controller.ts              |   9 +-
- backend/src/order/order.service.ts                 |  10 +-
- backend/src/payment/dto/update-order-status.dto.ts |   2 +-
- backend/src/payment/payment.controller.ts          |  10 +-
- backend/src/payment/payment.module.ts              |   2 +
- backend/src/payment/payment.service.ts             |  20 ++-
- backend/test/order-advance.spec.ts                 | 143 +++++++++++++++++++++
- 7 files changed, 188 insertions(+), 8 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
+--- branches containing 62837cc:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
 
 === cace4c3 ===
 commit cace4c375f444733f05a10c31a8e98c9e4c190f6
@@ -1166,140 +757,236 @@ CommitDate: Fri Oct 9 08:20:22 2026 +0700
  backend/test/auth.spec.ts                          | 30 +++++++++++++++--
  backend/test/roles.spec.ts                         | 39 ++++++++++++++++++++++
  12 files changed, 137 insertions(+), 18 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  ui-squashed
-  remotes/origin/a1/task-6
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-Ancestor of report HEAD: True
+--- branches containing cace4c3:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
 
-=== 2910b17 ===
-commit 2910b170681b9b5a2382aa1cdd6819db5b5db517
+=== 862bf65 ===
+commit 862bf65fcc6a55ded17167e0c62a4383651167ec
+Merge: 03cb553 d3e3edc
+Author:     Trần Vĩnh Thuận <241057594+ThuanTran260@users.noreply.github.com>
+AuthorDate: Wed Oct 7 20:05:50 2026 +0700
+Commit:     GitHub <noreply@github.com>
+CommitDate: Wed Oct 7 20:05:50 2026 +0700
+
+    Merge pull request #3 from DuVinhLoi/thien35
+    
+    'Thien35
+
+ .gitignore                                 |   6 +-
+ frontend/.env.example                      |   4 +
+ frontend/README.md                         |  49 +++
+ frontend/next-env.d.ts                     |   5 +
+ frontend/next.config.mjs                   |   6 +
+ frontend/package-lock.json                 | 548 +++++++++++++++++++++++++++++
+ frontend/package.json                      |  26 ++
+ frontend/src/app/cart/page.tsx             | 147 ++++++++
+ frontend/src/app/globals.css               |  14 +
+ frontend/src/app/layout.tsx                |  20 ++
+ frontend/src/app/page.tsx                  |  44 +++
+ frontend/src/components/Header.tsx         |  73 ++++
+ frontend/src/components/PaymentForm.tsx    | 122 +++++++
+ frontend/src/components/PaymentSuccess.tsx |  63 ++++
+ frontend/src/components/ProductCard.tsx    |  85 +++++
+ frontend/src/components/ProductGrid.tsx    | 101 ++++++
+ frontend/src/components/QtyStepper.tsx     |  63 ++++
+ frontend/src/lib/api.ts                    |  42 +++
+ frontend/src/lib/mock-products.ts          |  10 +
+ frontend/src/lib/payment/api-gateway.ts    |  40 +++
+ frontend/src/lib/payment/gateway.ts        |  20 ++
+ frontend/src/lib/payment/index.ts          |   3 +
+ frontend/src/lib/payment/mock-gateway.ts   |  22 ++
+ frontend/src/lib/payment/types.ts          |  35 ++
+ frontend/src/lib/pricing.ts                |  45 +++
+ frontend/src/lib/types.ts                  |  32 ++
+ frontend/src/store/cart.ts                 | 105 ++++++
+ frontend/tsconfig.json                     |  20 ++
+ 28 files changed, 1749 insertions(+), 1 deletion(-)
+--- branches containing 862bf65:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
+
+=== 03cb553 ===
+commit 03cb553d8922fb1309d1b80b7ce4f56a8423fb78
+Merge: 0743b79 60b9b22
+Author:     Thuan-AFK666 <181353273+Thuan-AFK666@users.noreply.github.com>
+AuthorDate: Wed Oct 7 16:55:18 2026 +0700
+Commit:     GitHub <noreply@github.com>
+CommitDate: Wed Oct 7 16:55:18 2026 +0700
+
+    Merge pull request #2 from DuVinhLoi/feature/task-8-10-payment-order
+    
+    Feature/task 8 10 payment order
+
+ .gitignore                                         |    1 +
+ .graphifyignore                                    |    4 +
+ backend/jest.config.js                             |    5 +
+ backend/package-lock.json                          | 5390 ++++++++++++++++++++
+ backend/package.json                               |   26 +
+ backend/prisma/schema.prisma                       |   62 +
+ backend/src/app.module.ts                          |    5 +
+ backend/src/contracts/order.contract.ts            |   32 +
+ backend/src/contracts/payment.contract.ts          |   20 +
+ backend/src/contracts/product.contract.ts          |   14 +
+ backend/src/contracts/user.contract.ts             |   11 +
+ backend/src/main.ts                                |   11 +
+ backend/src/payment/dto/create-payment.dto.ts      |   18 +
+ backend/src/payment/dto/update-order-status.dto.ts |    7 +
+ .../src/payment/mock-payment-gateway.service.ts    |   19 +
+ backend/src/payment/payment.controller.ts          |   23 +
+ backend/src/payment/payment.module.ts              |   26 +
+ backend/src/payment/payment.service.ts             |  103 +
+ .../src/state-machine/order-state.machine.spec.ts  |   28 +
+ backend/src/state-machine/order-state.machine.ts   |   18 +
+ backend/src/stubs/in-memory-order.repo.ts          |   23 +
+ backend/src/stubs/in-memory-payment.repo.ts        |   21 +
+ backend/src/stubs/in-memory-product.repo.ts        |   29 +
+ backend/src/stubs/in-memory-user.repo.ts           |   23 +
+ backend/test/order-payment.integration.spec.ts     |   63 +
+ backend/tsconfig.json                              |   14 +
+ docs/BrewLite-CongNghePhanMem-fixed.md             |   15 +-
+ docs/user-sequence-specifications.md               |  110 +-
+ 28 files changed, 6077 insertions(+), 44 deletions(-)
+--- branches containing 03cb553:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+backup/develop-before-squash
+backup/ui-plan-before-squash
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+develop-clean
+docs/sync-task4-task7
+feat/assignment2-task5
+feat/assignment2-task5-delivery
+ui-squashed
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+origin/feat/task4-task7
+--- ancestor of HEAD: yes
+
+=== eaf33f8 ===
+commit eaf33f829e78948a578f9b65219e60a68e588c31
+Merge: 92ff320 32831dc
 Author:     DuVinhLoi <enderstve097@gmail.com>
-AuthorDate: Wed Sep 30 15:49:47 2026 +0700
-Commit:     DuVinhLoi <enderstve097@gmail.com>
-CommitDate: Wed Sep 30 15:49:47 2026 +0700
-
-    chore: initialize BrewLite project hehee
-
- .env.example          | 0
- .gitignore            | 0
- README.md             | 0
- backend/package.json  | 0
- docker-compose.yml    | 0
- frontend/package.json | 0
- 6 files changed, 0 insertions(+), 0 deletions(-)
-CONTAINING REFS:
-+ a2/Task4
-  a2/req-sync-sprint2-scope
-+ a2/task-1-requirements
-+ a2/task-2-diagrams
-+ a2/task-3-architecture
-+ a2/task5-ui-cards
-  backup/develop-before-squash
-  backup/ui-plan-before-squash
-  chore/pg-test-plantuml-scrum
-+ claude/swagger-barista-admin-api-3b618c
-  claude/worktree-agile-2acb20
-+ develop
-+ develop-Assignment2
-* develop-agile
-  develop-clean
-  docs/status-note-p1
-  docs/sync-task4-task7
-  feat/assignment2-task5
-+ feat/assignment2-task5-delivery
-  feat/state-machine-visible
-  feature/task-8-10-payment-order
-  fix/backend-hardening
-  fix/review-3-bugs
-  fix/review-docs-code
-  main
-  ui-squashed
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/a1/task-6
-  remotes/origin/a1task2-9
-  remotes/origin/a2/Task4
-  remotes/origin/a2/task-1-requirements
-  remotes/origin/a2/task-2-diagrams
-  remotes/origin/a2/task-3-architecture
-  remotes/origin/a2/task5-ui-cards
-  remotes/origin/develop
-  remotes/origin/develop-Assignment2
-  remotes/origin/develop-agile
-  remotes/origin/feat/assignment2-task5-delivery
-  remotes/origin/feat/task4-task7
-  remotes/origin/feature/task-8-10-payment-order
-  remotes/origin/main
-  remotes/origin/thien35
-Ancestor of report HEAD: True
-
-=== 14b9b76 ===
-commit 14b9b769e0a67e397dd601fcf0f4d1726daeb850
-Author:     Saturlen <tranbaotin5509@gmail.com>
-AuthorDate: Thu Oct 22 13:45:51 2026 +0700
+AuthorDate: Tue Oct 13 19:25:02 2026 +0700
 Commit:     GitHub <noreply@github.com>
-CommitDate: Thu Oct 22 13:45:51 2026 +0700
+CommitDate: Tue Oct 13 19:25:02 2026 +0700
 
-    Add files via upload
-CONTAINING REFS:
-* develop-agile
-  remotes/origin/a1/task-6
-  remotes/origin/develop-agile
-Ancestor of report HEAD: True
+    Merge pull request #4 from DuVinhLoi/feat/task4-task7
+    
+    feat: complete product detail and JWT authentication tasks
 
-=== b8ac79d ===
-commit b8ac79d15eea7b702008ae26fdf2ac3f7f01bd5c
-Author:     Saturlen <tranbaotin5509@gmail.com>
-AuthorDate: Thu Oct 22 13:46:47 2026 +0700
-Commit:     GitHub <noreply@github.com>
-CommitDate: Thu Oct 22 13:46:47 2026 +0700
-
-    Add files via upload
-CONTAINING REFS:
-* develop-agile
-  remotes/origin/a1/task-6
-  remotes/origin/develop-agile
-Ancestor of report HEAD: True
-
-=== 3aa0436 ===
-commit 3aa04362387933fa24d292997cd2160a30a93ce8
-Author:     Saturlen <tranbaotin5509@gmail.com>
-AuthorDate: Thu Oct 22 13:49:00 2026 +0700
-Commit:     GitHub <noreply@github.com>
-CommitDate: Thu Oct 22 13:49:00 2026 +0700
-
-    Add files via upload
-CONTAINING REFS:
-* develop-agile
-  remotes/origin/a1/task-6
-  remotes/origin/develop-agile
-Ancestor of report HEAD: True
+ backend/src/auth/auth.module.ts                    |  10 +-
+ backend/src/auth/auth.service.ts                   |  33 +++--
+ backend/src/auth/dto.ts                            |   5 +
+ backend/src/auth/jwt-auth.guard.ts                 |   5 +-
+ backend/src/prisma/prisma-user.repo.ts             |   2 +-
+ backend/src/stubs/in-memory-user.repo.ts           |   2 +-
+ backend/test/task47-auth.spec.ts                   | 147 +++++++++++++++++++
+ docs/planning/2026-10-13-task4-task7-plan.md       |  12 ++
+ docs/task4-task7-report.md                         | 135 ++++++++++++++++++
+ frontend/src/components/ProductCard.tsx            |   2 +-
+ .../src/components/ProductDetailLoading.test.ts    |  49 +++++++
+ frontend/src/components/ProductDetailModal.tsx     | 155 ++++++++++++---------
+ frontend/src/lib/api.ts                            |  13 ++
+ frontend/src/lib/product-detail.test.ts            |  24 ++++
+ 14 files changed, 507 insertions(+), 87 deletions(-)
+--- branches containing eaf33f8:
+a2/Task4
+a2/req-sync-sprint2-scope
+a2/task-1-requirements
+a2/task-2-diagrams
+a2/task-3-architecture
+a2/task5-ui-cards
+claude/swagger-barista-admin-api-3b618c
+claude/worktree-agile-2acb20
+develop
+develop-Assignment2
+develop-agile
+docs/sync-task4-task7
+feat/assignment2-task5-delivery
+origin/a1/task-6
+origin/a2/Task4
+origin/a2/task-1-requirements
+origin/a2/task-2-diagrams
+origin/a2/task-3-architecture
+origin/a2/task5-ui-cards
+origin/develop
+origin/develop-Assignment2
+origin/develop-agile
+origin/feat/assignment2-task5-delivery
+--- ancestor of HEAD: yes
 
 === da34d1d ===
 commit da34d1d113ab41e7c4d05e6167ae20f5af2dca0f
@@ -1342,73 +1029,8 @@ CommitDate: Thu Oct 22 14:22:54 2026 +0700
  frontend/src/app/barista/page.tsx                  |   74 -
  frontend/src/app/history/page.tsx                  |    4 +-
  frontend/src/app/login/page.tsx                    |    7 +-
- frontend/src/components/BaristaView.module.css     |  231 --
- frontend/src/components/BaristaView.test.ts        |  209 --
- frontend/src/components/BaristaView.tsx            |  116 -
- frontend/src/components/Header.tsx                 |   15 +-
- frontend/src/components/HeaderView.test.ts         |   59 +-
- frontend/src/components/HeaderView.tsx             |   38 +-
- frontend/src/components/InventoryView.module.css   |  223 --
- frontend/src/components/InventoryView.test.ts      |  184 -
- frontend/src/components/InventoryView.tsx          |  138 -
- frontend/src/components/LoginView.test.ts          |   11 +-
- frontend/src/components/PaymentForm.tsx            |    2 +-
- frontend/src/components/ProductCard.tsx            |    2 +-
- frontend/src/lib/admin.test.ts                     |  133 -
- frontend/src/lib/admin.ts                          |   83 -
- frontend/src/lib/api.test.ts                       |   61 +-
- frontend/src/lib/api.ts                            |    9 +-
- frontend/src/lib/auth.test.ts                      |   19 +-
- frontend/src/lib/auth.ts                           |   12 +-
- frontend/src/lib/barista.test.ts                   |  123 -
- frontend/src/lib/barista.ts                        |   72 -
- frontend/src/lib/history.test.ts                   |    2 +-
- frontend/src/lib/history.ts                        |    4 +-
- frontend/src/lib/login.test.ts                     |   19 +-
- frontend/src/lib/login.ts                          |   10 +-
- frontend/src/lib/nav.test.ts                       |   59 +-
- frontend/src/lib/nav.ts                            |   28 +-
- frontend/src/lib/order-status.test.ts              |   18 -
- frontend/src/lib/order-status.ts                   |   12 +-
- frontend/src/lib/payment/api-gateway.test.ts       |    2 +-
- frontend/src/lib/payment/api-gateway.ts            |    2 +-
- frontend/src/lib/payment/checkout-session.ts       |    2 +-
- frontend/src/lib/payment/types.ts                  |    4 +-
- frontend/src/lib/promo.ts                          |    2 +-
- frontend/src/lib/session.test.ts                   |   43 +-
- frontend/src/lib/session.ts                        |   14 +-
- frontend/src/lib/stock.test.ts                     |   16 +-
- frontend/src/lib/stock.ts                          |    2 +-
- frontend/src/lib/use-order-poll.ts                 |    2 +-
- scripts/check-sequence-activation.mjs              |  136 -
- scripts/check-sequence-activation.test.mjs         |   95 -
- 71 files changed, 5196 insertions(+), 3888 deletions(-)
-CONTAINING REFS:
-* develop-agile
-  remotes/origin/a1/task-6
-  remotes/origin/develop-agile
-Ancestor of report HEAD: True
-
-=== 22a341f ===
-commit 22a341ff7abad387edac11395a5b8234fb3b372d
-Author:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-AuthorDate: Thu Oct 22 14:10:18 2026 +0700
-Commit:     Thuan-Test <241057594+ThuanTran260@users.noreply.github.com>
-CommitDate: Thu Oct 22 14:10:18 2026 +0700
-
-    docs: switch API testing from Swagger to Postman, add 10-task evidence
-
- .claude/rules/doc-code-sync.md                |    2 +-
- README.md                                     |   20 +-
- docs/BrewLite-CongNghePhanMem-fixed.md        |   12 +-
- docs/minh-chung-10-task.md                    |  205 ++
- docs/postman/BrewLite.postman_collection.json | 3795 +++++++++++++++++++++++++
- docs/postman/results/2026-10-21-run.txt       |  472 +++
- docs/product-backlog.md                       |   31 +-
- docs/scrum-process.md                         |    4 +-
- 8 files changed, 4508 insertions(+), 33 deletions(-)
-CONTAINING REFS:
-* develop-agile
-  remotes/origin/a1/task-6
-  remotes/origin/develop-agile
-Ancestor of report HEAD: True
+--- branches containing da34d1d:
+develop-agile
+origin/a1/task-6
+origin/develop-agile
+--- ancestor of HEAD: yes
