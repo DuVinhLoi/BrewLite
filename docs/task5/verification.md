@@ -1,5 +1,7 @@
 # Task 5 — Báo cáo kiểm chứng và bàn giao
 
+> Cập nhật 23/10/2026: tài liệu bên dưới là snapshot kiểm chứng ngày 21/10 trước commit/push. Sau đó source đã push, sync baseline mới, publish GHCR, tạo Render Postgres và Vercel project. Trạng thái code/hạ tầng hiện tại và blocker deploy nằm ở [report-task5](../planning/handoff/2026-10-21-req-sync/report-task5.md). Chưa có URL production; không coi snapshot này là bằng chứng deploy thành công.
+
 Ngày: 21/10/2026. Task ID: 5.1–5.4.
 Branch: `feat/assignment2-task5-delivery`. Worktree: `C:/BrewLite-a2-Task5`.
 Base/HEAD: `f1b856a70ba1ae91674c75291f0117ab6643d9b0` (Task 4).

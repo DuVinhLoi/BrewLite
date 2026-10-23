@@ -1,7 +1,12 @@
 # Triển khai và rollback — Task 5
 
-Trạng thái: cấu hình được chuẩn bị cho VPS Linux + Docker Compose; chưa có URL/hosting của nhóm.
-Không coi tài liệu này là bằng chứng production đã chạy. Task 3 architecture/deployment diagram vẫn do nhóm bổ sung.
+Production đã chốt **Vercel (web) + Render (API image + Postgres internal)** theo handoff P1.
+Ngày 23/10/2026 đã tạo PostgreSQL Free brewlite-a2-db (Singapore, PostgreSQL 16, available), Vercel brewlite-a2-web (Root Directory apps/web, không liên kết Git) và publish image API commit 6041b5f lên GHCR private.
+Postgres tạo 23/10/2026, hết hạn 22/11/2026 theo metadata Render; IP allowlist chỉ 127.0.0.1/32 để chặn client công khai. API phải dùng Internal Database URL khi tạo.
+API service và deploy web lần đầu còn chờ credential GHCR chỉ đọc; chưa có URL production/smoke thành công.
+Bằng chứng và bước còn lại: [report-task5](planning/handoff/2026-10-21-req-sync/report-task5.md).
+
+Phần VPS/SSH và lệnh rollback ở dưới là cấu hình cũ từ 21/10/2026, sẽ được thay ở Pha B CR-5.3/5.4; không dùng cho triển khai Vercel/Render hiện tại. Compose local vẫn áp dụng.
 
 ## Local Docker trên Windows
 

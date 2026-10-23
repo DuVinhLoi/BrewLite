@@ -1,7 +1,7 @@
 # Report Task 5 — Pha A, CR-5.0 lần 1
 
 Ngày thực hiện: 23/10/2026. Chủ Task 5, branch feat/assignment2-task5-delivery.
-Worktree: C:/BrewLite-a2-Task5. Trạng thái toàn Pha A: BLOCKED ở kết nối hosting; CR-5.0 lần 1 đã hoàn tất.
+Worktree: C:/BrewLite-a2-Task5. Trạng thái toàn Pha A: BLOCKED ở credential GHCR chỉ đọc và deploy lần đầu; CR-5.0 lần 1 đã hoàn tất.
 
 ## Nguồn và phạm vi
 
@@ -38,26 +38,58 @@ Các đường dẫn tài liệu/SRS/sơ đồ/handoff khác được kế thừ
 PlantUML -checkonly, integration/E2E/build toàn bộ, smoke và rollback production NOT RUN ở lượt Pha A này.
 Không khởi động dev server/Compose hoặc dùng cổng 3000/5432 của người khác.
 
-## CR-5.3 — cấu hình nền tảng Pha A
+## CR-5.3 — cấu hình nền tảng Pha A (cập nhật 23/10/2026)
 
-Người dùng chọn kết nối Render và Vercel trong chat. Hiện chưa có kết nối được xác nhận, nên chưa tạo database/service/project hoặc publish image.
-Không có URL production, ngày tạo/hết hạn Postgres hay deploy hook để ghi nhận. Không ghi giá trị secret vào báo cáo.
+Đã xác thực GitHub, Render CLI 2.31.0 và Vercel CLI 65.2.0. Không còn blocker đăng nhập nền tảng.
+Đây là báo cáo bàn giao code/hạ tầng, không phải báo cáo đồ án LaTeX.
 
-Cấu hình đã đối chiếu tài liệu chính thức, sẽ áp dụng khi kết nối:
-- Render Postgres: plan Free nếu khả dụng, cùng region API; API chỉ dùng Internal Database URL; ghi ngày tạo/hết hạn thực tế sau khi tạo. Theo tài liệu Free, database hết hạn sau 30 ngày; không tự bịa ngày khi chưa tạo.
-- Render Web Service Existing Image: ghcr.io/duvinhloi/brewlite-api:<full SHA>; health /health; DATABASE_URL internal, JWT_SECRET >=32 ký tự, CORS_ORIGINS là URL Vercel production; image-backed service không tự deploy khi registry đổi tag.
-- Image hiện tại chưa migrate khi boot (Dockerfile sẽ sửa ở Pha B). Lần tạo đầu có thể dùng Docker Command override được Render hỗ trợ để migrate/seed database sạch rồi chạy API; không sửa migration cũ hoặc reset DB.
-- Vercel: Next.js, Root Directory apps/web, NEXT_PUBLIC_API_URL là HTTPS API Render; tắt Git auto-deploy bằng cấu hình nền tảng, không sửa file UI thuộc contributor.
-- GitHub production: chuẩn bị RENDER_DEPLOY_HOOK_URL, VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID; vars PRODUCTION_API_URL/PRODUCTION_WEB_URL. Không xóa cấu hình SSH đang được dùng trước khi CD Pha B chuyển xong.
-- Smoke thật sau deploy: HTTPS /health, /products và trang web; không coi URL local hoặc deploy hook accepted là deploy thành công.
+| Hạng mục | Trạng thái đã kiểm chứng | Bằng chứng |
+|---|---|---|
+| Build API image | PASS | Docker build thành công với source commit 6041b5f8fa7bba9211d78554f80bb2b2e3a46175 |
+| Publish GHCR | PASS | ghcr.io/duvinhloi/brewlite-api:6041b5f8fa7bba9211d78554f80bb2b2e3a46175; private package; version ID 1434898354 |
+| Image digest | PASS | sha256:f8bfa6b18d74f9cf41ed380f6f3cb0c591945a83333d3ed3807dfe55c633afa8 |
+| Render PostgreSQL | PASS | brewlite-a2-db; ID dpg-dbdlr82vcj2c7387fol0-a; status available; PostgreSQL 16; plan free; region singapore |
+| Hạn dùng PostgreSQL Free | Đã đọc metadata thật | Tạo 23/10/2026, hết hạn 22/11/2026; API timestamps 2026-10-23T13:14:08.263534Z và 2026-11-22T13:14:08.263534Z |
+| Chặn kết nối DB công khai | PASS cấu hình | IP allowlist chỉ 127.0.0.1/32; chưa tạo API để kiểm chứng kết nối nội bộ đầu-cuối |
+| Vercel project | PASS | brewlite-a2-web; ID prj_6BUoPh0TSriVnqrpLjZ1g0vijK3O; team DuVinhLoi (du-vinh-loi) |
+| Root/framework/Node | PASS | Root Directory apps/web; framework nextjs; nodeVersion 24.x |
+| Git auto-deploy web | PASS trạng thái cấu hình | Project link = null: không liên kết repository, deploy tay/CLI, Git push không tự deploy |
+| Render API service | BLOCKED | Chờ registry credential chỉ có read:packages; chưa tạo service |
+| DATABASE_URL internal / JWT_SECRET / CORS /health | NOT CONFIGURED trên API | Chờ tạo API; không có giá trị secret trong Git hoặc báo cáo |
+| NEXT_PUBLIC_API_URL production | NOT CONFIGURED | Chưa có URL API Render thật |
+| Migration/seed trên Render | NOT RUN | Image sẵn có chưa migrate khi boot; lần deploy đầu sẽ override command migrate/seed, Dockerfile cập nhật ở Pha B |
+| Deploy web/API lần đầu và HTTPS smoke | NOT RUN | Chưa có URL production web/API/health/products để kiểm chứng |
 
-Nguồn:
+### Credential và bước còn lại
+
+Cơ chế duyệt tự động đã chặn việc gửi token GitHub CLI quyền rộng vào Render. Người dùng chọn phương án khuyến nghị: PAT riêng chỉ có read:packages, đồng thời đồng ý lưu Internal Database URL vào env API Render.
+Không dùng token GitHub CLI quyền repo/workflow/write:packages làm credential cho Render.
+Wizard tạm tại %TEMP%/brewlite-hosting-tools/ghcr-readonly-wizard.sh: nhập token ẩn, kiểm token chỉ có read:packages và đúng chủ package, lưu credential trên Render; không lưu PAT vào repository hoặc báo cáo. Hiện chưa có credential được wizard xác nhận.
+Script được kiểm bash -n PASS. Đây là tiện ích local tạm, không được commit vì không phải tạo phẩm chung.
+
+Bước tiếp theo sau khi token được nhập:
+1. Tạo API Render Free cùng region Postgres, image SHA ở trên, health /health, tắt auto-deploy.
+2. Đặt DATABASE_URL bằng Internal Database URL, JWT_SECRET ngẫu nhiên >=32 ký tự; migration deploy và seed create-if-missing trên DB sạch, không reset hoặc sửa lịch sử migration.
+3. Cấu hình NEXT_PUBLIC_API_URL của Vercel production bằng URL HTTPS API thật và CORS_ORIGINS của API bằng URL production web thật.
+4. Deploy snapshot apps/web từ commit đã push, Root Directory apps/web; không thay source UI của Người 1–3.
+5. Smoke HTTPS /health, /products (menu có dữ liệu), trang web. Chỉ khi PASS mới bàn giao Pha A hoàn tất và báo Người 1–3.
+
+### Lệnh/bằng chứng bổ sung
+
+- docker build --label org.opencontainers.image.source=https://github.com/DuVinhLoi/BrewLite --label org.opencontainers.image.revision=6041b5f8fa7bba9211d78554f80bb2b2e3a46175 -t ghcr.io/duvinhloi/brewlite-api:6041b5f8fa7bba9211d78554f80bb2b2e3a46175 apps/api: PASS.
+- docker push image SHA trên: PASS, digest khớp bảng. Token đăng nhập registry đi qua stdin, không ghi log.
+- gh api users/DuVinhLoi/packages/container/brewlite-api/versions: PASS, tìm thấy đúng tag/version/digest.
+- render postgres get brewlite-a2-db --output json: PASS, metadata available/free/singapore và IP allowlist.
+- vercel api /v9/projects/brewlite-a2-web --scope du-vinh-loi: PASS, root/framework/node/link khớp bảng.
+- Source snapshot chỉ apps/web và project metadata được chuẩn bị ở TEMP để deploy; không thêm dependency hay file generated vào repository.
+
+Nguồn cấu hình:
 - https://render.com/docs/deploying-an-image
-- https://render.com/docs/deploy-hooks
 - https://render.com/docs/postgresql-creating-connecting
 - https://render.com/docs/free
+- https://render.com/docs/cli
+- https://vercel.com/docs/projects/managing-projects
 - https://vercel.com/docs/monorepos
-- https://vercel.com/docs/project-configuration/git-settings
 
 ## Thông báo Người 1–3
 
