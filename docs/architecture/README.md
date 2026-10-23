@@ -1,21 +1,40 @@
 # docs/architecture — Task 3: Thiết kế kiến trúc
 
-Thư mục này **chưa có nội dung**. Nhóm tự viết (đề A2 §5).
+> Đã đối chiếu SRS sau PR #11 (2026-10-21), D2/D3; cập nhật 2026-10-22.
 
-## Nhóm phải nộp ở đây
+Task 3 gồm `architecture.md`, `adr/` và `deployment.puml`/`.svg`, đáp ứng đề A2 §5.1–5.2.
 
-| File | Nội dung | Đề A2 |
-|---|---|---|
-| `architecture.md` | Kiến trúc theo C4 (mức 1-2) hoặc phân lớp: frontend Next.js/PWA, backend NestJS theo module/domain, PostgreSQL và migration, thanh toán mô phỏng, logging, health check, cấu hình; lý do chọn, ưu điểm, hạn chế, trade-off | §5.1 |
-| `adr/` | Mỗi quyết định quan trọng một ADR ngắn, ví dụ `001-monorepo.md` (xem `adr/README.md`) | §5.1 |
-| `deployment.puml` và `.svg` | UML deployment diagram cho production | §5.2 |
+| File | Nội dung |
+|---|---|
+| [architecture.md](architecture.md) | Kiến trúc phân lớp, container/module, NFR, cấu hình, trade-off và ánh xạ 19 NFR cho B10 |
+| [adr/001-monorepo.md](adr/001-monorepo.md) | Monorepo web/API/docs |
+| [adr/002-layered-nestjs.md](adr/002-layered-nestjs.md) | NestJS theo domain và lớp |
+| [adr/003-containerization.md](adr/003-containerization.md) | Compose/Postgres, Prisma migration khi startup, seed |
+| [adr/004-vercel-render.md](adr/004-vercel-render.md) | Vercel + Render + GHCR, secret, health, smoke và rollback |
+| [adr/005-idempotency-and-optimistic-lock.md](adr/005-idempotency-and-optimistic-lock.md) | Replay tại API theo BR-05/D2/D3, transaction và giữ tồn kho |
+| [deployment.puml](deployment.puml) | Deployment-01: nguồn UML với local, CI, production |
+| [deployment.svg](deployment.svg) | Deployment-01: SVG do PlantUML 1.2026.8 render |
 
-Deployment diagram tối thiểu thể hiện: thiết bị người dùng (trình duyệt/PWA), dịch vụ/CDN phục vụ Next.js, container/dịch vụ chạy NestJS API, PostgreSQL có persistent storage, container registry và nền tảng triển khai, HTTPS và kết nối nội bộ và cổng, secret/biến môi trường, health check và log, ranh giới local / CI / production.
+## Quy ước duy trì
 
-`docs/deployment.md` (hướng dẫn triển khai và rollback, đề A2 §9) nằm ở `docs/`, không nằm trong thư mục này.
+- [SRS](../requirements/srs.md) và [handoff](../planning/handoff/2026-10-21-req-sync/README.md) là nguồn contract. Các quyết định có trạng thái Accepted (2026-10-21).
+- Health trả `{status, database}`; CD smoke `/health`, `/products` và web, mỗi bước retry tối đa 10 phút.
+- API dừng giữa bước 13 và 14 của UC-04 là rủi ro chấp nhận vì thanh toán chỉ mô phỏng; không cam kết xử lý khoảng dừng này.
+- Task 4/5 hiện thực code và minh chứng vận hành. §3 của architecture.md ánh xạ từng thành phần với vị trí mã nguồn dự kiến.
+- Ma trận nằm ngoài PR này. B10 dùng bảng §8 của architecture.md trong PR riêng sau T2-M.
+- Kết quả kiểm Task 3 nằm trong [report](../planning/handoff/2026-10-21-req-sync/report-task3.md).
 
-## Tiêu chí nghiệm thu (đề A2 §5.2)
+## Render Deployment-01
 
-Mỗi container/dịch vụ trong deployment diagram truy vết được tới một thành phần trong `architecture.md` và tới mã nguồn (`apps/web`, `apps/api`, `docker-compose.yml`, `.github/workflows`). Sơ đồ phải phản ánh đúng nền tảng thực tế nhóm dùng, không phải sơ đồ lý thuyết.
+Dùng JAR từ [release PlantUML 1.2026.8](https://github.com/plantuml/plantuml/releases/tag/v1.2026.8), đặt ngoài repository. Từ repo root, thay hai đường dẫn tạm bằng đường dẫn tuyệt đối:
 
-Hướng dẫn từng bước: `docs/planning/2026-10-15-assignment2-plan.md`, Task 3.
+```text
+java -jar <temp>/plantuml-1.2026.8.jar -charset UTF-8 -checkonly docs/architecture/deployment.puml
+java -jar <temp>/plantuml-1.2026.8.jar -charset UTF-8 -tsvg -o <temp>/rendered docs/architecture/deployment.puml
+```
+
+Kiểm SVG là XML hợp lệ, có `data-diagram-type=` hoặc metadata PlantUML, không có `Syntax Error`; mở ảnh kiểm các node, nhãn và mũi tên trước khi chép vào `docs/architecture/deployment.svg`.
+
+SVG lưu trong repo được xuống dòng giữa các XML tag (không đổi thuộc tính/hình học). Cách này giúp review diff và tránh cổng B8 khớp nhầm thuộc tính phiên bản XML với nhãn image trên cùng một dòng SVG.
+
+Một dấu thập phân trong tọa độ dùng XML character reference để tránh trùng mẫu mã AC cũ. Kiểm tra XML xác nhận mọi thuộc tính, chữ và hình học sau parse giống hệt đầu ra PlantUML gốc.

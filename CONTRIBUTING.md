@@ -33,7 +33,7 @@ Sau lần CI đầu tiên trên PR, quản trị viên cấu hình bảo vệ `d
 3. Không cho bypass các yêu cầu trên, force-push hoặc xóa nhánh bảo vệ.
 4. Kiểm PR cố ý đỏ thực sự không merge được; lưu ảnh/log theo [hồ sơ CI](docs/evidence/ci/README.md).
 
-Đây là yêu cầu cần thiết lập trên GitHub, không được bật chỉ bằng workflow. Hiện chưa có bằng chứng đã cấu hình trong phiên local này. Nếu gói repository không hỗ trợ protection, nhóm phải chọn cấu hình repository hỗ trợ; không coi review thủ công là thay thế cho điều kiện chặn merge của đề A2 §6.4.
+Đây là yêu cầu cần thiết lập trên GitHub, không được bật chỉ bằng workflow. Ngày 2026-10-21 đã có CI thật xanh/đỏ nhưng API kiểm rules trả HTTP 403 yêu cầu nâng gói hoặc chuyển repo public; contributor có quyền push, không có admin. [Hồ sơ CI](docs/evidence/ci/github-runs.md) lưu phản hồi và log. Chủ repo phải chọn cấu hình hỗ trợ, bật required check và kiểm việc chặn merge; không coi review thủ công, CI đỏ hoặc PR draft là thay thế cho điều kiện của đề A2 §6.4.
 
 ## Definition of Done
 

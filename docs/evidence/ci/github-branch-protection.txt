@@ -1,0 +1,31 @@
+Collected UTC: 2026-10-21T06:32:47.4929804Z
+Command: gh api --include repos/DuVinhLoi/BrewLite/rules/branches/develop-Assignment2
+Exit code: 1
+HTTP/2.0 403 Forbidden
+Access-Control-Allow-Origin: *
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning
+Content-Security-Policy: default-src 'none'
+Content-Type: application/json; charset=utf-8
+Date: Wed, 21 Oct 2026 06:32:49 GMT
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Server: github.com
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+Vary: Accept-Encoding, Accept, X-Requested-With
+X-Accepted-Oauth-Scopes: repo
+X-Content-Type-Options: nosniff
+X-Frame-Options: deny
+X-Github-Api-Version-Selected: 2022-11-28
+X-Github-Edge-Region: southeastasia
+X-Github-Media-Type: github.v3; format=json
+X-Github-Request-Id: 7FF9:399BD0:10CAD0D:18829E3:6AD85C91
+X-Oauth-Client-Id: 0120e057bd645470c1ed
+X-Oauth-Scopes: gist, repo, workflow
+X-Ratelimit-Limit: 5000
+X-Ratelimit-Remaining: 4964
+X-Ratelimit-Reset: 1792567037
+X-Ratelimit-Resource: core
+X-Ratelimit-Used: 36
+X-Xss-Protection: 0
+
+gh: Upgrade to GitHub Pro or make this repository public to enable this feature. (HTTP 403)
+{"message":"Upgrade to GitHub Pro or make this repository public to enable this feature.","documentation_url":"https://docs.github.com/rest/repos/rules#get-rules-for-a-branch","status":"403"}

@@ -8,6 +8,7 @@ Chưa có URL production hoặc GitHub CI/CD run được xác minh; sơ đồ/A
 - [Audit/kế hoạch Task 5](docs/task5/implementation.md), [kết quả kiểm chứng và bàn giao](docs/task5/verification.md).
 - [Deploy, secrets và rollback](docs/deployment.md), [release candidate](docs/task5/release-notes.md), [Sprint Review/Retro](docs/task5/sprint-review-retrospective.md).
 - [Traceability](docs/traceability-matrix.md), [quy trình PR/DoD](CONTRIBUTING.md), [Task 4 checkpoint](docs/checkpoints/2026-10-19-task4.md).
+- [Kiến trúc và ADR Task 3](docs/architecture/architecture.md), [log CI thật Task 4 xanh/đỏ](docs/evidence/ci/github-runs.md).
 
 ## Chạy trên Windows bằng Docker
 
@@ -129,6 +130,8 @@ Pop-Location
 Playwright tự chạy API 4105 và web 3105, không tái dùng server đang chạy. Đóng server chiếm cổng hoặc đổi cấu hình test trước.
 E2E chạy browser + API + PostgreSQL thật; lỗi mất response được tiêm sau khi request thật đã tới server, không dùng mock để giả thành công.
 Sau kiểm thử, bỏ các env test khỏi terminal hoặc mở terminal mới trước khi chạy demo. Production local: build với API URL demo, rồi `npm.cmd --prefix apps/api run start:prod` và `npm.cmd --prefix apps/web start`.
+
+Đã có [PR #9 CI xanh](https://github.com/DuVinhLoi/BrewLite/pull/9) và [PR #10 CI bắt lỗi test, đã đóng không merge](https://github.com/DuVinhLoi/BrewLite/pull/10); log ở [hồ sơ CI](docs/evidence/ci/README.md). Quản trị viên còn phải bật branch protection yêu cầu check `ci` và một approval để chặn merge khi lỗi. API GitHub hiện báo repo private cần gói hỗ trợ hoặc đổi visibility để dùng tính năng này; tài khoản kiểm tra không có quyền admin. Chưa xác nhận điều kiện chặn merge đã đạt.
 
 ## CI/CD và production
 

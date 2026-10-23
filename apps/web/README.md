@@ -9,6 +9,7 @@ npm.cmd ci
 npm.cmd run dev
 ```
 
+Mở `http://localhost:3000`.
 Copy `.env.example` thành `.env.local` trên clone mới. NEXT_PUBLIC_API_URL mặc định http://localhost:4000; đổi URL phải build lại.
 API CORS phải cho phép origin web. Không đặt JWT_SECRET trong frontend.
 Giỏ dùng localStorage, session dùng sessionStorage; không xóa giỏ khi lỗi thanh toán hoặc đăng xuất.
@@ -31,5 +32,7 @@ npm.cmd run build
 npm.cmd run test:e2e
 ```
 
-Unit Vitest không cần DB. Playwright dùng browser/API thật và TEST_DATABASE_URL riêng; xem root README.
+Unit Vitest không cần DB; fetch được mock. Sprint 1: `UNIT-T01` định dạng VND, `UNIT-T02` tồn kho, `UNIT-T03` thẻ món, `UNIT-T04` tải/8 món, `UNIT-T05` rỗng, `UNIT-T06` mất mạng/thử lại, `UNIT-T07` HTTP 503/thử lại; Sprint 2 xem [ma trận](../../docs/traceability-matrix.md).
+Playwright dùng browser/API thật và TEST_DATABASE_URL riêng; xem root README.
+PWA chỉ cần web app manifest theo AC-N10.1; service worker không thuộc yêu cầu minimum.
 Nhóm phải hiểu và giải thích được code khi vấn đáp.

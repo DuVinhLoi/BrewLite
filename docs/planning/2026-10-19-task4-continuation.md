@@ -26,3 +26,16 @@ Không sửa Task 1–3, code A1 hoặc worktree khác. Sau handoff local, ngư�
 ## Phụ thuộc và điều kiện nghiệm thu ngoài local
 
 Task 2–3 còn placeholder trong checkout này: Task 4 chỉ là bản nháp, chưa đủ điều kiện merge/nghiệm thu theo cổng B.4. GitHub CLI chưa đăng nhập: chưa có bằng chứng branch protection, board, PR/run xanh-đỏ hoặc Sprint Review/tag. Ghi rõ phần thiếu trong checkpoint và hướng dẫn minh chứng; không tự tạo URL hay đánh dấu đã hoàn tất.
+
+## Tiếp tục kiểm Task 4 / tạo minh chứng - 2026-10-21
+
+Giữ Task ID, nhánh, workspace và allowed paths ở trên. Đã dùng thông tin Git đăng nhập sẵn để truy cập repo; không lưu token. Đồng bộ các commit Task 1–2 đã merge vào base, giải quyết ba xung đột tài liệu để PR chạy CI. Không sửa tạo phẩm Task 1–2, code ứng dụng, test chính hoặc workflow.
+
+- [x] Đọc PDF đề §6.1–6.4 và đối chiếu tạo phẩm; [báo cáo](../evidence/ci/github-runs.md).
+- [x] Chạy lại lint/test/typecheck/build: API 5 test và web 13 test pass.
+- [x] Mở draft PR #9, thu log/metadata GitHub pipeline xanh.
+- [x] Tạo nhánh `a2/ci-demo-fail` và PR #10, chỉ đổi một kỳ vọng test; thu CI bắt lỗi rồi đóng PR, không merge. Test sai không vào `a2/Task4`.
+- [ ] Chủ repo bật required `ci` và chứng minh chặn merge; API báo giới hạn gói repo private, contributor không có admin.
+- [ ] Chốt tạo phẩm Task 3 và review/nghiệm thu trước khi merge Task 4.
+
+PR Task 4 giữ draft; không merge base, đổi visibility, mua gói hoặc tạo release/tag trong phiên này.

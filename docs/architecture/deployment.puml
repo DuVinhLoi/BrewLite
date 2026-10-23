@@ -1,0 +1,76 @@
+@startuml deployment
+title BrewLite – Deployment-01 (Vercel + Render + GHCR)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam NodeBackgroundColor #eef2fb
+skinparam NodeBorderColor #5b6b8c
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam nodesep 45
+skinparam ranksep 65
+left to right direction
+
+node "Thiết bị người dùng" as USER <<device>> {
+  node "Trình duyệt / PWA" as BROWSER <<executionEnvironment>>
+}
+
+package "Production" {
+  node "Vercel" as VERCEL <<platform>> {
+    node "CDN / Edge" as CDN <<executionEnvironment>> {
+      artifact "Next.js web (apps/web)\nNEXT_PUBLIC_API_URL" as WEB
+    }
+  }
+  node "Render (cùng region với DB)" as RENDER <<platform>> {
+    node "Web Service – Docker container :4000" as RSVC <<executionEnvironment>> {
+      artifact "NestJS API (apps/api)\nGET /health: 200 DB up / 503 DB down\nHealth Check Path: /health\nJSON stdout → Render logs\nPlatform env: DATABASE_URL (internal),\nJWT_SECRET, CORS_ORIGINS, LOG_LEVEL" as API
+      component "Payment simulator\nTrong tiến trình API, không lưu trạng thái" as SIM
+    }
+    node "Render Postgres – external access disabled" as RPG <<executionEnvironment>> {
+      database "PostgreSQL :5432" as DB
+      storage "Persistent storage\nDữ liệu ngoài filesystem API" as DISK
+    }
+    artifact "Render logs" as RLOG
+  }
+}
+
+node "GHCR – container registry" as REG <<registry>> {
+  artifact "ghcr.io/duvinhloi/\nbrewlite-api:<commit-sha>" as IMG
+}
+
+package "CI – GitHub Actions" {
+  node "Runner" as CI <<executionEnvironment>> {
+    artifact "ci.yml (PR)\ninstall → lint → unit test → build\nIntegration: Postgres tạm; E2E: Chromium" as CIYML
+    artifact "cd.yml (tag a2-v*)\nlint/test → build image → push → deploy\n→ smoke test (retry ≤ 10 phút / bước)\nSau cả hai deploy; quá hạn: đỏ và dừng\nRollback: image SHA trước + vercel rollback\n→ smoke lại (AC-N18.2–3)" as CDYML
+    artifact "GitHub production secrets\nRENDER_DEPLOY_HOOK_URL, VERCEL_TOKEN,\nVERCEL_ORG_ID, VERCEL_PROJECT_ID\nVars: PRODUCTION_API_URL, PRODUCTION_WEB_URL" as SEC
+  }
+}
+
+package "Local" {
+  node "Máy phát triển – Docker Compose" as LOCAL <<device>> {
+    artifact "web :3000 · api :4000 · db :5432\nPostgres named volume\n.env từ .env.example (không commit secret)" as DC
+  }
+}
+
+BROWSER --> CDN : (1) HTTPS 443
+BROWSER --> RSVC : (2) HTTPS 443 → API :4000\nREST + JWT, CORS
+API --> DB : (3) internal URL · TCP 5432\nPrisma; startup migration (ADR-003)
+DB -- DISK
+API ..> RLOG : (4) stdout JSON, LOG_LEVEL\nKhông log secret / token / số thẻ
+API --> SIM : Gọi nội bộ tiến trình · WALLET / CARD
+SEC ..> CDYML
+CDYML --> IMG : (5) docker push · HTTPS 443
+RSVC ..> IMG : (6) pull theo SHA · HTTPS 443
+CDYML --> RSVC : (7) deploy hook · HTTPS 443\nimgURL = image SHA
+CDYML --> VERCEL : (8) vercel deploy ~--prebuilt ~--prod\nHTTPS 443
+CDYML ..> RSVC : (9) smoke /health, /products · HTTPS 443
+CDYML ..> CDN : (9) smoke trang web · HTTPS 443
+
+LOCAL -[hidden]- CI
+@enduml
