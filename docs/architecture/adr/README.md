@@ -1,22 +1,17 @@
-# docs/architecture/adr — Architecture Decision Records
+# ADR index
 
-Thư mục này **chưa có ADR**. Đề A2 §5.1: mỗi quyết định kiến trúc quan trọng ghi thành một ADR ngắn.
+ADR của Task 3 (đề A2 §5.1), đồng bộ với SRS sau PR #11 và handoff D2/D3.
 
-## Đặt tên và mẫu
+## Danh sách ADR
 
-- Tên file: `NNN-ten-quyet-dinh.md`, đánh số tăng dần (ví dụ `001-monorepo.md`).
-- Mỗi ADR gồm: Trạng thái (Proposed / Accepted / Superseded), Bối cảnh, Quyết định, Các phương án đã cân nhắc, Hệ quả (ưu điểm, hạn chế, trade-off).
-- Đổi quyết định thì thêm ADR mới và đánh dấu ADR cũ là Superseded, không xóa.
-- Mọi thay đổi ADR đi qua pull request, nêu lý do trong mô tả PR (đề A2 §6.2).
+| File | Quyết định | Trạng thái |
+|---|---|---|
+| [001-monorepo.md](001-monorepo.md) | Một repo cho web, API và docs | Accepted (2026-10-21) |
+| [002-layered-nestjs.md](002-layered-nestjs.md) | NestJS chia domain, controller/service và truy cập dữ liệu | Accepted (2026-10-21) |
+| [003-containerization.md](003-containerization.md) | Compose/Postgres, Prisma migration lúc khởi động, seed tái tạo được | Accepted (2026-10-21) |
+| [004-vercel-render.md](004-vercel-render.md) | Vercel + Render + GHCR, internal DB, health, smoke ≤10 phút và rollback image/web trước | Accepted (2026-10-21) |
+| [005-idempotency-and-optimistic-lock.md](005-idempotency-and-optimistic-lock.md) | API replay theo BR-05/D2/D3; simulator không lưu trạng thái; transaction giữ kho | Accepted (2026-10-21) |
 
-## ADR đề xuất (nhóm tự viết và tự chốt)
+Giữ tên file 003/004 hiện có trên nhánh để liên kết không đổi. Mỗi ADR gồm bối cảnh, quyết định, hệ quả và phương án đã loại. Khi quyết định thay đổi, ghi lý do và ngày thay đổi qua PR.
 
-| File | Quyết định |
-|---|---|
-| `001-monorepo.md` | Một repo, `apps/web` + `apps/api` |
-| `002-layered-nestjs.md` | NestJS chia module theo domain, phân lớp controller / service / repository |
-| `003-prisma-migrations.md` | ORM và cách quản lý migration, seed |
-| `004-hosting-vercel-render.md` | Nền tảng production; chờ `/health.version` đúng SHA image trước smoke test; ngày tạo/hết hạn DB so với lịch chấm |
-| `005-idempotency-and-optimistic-lock.md` | Idempotency-Key ở API; simulator chống thu trùng theo `orderId`, lưu kết quả thành công bền vững qua restart và phục hồi E8b (SRS mục 3.4, AC-F16.7); khóa lạc quan hoặc transaction cho tồn kho |
-
-Nội dung gợi ý cho từng ADR: `docs/planning/2026-10-15-assignment2-plan.md`, Task 3.
+D3 được chốt 2026-10-22; ADR-005 ghi bổ sung ngày này ở dòng Liên quan. Các thay đổi tại đây là thiết kế cho Task 4/5, không thay thế minh chứng kiểm thử runtime.

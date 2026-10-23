@@ -1,0 +1,304 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" data-diagram-type="DESCRIPTION" style="width:2967px;height:1171px;background:#FFFFFF;" width="2967px" height="1171px" viewBox="0 0 2967 1171" zoomAndPan="magnify" preserveAspectRatio="none" contentStyleType="text/css">
+<?plantuml 1.2026.8?>
+<defs/>
+<g font-family="sans-serif" lengthAdjust="spacing">
+<g class="title" data-source-line="1">
+<text x="1305.731" y="23.132" fill="#1F2937" font-size="14" textLength="348.537" font-weight="700" font-family="Arial">BrewLite - Deployment-01 (Vercel + Render + GHCR)</text>
+</g>
+<!--cluster USER-->
+<g class="cluster" data-qualified-name="USER" id="ent0001" data-source-line="19">
+<polygon points="1020,352.099,1030,342.099,1248,342.099,1248,466.099,1238,476.099,1020,476.099,1020,352.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="1238" y1="352.099" x2="1248" y2="342.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="1020" y1="352.099" x2="1238" y2="352.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="1238" y1="352.099" x2="1238" y2="476.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="1101.979" y="368.23" fill="#1F2937" font-size="14" textLength="56.041" font-style="italic" font-family="Arial">«device»</text>
+<text x="1063.579" y="384.329" fill="#1F2937" font-size="14" textLength="132.843" font-weight="700" font-family="Arial">Thiết bị người dùng</text>
+</g>
+<!--cluster Production-->
+<g class="cluster" data-qualified-name="Production" id="ent0003" data-source-line="23">
+<path d="M1619.5,43.099 L1694.383,43.099 A3.75,3.75 0 0 1 1696.883,45.599 L1703.883,65.197 L2949.5,65.197 A2.5,2.5 0 0 1 2952,67.697 L2952,991.599 A2.5,2.5 0 0 1 2949.5,994.099 L1619.5,994.099 A2.5,2.5 0 0 1 1617,991.599 L1617,45.599 A2.5,2.5 0 0 1 1619.5,43.099" style="stroke:#94A3B8;stroke-width:1.5;" fill="#F8FAFC"/>
+<line x1="1617" y1="65.197" x2="1703.883" y2="65.197" style="stroke:#94A3B8;stroke-width:1.5;"/>
+<text x="1621" y="58.23" fill="#1F2937" font-size="14" textLength="73.883" font-weight="700" font-family="Arial">Production</text>
+</g>
+<!--cluster VERCEL-->
+<g class="cluster" data-qualified-name="Production.VERCEL" id="ent0004" data-source-line="24">
+<polygon points="1700.5,104.099,1710.5,94.099,2020.5,94.099,2020.5,385.099,2010.5,395.099,1700.5,395.099,1700.5,104.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="2010.5" y1="104.099" x2="2020.5" y2="94.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="1700.5" y1="104.099" x2="2010.5" y2="104.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="2010.5" y1="104.099" x2="2010.5" y2="395.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="1823.428" y="120.23" fill="#1F2937" font-size="14" textLength="66.145" font-style="italic" font-family="Arial">«platform»</text>
+<text x="1835.483" y="136.329" fill="#1F2937" font-size="14" textLength="42.034" font-weight="700" font-family="Arial">Vercel</text>
+</g>
+<!--cluster CDN-->
+<g class="cluster" data-qualified-name="Production.VERCEL.CDN" id="ent0005" data-source-line="25">
+<polygon points="1740.5,184.099,1750.5,174.099,1980.5,174.099,1980.5,337.099,1970.5,347.099,1740.5,347.099,1740.5,184.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="1970.5" y1="184.099" x2="1980.5" y2="174.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="1740.5" y1="184.099" x2="1970.5" y2="184.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="1970.5" y1="184.099" x2="1970.5" y2="347.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="1779.452" y="200.23" fill="#1F2937" font-size="14" textLength="154.096" font-style="italic" font-family="Arial">«executionEnvironment»</text>
+<text x="1818.386" y="216.329" fill="#1F2937" font-size="14" textLength="76.228" font-weight="700" font-family="Arial">CDN / Edge</text>
+</g>
+<!--cluster RENDER-->
+<g class="cluster" data-qualified-name="Production.RENDER" id="ent0007" data-source-line="29">
+<polygon points="1641,437.099,1651,427.099,2928,427.099,2928,960.099,2918,970.099,1641,970.099,1641,437.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="2918" y1="437.099" x2="2928" y2="427.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="1641" y1="437.099" x2="2918" y2="437.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="2918" y1="437.099" x2="2918" y2="970.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="2247.428" y="453.23" fill="#1F2937" font-size="14" textLength="66.145" font-style="italic" font-family="Arial">«platform»</text>
+<text x="2184.906" y="469.329" fill="#1F2937" font-size="14" textLength="191.188" font-weight="700" font-family="Arial">Render (cùng region với DB)</text>
+</g>
+<!--cluster RSVC-->
+<g class="cluster" data-qualified-name="Production.RENDER.RSVC" id="ent0008" data-source-line="30">
+<polygon points="1673,711.099,1683,701.099,2634,701.099,2634,928.099,2624,938.099,1673,938.099,1673,711.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="2624" y1="711.099" x2="2634" y2="701.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="1673" y1="711.099" x2="2624" y2="711.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="2624" y1="711.099" x2="2624" y2="938.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="2072.452" y="727.23" fill="#1F2937" font-size="14" textLength="154.096" font-style="italic" font-family="Arial">«executionEnvironment»</text>
+<text x="2024.614" y="743.329" fill="#1F2937" font-size="14" textLength="249.771" font-weight="700" font-family="Arial">Web Service - Docker container :4000</text>
+</g>
+<!--cluster RPG-->
+<g class="cluster" data-qualified-name="Production.RENDER.RPG" id="ent0011" data-source-line="34">
+<polygon points="2379.5,501.099,2389.5,491.099,2904,491.099,2904,605.099,2894,615.099,2379.5,615.099,2379.5,501.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="2894" y1="501.099" x2="2904" y2="491.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="2379.5" y1="501.099" x2="2894" y2="501.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="2894" y1="501.099" x2="2894" y2="615.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="2560.702" y="517.23" fill="#1F2937" font-size="14" textLength="154.096" font-style="italic" font-family="Arial">«executionEnvironment»</text>
+<text x="2493.02" y="533.329" fill="#1F2937" font-size="14" textLength="289.461" font-weight="700" font-family="Arial">Render Postgres - external access disabled</text>
+</g>
+<!--cluster REG-->
+<g class="cluster" data-qualified-name="REG" id="ent0015" data-source-line="42">
+<polygon points="2340,1028.099,2350,1018.099,2587,1018.099,2587,1136.099,2577,1146.099,2340,1146.099,2340,1028.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="2577" y1="1028.099" x2="2587" y2="1018.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="2340" y1="1028.099" x2="2577" y2="1028.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="2577" y1="1028.099" x2="2577" y2="1146.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="2428.766" y="1044.23" fill="#1F2937" font-size="14" textLength="61.469" font-style="italic" font-family="Arial">«registry»</text>
+<text x="2373.538" y="1060.329" fill="#1F2937" font-size="14" textLength="171.924" font-weight="700" font-family="Arial">GHCR - container registry</text>
+</g>
+<!--cluster CI - GitHub Actions-->
+<g class="cluster" data-qualified-name="CI - GitHub Actions" id="ent0017" data-source-line="46">
+<path d="M456.5,590.099 L585.824,590.099 A3.75,3.75 0 0 1 588.324,592.599 L595.324,612.197 L1340.5,612.197 A2.5,2.5 0 0 1 1343,614.697 L1343,991.599 A2.5,2.5 0 0 1 1340.5,994.099 L456.5,994.099 A2.5,2.5 0 0 1 454,991.599 L454,592.599 A2.5,2.5 0 0 1 456.5,590.099" style="stroke:#94A3B8;stroke-width:1.5;" fill="#F8FAFC"/>
+<line x1="454" y1="612.197" x2="595.324" y2="612.197" style="stroke:#94A3B8;stroke-width:1.5;"/>
+<text x="458" y="605.23" fill="#1F2937" font-size="14" textLength="128.324" font-weight="700" font-family="Arial">CI - GitHub Actions</text>
+</g>
+<!--cluster CI-->
+<g class="cluster" data-qualified-name="CI - GitHub Actions.CI" id="ent0018" data-source-line="47">
+<polygon points="486,651.099,496,641.099,1311,641.099,1311,952.099,1301,962.099,486,962.099,486,651.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="1301" y1="651.099" x2="1311" y2="641.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="486" y1="651.099" x2="1301" y2="651.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="1301" y1="651.099" x2="1301" y2="962.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="817.452" y="667.23" fill="#1F2937" font-size="14" textLength="154.096" font-style="italic" font-family="Arial">«executionEnvironment»</text>
+<text x="870" y="683.329" fill="#1F2937" font-size="14" textLength="49" font-weight="700" font-family="Arial">Runner</text>
+</g>
+<!--cluster Local-->
+<g class="cluster" data-qualified-name="Local" id="ent0022" data-source-line="54">
+<path d="M8.5,722.099 L46.065,722.099 A3.75,3.75 0 0 1 48.565,724.599 L55.565,744.197 L418.5,744.197 A2.5,2.5 0 0 1 421,746.697 L421,991.599 A2.5,2.5 0 0 1 418.5,994.099 L8.5,994.099 A2.5,2.5 0 0 1 6,991.599 L6,724.599 A2.5,2.5 0 0 1 8.5,722.099" style="stroke:#94A3B8;stroke-width:1.5;" fill="#F8FAFC"/>
+<line x1="6" y1="744.197" x2="55.565" y2="744.197" style="stroke:#94A3B8;stroke-width:1.5;"/>
+<text x="10" y="737.23" fill="#1F2937" font-size="14" textLength="36.565" font-weight="700" font-family="Arial">Local</text>
+</g>
+<!--cluster LOCAL-->
+<g class="cluster" data-qualified-name="Local.LOCAL" id="ent0023" data-source-line="55">
+<polygon points="38,783.099,48,773.099,389,773.099,389,952.099,379,962.099,38,962.099,38,783.099" fill="#F8FAFC" style="stroke:#94A3B8;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="379" y1="783.099" x2="389" y2="773.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="38" y1="783.099" x2="379" y2="783.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<line x1="379" y1="783.099" x2="379" y2="962.099" style="stroke:#94A3B8;stroke-width:1;"/>
+<text x="181.479" y="799.23" fill="#1F2937" font-size="14" textLength="56.041" font-style="italic" font-family="Arial">«device»</text>
+<text x="98.255" y="815.329" fill="#1F2937" font-size="14" textLength="222.489" font-weight="700" font-family="Arial">Máy phát triển - Docker Compose</text>
+</g>
+<!--entity BROWSER-->
+<g class="entity" data-qualified-name="USER.BROWSER" id="ent0002" data-source-line="20">
+<polygon points="1036,408.099,1046,398.099,1232.096,398.099,1232.096,450.296,1222.096,460.296,1036,460.296,1036,408.099" fill="#EEF2FB" style="stroke:#5B6B8C;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="1222.096" y1="408.099" x2="1232.096" y2="398.099" style="stroke:#5B6B8C;stroke-width:0.5;"/>
+<line x1="1036" y1="408.099" x2="1222.096" y2="408.099" style="stroke:#5B6B8C;stroke-width:0.5;"/>
+<line x1="1222.096" y1="408.099" x2="1222.096" y2="460.296" style="stroke:#5B6B8C;stroke-width:0.5;"/>
+<text x="1052" y="431.23" fill="#1F2937" font-size="14" textLength="154.096" font-style="italic" font-family="Arial">«executionEnvironment»</text>
+<text x="1071.862" y="447.329" fill="#1F2937" font-size="14" textLength="114.372" font-family="Arial">Trình duyệt / PWA</text>
+</g>
+<!--entity WEB-->
+<g class="entity" data-qualified-name="Production.VERCEL.CDN.WEB" id="ent0006" data-source-line="26">
+<rect x="1764.5" y="238.599" width="191.841" height="55.197" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<polygon points="1939.341,243.599,1939.341,257.599,1951.341,257.599,1951.341,249.599,1945.341,243.599,1939.341,243.599" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="1945.341" y1="243.599" x2="1945.341" y2="249.599" style="stroke:#181818;stroke-width:0.5;"/>
+<line x1="1951.341" y1="249.599" x2="1945.341" y2="249.599" style="stroke:#181818;stroke-width:0.5;"/>
+<text x="1774.5" y="264.73" fill="#1F2937" font-size="14" textLength="145.503" font-family="Arial">Next.js web (apps/web)</text>
+<text x="1774.5" y="280.829" fill="#1F2937" font-size="14" textLength="161.841" font-family="Arial">NEXT_PUBLIC_API_URL</text>
+</g>
+<!--entity RLOG-->
+<g class="entity" data-qualified-name="Production.RENDER.RLOG" id="ent0014" data-source-line="38">
+<rect x="2410.5" y="637.599" width="105.489" height="39.099" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<polygon points="2498.989,642.599,2498.989,656.599,2510.989,656.599,2510.989,648.599,2504.989,642.599,2498.989,642.599" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="2504.989" y1="642.599" x2="2504.989" y2="648.599" style="stroke:#181818;stroke-width:0.5;"/>
+<line x1="2510.989" y1="648.599" x2="2504.989" y2="648.599" style="stroke:#181818;stroke-width:0.5;"/>
+<text x="2420.5" y="663.73" fill="#1F2937" font-size="14" textLength="75.489" font-family="Arial">Render logs</text>
+</g>
+<!--entity API-->
+<g class="entity" data-qualified-name="Production.RENDER.RSVC.API" id="ent0009" data-source-line="31">
+<rect x="1697" y="765.099" width="327.186" height="119.592" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<polygon points="2007.186,770.099,2007.186,784.099,2019.186,784.099,2019.186,776.099,2013.186,770.099,2007.186,770.099" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="2013.186" y1="770.099" x2="2013.186" y2="776.099" style="stroke:#181818;stroke-width:0.5;"/>
+<line x1="2019.186" y1="776.099" x2="2013.186" y2="776.099" style="stroke:#181818;stroke-width:0.5;"/>
+<text x="1707" y="791.23" fill="#1F2937" font-size="14" textLength="137.724" font-family="Arial">NestJS API (apps/api)</text>
+<text x="1707" y="807.329" fill="#1F2937" font-size="14" textLength="244.364" font-family="Arial">GET /health: 200 DB up / 503 DB down</text>
+<text x="1707" y="823.428" fill="#1F2937" font-size="14" textLength="166.544" font-family="Arial">Health Check Path: /health</text>
+<text x="1707" y="839.526" fill="#1F2937" font-size="14" textLength="176.634" font-family="Arial">JSON stdout → Render logs</text>
+<text x="1707" y="855.625" fill="#1F2937" font-size="14" textLength="259.868" font-family="Arial">Platform env: DATABASE_URL (internal),</text>
+<text x="1707" y="871.724" fill="#1F2937" font-size="14" textLength="297.186" font-family="Arial">JWT_SECRET, CORS_ORIGINS, LOG_LEVEL</text>
+</g>
+<!--entity SIM-->
+<g class="entity" data-qualified-name="Production.RENDER.RSVC.SIM" id="ent0010" data-source-line="32">
+<rect x="2316" y="794.099" width="293.736" height="62.197" fill="#EEF2FB" style="stroke:#5B6B8C;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<rect x="2589.736" y="799.099" width="15" height="10" fill="#EEF2FB" style="stroke:#5B6B8C;stroke-width:0.5;"/>
+<rect x="2587.736" y="801.099" width="4" height="2" fill="#EEF2FB" style="stroke:#5B6B8C;stroke-width:0.5;"/>
+<rect x="2587.736" y="805.099" width="4" height="2" fill="#EEF2FB" style="stroke:#5B6B8C;stroke-width:0.5;"/>
+<text x="2331" y="827.23" fill="#1F2937" font-size="14" textLength="115.931" font-family="Arial">Payment simulator</text>
+<text x="2331" y="843.329" fill="#1F2937" font-size="14" textLength="253.736" font-family="Arial">Trong tiến trình API, không lưu trạng thái</text>
+</g>
+<!--entity DB-->
+<g class="entity" data-qualified-name="Production.RENDER.RPG.DB" id="ent0012" data-source-line="35">
+<path d="M2395.5,557.599 C2395.5,547.599 2463.093,547.599 2463.093,547.599 C2463.093,547.599 2530.686,547.599 2530.686,557.599 L2530.686,582.697 C2530.686,592.697 2463.093,592.697 2463.093,592.697 C2463.093,592.697 2395.5,592.697 2395.5,582.697 L2395.5,557.599" style="stroke:#181818;stroke-width:0.5;" fill="#F1F1F1"/>
+<path d="M2395.5,557.599 C2395.5,567.599 2463.093,567.599 2463.093,567.599 C2463.093,567.599 2530.686,567.599 2530.686,557.599" style="stroke:#181818;stroke-width:0.5;" fill="none"/>
+<text x="2405.5" y="584.73" fill="#1F2937" font-size="14" textLength="115.186" font-family="Arial">PostgreSQL :5432</text>
+</g>
+<!--entity DISK-->
+<g class="entity" data-qualified-name="Production.RENDER.RPG.DISK" id="ent0013" data-source-line="36">
+<rect x="2692" y="547.099" width="195.889" height="52.197" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="35" ry="35"/>
+<text x="2702" y="570.23" fill="#1F2937" font-size="14" textLength="112.834" font-family="Arial">Persistent storage</text>
+<text x="2702" y="586.329" fill="#1F2937" font-size="14" textLength="175.889" font-family="Arial">Dữ liệu ngoài filesystem API</text>
+</g>
+<!--entity IMG-->
+<g class="entity" data-qualified-name="REG.IMG" id="ent0016" data-source-line="43">
+<rect x="2366" y="1074.599" width="194.172" height="55.197" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<polygon points="2543.172,1079.599,2543.172,1093.599,2555.172,1093.599,2555.172,1085.599,2549.172,1079.599,2543.172,1079.599" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="2549.172" y1="1079.599" x2="2549.172" y2="1085.599" style="stroke:#181818;stroke-width:0.5;"/>
+<line x1="2555.172" y1="1085.599" x2="2549.172" y2="1085.599" style="stroke:#181818;stroke-width:0.5;"/>
+<text x="2376" y="1100.73" fill="#1F2937" font-size="14" textLength="105.062" font-family="Arial">ghcr.io/duvinhloi/</text>
+<text x="2376" y="1116.829" fill="#1F2937" font-size="14" textLength="164.172" font-family="Arial">brewlite-api:&lt;commit-sha>
+</text>
+</g>
+<!--entity CIYML-->
+<g class="entity" data-qualified-name="CI - GitHub Actions.CI.CIYML" id="ent0019" data-source-line="48">
+<rect x="565.5" y="705.599" width="292.999" height="71.296" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<polygon points="841.499,710.599,841.499,724.599,853.499,724.599,853.499,716.599,847.499,710.599,841.499,710.599" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="847.499" y1="710.599" x2="847.499" y2="716.599" style="stroke:#181818;stroke-width:0.5;"/>
+<line x1="853.499" y1="716.599" x2="847.499" y2="716.599" style="stroke:#181818;stroke-width:0.5;"/>
+<text x="575.5" y="731.73" fill="#1F2937" font-size="14" textLength="68.435" font-family="Arial">ci.yml (PR)</text>
+<text x="575.5" y="747.829" fill="#1F2937" font-size="14" textLength="197.634" font-family="Arial">install → lint → unit test → build</text>
+<text x="575.5" y="763.928" fill="#1F2937" font-size="14" textLength="262.999" font-family="Arial">Integration: Postgres tạm; E2E: Chromium</text>
+</g>
+<!--entity CDYML-->
+<g class="entity" data-qualified-name="CI - GitHub Actions.CI.CDYML" id="ent0020" data-source-line="49">
+<rect x="981" y="789.099" width="305.7" height="119.592" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<polygon points="1269.7,794.099,1269.7,808.099,1281.7,808.099,1281.7,800.099,1275.7,794.099,1269.7,794.099" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="1275.7" y1="794.099" x2="1275.7" y2="800.099" style="stroke:#181818;stroke-width:0.5;"/>
+<line x1="1281.7" y1="800.099" x2="1275.7" y2="800.099" style="stroke:#181818;stroke-width:0.5;"/>
+<text x="991" y="815.23" fill="#1F2937" font-size="14" textLength="109.696" font-family="Arial">cd.yml (tag a2-v*)</text>
+<text x="991" y="831.329" fill="#1F2937" font-size="14" textLength="252.902" font-family="Arial">lint/test → build image → push → deploy</text>
+<text x="991" y="847.428" fill="#1F2937" font-size="14" textLength="233.974" font-family="Arial">→ smoke test (retry ≤ 10 phút / bước)</text>
+<text x="991" y="863.526" fill="#1F2937" font-size="14" textLength="248.336" font-family="Arial">Sau cả hai deploy; quá hạn: đỏ và dừng</text>
+<text x="991" y="879.625" fill="#1F2937" font-size="14" textLength="275.7" font-family="Arial">Rollback: image SHA trước + vercel rollback</text>
+<text x="991" y="895.724" fill="#1F2937" font-size="14" textLength="164.151" font-family="Arial">→ smoke lại (AC-N18.2-3)</text>
+</g>
+<!--entity SEC-->
+<g class="entity" data-qualified-name="CI - GitHub Actions.CI.SEC" id="ent0021" data-source-line="50">
+<rect x="510" y="821.599" width="404.179" height="87.395" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<polygon points="897.179,826.599,897.179,840.599,909.179,840.599,909.179,832.599,903.179,826.599,897.179,826.599" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="903.179" y1="826.599" x2="903.179" y2="832.599" style="stroke:#181818;stroke-width:0.5;"/>
+<line x1="909.179" y1="832.599" x2="903.179" y2="832.599" style="stroke:#181818;stroke-width:0.5;"/>
+<text x="520" y="847.73" fill="#1F2937" font-size="14" textLength="161.854" font-family="Arial">GitHub production secrets</text>
+<text x="520" y="863.829" fill="#1F2937" font-size="14" textLength="332.213" font-family="Arial">RENDER_DEPLOY_HOOK_URL, VERCEL_TOKEN,</text>
+<text x="520" y="879.928" fill="#1F2937" font-size="14" textLength="276.192" font-family="Arial">VERCEL_ORG_ID, VERCEL_PROJECT_ID</text>
+<text x="520" y="896.026" fill="#1F2937" font-size="14" textLength="374.179" font-family="Arial">Vars: PRODUCTION_API_URL, PRODUCTION_WEB_URL</text>
+</g>
+<!--entity DC-->
+<g class="entity" data-qualified-name="Local.LOCAL.DC" id="ent0024" data-source-line="56">
+<rect x="62" y="837.599" width="303.144" height="71.296" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;" rx="2.5" ry="2.5"/>
+<polygon points="348.144,842.599,348.144,856.599,360.144,856.599,360.144,848.599,354.144,842.599,348.144,842.599" fill="#F1F1F1" style="stroke:#181818;stroke-width:0.5;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<line x1="354.144" y1="842.599" x2="354.144" y2="848.599" style="stroke:#181818;stroke-width:0.5;"/>
+<line x1="360.144" y1="848.599" x2="354.144" y2="848.599" style="stroke:#181818;stroke-width:0.5;"/>
+<text x="72" y="863.73" fill="#1F2937" font-size="14" textLength="201.592" font-family="Arial">web :3000 · api :4000 · db :5432</text>
+<text x="72" y="879.829" fill="#1F2937" font-size="14" textLength="150.965" font-family="Arial">Postgres named volume</text>
+<text x="72" y="895.928" fill="#1F2937" font-size="14" textLength="273.144" font-family="Arial">.env từ .env.example (không commit secret)</text>
+</g>
+<!--link BROWSER to CDN-->
+<g class="link" data-entity-1="ent0002" data-entity-2="ent0005" id="lnk25" data-source-line="60" data-link-type="dependency">
+<path d="M1232.39,406.609 C1327.75,385.729 1477.49,355.989 1609,343.099 C1636.27,340.426 1665.289,338.827 1693.544,337.934 C1707.672,337.488 1721.609,337.218 1735.04,337.08 C1736.719,337.063 1733.391,337.087 1735.053,337.074" style="stroke:#5B6B8C;stroke-width:1;" fill="none" id="BROWSER-to-CDN"/>
+<polygon points="1740.053,337.034,1731.021,333.106,1735.053,337.074,1731.085,341.106,1740.053,337.034" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="1436.5" y="342.292" fill="#1F2937" font-size="13" textLength="87.414" font-family="Arial">(1) HTTPS 443</text>
+</g>
+<!--link BROWSER to RSVC-->
+<g class="link" data-entity-1="ent0002" data-entity-2="ent0008" id="lnk26" data-source-line="61" data-link-type="dependency">
+<path d="M1232.36,427.809 C1341.75,432.229 1515.19,458.109 1601,571.099 C1612.19,585.839 1596.44,890.509 1609,904.099 C1646.38,944.569 1707.648,951.499 1760.233,948.101 C1786.525,946.402 1805.765,943.203 1823.645,939.242" style="stroke:#5B6B8C;stroke-width:1;" fill="none" id="BROWSER-to-RSVC"/>
+<polygon points="1828.527,938.161,1818.875,936.202,1823.645,939.242,1820.605,944.013,1828.527,938.161" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="1398" y="426.292" fill="#1F2937" font-size="13" textLength="164.734" font-family="Arial">(2) HTTPS 443 → API :4000</text>
+<text x="1419.877" y="441.241" fill="#1F2937" font-size="13" textLength="120.98" font-family="Arial">REST + JWT, CORS</text>
+</g>
+<!--link API to DB-->
+<g class="link" data-entity-1="ent0009" data-entity-2="ent0012" id="lnk27" data-source-line="62" data-link-type="dependency">
+<path d="M1911.86,765.079 C1948.18,725.759 2000.58,676.539 2057,648.099 C2166.97,592.659 2306.998,576.787 2390.328,572.147" style="stroke:#5B6B8C;stroke-width:1;" fill="none" id="API-to-DB"/>
+<polygon points="2395.32,571.869,2386.112,568.375,2390.328,572.147,2386.556,576.363,2395.32,571.869" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="2089.194" y="566.292" fill="#1F2937" font-size="13" textLength="161.84" font-family="Arial">(3) internal URL · TCP 5432</text>
+<text x="2065" y="581.241" fill="#1F2937" font-size="13" textLength="210.228" font-family="Arial">Prisma; startup migration (ADR-003)</text>
+</g>
+<!--link DB to DISK-->
+<g class="link" data-entity-1="ent0012" data-entity-2="ent0013" id="lnk28" data-source-line="63" data-link-type="association">
+<path d="M2530.55,570.709 C2576.98,571.139 2639.69,571.719 2691.71,572.199" style="stroke:#5B6B8C;stroke-width:1;" fill="none" id="DB-DISK"/>
+</g>
+<!--link API to RLOG-->
+<g class="link" data-entity-1="ent0009" data-entity-2="ent0014" id="lnk29" data-source-line="64" data-link-type="dependency">
+<path d="M2024,779.639 C2153.04,743.539 2320.605,696.656 2405.495,672.906" style="stroke:#5B6B8C;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="API-to-RLOG"/>
+<polygon points="2410.31,671.559,2400.565,670.131,2405.495,672.906,2402.721,677.836,2410.31,671.559" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="2082.437" y="694.292" fill="#1F2937" font-size="13" textLength="175.576" font-family="Arial">(4) stdout JSON, LOG_LEVEL</text>
+<text x="2077" y="709.241" fill="#1F2937" font-size="13" textLength="186.45" font-family="Arial">Không log secret / token / số thẻ</text>
+</g>
+<!--link API to SIM-->
+<g class="link" data-entity-1="ent0009" data-entity-2="ent0010" id="lnk30" data-source-line="65" data-link-type="dependency">
+<path d="M2024.17,830.469 C2035.28,830.719 2046.3,830.939 2057,831.099 C2157.43,832.639 2182.57,832.779 2283,831.099 C2293.73,830.919 2299.812,830.804 2310.972,830.524" style="stroke:#5B6B8C;stroke-width:1;" fill="none" id="API-to-SIM"/>
+<polygon points="2315.97,830.399,2306.873,826.626,2310.972,830.524,2307.073,834.623,2315.97,830.399" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="2058" y="828.292" fill="#1F2937" font-size="13" textLength="224.694" font-family="Arial">Gọi nội bộ tiến trình · WALLET / CARD</text>
+</g>
+<!--link SEC to CDYML-->
+<g class="link" data-entity-1="ent0021" data-entity-2="ent0020" id="lnk31" data-source-line="66" data-link-type="dependency">
+<path d="M914.08,857.439 C936.52,856.579 954.104,855.908 975.794,855.088" style="stroke:#5B6B8C;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="SEC-to-CDYML"/>
+<polygon points="980.79,854.899,971.645,851.241,975.794,855.088,971.948,859.236,980.79,854.899" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+</g>
+<!--link CDYML to IMG-->
+<g class="link" data-entity-1="ent0020" data-entity-2="ent0016" id="lnk32" data-source-line="67" data-link-type="dependency">
+<path d="M1234.74,909.189 C1272.47,929.379 1316.56,950.059 1359,963.099 C1719.23,1073.769 2166.591,1096.362 2361.001,1100.912" style="stroke:#5B6B8C;stroke-width:1;" fill="none" id="CDYML-to-IMG"/>
+<polygon points="2366,1101.029,2357.096,1096.819,2361.001,1100.912,2356.909,1104.817,2366,1101.029" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="1776" y="1023.292" fill="#1F2937" font-size="13" textLength="169.787" font-family="Arial">(5) docker push · HTTPS 443</text>
+</g>
+<!--link RSVC to IMG-->
+<g class="link" data-entity-1="ent0008" data-entity-2="ent0016" id="lnk33" data-source-line="68" data-link-type="dependency">
+<path d="M1900.886,938.148 C1901.66,938.31 1902.444,938.474 1903.238,938.641 C1928.644,943.968 1964.079,951.598 2005.111,960.987 C2087.175,979.766 2191.625,1005.584 2283,1034.099 C2320.6,1045.829 2357.101,1059.439 2390.451,1072.639" style="stroke:#5B6B8C;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="RSVC-to-IMG"/>
+<polygon points="2395.1,1074.479,2388.204,1067.447,2390.451,1072.639,2385.26,1074.886,2395.1,1074.479" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="2081" y="972.292" fill="#1F2937" font-size="13" textLength="178.458" font-family="Arial">(6) pull theo SHA · HTTPS 443</text>
+</g>
+<!--link CDYML to RSVC-->
+<g class="link" data-entity-1="ent0020" data-entity-2="ent0008" id="lnk34" data-source-line="69" data-link-type="dependency">
+<path d="M1265.87,909.209 C1295.86,920.349 1328.04,930.299 1359,936.099 C1467.475,956.424 1591.5,955.106 1688.95,948.617 C1713.313,946.995 1736.014,945.05 1756.396,943.039 C1766.588,942.033 1776.199,941.011 1785.148,940.005 C1789.623,939.501 1793.932,939.002 1798.066,938.511 C1799.099,938.388 1795.157,938.863 1796.168,938.742" style="stroke:#5B6B8C;stroke-width:1;" fill="none" id="CDYML-to-RSVC"/>
+<polygon points="1801.133,938.144,1791.719,935.249,1796.168,938.742,1792.675,943.191,1801.133,938.144" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="1395.5" y="918.292" fill="#1F2937" font-size="13" textLength="169.076" font-family="Arial">(7) deploy hook · HTTPS 443</text>
+<text x="1416.279" y="933.241" fill="#1F2937" font-size="13" textLength="127.518" font-family="Arial">imgURL = image SHA</text>
+</g>
+<!--link CDYML to RSVC-->
+<g class="link" data-entity-1="ent0020" data-entity-2="ent0008" id="lnk36" data-source-line="71" data-link-type="dependency">
+<path d="M1287.26,844.839 C1380.73,847.099 1501.24,858.929 1601,898.099 C1605.14,899.719 1604.86,902.479 1609,904.099 C1621.824,909.124 1635.284,913.306 1649.031,916&#46;776 C1655.904,918.511 1662.849,920.069 1669.821,921.464 C1670.693,921.639 1666.657,920.857 1667.529,921.027" style="stroke:#5B6B8C;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="CDYML-to-RSVC-1"/>
+<polygon points="1672.437,921.98,1664.365,916.337,1667.529,921.027,1662.84,924.191,1672.437,921.98" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="1360" y="846.292" fill="#1F2937" font-size="13" textLength="240.595" font-family="Arial">(9) smoke /health, /products · HTTPS 443</text>
+</g>
+<!--link CDYML to VERCEL-->
+<g class="link" data-entity-1="ent0020" data-entity-2="ent0004" id="lnk35" data-source-line="70" data-link-type="dependency">
+<path d="M1287.15,816.829 C1382.98,791.559 1506.06,749.679 1601,685.099 C1672.355,636.564 1736.09,563.616 1782.421,502.044 C1805.587,471.257 1824.402,443.315 1837.642,422.69 C1844.263,412.377 1849.49,403.894 1853.17,397.799 C1853.63,397.037 1854.066,396.312 1854.478,395.626 C1854.581,395.455 1852.114,399.576 1852.213,399.409" style="stroke:#5B6B8C;stroke-width:1;" fill="none" id="CDYML-to-VERCEL"/>
+<polygon points="1854.782,395.119,1846.727,400.786,1852.213,399.409,1853.591,404.895,1854.782,395.119" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="1385.5" y="667.292" fill="#1F2937" font-size="13" textLength="189.293" font-family="Arial">(8) vercel deploy --prebuilt --prod</text>
+<text x="1446.19" y="682.241" fill="#1F2937" font-size="13" textLength="67.914" font-family="Arial">HTTPS 443</text>
+</g>
+<!--link CDYML to CDN-->
+<g class="link" data-entity-1="ent0020" data-entity-2="ent0005" id="lnk37" data-source-line="72" data-link-type="dependency">
+<path d="M1185.29,788.789 C1227.04,742.789 1290.49,681.619 1359,647.099 C1457,597.719 1530.2,681.949 1601,598.099 C1619.29,576.439 1588.8,362.989 1609,343.099 C1618.763,333.486 1638.891,328.362 1663.691,326.1 C1676.092,324.969 1689.66,324.553 1703.685,324.65 C1710.698,324.698 1717.825,324.874 1724.977,325.153 C1728.552,325.292 1732.135,325.457 1735.712,325.645 C1736.606,325.691 1737.501,325.74 1738.394,325.789 C1738.841,325.814 1734.296,325.554 1734.742,325.58" style="stroke:#5B6B8C;stroke-width:1;stroke-dasharray:7,7;" fill="none" id="CDYML-to-CDN"/>
+<polygon points="1739.734,325.865,1730.977,321.358,1734.742,325.58,1730.521,329.345,1739.734,325.865" fill="#5B6B8C" style="stroke:#5B6B8C;stroke-width:1;stroke-linejoin:miter;stroke-miterlimit:10;"/>
+<text x="1381.5" y="595.292" fill="#1F2937" font-size="13" textLength="197.958" font-family="Arial">(9) smoke trang web · HTTPS 443</text>
+</g>
+<!--link LOCAL to CI-->
+<?plantuml-src bLP1Rnkv5RxhLpou5wcrRDcoOqT93SYZgQn4aRGZ9UwYAWHgXffXFKEg78uIeqWl1LeKYwBOlIqM2wpHthP0zr2Wg7KeK1NxFxI_f8ySoXfxamrwiCmX7p--z_Yzxr4n5LCub_HrboaALMZHUIok4yfLjNO0vLTK-ZI6du17UK0b3jeNZbSffLUCpuaa2QGH2SHhnaEOaJYbXPM0paWMgvy9hdeaeT2KZCJlNdT4B2Jyw61s-BX-KZ1fIYbUsyNZwQFfgVzmyOTszqH0pub_5KgHyS1QKJexd4qVMWc9qRtle05YaF3xKBFJ6Pczox28zlY8rAUd1ID797F1CS4VTcrh-eF-zOHwXtDqLlTF7beLSOB79oUrHmKBZfb8wHoEZWkJal0hFVdek1JJcG8bGB8mKX0mINt512-Lz4RO6KLiVVjl1TFryXFWuRVVh9TVCWXM_-BX3f0KNWvT3vu-3UY2-VJi37vJ0h0xvUflF88Wkrul_w1W7mQNJRFbtEjVvhle6-fd-ZINBvWKN3FqxApqjbIQvqc7dO4KGMOysYbWvmmsQAzSpt6x23QFYPe9cLWdDgPEguTdkq58ZRd-VD_1TXy0aOhDYAzWfqVVgBrVfV2QJg5CvlDq7qULCU-vFnzD1Y_FknrdqXnq9Y-zhe6_TCyDnjjI_fVxOEkixEkqWQGXdWoBzV8B1gtpYjdekRsMoSbxmhX41uPKwYphWXR-5GBwM2U4SHmrZcgrMWuqVENyVn6cwjaGC0WR89ap3B3jZc0_eYHMKGCEQpLq5B8vPlAuLjTZb0S-vXV609o8-bTOADhMRXhpPyD-3r8LY4p1Tx__R2CsiGZJCH_OA87oHGDQpL7pl3bqTHgXpBYYafEuieiWbwF9q7KyTxGBJjyRJlfUfztf3NUXsszFkkuhDyyxkcyZypVbXTmXHlCWPKc6vmavvYDCHGXASvg3oXcAUtVXAbhz0rVYRx_9S7vzUwFDejKDC_33pekxQtrmgGEHgb3I56y5kM8S1-BxD4snc58oZMcGtykW_U5h2OWYKv9gtkUmmu-wq3W-gXyQZDQvjKincBmyg4nPgaoK-ToOjzRBlqFCiEeoh5Yn-eh1ZCKqlKQxH4UROtM6pminRGbHkAVSSSoqOVFRZIReRe7XRjcd6PqgUMsPh0FTJDdWjl1XvCiz9lQ3RC5u50ksF-PJR5KnjgegSg_n56ymOQgAFUZC07PUjEz9WjF1mzjCNMHJQ1ffI8lQu6KSVSgBlVEXb6_zyjdUTH93UU0X-nbF5ObZmziO-MW66MUeb5WkvckQiJWOymwIDPH4upUsN518eEG9k8Tk0uj3YeHbYVNeunVTXoS7-ScAX40EguiVemFwqFtxPm5BTFZwUvwbaHa4fh6FkHwdYRYYkNzbIJ7ryDqV_me7DPX7grkjlrCjtb_uY3ua6VZhsxz0H9Z5U0A_pbOt46dcD-2_dwwNVuR5wYi8riklUJZcdeZZATv0mxenl6XYdUI8-81Ov4yAQQsA7iK8oQ3STAgzWzEzmsgzOeNu-vcmbpg_qtn8gO-ne63a-ZXfkODk_-F9HR__N8l5hfN_oQZ_tEsXNjZFljUUT5ftgmEl_ynrHZY55aIcU5DUl_NI6NNwlOryxnRdKCRl91tbPqF_EmfsXK_Y8kbUh6wkTQ9la24II-ztVAlIfk6dUVlfzfrczs6_BAP0Dvf67SKS_lDFm7B8bLr_1DDS2L0yDpJZ-08BO27YBC6wtqCjHUOjlmOzsgDlI3B7Ts3PIbjULZQZ-HsqxYBRzEHgzSoqo0QK3ofmCHeDXd1qLB-tRZeC6XmM30mRTGynxkhh6ewG5YZVkMwNz9hUZAq3jzOhi55vq9gFuOsS0TZm94iJyWG53TE2FITXji2GH2slMglLAoM4gLPp3TF8UtjdHgSqzb5bqtLq1oeqYZ5_RaLUX3ODM1KAEShnVxfUVegAlxvTtlcAge-0xVNoJmpuUlavqw-Wpnzq3tJzijdjwdO9JjDhbP0lnf-SuERNeA6CQVUEAzWx3IzC5UFsRPPDPlLUQ_keWaOeGogYmbJSFUijzEP6JYgscY4IukgUDMfQ4kfK_tHRm0K4-uf2ZDFAffWjr6-hrRcaMe9KFXOeUm-zC1TWlNXSiPLldmAxi6yhEdrN07ckUlTsAdoWXkRHTMz3AI-VwYyY5WIK_xAAUle_?>
+</g>
+</svg>
