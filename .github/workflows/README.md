@@ -1,19 +1,9 @@
-# .github/workflows — CI/CD
+# CI/CD Assignment 2
 
-Thư mục này **chưa có workflow**. Nhóm tự viết ở Task 4.4 và Task 5.3. Khi có workflow thật thì giữ file README này hoặc xóa, tùy nhóm.
+[`ci.yml`](ci.yml) chạy trên `pull_request` vào `develop-Assignment2` và `workflow_dispatch`, với Node theo `.nvmrc`. Một job tên **`ci`** chạy tuần tự **Install → Lint → Unit Test → Build** cho `apps/api` và `apps/web`; mỗi bước dừng khi lệnh lỗi. Prisma Client được generate sau install; API test mock Prisma nên không cần PostgreSQL hoặc secret.
 
-## Nhóm phải nộp ở đây
+Workflow chỉ có quyền `contents: read`; checkout không giữ credential. Cache dùng lockfile cả hai app. Không có path filter để PR tài liệu cũng nhận required check `ci`.
 
-| File | Khi nào chạy | Các bước | Đề A2 |
-|---|---|---|---|
-| `ci.yml` | `pull_request` | Install, Lint, Unit Test, Build | §6.4 |
-| `cd.yml` | Push tag `a2-v*` | Lint và Test, Build Docker Image, Push Registry, Deploy, Smoke Test | §7.3 |
+Quản trị viên cần bật branch protection và required check `ci` theo [CONTRIBUTING](../../CONTRIBUTING.md). Chưa có bằng chứng GitHub đã bật protection hoặc chạy CI; xem [hồ sơ minh chứng](../../docs/evidence/ci/README.md).
 
-## Yêu cầu bắt buộc
-
-- Pull request không được merge nếu lint, test hoặc build thất bại: bật branch protection cho `develop-Assignment2` (đề A2 §6.4).
-- Minh chứng CI: link PR đã chạy CI, một lần pipeline xanh và một lần pipeline bắt được lỗi (đề A2 §6.4).
-- CD: quality gate; image gắn tag commit SHA hoặc semantic version; push registry; deploy bằng secret của CI; migration an toàn; health check / smoke test; dừng pipeline khi lỗi và có cách rollback (đề A2 §7.3).
-- Secret chỉ nằm ở GitHub Secrets và biến môi trường của nền tảng, không có trong repo hay log CI (đề A2 §7.4).
-
-Hướng dẫn từng bước: `docs/planning/2026-10-15-assignment2-plan.md`, Task 4.4 và Task 5.3.
+`cd.yml`, build/push image, deploy, migration production, smoke và rollback thuộc Task 5.3, chưa có trong Sprint 1.

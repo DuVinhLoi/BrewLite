@@ -5,15 +5,22 @@
 
 # Node & IDE
 node_modules/
-backend/dist/
+dist/
+dist-test/
+coverage/
 *.tsbuildinfo
 .next/
 out/
 .env
 .env.local
+.env.*
+!.env.example
 *.log
 .DS_Store
 Thumbs.db
+
+# Local smoke-test capture (generated HTML)
+apps/api/web-smoke.html
 
 # OpenCode local config (personal plugin setup)
 opencode.json

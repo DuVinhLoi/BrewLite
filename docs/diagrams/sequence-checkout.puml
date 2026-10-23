@@ -101,7 +101,7 @@ alt Invalid payment DTO/key or wrong order (E6/E7)
   API --> UI : 400 VALIDATION_ERROR / IDEMPOTENCY_KEY_REQUIRED\nor 403 FORBIDDEN / 404 ORDER_NOT_FOUND
   UI --> Customer : Explain error; keep cart; no simulator call
 else Valid body, owner verified
-  API -> DB : Lookup SUCCESS by user + orderId + key + identical body
+  API -> DB : Lookup SUCCESS by owner + orderId + key + paymentMethod (BR-05)
   DB --> API : Original SUCCESS or no cache match
   alt E4a: successful replay, API cache hit
     API --> UI : 200 original SUCCESS + same paymentId
@@ -117,7 +117,7 @@ else Valid body, owner verified
         DB --> API : Updated PENDING; stock still reserved
       end
       API -> Pay : charge(orderId, amount=Order.total, method)
-      note right of Pay : E8b: simulator stores SUCCESS durably by orderId.\nRepeat after API restart returns ORIGINAL success;\nFAILED never locks orderId (SRS 3.4).
+      note right of Pay : Stateless simulator (SRS 3.4).\nDuplicate-charge guard lives in the API:\nSUCCESS replay (E4a) and ORDER_NOT_PAYABLE (E4d).
       alt E3: card declined
         Pay --> API : DECLINED (no money collected)
         group Persist failed attempt
@@ -127,29 +127,15 @@ else Valid body, owner verified
         API --> UI : 402 PAYMENT_DECLINED
         UI --> Customer : Keep cart/orderId; offer Retry same Order (A3)
       else Payment SUCCESS
-        Pay --> API : SUCCESS(original transactionRef, amount, method)
-        alt Normal commit
-          group Transaction T2: success and Order status together
-            API -> DB : BEGIN; INSERT Payment(SUCCESS, idempotencyKey)\nUPDATE Order PENDING -> PAID; COMMIT
-            DB --> API : One Payment SUCCESS; Order PAID
-          end
-          API --> UI : 201 {orderId, paymentId, status:SUCCESS,\norderStatus:PAID, amount}
-          UI -> UI : Clear cart
-          UI --> Customer : Show paid receipt, order code, tracking (FR-20)
-        else E8b: API crashes after charge before DB commit
-          note over API,DB : Before commit: no recorded SUCCESS / PAID in DB.\nUI retains SAME orderId and key and retries.
-          UI -> API : Retry POST /payments (same orderId and key)
-          API -> DB : Ownership check and SUCCESS cache lookup
-          DB --> API : PENDING; cache miss
-          API -> Pay : charge(SAME orderId, amount, method)
-          Pay --> API : ORIGINAL durable SUCCESS; no new debit
-          group Recovery T2 (AC-F16.7; NFR-13)
-            API -> DB : INSERT exactly one Payment(SUCCESS); Order -> PAID
-            DB --> API : COMMIT
-          end
-          API --> UI : 201 SUCCESS; Order PAID
-          UI --> Customer : Receipt; clear cart
+        Pay --> API : SUCCESS(transactionRef, amount, method)
+        group Transaction T2: success and Order status together
+          API -> DB : BEGIN; INSERT Payment(SUCCESS, idempotencyKey)\nUPDATE Order PENDING -> PAID; COMMIT
+          DB --> API : One Payment SUCCESS; Order PAID
         end
+        note over API,DB : E8b: API stops before COMMIT -> Order stays PENDING;\nretry is a new attempt (accepted risk, simulated money, SRS 3.4).
+        API --> UI : 201 {orderId, paymentId, status:SUCCESS,\norderStatus:PAID, amount}
+        UI -> UI : Clear cart
+        UI --> Customer : Show paid receipt, order code, tracking (FR-20)
       end
     end
   end

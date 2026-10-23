@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300" role="img" aria-label="Cold brew">
+  <rect width="400" height="300" fill="#F2ECE6"/>
+  <ellipse cx="200" cy="264" rx="104" ry="12" fill="#E4D9CE"/>
+  <defs>
+    <clipPath id="glass-cold-brew">
+      <path d="M146 92h108l-10 148a18 18 0 0 1-18 16h-52a18 18 0 0 1-18-16z"/>
+    </clipPath>
+  </defs>
+  <path d="M146 92h108l-10 148a18 18 0 0 1-18 16h-52a18 18 0 0 1-18-16z" fill="#FFFFFF"/>
+  <g clip-path="url(#glass-cold-brew)">
+    <path d="M152 118h96l-8 120a12 12 0 0 1-12 11h-56a12 12 0 0 1-12-11z" fill="#3E2C23"/>
+    <rect x="168" y="130" width="34" height="34" rx="8" fill="#FFFFFF" opacity="0.3" transform="rotate(-12 185 147)"/>
+    <rect x="212" y="144" width="32" height="32" rx="8" fill="#FFFFFF" opacity="0.3" transform="rotate(10 228 160)"/>
+    <rect x="182" y="184" width="30" height="30" rx="8" fill="#FFFFFF" opacity="0.25" transform="rotate(-6 197 199)"/>
+  </g>
+  <path d="M146 92h108l-10 148a18 18 0 0 1-18 16h-52a18 18 0 0 1-18-16z" fill="none" stroke="#D8C8B8" stroke-width="4"/>
+  <rect x="226" y="46" width="16" height="172" rx="8" fill="#6F4E37" transform="rotate(16 234 218)"/>
+</svg>
