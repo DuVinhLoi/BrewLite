@@ -1,6 +1,6 @@
 # Đặc tả yêu cầu phần mềm rút gọn (SRS) — BrewLite Assignment 2
 
-> **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5.** Thành viên phụ trách phải tự giải thích được từng yêu cầu và tiêu chí chấp nhận khi vấn đáp.
+> **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5, đã rút gọn thêm về mức tối thiểu của đề (xem mục 1.4).** Thành viên phụ trách phải tự giải thích được từng yêu cầu và tiêu chí chấp nhận khi vấn đáp.
 >
 > Đáp ứng đề A2 §3.2. Đề A2: [`../Assignment2-BrewLite.md`](../Assignment2-BrewLite.md). Bối cảnh, stakeholder, phạm vi: [`context-and-scope.md`](context-and-scope.md). Đặc tả use-case trọng tâm: [`uc-checkout.md`](uc-checkout.md). Truy vết: [`../traceability-matrix.md`](../traceability-matrix.md).
 >
@@ -37,15 +37,15 @@ BrewLite là ứng dụng đặt đồ uống không dùng tiền mặt, mobile-
 | **Must** | Bắt buộc có trong MVP; thiếu thì luồng end-to-end không đạt. Mọi `FR-xx` Must phải có đủ 5 cột ở ma trận truy vết trước khi hết Task 5 |
 | **Should** | Làm sau khi Must xong; thiếu thì MVP vẫn chạy nhưng yếu một phần nghiệp vụ |
 | **Could** | Làm nếu còn thời gian; bị cắt đầu tiên khi trễ tiến độ |
-| **Won't** | Không làm trong Assignment 2; ghi phạm vi/lý do ở mục 1.4, 5.6, 5.8 và 5.9 |
+| **Won't** | Không làm trong Assignment 2; ghi phạm vi/lý do ở mục 1.4 và 5.9 |
 
 ### 1.4 Baseline bản nộp và phụ thuộc
 
-- Bản nộp gồm FR-01–FR-16 và FR-20–FR-25 (22 Must). FR-23/24/25 là Must: FR-22 cần API cập nhật trạng thái; FR-15 và BR-03 cần hủy đơn chưa trả để hoàn tồn kho.
-- FR-17, FR-18, FR-19, FR-26, FR-27 là **Won’t trong bản nộp**. Giữ đặc tả mở rộng để truy vết; AC của chúng chỉ áp dụng khi một PR sau phê duyệt đưa tính năng vào phạm vi. Không yêu cầu UI, endpoint, seed khuyến mãi hay giao dịch điểm cho minimum.
-- FR-19 phụ thuộc FR-18; phần đảo điểm của FR-26 chỉ áp dụng khi FR-18 được triển khai. FR-17 và FR-18 độc lập.
-- NFR Must chỉ áp dụng cho endpoint và luồng thuộc baseline. NFR-05 không kéo theo FR-19/27; NFR-16 không kéo theo seed của FR-17. NFR Should không là điều kiện nghiệm thu minimum; ngưỡng timeout đã ghi trực tiếp trong FR-15 vẫn bắt buộc.
+- Bản nộp gồm FR-01–FR-16 và FR-20–FR-24 (21 Must). FR-23/24 là Must vì FR-22 cần API cập nhật trạng thái. **FR-25 (khách hủy đơn chưa thanh toán) là Could**: đề A2 §7.1 không đòi hủy đơn, và mục 8 đã chấp nhận đơn bỏ dở giữ chỗ tồn kho. Máy trạng thái (FR-23, mục 3.6) vẫn giữ hai chuyển `→ CANCELLED` trong mô hình; chỉ API/giao diện hủy là tùy chọn.
+- FR-17, FR-18, FR-19, FR-26, FR-27 là **Won’t trong bản nộp** và đã gộp vào bảng ở mục 5.9 (giữ nguyên mã, không đánh lại số). Không yêu cầu UI, endpoint, seed khuyến mãi hay giao dịch điểm; nếu một PR sau phê duyệt đưa lại vào phạm vi thì viết lại tiêu chí chấp nhận trong PR đó.
+- NFR Must chỉ áp dụng cho endpoint và luồng thuộc baseline. NFR Should và Could không là điều kiện nghiệm thu minimum.
 - Task 2 vẫn phải mô hình hóa hai lớp domain bắt buộc `Promotion` và `LoyaltyTransaction` với thuộc tính, quan hệ, multiplicity (đề A2 §4.3); không đồng nghĩa phải hiện thực tính năng.
+- **Ghi chú rút gọn (đề A2 §6.2).** Baseline PR #5 đặc tả nhiều hơn đề đòi, nên bản này giữ đúng mức tối thiểu để nhóm làm được và giải thích được khi vấn đáp. Đề A2 §3–§7 không đòi hủy đơn, không đặt ngưỡng hiệu năng bằng số (production free tier còn "ngủ"), không đòi kiểm thử tay đa trình duyệt hay quét secret trong lịch sử git. Thay đổi: (1) FR-25 Must thành Could; (2) NFR-01 giữ Must nhưng chỉ đo trên docker-compose local (nhóm chọn; đề A2 §3.2 chỉ đòi có nhóm hiệu năng, không đặt ngưỡng hay mức ưu tiên, ngưỡng 500 ms theo đề A1 §4.2); NFR-12 giữ Must cho E2E tự động tối thiểu theo đề A2 §7.2, bỏ kiểm thử tay đa trình duyệt; NFR-02 và NFR-03 Should thành Could; (3) NFR-10 PWA Should thành Must nhưng chỉ cần web app manifest, vì đề nhắc PWA ở §1.1, §5.1, §5.2, §9; (4) FR-17, FR-18, FR-19, FR-26, FR-27 gộp vào bảng Won’t; (5) bỏ các tiêu chí thừa: thanh toán song song cùng key, tái dùng key cho đơn khác, timeout Payment Service, ngưỡng thời gian giao diện, bảng ánh xạ mã lỗi, quét secret lịch sử, kiểm đồng thời trùng lặp; (6) bỏ AC-F16.7 và luồng phục hồi E8b: simulator không lưu trạng thái, API dừng giữa bước 13 và 14 của UC-04 là rủi ro chấp nhận (mục 3.4); (7) bỏ AC-N15.3 và điều kiện so SHA ở AC-N18.2–3: `/health` chỉ trả `status` và `database` (đề A2 §7.3 chỉ đòi health check/smoke test; image vẫn gắn tag commit SHA). Mã tiêu chí, quy tắc, luồng đã bỏ không dùng lại; các mã còn lại giữ nguyên số hiệu.
 
 ### 1.5 Cách đọc một yêu cầu
 
@@ -60,9 +60,9 @@ Mỗi yêu cầu có: **mô tả**, dòng **Ưu tiên / Use-case / Stakeholder**
 | Actor | Loại | Mô tả |
 |---|---|---|
 | Khách vãng lai (**Guest**) | Chính | Chưa đăng nhập: xem menu, chi tiết món, quản lý giỏ hàng, đăng ký, đăng nhập |
-| Khách hàng (**Customer**) | Chính | Đã đăng nhập (JWT hợp lệ, `role = CUSTOMER`); kế thừa mọi việc của Guest (`Customer --\|> Guest`), thêm: đặt đơn, thanh toán, lịch sử và theo dõi đơn, hủy đơn chưa trả; xem điểm chỉ khi triển khai FR-19 |
+| Khách hàng (**Customer**) | Chính | Đã đăng nhập (JWT hợp lệ, `role = CUSTOMER`); kế thừa mọi việc của Guest (`Customer --\|> Guest`), thêm: đặt đơn, thanh toán, lịch sử và theo dõi đơn; hủy đơn chưa trả (FR-25, Could) |
 | Nhân viên quầy (**Barista**) | Chính (minimum) | Đã đăng nhập, `role = BARISTA`; đổi trạng thái đơn đã thanh toán qua API (Postman); không đặt đơn, không thanh toán |
-| Dịch vụ thanh toán (**Payment Service**) | Phụ (dịch vụ) | Dịch vụ **mô phỏng** Ví/Thẻ: nhận yêu cầu trừ tiền, trả thành công/thất bại; nhận yêu cầu hoàn tiền chỉ khi triển khai FR-26 |
+| Dịch vụ thanh toán (**Payment Service**) | Phụ (dịch vụ) | Dịch vụ **mô phỏng** Ví/Thẻ: nhận yêu cầu trừ tiền, trả thành công/thất bại |
 
 ### 2.2 Use-case diagram tổng quát
 
@@ -76,17 +76,20 @@ Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Use-case trọng t�
 |---|---|---|---|
 | UC-01 | Xem menu và chi tiết món (size, topping) | Guest, Customer | FR-01 đến FR-04 |
 | UC-02 | Quản lý giỏ hàng | Guest, Customer | FR-05 đến FR-07 |
-| UC-03 | Đăng ký / Đăng nhập (JWT) | Guest, Barista | FR-08, FR-09, FR-10 |
+| UC-03 | Đăng nhập (JWT) | Guest, Barista | FR-09, FR-10 |
 | UC-04 | **Đặt và thanh toán đơn hàng** (trọng tâm) | Customer; Payment Service | FR-10 đến FR-16; FR-17/18 ngoài bản nộp |
 | UC-04.1 | Tạo đơn hàng (include của UC-04) | Customer | FR-11, FR-12, FR-13 |
 | UC-04.2 | Thanh toán đơn hàng (include của UC-04) | Customer; Payment Service | FR-14, FR-15, FR-16 |
-| UC-04.3 | Áp mã giảm giá (extend UC-04.2) | Customer | FR-17 |
-| UC-04.4 | Ghi nhận điểm thưởng (extend UC-04.2) | hệ thống | FR-18 |
+| UC-04.3 | Áp mã giảm giá (extend UC-04.2) — ngoài bản nộp, không vẽ trong sơ đồ | Customer | FR-17 (Won’t) |
+| UC-04.4 | Ghi nhận điểm thưởng (extend UC-04.2) — ngoài bản nộp, không vẽ trong sơ đồ | hệ thống | FR-18 (Won’t) |
 | UC-04.5 | Thử lại thanh toán (extend UC-04.2, khi đơn `PAYMENT_FAILED`) | Customer; Payment Service | FR-15, FR-16 |
 | UC-05 | Xem lịch sử và theo dõi đơn | Customer | FR-20, FR-21, FR-22 |
-| UC-06 | Hủy đơn | Customer, Barista; Payment Service (hoàn tiền) | FR-25, FR-26 |
-| UC-07 | Cập nhật trạng thái đơn | Barista | FR-23, FR-24, FR-27 |
-| UC-08 | Xem điểm thưởng | Customer | FR-19 |
+| UC-06 | Hủy đơn (Customer hủy đơn chưa trả: Could; Barista hủy đơn đã trả và hoàn tiền: ngoài bản nộp, phần FR-26 không vẽ trong sơ đồ) | Customer, Barista; Payment Service (hoàn tiền) | FR-25 (Could); FR-26 (Won’t) |
+| UC-07 | Cập nhật trạng thái đơn (hàng đợi Barista FR-27 không vẽ trong sơ đồ) | Barista | FR-23, FR-24; FR-27 (Won’t) |
+| UC-08 | Xem điểm thưởng — ngoài bản nộp, không vẽ trong sơ đồ | Customer | FR-19 (Won’t) |
+| UC-09 | Đăng ký tài khoản (Barista không đăng ký, tài khoản do seed tạo: giả định A-04) | Guest | FR-08 |
+
+Sơ đồ chỉ vẽ use-case thuộc bản nộp (Must, Could). Các dòng Won’t giữ lại ở bảng này để truy vết (xem mục 5.9).
 
 ---
 
@@ -103,10 +106,8 @@ Mục này cố định tên và giá trị để các tiêu chí kiểm chứng
 | `POST /orders` | Customer | Tạo đơn `PENDING` |
 | `POST /payments` | Customer | Thanh toán (header `Idempotency-Key`) |
 | `GET /orders/me`, `GET /orders/:id` | Customer (`:id` còn cho Barista) | Lịch sử, chi tiết đơn |
-| `PATCH /orders/:id` | Customer (hủy), Barista (đổi trạng thái) | Body `{ "status": "<TRẠNG_THÁI_ĐÍCH>" }` |
-| `GET /orders?status=` | Barista | Hàng đợi quầy, chỉ khi triển khai FR-27 (ngoài bản nộp) |
-| `GET /users/me` | Customer | Hồ sơ và điểm thưởng, chỉ khi triển khai FR-19 (ngoài bản nộp) |
-| `GET /health` | công khai | Kiểm tra sống |
+| `PATCH /orders/:id` | Barista (đổi trạng thái); Customer (hủy, chỉ khi làm FR-25 Could) | Body `{ "status": "<TRẠNG_THÁI_ĐÍCH>" }` |
+| `GET /health` | công khai | Kiểm kết nối DB (NFR-15) |
 
 Cổng chạy local (dự kiến): web 3000, API 4000, PostgreSQL 5432.
 
@@ -122,8 +123,6 @@ Mọi lỗi API trả JSON: `{ "statusCode": <số>, "error": "<MÃ_LỖI>", "me
 | 403 | `FORBIDDEN` | Đúng đăng nhập nhưng sai vai trò, hoặc không phải chủ đơn |
 | 404 | `PRODUCT_NOT_FOUND`, `ORDER_NOT_FOUND` | Không tồn tại |
 | 409 | `EMAIL_ALREADY_EXISTS`, `OUT_OF_STOCK`, `ORDER_NOT_PAYABLE`, `INVALID_ORDER_TRANSITION` | Xung đột trạng thái hoặc dữ liệu |
-| 422 | `IDEMPOTENCY_KEY_REUSED`; `PROMOTION_INVALID` chỉ khi triển khai FR-17 | Dữ liệu đúng định dạng nhưng sai nghiệp vụ |
-| 502 | `PAYMENT_SERVICE_UNAVAILABLE` | Payment Service lỗi hoặc không phản hồi quá 5 giây |
 | 503 | — | `GET /health` khi database không kết nối được |
 
 Giao diện hiển thị số tiền dạng `124.000đ` (dấu chấm ngăn nghìn, hậu tố "đ"); thông báo cho người dùng bằng tiếng Việt.
@@ -135,32 +134,33 @@ Các tiêu chí dùng chung bộ dữ liệu này (NFR-16 yêu cầu seed tái t
 - **Sản phẩm** (giá cho size S, đồng): Cà phê sữa 35.000 (tồn 50), Americano 40.000 (tồn 50), Cappuccino 45.000 (tồn 30), Trà đào 39.000 (tồn 30), Trà sữa trân châu 42.000 (tồn 20), Matcha latte 48.000 (tồn 20), Bạc xỉu 38.000 (**tồn 3**, dùng test sắp hết), Cold brew 45.000 (**tồn 0**, dùng test hết hàng).
 - **Size:** S phụ thu 0đ, M +5.000đ, L +10.000đ.
 - **Topping:** Trân châu +7.000đ, Kem phô mai +10.000đ, Thạch dừa +5.000đ.
-- **Mã khuyến mãi (`Promotion`, chỉ seed khi triển khai FR-17):** `BREWLITE10` (giảm 10%, hợp lệ), `EXPIRED10` (đã hết hạn), `SOLDOUT10` (đã dùng hết lượt).
 - **Tài khoản demo** (chỉ để test, mật khẩu chỉ dùng cho tài khoản **demo**): Customer `customer.demo@brewlite.local` mật khẩu demo `Demo@12345`; Barista `barista.demo@brewlite.local` mật khẩu demo `Demo@12345`.
 
-**Ví dụ tính tiền dùng trong các tiêu chí:** 2 ly Cappuccino size L kèm topping Trân châu: đơn giá `45.000 + 10.000 + 7.000 = 62.000`; tổng `124.000`. Minimum trả đủ `124.000`, không ghi điểm. Chỉ khi triển khai FR-17, áp `BREWLITE10`: giảm `floor(124.000 × 10 / 100) = 12.400`; phải trả `111.600`; chỉ khi triển khai FR-18, điểm thưởng `floor(111.600 / 10.000) = 11`.
+**Ví dụ tính tiền dùng trong các tiêu chí:** 2 ly Cappuccino size L kèm topping Trân châu: đơn giá `45.000 + 10.000 + 7.000 = 62.000`; tổng `124.000`; số tiền phải trả đúng `124.000`.
 
 ### 3.4 Quy ước mô phỏng Payment Service (dự kiến)
 
 Để test thanh toán thành công/thất bại lặp lại được:
 
 - Phương thức `WALLET` (Ví): luôn thành công.
-- Phương thức `CARD` (Thẻ): body có `cardNumber` (số thẻ **demo**). `4242424242424242` thành công; kết thúc bằng `0002` (ví dụ `4000000000000002`) bị **từ chối**; kết thúc bằng `0119` làm Payment Service **không phản hồi** (quá 5 giây). Hệ thống không lưu và không ghi log số thẻ.
+- Phương thức `CARD` (Thẻ): body có `cardNumber` (số thẻ **demo**). `4242424242424242` thành công; kết thúc bằng `0002` (ví dụ `4000000000000002`) bị **từ chối**. Hệ thống không lưu và không ghi log số thẻ.
 - Có thể ép lỗi cho test bằng biến môi trường (tên do Task 3 chốt).
+- API gửi `orderId` làm mã tham chiếu cho simulator. Simulator không lưu trạng thái; chống thu trùng do API bảo đảm (FR-16: trả lại kết quả thành công theo BR-05; đơn đã `PAID` thì 409 `ORDER_NOT_PAYABLE`). Kết quả từ chối không khóa đơn, nên đổi thẻ/phương thức sau thất bại vẫn được thử lại.
+- Nếu API dừng sau khi simulator trả thành công nhưng trước commit bước 14 của UC-04 thì đơn vẫn `PENDING` và khách thanh toán lại được. Đây là **rủi ro chấp nhận** vì Payment Service là mô phỏng, không thu tiền thật; bản nộp không có cơ chế phục hồi riêng (AC-F16.7 đã bỏ, mục 1.4).
 
 ### 3.5 Quy tắc nghiệp vụ (BR)
 
 | Mã | Quy tắc |
 |---|---|
-| BR-01 | Giá do **server** tính: `unitPrice = product.price + phụ thu size + Σ phụ thu topping`; `lineTotal = unitPrice × quantity`; `total = Σ lineTotal`. Giá client gửi lên bị bỏ qua |
+| BR-01 | Giá do **server** tính: `unitPrice = product.price + phụ thu size + Σ phụ thu topping`; `lineTotal = unitPrice × quantity`; `total = Σ lineTotal`. Trường giá hoặc tổng tiền do client gửi bị từ chối theo AC-F12.3 |
 | BR-02 | Số lượng mỗi dòng từ 1 đến 99; mỗi đơn tối đa 20 dòng; giá là số nguyên VND |
 | BR-03 | Tồn kho **giữ chỗ** (trừ) khi tạo đơn, trong cùng transaction với tạo `Order`; hoàn lại khi đơn `CANCELLED`; tồn kho không bao giờ âm |
 | BR-04 | Chỉ chủ đơn mới thanh toán/hủy đơn của mình; đơn chỉ thanh toán được khi ở `PENDING` hoặc `PAYMENT_FAILED` |
-| BR-05 | `Idempotency-Key` bắt buộc cho `POST /payments`, gắn với người dùng; chỉ **kết quả thành công** được giữ để trả lại; thanh toán thất bại không khóa key |
-| BR-06 | Chỉ khi triển khai FR-17 (ngoài bản nộp): mỗi đơn dùng tối đa một mã khuyến mãi; mã hợp lệ khi `active`, trong khoảng `validFrom` đến `validTo`, và `usedCount < maxUses` (nếu có giới hạn); không phân biệt hoa/thường, bỏ khoảng trắng đầu cuối. `BREWLITE10`: `discount = floor(total × 10 / 100)`; `usedCount` tăng khi thanh toán thành công |
-| BR-07 | Chỉ khi triển khai FR-18 (ngoài bản nộp): điểm thưởng: `floor(số tiền phải trả / 10.000)`, ghi một `LoyaltyTransaction` loại `EARN` khi đơn sang `PAID`; 0 điểm thì không ghi; mỗi đơn tối đa một giao dịch `EARN` |
+| BR-05 | `Idempotency-Key` bắt buộc cho `POST /payments`, gắn với người dùng; chỉ **kết quả thành công** được giữ để trả lại; thanh toán thất bại không khóa key. Hai yêu cầu là **cùng một yêu cầu** khi cùng chủ đơn, `orderId`, `Idempotency-Key` và `paymentMethod`; `cardNumber` không lưu nên không dùng để so |
 | BR-08 | Vòng đời đơn theo mục 3.6; mọi chuyển trạng thái ngoài bảng đều bị từ chối |
 | BR-09 | Thanh toán thất bại không xóa giỏ hàng và không hủy đơn; tồn kho vẫn giữ cho tới khi đơn `CANCELLED` |
+
+Mã BR giữ nguyên số hiệu; các mã bị bỏ (cùng FR-17/18 ngoài bản nộp) không dùng lại.
 
 ### 3.6 Từ điển miền dữ liệu (ràng buộc cho Task 2)
 
@@ -173,19 +173,19 @@ Class diagram dùng đúng tên lớp và giá trị dưới đây (đề A2 §4
 - **Phương thức thanh toán** (`PaymentMethod`): `WALLET`, `CARD`.
 - **Trạng thái thanh toán** (`PaymentStatus`): `SUCCESS`, `FAILED`, `REFUNDED`.
 - **Loại giao dịch điểm** (`LoyaltyType`): `EARN`, `REVERSAL`.
-- **Thuộc tính tối thiểu cần có để thỏa tiêu chí:** `Product(id, name, price, imageUrl, stock)`; `User(id, email, passwordHash, role)`; `Order(id, userId, status, total, discountAmount, promotionId?, createdAt)`; `OrderItem(id, orderId, productId, size, toppings, quantity, unitPrice, lineTotal)`; `Payment(id, orderId, method, status, amount, idempotencyKey, createdAt)`; `Promotion(id, code, discountPercent, validFrom, validTo, maxUses?, usedCount, active)`; `LoyaltyTransaction(id, userId, orderId?, type, points, createdAt)`.
+- **Thuộc tính tối thiểu cần có để thỏa tiêu chí:** `Product(id, name, description, price, imageUrl, stock)`; `User(id, email, passwordHash, role)`; `Order(id, userId, status, total, discountAmount, promotionId?, createdAt)`; `OrderItem(id, orderId, productId, size, toppings, quantity, unitPrice, lineTotal)`; `Payment(id, orderId, method, status, amount, idempotencyKey, createdAt)`; `Promotion(id, code, discountPercent, validFrom, validTo, maxUses?, usedCount, active)`; `LoyaltyTransaction(id, userId, orderId?, type, points, createdAt)`.
 
-**Máy trạng thái đơn (BR-08).** Minimum có 8 chuyển trạng thái hợp lệ; chuyển thứ 9 `PAID → CANCELLED` chỉ hợp lệ khi triển khai FR-26, hiện ngoài bản nộp (nguồn: đề A1 §9.1):
+**Máy trạng thái đơn (BR-08).** Mô hình có 8 chuyển trạng thái hợp lệ; chuyển `PAID → CANCELLED` (FR-26) là Won’t nên bị từ chối. Hai chuyển `→ CANCELLED` của Customer vẫn nằm trong mô hình dù API hủy (FR-25) là Could (nguồn: đề A1 §9.1):
 
 | Từ | Sang | Ai thực hiện |
 |---|---|---|
 | `PENDING` | `PAID` | hệ thống, khi thanh toán thành công |
 | `PENDING` | `PAYMENT_FAILED` | hệ thống, khi thanh toán thất bại |
-| `PENDING` | `CANCELLED` | Customer (chủ đơn) |
+| `PENDING` | `CANCELLED` | Customer (chủ đơn), qua API hủy FR-25 (Could) |
 | `PAYMENT_FAILED` | `PENDING` | hệ thống, khi khách thử thanh toán lại |
-| `PAYMENT_FAILED` | `CANCELLED` | Customer (chủ đơn) |
+| `PAYMENT_FAILED` | `CANCELLED` | Customer (chủ đơn), qua API hủy FR-25 (Could) |
 | `PAID` | `PREPARING` | Barista |
-| `PAID` | `CANCELLED` | Barista, chỉ khi triển khai FR-26; minimum từ chối với 409 `INVALID_ORDER_TRANSITION` |
+| `PAID` | `CANCELLED` | không chuyển được (FR-26 Won’t): từ chối với 409 `INVALID_ORDER_TRANSITION` |
 | `PREPARING` | `READY` | Barista |
 | `READY` | `COMPLETED` | Barista |
 
@@ -206,13 +206,13 @@ Class diagram dùng đúng tên lớp và giá trị dưới đây (đề A2 §4
 | 5 | Đặt đơn | FR-11, FR-12, FR-13 | Must |
 | 6 | Thanh toán | FR-14, FR-15, FR-16 (Must); FR-17, FR-18, FR-19 (Won’t bản nộp) | Must / Won’t |
 | 7 | Lịch sử đơn | FR-20, FR-21, FR-22 | Must |
-| 8 | Quản lý trạng thái đơn | FR-23, FR-24, FR-25 (Must); FR-26, FR-27 (Won’t bản nộp) | Must / Won’t |
-| 9 | Hiệu năng | NFR-01 (Must); NFR-02, NFR-03 (Should) | Must / Should |
+| 8 | Quản lý trạng thái đơn | FR-23, FR-24 (Must); FR-25 (Could); FR-26, FR-27 (Won’t bản nộp) | Must / Could / Won’t |
+| 9 | Hiệu năng | NFR-01 (Must); NFR-02, NFR-03 (Could) | Must / Could |
 | 10 | Bảo mật | NFR-04 đến NFR-08, NFR-13 | Must |
-| 11 | Tính khả dụng | NFR-09, NFR-11, NFR-12 (Must); NFR-10 (Should) | Must / Should |
+| 11 | Tính khả dụng | NFR-09 đến NFR-12 | Must |
 | 12 | Khả năng triển khai | NFR-14 đến NFR-19 (Must); NFR-20 (Should) | Must / Should |
 
-Won’t bản nộp: FR-17, FR-18, FR-19, FR-26, FR-27 và FR-28 đến FR-32. Tổng cộng: **32 FR** (22 Must, 10 Won’t) và **20 NFR** (16 Must, 4 Should).
+Won’t bản nộp: FR-17, FR-18, FR-19, FR-26, FR-27 và FR-28 đến FR-32. Tổng cộng: **32 FR** (21 Must, 1 Could, 10 Won’t) và **20 NFR** (17 Must, 1 Should, 2 Could).
 
 Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu riêng: **chưa đăng nhập** → FR-10; **hết hàng** → FR-13; **thanh toán thất bại** → FR-15.
 
@@ -234,7 +234,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Mô tả:** Trang menu xử lý ba trạng thái: đang tải, danh sách rỗng, lỗi tải.
 - **Ưu tiên:** Must · **Use-case:** UC-01 · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
-  - AC-F02.1: Khi yêu cầu tải chưa xong thì trang hiển thị skeleton hoặc spinner trong vòng 200 ms kể từ lúc gửi yêu cầu, và biến mất khi có dữ liệu.
+  - AC-F02.1: Khi yêu cầu tải chưa xong thì trang hiển thị skeleton hoặc spinner, và biến mất khi có dữ liệu.
   - AC-F02.2: Khi `GET /products` trả mảng rỗng thì trang hiển thị "Hiện chưa có món nào" và không hiển thị lưới.
   - AC-F02.3: Khi `GET /products` trả 5xx hoặc mất mạng thì trang hiển thị "Không tải được thực đơn" cùng nút "Thử lại"; bấm "Thử lại" gửi lại yêu cầu và hiển thị menu nếu thành công.
 
@@ -281,14 +281,14 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Ưu tiên:** Must · **Use-case:** UC-02 · **Stakeholder:** S1, S3
 - **Tiêu chí chấp nhận:**
   - AC-F07.1: Khi giỏ có 2 × Cappuccino L + Trân châu thì dòng hiển thị đơn giá `62.000đ`, thành tiền `124.000đ`; tổng giỏ là `124.000đ`.
-  - AC-F07.2: Khi giỏ có thêm 1 × Americano M (`45.000đ`) thì tổng giỏ là `169.000đ`; đổi số lượng hoặc xóa dòng thì tổng cập nhật trong vòng 100 ms mà không tải lại trang.
+  - AC-F07.2: Khi giỏ có thêm 1 × Americano M (`45.000đ`) thì tổng giỏ là `169.000đ`; đổi số lượng hoặc xóa dòng thì tổng cập nhật ngay mà không tải lại trang.
   - AC-F07.3: Tổng hiển thị ở giỏ bằng `Order.total` do server tính ở FR-11 cho cùng nội dung giỏ (kiểm bằng một test so sánh).
 
 ### 5.4 Xác thực
 
 #### FR-08 — Đăng ký tài khoản
 - **Mô tả:** Guest đăng ký bằng email và mật khẩu; tài khoản mới có vai trò `CUSTOMER`.
-- **Ưu tiên:** Must · **Use-case:** UC-03 · **Stakeholder:** S1
+- **Ưu tiên:** Must · **Use-case:** UC-09 · **Stakeholder:** S1
 - **Tiêu chí chấp nhận:**
   - AC-F08.1: Khi `POST /auth/register` với `{ email, password }` hợp lệ (email đúng định dạng, mật khẩu ít nhất 8 ký tự gồm chữ và số) thì trả 201 với `id`, `email`, `role = "CUSTOMER"`; phản hồi không chứa `password` hay `passwordHash`.
   - AC-F08.2: Khi email đã tồn tại (không phân biệt hoa/thường) thì trả 409 `EMAIL_ALREADY_EXISTS`.
@@ -305,7 +305,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
   - AC-F09.4: Barista dùng cùng form và endpoint đăng nhập; token có `role = "BARISTA"`.
 
 #### FR-10 — Chặn khi chưa đăng nhập
-- **Mô tả:** Chức năng cần xác thực (đặt đơn, thanh toán, lịch sử, theo dõi đơn, đổi trạng thái; hồ sơ chỉ khi triển khai FR-19) chỉ dùng được khi có JWT hợp lệ; Guest được dẫn tới đăng nhập rồi quay lại và không mất giỏ hàng.
+- **Mô tả:** Chức năng cần xác thực (đặt đơn, thanh toán, lịch sử, theo dõi đơn, đổi trạng thái) chỉ dùng được khi có JWT hợp lệ; Guest được dẫn tới đăng nhập rồi quay lại và không mất giỏ hàng.
 - **Ưu tiên:** Must · **Use-case:** UC-03, UC-04 · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
   - AC-F10.1: Khi gọi `POST /orders`, `POST /payments`, `GET /orders/me`, `GET /orders/:id`, `PATCH /orders/:id` mà không có header `Authorization` thì trả 401 `UNAUTHORIZED`.
@@ -352,57 +352,27 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Tiêu chí chấp nhận:**
   - AC-F14.1: Khi `POST /payments` với `{ orderId, paymentMethod: "WALLET" }`, header `Idempotency-Key` hợp lệ, đơn `PENDING` của chính người gọi thì trả 201 với `orderStatus = "PAID"`, `amount` bằng `Order.total`, `status = "SUCCESS"`; `Order.status` trong DB là `PAID`; Payment Service được gọi đúng 1 lần; có đúng 1 `Payment` `SUCCESS`.
   - AC-F14.2: Khi `paymentMethod` ngoài `WALLET`/`CARD` hoặc thiếu `orderId` thì trả 400 `VALIDATION_ERROR`; thiếu hoặc rỗng header `Idempotency-Key`, hoặc dài hơn 255 ký tự, thì trả 400 `IDEMPOTENCY_KEY_REQUIRED`; cả hai trường hợp không gọi Payment Service.
-  - AC-F14.3: Khi `orderId` không tồn tại thì trả 404 `ORDER_NOT_FOUND`; khi đơn thuộc người khác thì trả 403 `FORBIDDEN`; sau khi kiểm xác thực và quyền sở hữu, nếu có kết quả thành công của cùng người dùng/đơn/key/body thì trả lại 200 theo FR-16 trước khi xét trạng thái. Chỉ với yêu cầu mới, khi đơn đang ở `PAID`, `PREPARING`, `READY`, `COMPLETED` hoặc `CANCELLED` thì trả 409 `ORDER_NOT_PAYABLE`; các nhánh trên đều không gọi Payment Service.
+  - AC-F14.3: Khi `orderId` không tồn tại thì trả 404 `ORDER_NOT_FOUND`; khi đơn thuộc người khác thì trả 403 `FORBIDDEN`; sau khi kiểm xác thực và quyền sở hữu, nếu có kết quả thành công của cùng chủ đơn/`orderId`/key/`paymentMethod` (BR-05) thì trả lại 200 theo FR-16 trước khi xét trạng thái. Chỉ với yêu cầu mới, khi đơn đang ở `PAID`, `PREPARING`, `READY`, `COMPLETED` hoặc `CANCELLED` thì trả 409 `ORDER_NOT_PAYABLE`; các nhánh trên đều không gọi Payment Service.
   - AC-F14.4: Khi gọi bằng token Barista thì trả 403 `FORBIDDEN`.
   - AC-F14.5: Khi chọn Thẻ ở giao diện mà số thẻ demo sai định dạng (không đủ 16 chữ số) thì giao diện báo lỗi tại ô và không gọi API.
 
 #### FR-15 — Xử lý thanh toán thất bại
-- **Mô tả:** Khi Payment Service từ chối hoặc không phản hồi, đơn chuyển `PAYMENT_FAILED`, giỏ hàng và đơn được giữ để khách thử lại hoặc hủy (BR-09).
+- **Mô tả:** Khi Payment Service từ chối, đơn chuyển `PAYMENT_FAILED`, giỏ hàng và đơn được giữ để khách thử lại (hoặc hủy nếu làm FR-25) (BR-09).
 - **Ưu tiên:** Must · **Use-case:** UC-04.2 · **Stakeholder:** S1, S6
 - **Tiêu chí chấp nhận:**
-  - AC-F15.1: Khi `paymentMethod = "CARD"` với `cardNumber = 4000000000000002` thì trả 402 `PAYMENT_DECLINED`; có 1 `Payment` `FAILED`; `Order.status = "PAYMENT_FAILED"`; nếu triển khai FR-18 thì không ghi điểm; nếu triển khai FR-17 thì `usedCount` không đổi; Payment Service không ghi nhận khoản thu nào.
-  - AC-F15.2: Khi `cardNumber = 4000000000000119` (Payment Service không phản hồi quá 5 giây) thì trả 502 `PAYMENT_SERVICE_UNAVAILABLE` trong vòng 7 giây; kết quả đối với `Order` và `Payment` giống AC-F15.1.
+  - AC-F15.1: Khi `paymentMethod = "CARD"` với `cardNumber = 4000000000000002` thì trả 402 `PAYMENT_DECLINED`; có 1 `Payment` `FAILED`; `Order.status = "PAYMENT_FAILED"`; Payment Service không ghi nhận khoản thu nào.
   - AC-F15.3: Sau thất bại thì `stock` vẫn đang giữ chỗ (không hoàn), `Order` còn nguyên `OrderItem`, và `GET /orders/me` vẫn trả đơn đó ở trạng thái `PAYMENT_FAILED`.
-  - AC-F15.4: Khi nhận 402 hoặc 502 thì giao diện hiển thị "Thanh toán không thành công. Đơn của bạn vẫn được giữ, bạn có thể thử lại hoặc chọn phương thức khác.", giỏ hàng còn đủ các dòng, có nút "Thử lại" và "Hủy đơn".
+  - AC-F15.4: Khi nhận 402 thì giao diện hiển thị "Thanh toán không thành công. Đơn của bạn vẫn được giữ, bạn có thể thử lại hoặc chọn phương thức khác.", giỏ hàng còn đủ các dòng, có nút "Thử lại" (nút "Hủy đơn" chỉ khi làm FR-25).
   - AC-F15.5: Khi khách thử lại sau thất bại với thẻ `4242424242424242` cho cùng `orderId` thì trả 201, `Order` đi `PAYMENT_FAILED → PENDING → PAID`, **không** tạo `Order` mới (số đơn của khách không đổi), có thêm 1 `Payment` `SUCCESS`.
 
 #### FR-16 — Thanh toán idempotent
 - **Mô tả:** Gửi lại cùng yêu cầu thanh toán (mất phản hồi, bấm đúp, retry mạng) không trừ tiền hai lần và không tạo trùng bản ghi (BR-05).
 - **Ưu tiên:** Must · **Use-case:** UC-04.2 · **Stakeholder:** S1, S3, S6
 - **Tiêu chí chấp nhận:**
-  - AC-F16.1: Khi gửi hai lần `POST /payments` giống hệt nhau (cùng `Idempotency-Key`, cùng `orderId`, cùng body) và lần đầu thành công thì lần hai trả 200 với `paymentId` và nội dung giống lần đầu; Payment Service được gọi đúng 1 lần; DB có đúng 1 `Payment` `SUCCESS` cho đơn; có đúng 1 `LoyaltyTransaction` `EARN` (nếu FR-18 được làm).
-  - AC-F16.2: Khi hai yêu cầu cùng người dùng/đơn/key/body gửi song song và thanh toán thành công thì xử lý tuần tự theo key: kết quả cuối đúng 1 `Payment` `SUCCESS`; cả hai nhận 2xx với cùng `paymentId`. Nếu lần đầu thất bại thì yêu cầu thứ hai được xử lý như lần thử mới theo AC-F16.5; với cùng thẻ từ chối/timeout, cả hai trả 402/502 tương ứng, có 2 `Payment` `FAILED`, không ghi nhận khoản thu.
-  - AC-F16.3: Khi cùng `Idempotency-Key` nhưng `orderId` khác (cùng chủ) thì trả 422 `IDEMPOTENCY_KEY_REUSED`, không gọi Payment Service, đơn thứ hai giữ nguyên trạng thái.
+  - AC-F16.1: Khi gửi hai lần `POST /payments` giống hệt nhau (cùng chủ đơn, `orderId`, `Idempotency-Key` và `paymentMethod`, theo BR-05) và lần đầu thành công thì lần hai trả 200 với `paymentId` và nội dung giống lần đầu; Payment Service được gọi đúng 1 lần; DB có đúng 1 `Payment` `SUCCESS` cho đơn. Cùng key nhưng khác `paymentMethod` sau khi đã thành công không phải replay: xử lý như yêu cầu mới, đơn đã `PAID` nên trả 409 `ORDER_NOT_PAYABLE` và không gọi Payment Service.
   - AC-F16.4: Khi đơn đã `PAID` mà khách gửi `Idempotency-Key` **mới** thì trả 409 `ORDER_NOT_PAYABLE`, không gọi Payment Service (không trừ tiền lần hai).
   - AC-F16.5: Khi lần đầu thất bại (FR-15) thì gửi lại cùng key được xử lý như lần thử mới (BR-05), không trả lại kết quả thất bại cũ.
   - AC-F16.6: Khi bấm "Xác nhận trả" thì nút bị vô hiệu cho tới khi có phản hồi (chống bấm đúp); giao diện dùng cùng một `Idempotency-Key` cho cả phiên màn thanh toán, sinh key mới khi bắt đầu phiên thanh toán khác; chuyển sang đăng nhập theo E1 phải giữ key cùng `orderId` để tiếp tục phiên cũ.
-
-#### FR-17 — Xác thực và áp mã giảm giá
-- **Mô tả:** Khi thanh toán, khách có thể nhập một mã khuyến mãi; server kiểm hợp lệ và giảm giá theo BR-06.
-- **Ưu tiên:** Won’t trong bản nộp · **Use-case:** UC-04.3 · **Stakeholder:** S1, S3
-- **Tiêu chí mở rộng (chỉ áp dụng khi được đưa lại vào phạm vi):**
-  - AC-F17.1: Khi `POST /payments` kèm `promotionCode = "BREWLITE10"` cho đơn `total = 124000` thì trả 201 với `discountAmount = 12400`, `amount = 111600`; `usedCount` của mã tăng 1; mã `brewlite10 ` (chữ thường, thừa khoảng trắng) cho kết quả y hệt.
-  - AC-F17.2: Khi mã không tồn tại, hoặc `EXPIRED10` (hết hạn), hoặc `SOLDOUT10` (hết lượt), hoặc chưa tới `validFrom`, hoặc `active = false` thì trả 422 `PROMOTION_INVALID`; không gọi Payment Service; `Order` vẫn `PENDING`; không có `Payment`.
-  - AC-F17.3: Sau lỗi `PROMOTION_INVALID`, khách gửi lại cùng `Idempotency-Key` và không kèm mã thì thanh toán thành công với `amount = total`.
-  - AC-F17.4: Giao diện có ô "Mã giảm giá" tùy chọn; mã không hợp lệ hiển thị "Mã giảm giá không hợp lệ hoặc đã hết hạn" và giữ nguyên các lựa chọn khác; thành công hiển thị dòng "Đã giảm: 12.400đ" trên biên lai.
-  - AC-F17.5: Mỗi đơn chỉ áp tối đa một mã (body chỉ nhận một `promotionCode`).
-
-#### FR-18 — Ghi nhận điểm thưởng khi đơn PAID
-- **Mô tả:** Khi đơn chuyển `PAID`, hệ thống ghi một `LoyaltyTransaction` loại `EARN` theo BR-07.
-- **Ưu tiên:** Won’t trong bản nộp · **Use-case:** UC-04.4 · **Stakeholder:** S1, S3
-- **Tiêu chí mở rộng (chỉ áp dụng khi được đưa lại vào phạm vi):**
-  - AC-F18.1: Khi đơn có `amount = 111600` sang `PAID` thì có đúng 1 `LoyaltyTransaction` với `type = EARN`, `points = 11`, `userId` và `orderId` đúng.
-  - AC-F18.2: Khi `amount = 9999` thì không ghi `LoyaltyTransaction` (0 điểm); khi thanh toán thất bại thì không ghi.
-  - AC-F18.3: Khi gửi lại thanh toán cùng `Idempotency-Key` thì vẫn chỉ có 1 giao dịch `EARN` cho đơn (không cộng điểm hai lần).
-  - AC-F18.4: Lưu `Payment` `SUCCESS`, đổi `Order` sang `PAID` và ghi `LoyaltyTransaction` nằm trong cùng một transaction: nếu bước ghi điểm lỗi thì ba thay đổi đều không được lưu (xem NFR-13).
-
-#### FR-19 — Hiển thị điểm thưởng
-- **Mô tả:** Khách xem tổng điểm thưởng của mình và điểm vừa được cộng.
-- **Ưu tiên:** Won’t trong bản nộp · **Use-case:** UC-08 · **Stakeholder:** S1
-- **Tiêu chí mở rộng (chỉ áp dụng khi được đưa lại vào phạm vi):**
-  - AC-F19.1: Khi `GET /users/me` với token Customer thì trả 200 với `id`, `email`, `role`, `loyaltyPoints` bằng tổng `points` các `LoyaltyTransaction` của người đó; phản hồi không chứa `passwordHash`; không có token thì 401; token Barista thì 403.
-  - AC-F19.2: Khi mở trang hồ sơ thì giao diện hiển thị "Điểm tích lũy: N" khớp `loyaltyPoints`.
-  - AC-F19.3: Khi biên lai có `loyaltyPointsEarned > 0` thì hiển thị "+N điểm tích lũy"; bằng 0 thì không hiển thị dòng này.
 
 ### 5.7 Lịch sử đơn
 
@@ -410,7 +380,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Mô tả:** Sau thanh toán thành công, khách thấy màn xác nhận đơn.
 - **Ưu tiên:** Must · **Use-case:** UC-04, UC-05 · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
-  - AC-F20.1: Khi thanh toán trả 2xx thì giao diện chuyển tới màn xác nhận hiển thị: mã đơn, trạng thái "Đã thanh toán", danh sách món (tên, size, topping, số lượng), tổng gốc, số tiền giảm (chỉ nếu triển khai FR-17), số tiền đã trả, phương thức, thời gian.
+  - AC-F20.1: Khi thanh toán trả 2xx thì giao diện chuyển tới màn xác nhận hiển thị: mã đơn, trạng thái "Đã thanh toán", danh sách món (tên, size, topping, số lượng), số tiền đã trả, phương thức, thời gian.
   - AC-F20.2: Khi hiển thị màn xác nhận thì giỏ hàng đã được xóa (số lượng trên biểu tượng giỏ là 0); khi thanh toán thất bại thì giỏ **không** bị xóa.
   - AC-F20.3: Khi tải lại trang xác nhận thì nội dung vẫn đúng (dữ liệu lấy từ `GET /orders/:id`, không phụ thuộc state tạm); có nút "Theo dõi đơn" dẫn tới trang chi tiết đơn.
 
@@ -428,21 +398,21 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Mô tả:** Customer xem chi tiết một đơn của mình và thấy trạng thái cập nhật tự động (bước "Theo dõi đơn" của luồng).
 - **Ưu tiên:** Must · **Use-case:** UC-05 · **Stakeholder:** S1, S2
 - **Tiêu chí chấp nhận:**
-  - AC-F22.1: Khi `GET /orders/:id` của chủ đơn thì trả 200 với `status`, `total`, `discountAmount` (0 ở minimum), `items`, thông tin thanh toán (nếu có); đơn không tồn tại trả 404 `ORDER_NOT_FOUND`; đơn của người khác trả 403 `FORBIDDEN`; token Barista xem được mọi đơn (200).
+  - AC-F22.1: Khi `GET /orders/:id` của chủ đơn thì trả 200 với `status`, `total`, `discountAmount` (luôn 0 trong bản nộp), `items`, thông tin thanh toán (nếu có); đơn không tồn tại trả 404 `ORDER_NOT_FOUND`; đơn của người khác trả 403 `FORBIDDEN`; token Barista xem được mọi đơn (200).
   - AC-F22.2: Khi trang theo dõi đơn đang mở và Barista đổi trạng thái (FR-24) thì nhãn trên trang cập nhật trong vòng 6 giây mà không cần tải lại (tự làm mới mỗi 5 giây).
   - AC-F22.3: Khi đơn đã ở `COMPLETED` hoặc `CANCELLED` thì trang ngừng tự làm mới (không còn yêu cầu định kỳ).
   - AC-F22.4: Trang hiển thị tiến trình `PAID → PREPARING → READY → COMPLETED` với bước hiện tại được đánh dấu; trạng thái `CANCELLED` và `PAYMENT_FAILED` hiển thị nhãn riêng.
 
 ### 5.8 Quản lý trạng thái đơn
 
-> **Quyết định minimum:** FR-23, FR-24, FR-25 là Must. Nhân viên đổi trạng thái qua API bằng Postman, dùng mã đơn từ biên lai demo để đọc `GET /orders/:id`; không cần API danh sách/màn hàng đợi (FR-27). Swagger UI không là tiêu chí nghiệm thu.
+> **Quyết định minimum:** FR-23, FR-24 là Must; FR-25 là Could (đề A2 §7.1 không đòi hủy đơn). Nhân viên đổi trạng thái qua API bằng Postman, dùng mã đơn từ biên lai demo để đọc `GET /orders/:id`; không cần API danh sách/màn hàng đợi (FR-27). Swagger UI không là tiêu chí nghiệm thu.
 
 #### FR-23 — Vòng đời và chặn chuyển trạng thái sai
 - **Mô tả:** Mọi thay đổi trạng thái đơn tuân theo bảng chuyển hợp lệ theo phạm vi ở mục 3.6; chuyển ngoài bảng bị từ chối.
 - **Ưu tiên:** Must · **Use-case:** UC-07 · **Stakeholder:** S2, S3, S5
 - **Tiêu chí chấp nhận:**
-  - AC-F23.1: Unit test duyệt toàn bộ 49 cặp (trạng thái hiện tại, trạng thái đích) trên 7 trạng thái: minimum chấp nhận đúng 8 cặp ở mục 3.6 và từ chối 41 cặp còn lại (kể cả cặp trùng trạng thái và `PAID → CANCELLED`). Chỉ khi triển khai FR-26 mới chấp nhận 9 cặp và từ chối 40 cặp; kiểm quyền actor riêng theo FR-24/25/26.
-  - AC-F23.2: Khi gọi `PATCH /orders/:id` với chuyển không hợp lệ (ví dụ `PAID → READY`, `PREPARING → CANCELLED`, `COMPLETED → PREPARING`) thì trả 409 `INVALID_ORDER_TRANSITION` và trạng thái đơn trong DB không đổi.
+  - AC-F23.1: Unit test duyệt toàn bộ 49 cặp (trạng thái hiện tại, trạng thái đích) trên 7 trạng thái: chấp nhận đúng 8 cặp ở mục 3.6 và từ chối 41 cặp còn lại (kể cả cặp trùng trạng thái và `PAID → CANCELLED`, FR-26 Won’t); quyền của từng actor kiểm riêng theo FR-24 (và FR-25 nếu làm).
+  - AC-F23.2: Khi gọi `PATCH /orders/:id` với chuyển không hợp lệ (ví dụ `PAID → READY`, `PREPARING → CANCELLED`, `COMPLETED → PREPARING`) thì trả 409 `INVALID_ORDER_TRANSITION` và trạng thái đơn trong DB không đổi. Các trường hợp bị từ chối do phân quyền theo FR-24 và FR-25 (nếu triển khai) trả 403 theo tiêu chí tương ứng; quy định 409 ở đây áp dụng khi không thuộc các trường hợp đó.
   - AC-F23.3: Khi `status` đích trong body là `PENDING`, `PAID` hoặc `PAYMENT_FAILED` thì trả 400 `VALIDATION_ERROR` (các chuyển này chỉ do luồng thanh toán thực hiện).
   - AC-F23.4: `COMPLETED` và `CANCELLED` không có chuyển nào đi ra.
 
@@ -451,41 +421,32 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Ưu tiên:** Must · **Use-case:** UC-07 · **Stakeholder:** S2, S1
 - **Tiêu chí chấp nhận:**
   - AC-F24.1: Khi token Barista gọi `PATCH /orders/:id` với `{ "status": "PREPARING" }` trên đơn `PAID` thì trả 200 với `status = "PREPARING"`; tiếp tục `READY` rồi `COMPLETED` đều trả 200.
-  - AC-F24.2: Khi token Customer gọi cùng thao tác với `PREPARING`, `READY` hoặc `COMPLETED` thì trả 403 `FORBIDDEN`; không có token thì 401.
-  - AC-F24.3: Khi Barista chuyển đơn `PENDING` hoặc `PAYMENT_FAILED` sang `PREPARING` thì trả 409 `INVALID_ORDER_TRANSITION`; `id` không tồn tại trả 404 `ORDER_NOT_FOUND`.
+  - AC-F24.2: Khi token Customer gọi cùng thao tác với `PREPARING`, `READY` hoặc `COMPLETED` thì trả 403 `FORBIDDEN`; không có token thì 401. Khi không làm FR-25, Customer gửi `{ "status": "CANCELLED" }` cũng bị từ chối với 403 `FORBIDDEN`, vì bản minimum chưa cấp quyền hủy cho Customer; trạng thái đơn và `stock` không đổi. Nếu làm FR-25 thì Customer hủy đơn theo AC-F25.1–2.
+  - AC-F24.3: Khi Barista chuyển đơn `PENDING` hoặc `PAYMENT_FAILED` sang `PREPARING` thì trả 409 `INVALID_ORDER_TRANSITION`; `id` không tồn tại trả 404 `ORDER_NOT_FOUND`. Khi Barista gửi `{ "status": "CANCELLED" }` trên đơn `PENDING` hoặc `PAYMENT_FAILED` thì trả 403 `FORBIDDEN` (hai chuyển này chỉ dành cho chủ đơn, mục 3.6); trên đơn `PAID`, `PREPARING`, `READY`, `COMPLETED` hoặc `CANCELLED` thì trả 409 `INVALID_ORDER_TRANSITION` (chuyển không có trong bảng, `PAID → CANCELLED` là FR-26 Won’t). Mọi trường hợp bị từ chối đều không đổi trạng thái đơn và `stock`.
   - AC-F24.4: Có Postman collection và hướng dẫn dùng tài khoản Barista demo để lấy Bearer token, đọc đơn theo mã đơn, gọi `PATCH /orders/:id` qua đủ `PAID → PREPARING → READY → COMPLETED`; chạy được và nhận các mã HTTP theo AC-F24.1–3. Không yêu cầu Swagger UI.
 
 #### FR-25 — Khách hủy đơn chưa thanh toán
-- **Mô tả:** Customer hủy đơn của mình khi đơn còn `PENDING` hoặc `PAYMENT_FAILED`; tồn kho giữ chỗ được hoàn lại.
-- **Ưu tiên:** Must · **Use-case:** UC-06 · **Stakeholder:** S1, S3
-- **Tiêu chí chấp nhận:**
+- **Mô tả:** Customer hủy đơn của mình khi đơn còn `PENDING` hoặc `PAYMENT_FAILED`; tồn kho giữ chỗ được hoàn lại. Nếu không làm, đơn bỏ dở giữ chỗ tồn kho (chấp nhận ở mục 8); hai chuyển `→ CANCELLED` vẫn nằm trong máy trạng thái FR-23.
+- **Ưu tiên:** Could · **Use-case:** UC-06 · **Stakeholder:** S1, S3
+- **Tiêu chí chấp nhận (chỉ áp dụng khi làm FR-25):**
   - AC-F25.1: Khi chủ đơn gọi `PATCH /orders/:id` với `{ "status": "CANCELLED" }` trên đơn `PENDING` hoặc `PAYMENT_FAILED` thì trả 200 với `status = "CANCELLED"` và `stock` của từng món trong đơn tăng lại đúng số lượng đã giữ (kiểm: tồn Cappuccino 28 về 30 sau khi hủy đơn 2 ly).
-  - AC-F25.2: Khi Customer hủy đơn của người khác thì trả 403 `FORBIDDEN`; hủy đơn `PAID` bằng token Customer thì trả 403 `FORBIDDEN` (Barista chỉ được hủy PAID khi triển khai FR-26; minimum trả 409 cho Barista); hủy đơn `PREPARING`, `READY`, `COMPLETED` hoặc `CANCELLED` thì trả 409 `INVALID_ORDER_TRANSITION`.
+  - AC-F25.2: Khi Customer hủy đơn của người khác thì trả 403 `FORBIDDEN`; hủy đơn `PAID` bằng token Customer thì trả 403 `FORBIDDEN` (Barista hủy `PAID`: FR-26 Won’t, trả 409 `INVALID_ORDER_TRANSITION`); hủy đơn `PREPARING`, `READY`, `COMPLETED` hoặc `CANCELLED` thì trả 409 `INVALID_ORDER_TRANSITION`.
   - AC-F25.3: Giao diện hiển thị nút "Hủy đơn" cho đơn `PENDING` và `PAYMENT_FAILED`, hỏi xác nhận "Bạn chắc chắn muốn hủy đơn?"; sau khi hủy nhãn đơn là "Đã hủy" và nút biến mất.
-
-#### FR-26 — Hủy đơn đã thanh toán và hoàn tiền mô phỏng
-- **Mô tả:** Barista hủy đơn `PAID` (ví dụ hết nguyên liệu): hoàn tiền mô phỏng, hoàn tồn kho, đảo điểm thưởng.
-- **Ưu tiên:** Won’t trong bản nộp · **Use-case:** UC-06 · **Stakeholder:** S2, S1, S6
-- **Tiêu chí mở rộng (chỉ áp dụng khi được đưa lại vào phạm vi):**
-  - AC-F26.1: Khi token Barista gọi `PATCH /orders/:id` với `{ "status": "CANCELLED" }` trên đơn `PAID` thì trả 200 với `status = "CANCELLED"`; `Payment` chuyển `REFUNDED`; Payment Service nhận đúng 1 yêu cầu hoàn tiền bằng số đã thu; `stock` được hoàn lại.
-  - AC-F26.2: Chỉ khi triển khai cả FR-18 và FR-26, khi đơn đã có `LoyaltyTransaction` `EARN` thì có thêm 1 giao dịch `REVERSAL` với `points` âm cùng độ lớn; `loyaltyPoints` của khách trở về giá trị trước đơn.
-  - AC-F26.3: Khi đơn đã `PREPARING`, `READY` hoặc `COMPLETED` thì trả 409 `INVALID_ORDER_TRANSITION`, không hoàn tiền.
-
-#### FR-27 — Barista xem hàng đợi đơn
-- **Mô tả:** Barista xem danh sách đơn qua API và màn hàng đợi; cả hai ngoài bản nộp.
-- **Ưu tiên:** Won’t trong bản nộp · **Use-case:** UC-07 · **Stakeholder:** S2
-- **Tiêu chí mở rộng (chỉ áp dụng khi được đưa lại vào phạm vi):**
-  - AC-F27.1: Khi token Barista gọi `GET /orders?status=PAID,PREPARING,READY` thì trả 200 với các đơn thuộc các trạng thái đó, sắp theo `createdAt` tăng dần (đơn cũ nhất trước); không có tham số `status` thì dùng mặc định `PAID,PREPARING,READY`.
-  - AC-F27.2: Khi token Customer gọi thì trả 403 `FORBIDDEN`; không có token thì 401.
-  - AC-F27.3: Khi `status` chứa giá trị ngoài 7 trạng thái thì trả 400 `VALIDATION_ERROR`.
 
 ### 5.9 Yêu cầu không thực hiện (Won't)
 
+FR-17, FR-18, FR-19, FR-26, FR-27 từng có đặc tả mở rộng trong baseline PR #5; nay gộp vào bảng này (xem mục 1.4), giữ nguyên mã. Nếu một PR sau phê duyệt đưa lại vào phạm vi thì viết lại tiêu chí chấp nhận trong PR đó.
+
 | Mã | Yêu cầu | Lý do không làm | Kiểm chứng "không làm" |
 |---|---|---|---|
+| FR-17 | Xác thực và áp mã giảm giá khi thanh toán | Ngoài bản nộp | Không có endpoint/UI nhập mã giảm giá; body `POST /payments` không có `promotionCode` |
+| FR-18 | Ghi nhận điểm thưởng khi đơn `PAID` | Ngoài bản nộp | Không có endpoint/UI ghi điểm; luồng thanh toán không tạo `LoyaltyTransaction` |
+| FR-19 | Hiển thị điểm thưởng của khách | Ngoài bản nộp; phụ thuộc FR-18 | Không có endpoint/UI hồ sơ hoặc điểm thưởng |
+| FR-26 | Hủy đơn đã thanh toán và hoàn tiền mô phỏng | Ngoài bản nộp | Không có endpoint/UI hoàn tiền; Barista đổi đơn `PAID` sang `CANCELLED` nhận 409 `INVALID_ORDER_TRANSITION` |
+| FR-27 | Barista xem hàng đợi đơn (API danh sách và màn hình) | Ngoài bản nộp; Barista dùng `GET /orders/:id` theo mã đơn | Không có endpoint/UI danh sách đơn cho Barista |
 | FR-28 | Quản trị menu (thêm, sửa, xóa món, giá, size, topping) | Ngoài luồng đề A2 §1.1, §7.1; menu nạp bằng seed | Không có route quản trị trong web; `POST /products` trả 404 hoặc 405 |
 | FR-29 | Quản trị và chỉnh tồn kho bằng màn hình | Tồn kho đổi qua seed và qua luồng đặt/hủy đơn | Không có endpoint ghi `stock` trực tiếp |
-| FR-30 | Quản trị voucher/khuyến mãi bằng màn hình | Chỉ seed mã nếu triển khai FR-17; `Promotion` vẫn có trong mô hình (đề A2 §4.3) | Không có endpoint tạo/sửa `Promotion` |
+| FR-30 | Quản trị voucher/khuyến mãi bằng màn hình | Không seed khuyến mãi; `Promotion` vẫn có trong mô hình (đề A2 §4.3) | Không có endpoint tạo/sửa `Promotion` |
 | FR-31 | Thanh toán thật qua Momo/VNPay/Stripe | Chỉ mô phỏng (A-01) | Không có khóa/URL cổng thật trong cấu hình |
 | FR-32 | Đổi hoặc trừ điểm thưởng khi thanh toán | Ghi nhận/hiển thị điểm cũng ngoài bản nộp | Không có trường dùng điểm trong body `POST /payments` |
 
@@ -496,20 +457,19 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 ### 6.1 Hiệu năng
 
 #### NFR-01 — Thời gian phản hồi API đọc
-- **Mô tả:** Các API đọc menu phản hồi nhanh với dữ liệu mẫu.
+- **Mô tả:** Các API đọc menu phản hồi nhanh với dữ liệu mẫu trên môi trường local. Đề A2 không đặt ngưỡng số; production free tier có thể "ngủ" nên không đo ở production. Nhóm chọn mức Must để nhóm hiệu năng có một cam kết kiểm chứng được; ngưỡng p95 ≤ 500 ms lấy theo đề A1 §4.2.
 - **Ưu tiên:** Must · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
   - AC-N01.1: Với dữ liệu mẫu (không quá 50 sản phẩm) trên môi trường `docker-compose` local, 100 yêu cầu tuần tự `GET /products` và 100 yêu cầu `GET /products/:id` đều có phân vị 95 (p95) không quá 500 ms.
-  - AC-N01.2: Trên production khi dịch vụ đã "thức" (sau yêu cầu `GET /health` thành công), p95 của `GET /products` qua 50 yêu cầu không quá 800 ms.
 
 #### NFR-02 — Tốc độ tải trang menu trên di động
-- **Ưu tiên:** Should · **Stakeholder:** S1
+- **Ưu tiên:** Could · **Stakeholder:** S1
 - **Tiêu chí chấp nhận:**
   - AC-N02.1: Lighthouse (hồ sơ di động, mạng "Slow 4G") trên bản build production local của trang menu cho Largest Contentful Paint không quá 2,5 giây và điểm Performance từ 80 trở lên.
   - AC-N02.2: Khi API chưa phản hồi (dịch vụ free đang ngủ) thì giao diện hiển thị trạng thái loading (AC-F02.1), không để trang trắng.
 
 #### NFR-03 — Thời gian phản hồi đặt đơn và thanh toán
-- **Ưu tiên:** Should · **Stakeholder:** S1, S6
+- **Ưu tiên:** Could · **Stakeholder:** S1, S6
 - **Tiêu chí chấp nhận:**
   - AC-N03.1: Với dữ liệu mẫu, p95 của `POST /orders` qua 50 yêu cầu không quá 1 giây; p95 của `POST /payments` thành công qua 50 yêu cầu không quá 2 giây (Payment Service mô phỏng trả trong tối đa 500 ms).
 
@@ -525,7 +485,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Ưu tiên:** Must · **Stakeholder:** S1, S2, S3, S4
 - **Tiêu chí chấp nhận:**
   - AC-N05.1: JWT được ký bằng khóa đọc từ biến môi trường (ít nhất 32 ký tự), có `exp` không quá 3600 giây kể từ lúc cấp; token đổi một ký tự bị từ chối với 401.
-  - AC-N05.2: Ma trận quyền sau được test từng ô: không token → 401 cho mọi endpoint ở FR-10; `POST /orders`, `POST /payments`, `GET /orders/me` chỉ `CUSTOMER` (Barista nhận 403); `GET /orders/:id` cho chủ đơn hoặc Barista; chỉ khi triển khai FR-19, `GET /users/me` dành cho Customer, và chỉ khi triển khai FR-27, `GET /orders?status=` dành cho Barista (vai trò khác nhận 403); `PATCH /orders/:id` theo quy tắc FR-24, FR-25.
+  - AC-N05.2: Ma trận quyền sau được test từng ô: không token → 401 cho mọi endpoint ở FR-10; `POST /orders`, `POST /payments`, `GET /orders/me` chỉ `CUSTOMER` (Barista nhận 403); `GET /orders/:id` cho chủ đơn hoặc Barista; `PATCH /orders/:id` theo quy tắc FR-24 (và FR-25 nếu làm).
   - AC-N05.3: Customer không đọc, thanh toán hoặc hủy được đơn của người khác (403 `FORBIDDEN`).
 
 #### NFR-06 — Kiểm dữ liệu đầu vào hai phía và chống tiêm lệnh
@@ -539,7 +499,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 #### NFR-07 — Quản lý secret, cấu hình và CORS
 - **Ưu tiên:** Must · **Stakeholder:** S3, S4, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N07.1: Quét repository và lịch sử bằng công cụ quét secret (ví dụ gitleaks) không tìm thấy secret thật; `.env` có trong `.gitignore`; `.env.example` chỉ có tên biến và giá trị giả.
+  - AC-N07.1: Kiểm tra các file được Git theo dõi không chứa secret thật (đề A2 §7.4); `.env` có trong `.gitignore`; `.env.example` chỉ có giá trị mẫu, không chứa secret thật.
   - AC-N07.2: Log của các lần chạy CI/CD không in giá trị secret (rà log trước khi nộp); mật khẩu xuất hiện trong tài liệu chỉ thuộc tài khoản demo và kèm chữ "demo" (đề A2 §7.4).
   - AC-N07.3: API chỉ chấp nhận origin trong biến `CORS_ORIGINS`; yêu cầu từ origin khác không nhận header `Access-Control-Allow-Origin`.
   - AC-N07.4: Số thẻ, token, mật khẩu không được ghi vào log.
@@ -559,24 +519,22 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
   - AC-N09.2: Nút hành động chính ("Thêm vào giỏ", "Thanh toán", "Xác nhận trả") có vùng chạm ít nhất 44×44 px; chữ nội dung ít nhất 16 px.
   - AC-N09.3: Ở khung nhìn 1280×800 các màn trên vẫn dùng được, không vỡ bố cục.
 
-#### NFR-10 — PWA cài đặt được
-- **Ưu tiên:** Should · **Stakeholder:** S1, S4
+#### NFR-10 — Web app manifest (PWA)
+- **Mô tả:** Đề A2 nhắc Next.js theo hướng mobile-first/PWA (§1.1, §5.1, §5.2, §9). Bản nộp chỉ yêu cầu web app manifest; không yêu cầu service worker hay chạy offline (A-09).
+- **Ưu tiên:** Must · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
-  - AC-N10.1: Có web app manifest với `name`, `short_name`, `start_url`, `display = standalone`, `theme_color` và biểu tượng 192 px, 512 px; có service worker đăng ký thành công.
-  - AC-N10.2: Lighthouse không báo lỗi tiêu chí "Installable" trên bản production.
+  - AC-N10.1: Có web app manifest với `name`, `short_name`, `start_url`, `display = standalone`, `theme_color` và biểu tượng 192 px, 512 px; manifest được liên kết từ các trang (thẻ `<link rel="manifest">`).
 
 #### NFR-11 — Ba trạng thái giao diện và thông báo lỗi dễ hiểu
 - **Ưu tiên:** Must · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
   - AC-N11.1: Mỗi màn tải dữ liệu từ API (menu, chi tiết món, lịch sử đơn, chi tiết đơn) có đủ trạng thái loading, empty (nếu áp dụng) và error theo FR-02.
   - AC-N11.2: Khi API giả lập trả 500 thì màn hiển thị thông báo tiếng Việt như "Không thể tải dữ liệu, vui lòng thử lại" kèm nút "Thử lại"; không hiển thị stack trace, JSON thô hay chỉ mã HTTP.
-  - AC-N11.3: Mọi mã lỗi ở mục 3.2 thuộc tính năng đã triển khai mà người dùng có thể gặp đều ánh xạ sang thông báo tiếng Việt riêng (có bảng ánh xạ và test).
 
 #### NFR-12 — Trình duyệt hỗ trợ
 - **Ưu tiên:** Must · **Stakeholder:** S1, S4
 - **Tiêu chí chấp nhận:**
-  - AC-N12.1: Luồng end-to-end (menu → giỏ → đăng nhập → thanh toán → theo dõi đơn) chạy đạt trên Chromium bằng test E2E tự động.
-  - AC-N12.2: Trước khi phát hành, nhóm chạy thử tay luồng trên Chrome và Safari (iOS) và Firefox và Edge, bản mới nhất và bản liền trước, ghi kết quả vào biên bản.
+  - AC-N12.1: Luồng end-to-end (menu → giỏ → đăng nhập → thanh toán → xác nhận đơn) chạy đạt trên Chromium bằng test E2E tự động.
 
 ### 6.4 Độ tin cậy dữ liệu
 
@@ -584,8 +542,8 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Mô tả:** Các thao tác nhiều bước phải toàn vẹn: hoặc xong cả, hoặc không đổi gì.
 - **Ưu tiên:** Must · **Stakeholder:** S3, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N13.1: Tạo đơn (tạo `Order`, `OrderItem`, giữ chỗ tồn kho) là một transaction; gây lỗi ở bước bất kỳ thì DB không đổi (xem AC-F11.3).
-  - AC-N13.2: Hai mươi yêu cầu đặt đồng thời trên tổng tồn kho 10 không bao giờ làm `stock` âm hoặc tạo tổng số lượng đặt vượt 10 (xem AC-F13.3).
+  - AC-N13.1: Tạo đơn (tạo `Order`, `OrderItem`, giữ chỗ tồn kho) là một transaction; gây lỗi ở bước bất kỳ thì DB không đổi (xem AC-F11.3); đặt đồng thời không làm `stock` âm (xem AC-F13.3).
+
 ### 6.5 Khả năng triển khai
 
 #### NFR-14 — Chạy local bằng docker-compose
@@ -603,7 +561,7 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 #### NFR-16 — Migration và seed tái tạo được
 - **Ưu tiên:** Must · **Stakeholder:** S4, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N16.1: Trên DB trống, chạy migration rồi seed tạo đúng dữ liệu mẫu ở mục 3.3 (8 sản phẩm, 2 tài khoản demo; size/topping theo mục 3.3). Không cần seed khuyến mãi trong minimum; chỉ thêm 3 mã nếu triển khai FR-17.
+  - AC-N16.1: Trên DB trống, chạy migration rồi seed tạo đúng dữ liệu mẫu ở mục 3.3 (8 sản phẩm, 2 tài khoản demo; size/topping theo mục 3.3). Không seed khuyến mãi.
   - AC-N16.2: Chạy seed lần hai không tạo bản ghi trùng (số dòng mỗi bảng không đổi).
   - AC-N16.3: Migration nằm trong repository, có phiên bản, chạy được bằng một lệnh; migration phát hành chỉ thêm bảng hoặc cột (không xóa, không đổi tên cột) để quay lại image cũ vẫn chạy được.
 
@@ -617,8 +575,8 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 - **Ưu tiên:** Must · **Stakeholder:** S3, S4, S5
 - **Tiêu chí chấp nhận:**
   - AC-N18.1: Khi đẩy tag `a2-v*` thì pipeline chạy đủ chuỗi Lint và Test, Build Docker Image (gắn tag commit SHA hoặc semantic version), Push Registry, Deploy bằng secret của CI, chạy migration, Smoke Test.
-  - AC-N18.2: Smoke Test gọi `GET /health`, `GET /products` và trang web, cùng trả 200, có thử lại tối đa khoảng 2 phút; bước nào lỗi thì pipeline dừng và báo đỏ.
-  - AC-N18.3: Có quy trình rollback ghi trong `docs/deployment.md` và README, đã thử một lần (triển khai lại image bản trước, `GET /health` trả 200).
+  - AC-N18.2: Sau deploy API và web, Smoke Test gọi `GET /health` (trả 200, `database = "up"`), `GET /products` và trang web; mỗi bước thử lại tới khi nhận 200, tối đa 10 phút để chống ngủ đông/lỗi tạm thời; quá hạn thì pipeline báo đỏ và dừng.
+  - AC-N18.3: Có quy trình rollback ghi trong `docs/deployment.md` và README, đã thử một lần: deploy lại image có tag commit SHA của bản trước và deployment web trước, rồi chạy lại smoke test theo AC-N18.2.
 
 #### NFR-19 — Production truy cập được và bàn giao
 - **Ưu tiên:** Must · **Stakeholder:** S3, S4
@@ -638,12 +596,12 @@ Ba tình huống đề A2 §4.1 đòi có nhánh riêng đều có yêu cầu ri
 
 Stakeholder gọi theo mã trong [`context-and-scope.md`](context-and-scope.md) mục 2: **S1** khách hàng, **S2** nhân viên quầy, **S3** quản lý cửa hàng, **S4** giảng viên/khách hàng nghiệm thu, **S5** nhóm phát triển, **S6** đơn vị thanh toán.
 
-- **S1 Khách hàng:** FR-01 đến FR-22, FR-25, FR-26 (nhận hoàn tiền); NFR-01, NFR-02, NFR-03, NFR-04, NFR-05, NFR-06, NFR-09, NFR-10, NFR-11, NFR-12.
-- **S2 Nhân viên quầy:** FR-09 (đăng nhập), FR-22 (xem đơn), FR-23, FR-24, FR-26, FR-27; NFR-05.
-- **S3 Quản lý cửa hàng:** FR-01, FR-07, FR-11 đến FR-14, FR-16 đến FR-18, FR-23, FR-25; NFR-04, NFR-05, NFR-07, NFR-08, NFR-13, NFR-18, NFR-19.
+- **S1 Khách hàng:** FR-01 đến FR-16, FR-20 đến FR-22, FR-25 (Could); NFR-01, NFR-02, NFR-03, NFR-04, NFR-05, NFR-06, NFR-09, NFR-10, NFR-11, NFR-12.
+- **S2 Nhân viên quầy:** FR-09 (đăng nhập), FR-22 (xem đơn), FR-23, FR-24; NFR-05.
+- **S3 Quản lý cửa hàng:** FR-01, FR-07, FR-11 đến FR-14, FR-16, FR-23, FR-25 (Could); NFR-04, NFR-05, NFR-07, NFR-08, NFR-13, NFR-18, NFR-19.
 - **S4 Giảng viên nghiệm thu:** FR-02, FR-10, FR-20; toàn bộ NFR bảo mật, khả dụng, triển khai (NFR-04 đến NFR-12, NFR-14 đến NFR-20) vì liên quan trực tiếp tới đề A2 §6, §7, §8.
 - **S5 Nhóm phát triển:** FR-11, FR-12, FR-23; NFR-06, NFR-07, NFR-13 đến NFR-18, NFR-20.
-- **S6 Đơn vị thanh toán:** FR-14, FR-15, FR-16, FR-26; NFR-03.
+- **S6 Đơn vị thanh toán:** FR-14, FR-15, FR-16; NFR-03 (Could).
 
 ---
 
@@ -651,14 +609,15 @@ Stakeholder gọi theo mã trong [`context-and-scope.md`](context-and-scope.md) 
 
 Baseline này chốt Task 1 trước Task 2 theo đề A2 §1. Không đợi code hoặc sơ đồ Task 2 để merge Task 1; các ô truy vết của Task 2–5 được ghi là chờ đúng task.
 
-1. **Tồn kho:** giữ chỗ trong transaction tạo đơn (BR-03), hoàn khi khách hủy đơn chưa trả (FR-25 Must). Chấp nhận rủi ro đơn bỏ dở giữ chỗ vô thời hạn; tự hủy theo thời gian ngoài minimum.
-2. **Phạm vi:** FR-23/24/25 Must; FR-17/18/19/26/27 ngoài bản nộp. Giữ `Promotion`/`LoyaltyTransaction` trong mô hình domain Task 2, không yêu cầu seed hoặc luồng runtime tương ứng.
-3. **Dữ liệu và giới hạn:** dùng bộ giá size/topping, giới hạn 20 dòng/99 ly, JWT 1 giờ ở mục 3 làm baseline kiểm thử. Tỷ lệ điểm và mã giảm giá chỉ dùng nếu mở rộng được phê duyệt.
-4. **Thanh toán:** giữ quy ước mô phỏng mục 3.4. Payment Service là thành phần logic riêng trong sequence; bố trí trong tiến trình API hay dịch vụ riêng do Task 3 chốt bằng ADR, không chặn nghiệm thu Task 1.
+1. **Tồn kho:** giữ chỗ trong transaction tạo đơn (BR-03), hoàn khi đơn `CANCELLED`, tức khi khách hủy đơn chưa trả nếu làm FR-25 (Could). Chấp nhận rủi ro đơn bỏ dở giữ chỗ vô thời hạn (kể cả khi không làm FR-25); tự hủy theo thời gian ngoài minimum.
+2. **Phạm vi:** FR-23/24 Must, FR-25 Could; FR-17/18/19/26/27 ngoài bản nộp. Giữ `Promotion`/`LoyaltyTransaction` trong mô hình domain Task 2, không yêu cầu seed hoặc luồng runtime tương ứng.
+3. **Dữ liệu và giới hạn:** dùng bộ giá size/topping, giới hạn 20 dòng/99 ly, JWT 1 giờ ở mục 3 làm baseline kiểm thử.
+4. **Thanh toán:** giữ quy ước mô phỏng mục 3.4: chống thu trùng do API bảo đảm theo `Idempotency-Key` và trạng thái đơn (BR-05, FR-16); simulator không lưu trạng thái; API dừng giữa bước 13 và 14 là rủi ro chấp nhận. Payment Service là thành phần logic riêng trong sequence; bố trí trong tiến trình API hay dịch vụ riêng do Task 3 chốt bằng ADR, không chặn nghiệm thu Task 1.
 5. **API và lỗi:** dùng tên endpoint, schema lỗi và mã HTTP mục 3.1–3.2 làm baseline; thay đổi sau này phải đồng bộ tài liệu và test trong cùng PR.
 6. **Tạo đơn:** không thêm idempotency cho `POST /orders` trong minimum. UI khóa nút khi đang gửi; nếu mất phản hồi tạo đơn thì không tự gửi lại, yêu cầu kiểm tra lịch sử trước khi quyết định tạo đơn mới. Khi đã biết `orderId`, E1/A3/E4 phải tiếp tục đơn cũ. Rủi ro bấm đúp từ nhiều tab còn được chấp nhận.
 7. **Nhân viên:** dùng Postman với `GET /orders/:id`, `PATCH /orders/:id`; mã đơn lấy từ biên lai demo. Không cam kết Swagger UI hoặc màn hàng đợi.
-8. **Task 2:** dùng baseline này để vẽ activity, sequence, class; phải thể hiện hai nhánh E1 trước/sau tạo đơn, 8 chuyển trạng thái minimum và điều kiện mở rộng nếu mô tả FR-26.
+8. **Task 2:** dùng baseline này để vẽ activity, sequence, class; phải thể hiện hai nhánh E1 trước/sau tạo đơn, 8 chuyển trạng thái hợp lệ (gồm hai chuyển `→ CANCELLED` dù API hủy FR-25 là Could); không cần mô tả FR-26.
+9. **Rút gọn bản nộp:** lý do và danh sách thay đổi ở mục 1.4 (ghi chú rút gọn). Mọi mục bắt buộc của đề A2 §3–§7 vẫn có ít nhất một yêu cầu Must phủ: hiệu năng API đọc đo ở local (NFR-01), menu, chi tiết và size/topping, giỏ hàng và tổng tiền, đăng ký/đăng nhập/JWT, tạo đơn, thanh toán Ví/Thẻ, ba nhánh lỗi, idempotency, transaction đơn và tồn kho, xác nhận/lịch sử/trạng thái đơn, validate hai phía, loading/empty/error, mobile-first/PWA, docker-compose, health, migration/seed, CI, CD và rollback, HTTPS và DB không public, secret.
 
 ---
 

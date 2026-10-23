@@ -24,11 +24,9 @@ actor "Dịch vụ\nthanh toán\n(Payment Service)" as Pay <<Service>>
 Customer --|> Guest
 
 rectangle "Hệ thống BrewLite" {
-  usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-16 (minimum)" as UC04
+  usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-16" as UC04
   usecase "UC-04.1 Tạo đơn hàng\nFR-11, FR-12, FR-13" as UC041
   usecase "UC-04.2 Thanh toán đơn hàng\nFR-14, FR-15, FR-16" as UC042
-  usecase "UC-04.3 Áp mã giảm giá\nFR-17 (ngoài bản nộp)" as UC043
-  usecase "UC-04.4 Ghi nhận điểm thưởng\nFR-18 (ngoài bản nộp)" as UC044
   usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
   usecase "UC-03 Đăng nhập\nFR-09, FR-10" as UC03
 }
@@ -38,42 +36,24 @@ Guest --- UC03
 
 UC04 .> UC041 : <<include>>
 UC04 .> UC042 : <<include>>
-UC043 .> UC042 : <<extend>>
-UC044 .> UC042 : <<extend>>
 UC045 .> UC042 : <<extend>>
 UC03 .> UC04 : <<extend>>
 
 UC042 --- Pay
 
 note right of UC03
-  Điều kiện extend: chưa có JWT
-  hợp lệ hoặc API trả 401 (E1).
-  Chưa có đơn: tạo sau đăng nhập.
-  Đã có đơn: cùng tài khoản tiếp tục
-  orderId cũ, không tạo lại đơn.
-end note
-
-note right of UC043
-  Điều kiện extend: triển khai FR-17
-  và khách nhập mã giảm giá (luồng thay thế A1,
-  ngoại lệ E5)
-end note
-
-note right of UC044
-  Điều kiện extend: triển khai FR-18
-  và thanh toán thành công, đơn sang PAID
+  Điều kiện extend: khách chưa đăng nhập
+  hoặc phiên đăng nhập đã hết hạn (API trả 401).
+  Chưa có đơn: đăng nhập xong mới tạo đơn.
+  Đã có đơn: đăng nhập lại đúng tài khoản
+  rồi trả tiếp đơn cũ, không tạo đơn mới.
 end note
 
 note right of UC045
-  Điều kiện extend: đơn đang ở
-  PAYMENT_FAILED (ngoại lệ E3,
-  thay thế A3)
+  Điều kiện extend: lần thanh toán trước
+  bị từ chối, đơn đang PAYMENT_FAILED.
+  Khách bấm "Thử lại": trả lại cho đúng
+  đơn cũ, không tạo đơn mới.
 end note
-
-legend bottom
-  Minimum: luồng chính và API trạng thái.
-  FR-17/18/19/26/27 ngoài bản nộp; chỉ áp dụng khi được phê duyệt mở rộng.
-  E1/A3 tiếp tục đơn đã tạo: chỉ thanh toán, không chạy lại tạo đơn.
-endlegend
 
 @enduml
