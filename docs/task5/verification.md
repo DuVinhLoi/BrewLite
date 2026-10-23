@@ -1,6 +1,8 @@
+> Pha A 23/10/2026: deploy tay Render/Vercel PASS. Web https://brewlite-a2-web.vercel.app HTTP 200; API https://brewlite-a2-api.onrender.com/health HTTP 200 với database up; /products và Chromium menu đủ 8 món. Migration/seed, CORS và auto-deploy off đã kiểm chứng. Xem [report-task5](../planning/handoff/2026-10-21-req-sync/report-task5.md) để có IDs/lệnh override. Các kiểm tra 21/10 bên dưới là lịch sử; CD mới và rollback chưa chạy.
+
 # Task 5 — Báo cáo kiểm chứng và bàn giao
 
-> Cập nhật 23/10/2026: tài liệu bên dưới là snapshot kiểm chứng ngày 21/10 trước commit/push. Sau đó source đã push, sync baseline mới, publish GHCR, tạo Render Postgres và Vercel project. Trạng thái code/hạ tầng hiện tại và blocker deploy nằm ở [report-task5](../planning/handoff/2026-10-21-req-sync/report-task5.md). Chưa có URL production; không coi snapshot này là bằng chứng deploy thành công.
+> Các mục dưới là snapshot kiểm chứng local ngày 21/10 trước commit/push. Bằng chứng deploy production ngày 23/10 nằm trong cập nhật Pha A và report-task5 ở trên.
 
 Ngày: 21/10/2026. Task ID: 5.1–5.4.
 Branch: `feat/assignment2-task5-delivery`. Worktree: `C:/BrewLite-a2-Task5`.

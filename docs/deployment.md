@@ -1,9 +1,10 @@
 # Triển khai và rollback — Task 5
 
 Production đã chốt **Vercel (web) + Render (API image + Postgres internal)** theo handoff P1.
-Ngày 23/10/2026 đã tạo PostgreSQL Free brewlite-a2-db (Singapore, PostgreSQL 16, available), Vercel brewlite-a2-web (Root Directory apps/web, không liên kết Git) và publish image API commit 6041b5f lên GHCR private.
-Postgres tạo 23/10/2026, hết hạn 22/11/2026 theo metadata Render; IP allowlist chỉ 127.0.0.1/32 để chặn client công khai. API phải dùng Internal Database URL khi tạo.
-API service và deploy web lần đầu còn chờ credential GHCR chỉ đọc; chưa có URL production/smoke thành công.
+Ngày 23/10/2026 đã deploy tay thành công từ commit 6041b5f: [web Vercel](https://brewlite-a2-web.vercel.app), [API Render](https://brewlite-a2-api.onrender.com), image ghcr.io/duvinhloi/brewlite-api:6041b5f8fa7bba9211d78554f80bb2b2e3a46175 **public**, không cần PAT.
+Render API Free/Singapore dùng DB nội bộ brewlite-a2-db (PostgreSQL 16), health /health, JWT ngẫu nhiên 64 ký tự, CORS_ORIGINS trỏ web trên; Auto-Deploy off. Vercel Root Directory apps/web, production NEXT_PUBLIC_API_URL trỏ API trên, không liên kết Git nên push không auto-deploy.
+Postgres tạo 23/10/2026, hết hạn 22/11/2026; IP allowlist chỉ 127.0.0.1/32 để chặn client công khai.
+Migration và seed đã chạy; HTTPS /health 200 với database up, /products 8 món, Chromium hiển thị 8 món. Docker Command override tạm và deployment IDs có trong báo cáo. Dockerfile/CD mới và rollback thuộc Pha B–D, chưa nghiệm thu ở Pha A.
 Bằng chứng và bước còn lại: [report-task5](planning/handoff/2026-10-21-req-sync/report-task5.md).
 
 Phần VPS/SSH và lệnh rollback ở dưới là cấu hình cũ từ 21/10/2026, sẽ được thay ở Pha B CR-5.3/5.4; không dùng cho triển khai Vercel/Render hiện tại. Compose local vẫn áp dụng.

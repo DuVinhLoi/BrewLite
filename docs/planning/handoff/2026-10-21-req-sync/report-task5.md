@@ -1,7 +1,7 @@
 # Report Task 5 — Pha A, CR-5.0 lần 1
 
 Ngày thực hiện: 23/10/2026. Chủ Task 5, branch feat/assignment2-task5-delivery.
-Worktree: C:/BrewLite-a2-Task5. Trạng thái toàn Pha A: BLOCKED ở credential GHCR chỉ đọc và deploy lần đầu; CR-5.0 lần 1 đã hoàn tất.
+Worktree: C:/BrewLite-a2-Task5. Trạng thái Pha A: PASS sync, cấu hình nền tảng, deploy tay và HTTPS smoke. Bàn giao Người 1–3 ở cuối báo cáo; chưa gửi qua kênh nhóm vì chưa có địa chỉ/kênh nhận.
 
 ## Nguồn và phạm vi
 
@@ -35,7 +35,7 @@ Các đường dẫn tài liệu/SRS/sơ đồ/handoff khác được kế thừ
 | git diff --name-only --diff-filter=U | PASS, không còn file unmerged |
 
 Đây là kiểm sync baseline, không phải nghiệm thu code theo D2/D3/C3. Test hiện tại còn kiểm hợp đồng cũ; việc đổi test/code thuộc Pha B.
-PlantUML -checkonly, integration/E2E/build toàn bộ, smoke và rollback production NOT RUN ở lượt Pha A này.
+PlantUML -checkonly, integration/E2E/build toàn bộ, rollback production NOT RUN ở lượt Pha A này. HTTPS smoke đã chạy sau triển khai, xem bên dưới.
 Không khởi động dev server/Compose hoặc dùng cổng 3000/5432 của người khác.
 
 ## CR-5.3 — cấu hình nền tảng Pha A (cập nhật 23/10/2026)
@@ -46,33 +46,43 @@ Không khởi động dev server/Compose hoặc dùng cổng 3000/5432 của ng�
 | Hạng mục | Trạng thái đã kiểm chứng | Bằng chứng |
 |---|---|---|
 | Build API image | PASS | Docker build thành công với source commit 6041b5f8fa7bba9211d78554f80bb2b2e3a46175 |
-| Publish GHCR | PASS | ghcr.io/duvinhloi/brewlite-api:6041b5f8fa7bba9211d78554f80bb2b2e3a46175; private package; version ID 1434898354 |
+| Publish GHCR | PASS | ghcr.io/duvinhloi/brewlite-api:6041b5f8fa7bba9211d78554f80bb2b2e3a46175; public package (GitHub API và manifest anonymous HTTP 200); version ID 1434898354 |
 | Image digest | PASS | sha256:f8bfa6b18d74f9cf41ed380f6f3cb0c591945a83333d3ed3807dfe55c633afa8 |
 | Render PostgreSQL | PASS | brewlite-a2-db; ID dpg-dbdlr82vcj2c7387fol0-a; status available; PostgreSQL 16; plan free; region singapore |
 | Hạn dùng PostgreSQL Free | Đã đọc metadata thật | Tạo 23/10/2026, hết hạn 22/11/2026; API timestamps 2026-10-23T13:14:08.263534Z và 2026-11-22T13:14:08.263534Z |
-| Chặn kết nối DB công khai | PASS cấu hình | IP allowlist chỉ 127.0.0.1/32; chưa tạo API để kiểm chứng kết nối nội bộ đầu-cuối |
+| Chặn kết nối DB công khai | PASS cấu hình | IP allowlist chỉ 127.0.0.1/32; API dùng DB nội bộ, health xác nhận database up |
 | Vercel project | PASS | brewlite-a2-web; ID prj_6BUoPh0TSriVnqrpLjZ1g0vijK3O; team DuVinhLoi (du-vinh-loi) |
 | Root/framework/Node | PASS | Root Directory apps/web; framework nextjs; nodeVersion 24.x |
 | Git auto-deploy web | PASS trạng thái cấu hình | Project link = null: không liên kết repository, deploy tay/CLI, Git push không tự deploy |
-| Render API service | BLOCKED | Chờ registry credential chỉ có read:packages; chưa tạo service |
-| DATABASE_URL internal / JWT_SECRET / CORS /health | NOT CONFIGURED trên API | Chờ tạo API; không có giá trị secret trong Git hoặc báo cáo |
-| NEXT_PUBLIC_API_URL production | NOT CONFIGURED | Chưa có URL API Render thật |
-| Migration/seed trên Render | NOT RUN | Image sẵn có chưa migrate khi boot; lần deploy đầu sẽ override command migrate/seed, Dockerfile cập nhật ở Pha B |
-| Deploy web/API lần đầu và HTTPS smoke | NOT RUN | Chưa có URL production web/API/health/products để kiểm chứng |
+| Render API service | PASS, live | brewlite-a2-api; srv-dbdms83ncjis73aodm1g; Free/Singapore; autoDeploy=no, autoDeployTrigger=off; health /health |
+| DATABASE_URL / JWT_SECRET / CORS | PASS cấu hình thật | DATABASE_URL internal; JWT_SECRET ngẫu nhiên 64 ký tự; CORS_ORIGINS=https://brewlite-a2-web.vercel.app; SEED_DEMO_USERS=true; không ghi secret vào Git |
+| NEXT_PUBLIC_API_URL production | PASS | https://brewlite-a2-api.onrender.com |
+| Migration/seed | PASS | Áp dụng 20261019000000_init và 20261021000000_sprint2; seed xác nhận 8 sản phẩm; không reset DB |
+| API HTTPS /health | PASS | HTTP 200, {"status":"ok","database":"up"} |
+| API HTTPS /products | PASS | HTTP 200, mảng 8 món; Access-Control-Allow-Origin=https://brewlite-a2-web.vercel.app |
+| Web HTTPS anonymous | PASS | https://brewlite-a2-web.vercel.app HTTP 200 |
+| Menu Chromium | PASS | Request /products 200; 8 article: Americano, Bạc xỉu, Cà phê sữa, Cappuccino, Cold brew, Matcha latte, Trà đào, Trà sữa trân châu |
 
-### Credential và bước còn lại
+### Deployment và khởi động thực tế
 
-Cơ chế duyệt tự động đã chặn việc gửi token GitHub CLI quyền rộng vào Render. Người dùng chọn phương án khuyến nghị: PAT riêng chỉ có read:packages, đồng thời đồng ý lưu Internal Database URL vào env API Render.
-Không dùng token GitHub CLI quyền repo/workflow/write:packages làm credential cho Render.
-Wizard tạm tại %TEMP%/brewlite-hosting-tools/ghcr-readonly-wizard.sh: nhập token ẩn, kiểm token chỉ có read:packages và đúng chủ package, lưu credential trên Render; không lưu PAT vào repository hoặc báo cáo. Hiện chưa có credential được wizard xác nhận.
-Script được kiểm bash -n PASS. Đây là tiện ích local tạm, không được commit vì không phải tạo phẩm chung.
+- API https://brewlite-a2-api.onrender.com; deployment dep-dbdn0229lscs73cat9q0 live lúc 2026-10-23T14:33:34Z (21:33 Việt Nam).
+- Web https://brewlite-a2-web.vercel.app; deployment dpl_4P8q8ZvE4TSw12J3637oeEQ2iapW READY/production. Snapshot apps/web từ commit 6041b5f8fa7bba9211d78554f80bb2b2e3a46175.
+- Digest bảng là manifest index GHCR; Render báo platform manifest sha256:2812ff8ca5dbbcc1cb9de6487e2de91e2d544b856fcd2152a5154143653bc832 cho đúng image tag SHA.
+- Package public: không cần PAT/registry credential; không gửi GitHub CLI token quyền rộng vào Render. Wizard PAT cũ không còn cần dùng.
+- Deploy trước lỗi Docker Command: dấu nháy bị giữ trong đối số; bỏ shell thì chỉ migration chạy rồi thoát. Override dưới giữ script thành một đối số, ${IFS} được shell mở rộng thành khoảng trắng; đã kiểm chứng migrate, seed và Nest PID 1 khởi động thành công:
 
-Bước tiếp theo sau khi token được nhập:
-1. Tạo API Render Free cùng region Postgres, image SHA ở trên, health /health, tắt auto-deploy.
-2. Đặt DATABASE_URL bằng Internal Database URL, JWT_SECRET ngẫu nhiên >=32 ký tự; migration deploy và seed create-if-missing trên DB sạch, không reset hoặc sửa lịch sử migration.
-3. Cấu hình NEXT_PUBLIC_API_URL của Vercel production bằng URL HTTPS API thật và CORS_ORIGINS của API bằng URL production web thật.
-4. Deploy snapshot apps/web từ commit đã push, Root Directory apps/web; không thay source UI của Người 1–3.
-5. Smoke HTTPS /health, /products (menu có dữ liệu), trang web. Chỉ khi PASS mới bàn giao Pha A hoàn tất và báo Người 1–3.
+```sh
+/bin/sh -c npx${IFS}prisma${IFS}migrate${IFS}deploy&&npx${IFS}prisma${IFS}db${IFS}seed&&exec${IFS}node${IFS}dist/main.js
+```
+
+Dockerfile chưa sửa ở Pha A; Pha B CR-5.3 sẽ chuyển migrate vào CMD chuẩn. Override hiện chạy migrate/seed idempotent trước server, không reset dữ liệu.
+Kiểm chứng: Render logs/deploys/REST metadata; Invoke-WebRequest anonymous; Chromium qua @playwright/test có sẵn. Không dùng cookie/token Vercel để vượt bảo vệ deployment. Không chạy full checkout E2E production, không diễn tập rollback hoặc kích hoạt CD cũ VPS/SSH.
+
+### Bàn giao Người 1–3
+
+Pha A đã có baseline sync và URL hoạt động. Người 1–3 có thể bắt đầu theo card-task5-p1.md, card-task5-p2.md, card-task5-p3.md từ branch feat/assignment2-task5-delivery. Chủ Task 5 giữ API/CD và ma trận, không sửa UI contributor.
+Nội dung thông báo: “CR-5.0 lần 1 xong, không chờ PR #9. Web https://brewlite-a2-web.vercel.app; API https://brewlite-a2-api.onrender.com. Health DB up, products/menu 8 món smoke PASS. Pull branch delivery rồi tách branch theo card P1–P3.”
+Đã ghi thông báo tại đây để bàn giao; chưa gửi tới bên ngoài vì chưa xác định người nhận/kênh nhóm.
 
 ### Lệnh/bằng chứng bổ sung
 
@@ -81,7 +91,7 @@ Bước tiếp theo sau khi token được nhập:
 - gh api users/DuVinhLoi/packages/container/brewlite-api/versions: PASS, tìm thấy đúng tag/version/digest.
 - render postgres get brewlite-a2-db --output json: PASS, metadata available/free/singapore và IP allowlist.
 - vercel api /v9/projects/brewlite-a2-web --scope du-vinh-loi: PASS, root/framework/node/link khớp bảng.
-- Source snapshot chỉ apps/web và project metadata được chuẩn bị ở TEMP để deploy; không thêm dependency hay file generated vào repository.
+- Source snapshot chỉ apps/web và project metadata ở TEMP đã deploy production READY; không thêm dependency hay file generated vào repository.
 
 Nguồn cấu hình:
 - https://render.com/docs/deploying-an-image
@@ -96,3 +106,4 @@ Nguồn cấu hình:
 Chưa gửi thông báo Pha A hoàn tất vì chưa có deploy/URL thật. Chưa có định danh/kênh liên hệ ba người trong phiên.
 Nội dung sẽ gửi sau khi hosting PASS: tách branch từ origin/feat/assignment2-task5-delivery tại SHA được ghi lúc bàn giao; mỗi người chỉ sửa allowed paths trong card của mình, PR về branch delivery.
 Nếu cần khởi động Pha B trước URL, trưởng nhóm phải xác nhận thay đổi điều kiện bắt đầu; agent không tự bỏ gate Pha A.
+- Kiểm tra tài liệu sau cập nhật URL: python docs/validate_task2.py PASS (All static checks PASSED); git diff --check PASS; diff chỉ ba file docs/deployment.md, docs/task5/verification.md và report-task5.md. Không sửa source API/web nên không chạy lại unit suite trong lượt cập nhật tài liệu này.
