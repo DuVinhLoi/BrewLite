@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300" role="img" aria-label="Trà đào">
+  <rect width="400" height="300" fill="#FDF0E8"/>
+  <ellipse cx="200" cy="264" rx="104" ry="12" fill="#F3DFCC"/>
+  <defs>
+    <clipPath id="glass-tra-dao">
+      <path d="M146 92h108l-10 148a18 18 0 0 1-18 16h-52a18 18 0 0 1-18-16z"/>
+    </clipPath>
+  </defs>
+  <path d="M146 92h108l-10 148a18 18 0 0 1-18 16h-52a18 18 0 0 1-18-16z" fill="#FFFFFF"/>
+  <g clip-path="url(#glass-tra-dao)">
+    <path d="M152 118h96l-8 120a12 12 0 0 1-12 11h-56a12 12 0 0 1-12-11z" fill="#E8946B"/>
+    <rect x="166" y="130" width="34" height="34" rx="8" fill="#FFFFFF" opacity="0.45" transform="rotate(-12 183 147)"/>
+    <rect x="212" y="142" width="32" height="32" rx="8" fill="#FFFFFF" opacity="0.45" transform="rotate(10 228 158)"/>
+    <rect x="180" y="180" width="30" height="30" rx="8" fill="#FFFFFF" opacity="0.4" transform="rotate(-6 195 195)"/>
+  </g>
+  <path d="M146 92h108l-10 148a18 18 0 0 1-18 16h-52a18 18 0 0 1-18-16z" fill="none" stroke="#E3C8B4" stroke-width="4"/>
+  <rect x="226" y="46" width="16" height="172" rx="8" fill="#E97451" transform="rotate(16 234 218)"/>
+</svg>

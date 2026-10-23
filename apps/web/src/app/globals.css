@@ -1,0 +1,53 @@
+:root {
+  --bg: #faf6f1;
+  --surface: #ffffff;
+  --ink: #2b2118;
+  --ink-muted: #6f6257;
+  --accent: #b4551f;
+  --accent-ink: #8a3d12;
+  --border: #eadfd2;
+  --warn-bg: #fce9d2;
+  --warn-ink: #9a4a0b;
+  --danger-bg: #f8e1dc;
+  --danger-ink: #9b2c1f;
+  --ok-bg: #eee9e2;
+  --ok-ink: #5b544b;
+  --skeleton: #efe7dc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}

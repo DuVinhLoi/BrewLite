@@ -1,32 +1,26 @@
-# apps/web — Next.js mobile-first / PWA
+# BrewLite Web — Next.js
 
-> Thư mục này **chưa có code**. Giảng viên cấm vibecoding: code ở Task 4 và Task 5 do nhóm viết; agent AI chỉ viết code vào `apps/` khi người dùng yêu cầu rõ (xem `.claude/rules/doc-code-sync.md`).
+Sprint 1 có menu gọi API thật, ảnh/giá/tồn kho, skeleton, danh sách rỗng, lỗi và thử lại. CSS dùng một cột trên mobile, hai cột từ 560 px và ba cột từ 900 px. Size/topping, chi tiết UI, giỏ hàng, auth, checkout và PWA thuộc Task 5; nút thêm vào giỏ chưa xử lý thao tác.
 
-Đề A2 yêu cầu frontend dùng **Next.js**, mobile-first / PWA (đề A2 §1.1).
+## Chạy từ thư mục này
 
-## Nhóm phải nộp ở đây
+Dùng Node 24.19.0. Copy `.env.example` thành `.env.local`; `NEXT_PUBLIC_API_URL` mặc định `http://localhost:4000`, không có `/` cuối. Khởi động API theo [README gốc](../../README.md#chạy-local).
 
-Task 4.3 (Sprint 1, đề A2 §6.3):
-- màn hình menu mobile-first, gọi `GET /products` của `apps/api`;
-- trạng thái loading, empty và error;
-- test component hoặc luồng chính (gợi ý Vitest + Testing Library);
-- `.env.example` (hoặc dùng `.env.example` ở gốc) nêu `NEXT_PUBLIC_API_URL`.
+```powershell
+npm.cmd ci
+npm.cmd run dev
+```
 
-Task 5.1 (Sprint 2, đề A2 §7.1):
-- chi tiết sản phẩm, chọn size và topping;
-- giỏ hàng và tính tổng tiền;
-- đăng ký, đăng nhập, lưu JWT;
-- tạo đơn, thanh toán Ví/Thẻ mô phỏng;
-- màn xác nhận, trạng thái và lịch sử đơn;
-- validate và xử lý lỗi ở frontend;
-- web app manifest cho PWA (NFR-10; không cần service worker).
+Mở `http://localhost:3000`. Trình duyệt gọi `GET /products` bằng `fetch` không cache; đổi API origin cần cấu hình CORS tương ứng ở API. `NEXT_PUBLIC_API_URL` được nhúng khi build, nên đổi URL cần build lại production.
 
-Task 5.2 và 5.3:
-- `Dockerfile` nếu chạy web trong `docker-compose.yml` local;
-- cấu hình deploy production (nền tảng nhóm chọn trong ADR 004).
+```powershell
+npm.cmd run lint
+npm.cmd test
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd start
+```
 
-## Ràng buộc
+Test Vitest + Testing Library trong `src/`: `UNIT-T01` định dạng VND, `UNIT-T02` tồn kho, `UNIT-T03` thẻ món, `UNIT-T04` tải/8 món, `UNIT-T05` rỗng, `UNIT-T06` mất mạng/thử lại, `UNIT-T07` HTTP 503/thử lại. Fetch được mock trong test; không cần API/DB đang chạy. Xem [ma trận](../../docs/traceability-matrix.md) và [checkpoint](../../docs/checkpoints/2026-10-19-task4.md) cho phạm vi đã kiểm.
 
-- Mỗi thay đổi đi qua nhánh `a2/task-<n>-<tên>` và pull request vào `develop-Assignment2`.
-- Mỗi chức năng phải truy vết được tới mã `FR-xx` trong `docs/requirements/srs.md` và ghi vào `docs/traceability-matrix.md`.
-- Kế hoạch chi tiết: `docs/planning/2026-10-15-assignment2-plan.md`.
+Phạm vi Task 5 theo baseline mới nhất: [SRS](../../docs/requirements/srs.md) và [kế hoạch A2](../../docs/planning/2026-10-15-assignment2-plan.md). PWA chỉ cần web app manifest theo AC-N10.1; service worker không thuộc yêu cầu minimum.
