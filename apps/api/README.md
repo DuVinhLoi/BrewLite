@@ -11,6 +11,7 @@ npm.cmd run prisma:seed
 npm.cmd run start:dev
 ```
 
+API mặc định cổng 4000, CORS cho `http://localhost:3000` (đổi bằng `CORS_ORIGINS`).
 Cần DATABASE_URL của database demo riêng và JWT_SECRET >=32 ký tự trong `.env` của app.
 Seed không ghi đè sản phẩm có sẵn; SEED_DEMO_USERS=true chỉ dùng demo/test, không production.
 
@@ -37,5 +38,6 @@ npm.cmd run test:integration
 npm.cmd run build
 ```
 
-Integration chỉ chạy khi TEST_DATABASE_URL là database test riêng hợp lệ. Không reset DB hoặc sửa migration đã phát hành.
+Integration chỉ chạy khi TEST_DATABASE_URL là database test riêng hợp lệ. `prisma:migrate` dùng `prisma migrate deploy`; không reset DB hoặc sửa migration đã phát hành.
+Kiến trúc và ADR (Task 3): [docs/architecture](../../docs/architecture/architecture.md).
 Nhóm phải hiểu và giải thích được code khi vấn đáp.

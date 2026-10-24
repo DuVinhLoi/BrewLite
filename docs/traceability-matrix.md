@@ -1,6 +1,6 @@
 # Ma trận truy vết (đề A2 §8.1)
 
-> **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5, đã rút gọn thêm (SRS mục 1.4).** Các cột thiết kế, code và test ghi kế hoạch/chờ đúng task, không phải bằng chứng đã hiện thực. Không chờ tạo phẩm Task 2–5 để merge Task 1.
+> **Baseline Task 1 theo SRS mục 1.4 mới nhất.** Cột thiết kế theo Task 2–3 (ô "chờ Task 3" điền ở B10); cột Code/API và Test theo source Task 5 trên `feat/assignment2-task5-delivery`, riêng FR-02 và NFR-17 theo Task 4 (PR #9). Các đường dẫn code/test không thay thế nghiệm thu. Xem [checkpoint Task 4](checkpoints/2026-10-19-task4.md).
 >
 > Nguồn: [`requirements/srs.md`](requirements/srs.md) (`FR-xx`, `NFR-xx`), [`requirements/uc-checkout.md`](requirements/uc-checkout.md), [`requirements/use-case-overview.svg`](requirements/use-case-overview.svg). Quy tắc kiểm và cách điền: kế hoạch A2 mục C ([`planning/2026-10-15-assignment2-plan.md`](planning/2026-10-15-assignment2-plan.md)).
 
@@ -20,7 +20,7 @@
 | Mã yêu cầu | Use-case/User Story | Thiết kế/Sơ đồ | Code/API | Test |
 |---|---|---|---|---|
 | FR-01 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /products` — `apps/api/src/catalog/`; `apps/web/src/components/menu/MenuScreen.tsx`, `ProductCard.tsx`; `apps/api/prisma/seed.ts` | `apps/api/test/products.e2e-spec.ts`: API-T01 (HTTP/provider giả); web: `src/components/menu/MenuScreen.test.tsx` UNIT-T04, `ProductCard.test.tsx` UNIT-T03; `src/lib/format.test.ts` UNIT-T01, `stock.test.ts` UNIT-T02. Seed đủ 8 món được kiểm riêng trên DB local; chưa kiểm DB trống tự động |
-| FR-02 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `apps/web/src/components/menu/MenuScreen.tsx`, `apps/web/src/lib/api.ts` | `apps/web/src/components/menu/MenuScreen.test.tsx`: UNIT-T04 loading, UNIT-T05 empty, UNIT-T06 mất mạng/retry, UNIT-T07 HTTP 503/retry; API-T04 tại `apps/api/test/products.e2e-spec.ts` kiểm API rỗng. Chưa đo ngưỡng loading 200 ms |
+| FR-02 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `apps/web/src/components/menu/MenuScreen.tsx`, `apps/web/src/lib/api.ts` | `apps/web/src/components/menu/MenuScreen.test.tsx`: UNIT-T04 loading, UNIT-T05 empty, UNIT-T06 mất mạng/retry, UNIT-T07 HTTP 503/retry; API-T04 tại `apps/api/test/products.e2e-spec.ts` kiểm API rỗng |
 | FR-03 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /products/:id`; `apps/web/src/components/shop/ProductDetail.tsx` | API-T02/03; E2E-S2-01; UI error/not-found được hiện thực, chưa test browser riêng từng nhánh |
 | FR-04 | UC-01 Xem menu và chi tiết món | chờ Task 2 | `GET /catalog/options`; `ProductDetail.tsx`; `apps/api/src/checkout/pricing.ts` | UNIT-S2-01, UNIT-S2-04; E2E-S2-01 |
 | FR-05 | UC-02 Quản lý giỏ hàng | chờ Task 2 | `apps/web/src/components/shop/ShopProvider.tsx`; `apps/web/src/lib/shop.ts` | UNIT-S2-04; E2E-S2-01 (reload giỏ) |
@@ -74,7 +74,7 @@ Cột "Use-case/User Story" của NFR ghi use-case chịu tác động chính v�
 | NFR-14 | Triển khai; kiểm `docker compose up` trên máy sạch | chờ Task 3 (Deployment-01: vùng Local) | `docker-compose.yml`; Dockerfiles hai app | Compose build/up/health + smoke thực tế; kiểm persistence down/up trong verification.md |
 | NFR-15 | Triển khai; kiểm `GET /health` 200/503 theo DB (AC-N15.1–2) | chờ Task 3 (ADR, deployment: health check) | `GET /health`; `HealthController` | UNIT-S2-05 DB-down 503 payload; Compose/API thật health 200 |
 | NFR-16 | Triển khai; kiểm migration/seed tái tạo DB; minimum không seed khuyến mãi | chờ Task 3 (ADR 003) | `apps/api/prisma/migrations/20261021000000_sprint2`; seed không ghi đè bản ghi tồn tại | Migrate/seed trên DB test sạch; Compose migrate/seed; seed lần hai kiểm riêng trong verification.md |
-| NFR-17 | Triển khai; kiểm pipeline CI xanh và đỏ | chờ Task 3 (Deployment-01: vùng CI) | `.github/workflows/ci.yml` job ci lint/unit/integration/build/E2E | Local các lệnh đã chạy; GitHub run và branch protection NOT RUN |
+| NFR-17 | Triển khai; kiểm pipeline CI xanh và đỏ | chờ Task 3 (Deployment-01: vùng CI) | `.github/workflows/ci.yml`, `.nvmrc`, `CONTRIBUTING.md` | [CI thật xanh PR #9, đỏ PR #10 và log](evidence/ci/github-runs.md), ngày 2026-10-21; Build bị skip khi test sai. Chưa xác minh branch protection chặn merge: repo private báo giới hạn gói, contributor không có admin. AC-N17.2 chưa đạt |
 | NFR-18 | Triển khai; kiểm pipeline CD: smoke test chờ 200 có retry; rollback deploy lại image tag bản trước (AC-N18.2–3) | chờ Task 3 (ADR 004, Deployment-01) | `.github/workflows/cd.yml`; `scripts/deploy.sh`; `docs/deployment.md` | YAML/Compose parse PASS; publish/deploy/production smoke/rollback NOT RUN vì chưa có hosting/approval |
 | NFR-19 | Triển khai; kiểm URL production sống và người ngoài nhóm chạy theo README | chờ Task 3 (Deployment-01) | `README.md`; `docs/deployment.md`; release/review/retro trong docs/task5 | BLOCKED: chưa có URL production và minh chứng bàn giao thực tế |
 | NFR-20 | Triển khai; kiểm log JSON mỗi yêu cầu | chờ Task 3 (architecture.md: logging) | dự kiến logger trong `apps/api`; chờ Task 5 | chờ Task 5 |
