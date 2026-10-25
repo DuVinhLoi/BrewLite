@@ -10,7 +10,7 @@ export function cartKey(productId: string, size: string, toppings: string[]) { r
 export function addLine(lines: CartLine[], next: CartLine): CartLine[] {
   const existing = lines.find((line) => line.key === next.key);
   if (existing && existing.quantity + next.quantity > 99) throw new Error('Mỗi dòng tối đa 99 ly');
-  if (!existing && lines.length >= 20) throw new Error('Giỏ hàng tối đa 20 dòng');
+  if (!existing && lines.length >= 20) throw new Error('Giỏ hàng tối đa 20 món');
   return existing ? lines.map((line) => line.key === next.key ? { ...line, quantity: line.quantity + next.quantity } : line) : [...lines, next];
 }
 export function cartTotal(lines: CartLine[]) { return lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0); }
