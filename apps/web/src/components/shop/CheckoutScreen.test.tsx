@@ -1,93 +1,91 @@
-import '@testing-library/jest-dom/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { ApiError } from '@/lib/api';
+import { shopApi } from '@/lib/shop';
+import { useShop } from './ShopProvider';
 import { CheckoutScreen } from './CheckoutScreen';
 
-const push = vi.fn();
-const replace = vi.fn();
-const clear = vi.fn();
-const logout = vi.fn();
+const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => router }));
+vi.mock('./ShopProvider', () => ({ useShop: vi.fn() }));
+vi.mock('@/lib/shop', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/shop')>()), shopApi: vi.fn() }));
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push, replace }),
-}));
+const line = {
+  key: 'cappuccino-L-pearls', productId: 'cappuccino', name: 'Cappuccino',
+  size: 'L', toppings: ['Trân châu'], quantity: 2, unitPrice: 62000,
+};
+const store = {
+  cart: [line], ready: true, session: { token: 'token-1', email: 'demo@test.local', role: 'CUSTOMER' },
+  add: vi.fn(), quantity: vi.fn(), clear: vi.fn(), login: vi.fn(), logout: vi.fn(),
+};
+const order = {
+  id: 'order-1', status: 'PAYMENT_FAILED', total: 35000, createdAt: '2026-10-25T00:00:00.000Z',
+  items: [{ id: 'item-1', productId: 'latte', name: 'Latte', size: 'M', toppings: [], quantity: 1, unitPrice: 35000, lineTotal: 35000 }],
+};
+const cardError = 'Số thẻ demo phải gồm 16 chữ số';
 
-vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <a href={href}>{children}</a>
-  ),
-}));
+async function renderCheckout() {
+  vi.mocked(useShop).mockReturnValue(store);
+  render(<CheckoutScreen />);
+  await screen.findByRole('heading', { name: 'Thanh toán mô phỏng' });
+}
 
-vi.mock('./ShopProvider', () => ({
-  useShop: () => ({
-    ready: true,
-    session: { email: 'demo@brewlite.test', token: 'token-1', role: 'CUSTOMER' },
-    cart: [
-      {
-        key: 'line-1',
-        productId: 'p1',
-        name: 'Cappuccino',
-        size: 'L',
-        toppings: ['Trân châu'],
-        quantity: 2,
-        unitPrice: 45000,
-      },
-    ],
-    clear,
-    logout,
-  }),
-}));
+function chooseCard(number: string) {
+  fireEvent.change(screen.getByRole('combobox', { name: 'Phương thức' }), { target: { value: 'CARD' } });
+  fireEvent.change(screen.getByLabelText('Số thẻ demo'), { target: { value: number } });
+}
 
-vi.mock('@/lib/shop', () => ({
-  shopApi: vi.fn(),
-  cartTotal: (lines: Array<{ unitPrice: number; quantity: number }>) =>
-    lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0),
-}));
+beforeEach(() => { vi.mocked(shopApi).mockReset(); sessionStorage.clear(); });
 
-vi.mock('@/lib/format', () => ({
-  formatVnd: (value: number) => `${value.toLocaleString('vi-VN')} ₫`,
-}));
-
-const { shopApi } = await import('@/lib/shop');
-
-describe('CheckoutScreen', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    sessionStorage.clear();
-  });
-
-  it('shows inline validation error for invalid card input and blocks API call', async () => {
-    render(<CheckoutScreen />);
-
-    fireEvent.click(screen.getByLabelText('Thẻ'));
-    const input = screen.getByLabelText('Số thẻ demo');
-
-    fireEvent.change(input, { target: { value: '1234' } });
+describe('CheckoutScreen: AC-F14.5, UC-04 bước 2, C3', () => {
+  it('UNIT-P3-01: số thẻ thiếu chữ số báo lỗi tại ô và không gọi API', async () => {
+    await renderCheckout();
+    chooseCard('1234');
     fireEvent.click(screen.getByRole('button', { name: 'Xác nhận trả' }));
-
-    expect(screen.getByText('Số thẻ demo phải gồm 16 chữ số')).toBeInTheDocument();
+    const input = screen.getByLabelText('Số thẻ demo');
     expect(input).toHaveAttribute('aria-invalid', 'true');
-    expect(input).toHaveAttribute('aria-describedby', 'card-error');
+    expect(input).toHaveAccessibleDescription(cardError);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(shopApi).not.toHaveBeenCalled();
   });
 
-  it('renders order summary and clears card validation after fixing the card number', () => {
-    render(<CheckoutScreen />);
+  it('UNIT-P3-02: sửa số thẻ hoặc đổi phương thức thì lỗi tại ô biến mất', async () => {
+    await renderCheckout();
+    chooseCard('1234');
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận trả' }));
+    fireEvent.change(screen.getByLabelText('Số thẻ demo'), { target: { value: '12345' } });
+    expect(screen.getByLabelText('Số thẻ demo')).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.queryByText(cardError)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText('Thẻ'));
-    const input = screen.getByLabelText('Số thẻ demo');
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận trả' }));
+    expect(screen.getByText(cardError)).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Phương thức' }), { target: { value: 'WALLET' } });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Phương thức' }), { target: { value: 'CARD' } });
+    expect(screen.queryByText(cardError)).not.toBeInTheDocument();
+  });
 
-    fireEvent.change(input, { target: { value: '1234' } });
-    expect(screen.getByText('Số thẻ demo phải gồm 16 chữ số')).toBeInTheDocument();
+  it('UNIT-P3-03: chưa có đơn thì tóm tắt các dòng trong giỏ', async () => {
+    await renderCheckout();
+    expect(screen.getByRole('heading', { name: 'Tóm tắt đơn' })).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual(['2 × Cappuccino · Size L · Trân châu']);
+    expect(screen.getByText('Tổng tiền: 124.000đ', { exact: true })).toBeInTheDocument();
+  });
 
-    fireEvent.change(input, { target: { value: '4242424242424242' } });
+  it('UNIT-P3-04: thanh toán lại đơn PAYMENT_FAILED thì tóm tắt các dòng của đơn', async () => {
+    sessionStorage.setItem('brewlite-checkout:demo@test.local', JSON.stringify({ orderId: order.id, key: 'key-1' }));
+    vi.mocked(shopApi).mockResolvedValueOnce(order);
+    await renderCheckout();
+    expect(screen.getByText('Mã đơn: order-1')).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual(['1 × Latte · Size M · Không topping']);
+    expect(screen.getByRole('button', { name: 'Thử lại thanh toán' })).toBeEnabled();
+  });
 
-    expect(screen.queryByText('Số thẻ demo phải gồm 16 chữ số')).not.toBeInTheDocument();
-    expect(screen.getByText('Tóm tắt đơn')).toBeInTheDocument();
-    expect(screen.getByText('Cappuccino')).toBeInTheDocument();
-    expect(screen.getByText('L')).toBeInTheDocument();
-    expect(screen.getByText('Trân châu')).toBeInTheDocument();
-    expect(screen.getByText('x2')).toBeInTheDocument();
-    expect(screen.getByText('Tổng tiền: 90.000 ₫')).toBeInTheDocument();
+  it('UNIT-P3-05: thanh toán bị từ chối 402 chỉ hiện một alert và giữ giỏ', async () => {
+    vi.mocked(shopApi).mockResolvedValueOnce({ ...order, status: 'PENDING' }).mockRejectedValueOnce(new ApiError('Thẻ bị từ chối', 402));
+    await renderCheckout();
+    fireEvent.click(screen.getByRole('button', { name: 'Xác nhận trả' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Đơn của bạn vẫn được giữ');
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(store.clear).not.toHaveBeenCalled();
   });
 });
