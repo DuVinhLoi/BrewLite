@@ -2,7 +2,7 @@
 
 Next.js + NestJS + PostgreSQL/Prisma. Task 5 phát triển tiếp từ Sprint 1 commit `f1b856a`, giữ nguyên Product API và Menu UI.
 Luồng: menu → size/topping → giỏ → đăng ký/đăng nhập → đặt đơn → Ví/Thẻ demo → xác nhận/lịch sử/theo dõi.
-Chưa có URL production hoặc GitHub CI/CD run được xác minh; sơ đồ/ADR Task 2–3 vẫn là phụ thuộc của nhóm.
+Production demo: [web](https://brewlite-a2-web.vercel.app), [API health](https://brewlite-a2-api.onrender.com/health). Triển khai tay và menu tám món đã kiểm chứng ngày 23/10/2026; kết quả release hiện tại ở [báo cáo Task 5](docs/planning/handoff/2026-10-21-req-sync/report-task5.md).
 
 - [Đề A2](docs/Assignment2-BrewLite.md), [SRS](docs/requirements/srs.md), [Use-case](docs/requirements/uc-checkout.md).
 - [Audit/kế hoạch Task 5](docs/task5/implementation.md), [kết quả kiểm chứng và bàn giao](docs/task5/verification.md).
@@ -31,7 +31,7 @@ Start-Process http://localhost:3000
 
 DB chỉ ở network nội bộ, có volume bền vững. Không xóa volume hoặc dùng `down -v`/`prisma migrate reset`.
 Compose chạy migration trước API. Seed tạo 8 sản phẩm nếu thiếu, không ghi đè giá/tồn kho đã có.
-Tài khoản demo opt-in: `customer.demo@brewlite.local`, `barista.demo@brewlite.local`, mật khẩu `Demo@12345`. Không seed tài khoản này trên production.
+Tài khoản demo opt-in: `customer.demo@brewlite.local`, `barista.demo@brewlite.local`, mật khẩu `Demo@12345`. Chỉ bật seed tài khoản demo trên môi trường demo đã được nhóm cho phép; không dùng mật khẩu mẫu cho dữ liệu thật.
 
 ## Chạy hai app bằng Node.js
 
@@ -77,11 +77,11 @@ Nếu thay cổng web phải thay CORS_ORIGINS; API URL được nhúng khi web 
 
 JWT_SECRET tối thiểu 32 ký tự; bcrypt cost 12. Unknown fields bị từ chối (kể cả giá/userId/role do client tự gửi).
 Giá integer VND do backend tính; tạo đơn và trừ tồn cùng transaction. Hủy chưa trả hoàn kho đúng một lần.
-Thanh toán PostgreSQL lock theo khách/đơn; key thành công không thu lại, key thất bại được retry.
-Không lưu/log số thẻ: chỉ lưu fingerprint HMAC phục vụ so khớp idempotency.
+Thanh toán PostgreSQL lock theo khách/đơn; replay thành công theo chủ đơn/orderId/key/paymentMethod, không so số thẻ. Key thất bại được retry; cùng key dùng cho đơn khác được xử lý độc lập.
+Không lưu/log số thẻ; fingerprint HMAC chỉ băm orderId và paymentMethod. Mỗi đơn có tối đa một Payment SUCCESS.
 Token lưu sessionStorage, giỏ lưu localStorage; cần bật browser storage. Khi mất phản hồi tạo đơn, UI chặn tạo lại và hướng tới lịch sử để đối soát.
 
-Ví `WALLET` thành công; thẻ demo `4242424242424242` thành công, `4000000000000002` bị từ chối, `4000000000000119` timeout sau 5 giây.
+Ví `WALLET` thành công; thẻ demo `4242424242424242` thành công, `4000000000000002` bị từ chối.
 Chỉ dùng thẻ demo, không thu tiền thật. Thất bại giữ đơn và giỏ; chỉ xóa giỏ sau khi backend xác nhận thanh toán.
 
 Barista dùng [Postman collection](tests/postman/BrewLite-Sprint2.postman_collection.json): login, điền orderId từ biên lai, GET chi tiết, PATCH lần lượt PREPARING, READY, COMPLETED.
@@ -136,8 +136,8 @@ Sau kiểm thử, bỏ các env test khỏi terminal hoặc mở terminal mới 
 ## CI/CD và production
 
 CI giữ job `ci`, mở rộng pipeline Task 4: install → lint → unit → migration/seed/integration DB riêng → typecheck/build → Chromium E2E → Compose validation.
-CD chạy theo tag `a2-v*` hoặc workflow_dispatch; **phải bật required reviewers ở environment release và production trước khi kích hoạt**. Quality gate xong mới được push image SHA; deploy cần approval riêng.
-Secrets, HTTPS proxy, DB private, health/smoke và rollback theo [deployment.md](docs/deployment.md). Không tự deploy hoặc dùng `continue-on-error` để làm xanh.
-Rollback: operator chọn full SHA trước đã kiểm chứng, chạy `RELEASE_SHA=<SHA> REGISTRY_IMAGE=ghcr.io/owner/repo bash /opt/brewlite/deploy.sh`; không rollback/reset DB tự động.
+CD chạy theo tag `a2-v*` hoặc `workflow_dispatch`: quality gate → publish API image full SHA → Render API và Vercel web → smoke HTTPS có retry. Git auto-deploy của hai nền tảng tắt để release đi qua workflow. Vercel CLI được cố định phiên bản; API chạy migration khi khởi động.
+Cấu hình environment, secret, deploy hook, HTTPS/DB nội bộ và rollback theo [deployment.md](docs/deployment.md). Không dùng `continue-on-error` để làm xanh.
+Rollback dùng image SHA trước trên Render và `vercel rollback`/promote deployment web trước, rồi chạy lại smoke; không reset hoặc tự đảo migration DB.
 
-Trạng thái production: **BLOCKED** vì chưa có hosting, domain HTTPS, secrets, approval và URL thật. Nhóm phải hoàn thành Task 2–3, GitHub branch protection, chạy pipeline, release/tag, video demo, review/retro và thử rollback trước nghiệm thu.
+Production demo hoạt động từ Pha A. Pipeline/tag, smoke và diễn tập rollback của release hiện tại chỉ được coi PASS khi có run/URL và kết quả thật trong [verification](docs/task5/verification.md), [release notes](docs/task5/release-notes.md) và [báo cáo Task 5](docs/planning/handoff/2026-10-21-req-sync/report-task5.md). Video demo và buổi review/retro là bằng chứng nhóm phải hoàn thiện riêng.

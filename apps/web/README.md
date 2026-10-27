@@ -15,14 +15,14 @@ API CORS phải cho phép origin web. Không đặt JWT_SECRET trong frontend.
 Giỏ dùng localStorage, session dùng sessionStorage; không xóa giỏ khi lỗi thanh toán hoặc đăng xuất.
 Chi tiết setup/test/DB riêng: [README root](../../README.md).
 
-## Phân công sau sync Pha A
+## Phần Người 1–3 đã tích hợp
 
-- Người 1: số lượng ở chi tiết, cap tồn kho, giới hạn 20 món; card-task5-p1.md.
-- Người 2: xác nhận giảm về 0, thành tiền từng dòng, manifest/icons; card-task5-p2.md.
-- Người 3: tóm tắt checkout, lỗi tại ô thẻ và bỏ nhánh lỗi cũ ở web; card-task5-p3.md.
+- PR #23 (Người 1): số lượng tại chi tiết, giới hạn tồn kho chung mọi size/topping, cap 99 mỗi dòng và 20 món. Tests `P1-UI-01`–`P1-UI-16`, `P1-CART-01`–`P1-CART-03`.
+- PR #22 (Người 2): xác nhận khi giảm 1 về 0, nút Xóa trực tiếp, thành tiền từng dòng; `UNIT-P2-01`–`UNIT-P2-05`. Web manifest và icons PNG 192/512 px đáp ứng minimum PWA.
+- PR #24 (Người 3): tóm tắt giỏ/đơn đang trả lại, lỗi tại ô thẻ, chỉ xử lý decline; `UNIT-P3-01`–`UNIT-P3-05` có trong source test (mô tả PR không liệt kê mã).
 
-Các card ở `docs/planning/handoff/2026-10-21-req-sync/` trên develop-Assignment2.
-Không sửa file của người khác trong Pha B. Production đã chốt Vercel, Root Directory apps/web; API trên Render.
+Card và giới hạn ownership ở `docs/planning/handoff/2026-10-21-req-sync/`. Mã test và truy vết chi tiết ở [ma trận](../../docs/traceability-matrix.md).
+Production: Vercel Root Directory `apps/web`, `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`. Project không liên kết Git; release deploy qua CLI/CD. URL demo: https://brewlite-a2-web.vercel.app.
 
 ```powershell
 npm.cmd run lint

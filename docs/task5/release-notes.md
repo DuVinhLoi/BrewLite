@@ -1,26 +1,20 @@
-# Release candidate 0.2.0 — Sprint 2
+# BrewLite Assignment 2 — a2-v0.2.0-rc.1
 
-Ngày chuẩn bị: 21/10/2026. Chưa tạo Git tag/release. Chưa deploy production.
-Branch: feat/assignment2-task5-delivery. Base Task 4: f1b856a.
+Ngày chuẩn bị: 27/10/2026, branch feat/assignment2-task5-delivery. Release candidate; không tự nhận CD thành công trước khi có run/deployment thật.
 
-## Nội dung
+## Thay đổi
 
-- Kế thừa Product API và Menu UI Task 4; nút thêm giỏ mở trang tùy chọn.
-- Chi tiết sản phẩm, size M mặc định, topping API, giỏ lưu browser, badge, tăng/giảm/xóa.
-- Đăng ký bcrypt cost 12, đăng nhập JWT HS256 1 giờ, phân quyền Customer/Barista.
-- Tạo đơn transaction + giữ tồn kho; backend tính tiền, từ chối trường lạ và dữ liệu sai.
-- Ví/thẻ demo, thất bại/timeout, retry, idempotency bền vững PostgreSQL; không lưu/log số thẻ.
-- Xác nhận, lịch sử, polling chi tiết 5 giây, hủy đơn chưa trả và hoàn tồn một lần; API Barista đổi trạng thái.
-- Migration cộng thêm, seed opt-in account demo, health DB, Docker/CI/CD và hướng dẫn rollback.
+- Tích hợp PR #22 (xác nhận xóa, thành tiền, manifest/icons), #23 (số lượng/tồn kho), #24 (tóm tắt checkout, lỗi ô thẻ). Các PR đã merge trước lượt này; review lại không thấy blocker và sáu E2E đạt.
+- Replay theo chủ đơn/orderId/key/phương thức, bỏ số thẻ khỏi identity; key dùng được ở đơn khác; đổi phương thức sau trả thành công bị từ chối 409. Giữ replay cho bản ghi fingerprint cũ (INT-S2-10).
+- Migration cộng thêm chỉ bỏ index key xuyên đơn; giữ một thanh toán thành công mỗi đơn. Payment simulator còn thành công/từ chối, không thu tiền thật.
+- CD publish API SHA lên GHCR, Render hook, Vercel CLI 65.2.0 prebuilt, HTTPS smoke/retry và hướng dẫn rollback. Docker startup migrate trước server.
 
-## Giới hạn cần nghiệm thu
+## Kiểm chứng local 27/10/2026
 
-- Chưa có URL production, run CI/CD trên GitHub, release/tag hoặc minh chứng rollback thực tế.
-- Task 2–3 thiếu sơ đồ/ADR; không tự nhận hoàn thành truy vết thiết kế.
-- FR-17/18/19/26/27 ngoài minimum SRS, không triển khai promotion/loyalty/refund/queue.
-- Giỏ lưu localStorage; token chỉ sessionStorage (có rủi ro XSS và không chia sẻ tab), không refresh token. API quyết định giá và quyền cuối cùng.
-- Lịch sử trả tối đa 50 đơn gần nhất; chưa có phân trang cho quy mô lớn.
-- Không tự thay .env thật, không dùng migrate reset, không commit/push/deploy.
+API lint/build PASS, unit 19/19; web lint/typecheck/build PASS, unit50/50 (8 files); PostgreSQL integration10/10; Chromium E2E6/6; validator Task2 và Compose config PASS. DB riêng brewlite_test_cr56 trên cổng55437, không dùng DB production cho test.
 
-Kết quả lệnh thực tế và blocker: xem `verification.md`. Chỉ PASS khi lệnh đã chạy thành công.
-Vận hành/triển khai/rollback: `../deployment.md`. Hướng dẫn Windows: README root.
+## Trạng thái phát hành
+
+Đang chuẩn bị tag/image/deployment và diễn tập rollback; IDs, URL và kết quả thật sẽ bổ sung sau. CD cần RENDER_DEPLOY_HOOK_URL và VERCEL_TOKEN ở environment production. CLI Vercel trả Cannot create tokens for this app; chưa có token dùng riêng cho CI. Đã đặt project/org IDs và URL production. Không đưa token đăng nhập cá nhân vào GitHub để thay thế token CI.
+
+Web https://brewlite-a2-web.vercel.app; API https://brewlite-a2-api.onrender.com. Postgres Free hết hạn22/11/2026. Hướng dẫn [deploy/rollback](../deployment.md), bằng chứng chi tiết [báo cáo Task5](../planning/handoff/2026-10-21-req-sync/report-task5.md).

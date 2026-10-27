@@ -1,4 +1,4 @@
-name: Delivery (manual approval)
+name: Delivery (Render and Vercel)
 on:
   push:
     tags: ['a2-v*']
@@ -27,59 +27,74 @@ jobs:
           persist-credentials: false
       - name: Image namespace
         id: image
-        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-api" >> "$GITHUB_OUTPUT"
       - name: Authenticate registry
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-      - name: Build and push immutable images
+      - name: Build and push immutable API image
         env:
           IMAGE: ${{ steps.image.outputs.name }}
-          PUBLIC_API: ${{ vars.PRODUCTION_API_URL }}
         run: |
-          [[ "$PUBLIC_API" == https://* ]] || { echo 'Set release environment PRODUCTION_API_URL to HTTPS API URL'; exit 1; }
-          docker build -t "$IMAGE-api:$GITHUB_SHA" apps/api
-          docker build --build-arg "NEXT_PUBLIC_API_URL=$PUBLIC_API" -t "$IMAGE-web:$GITHUB_SHA" apps/web
-          docker push "$IMAGE-api:$GITHUB_SHA"
-          docker push "$IMAGE-web:$GITHUB_SHA"
-  deploy:
+          docker build -t "$IMAGE:$GITHUB_SHA" apps/api
+          docker push "$IMAGE:$GITHUB_SHA"
+  deploy-api:
     needs: publish
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Deploy immutable API image on Render
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+        run: |
+          test -n "$DEPLOY_HOOK"
+          IMAGE_URL=$(python3 -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["IMAGE"]+":"+os.environ["GITHUB_SHA"],safe=""))')
+          curl --fail --silent --show-error --max-time 60 -X POST "${DEPLOY_HOOK}&imgURL=${IMAGE_URL}" >/dev/null
+  deploy-web:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment:
       name: production
       url: ${{ vars.PRODUCTION_WEB_URL }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Configure SSH (pinned host key)
-        env:
-          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
-      - name: Deploy and migrate safely
-        env:
-          HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_LOGIN: ${{ secrets.DEPLOY_USER }}
-          IMAGE: ${{ needs.publish.outputs.image }}
-        run: |
-          [[ "$HOST" =~ ^[a-zA-Z0-9.-]+$ && "$DEPLOY_LOGIN" =~ ^[a-zA-Z0-9_-]+$ ]] || exit 1
-          scp -o BatchMode=yes -o ConnectTimeout=10 docker-compose.production.yml scripts/deploy.sh "$DEPLOY_LOGIN@$HOST:/opt/brewlite/"
-          ssh -o BatchMode=yes -o ConnectTimeout=10 "$DEPLOY_LOGIN@$HOST" "RELEASE_SHA='$GITHUB_SHA' REGISTRY_IMAGE='$IMAGE' bash /opt/brewlite/deploy.sh"
-      - name: Production smoke test
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: Pull production settings
+        run: npx --yes vercel@65.2.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build production web
+        run: npx --yes vercel@65.2.0 build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy production web
+        run: npx --yes vercel@65.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+  smoke:
+    needs: [deploy-api, deploy-web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: production
+    steps:
+      - name: Production HTTPS smoke
         env:
           API_URL: ${{ vars.PRODUCTION_API_URL }}
           WEB_URL: ${{ vars.PRODUCTION_WEB_URL }}
         run: |
           [[ "$API_URL" == https://* && "$WEB_URL" == https://* ]] || exit 1
-          curl --fail --silent --show-error --connect-timeout 5 --max-time 10 --retry 6 --retry-max-time 120 --retry-connrefused --retry-delay 5 "$API_URL/health"
-          curl --fail --silent --show-error --connect-timeout 5 --max-time 10 --retry 6 --retry-max-time 120 --retry-connrefused --retry-delay 5 "$API_URL/products" >/dev/null
-          curl --fail --silent --show-error --connect-timeout 5 --max-time 10 --retry 6 --retry-max-time 120 --retry-connrefused --retry-delay 5 "$WEB_URL/" >/dev/null
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$API_URL/health" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d=={"status":"ok","database":"up"}, d'
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$API_URL/products" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert isinstance(d,list) and len(d)==8, "Expected eight demo products"'
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$WEB_URL/" >/dev/null
+  rollback-instructions:
+    needs: [quality, publish, deploy-api, deploy-web, smoke]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
       - name: Rollback instructions
-        if: failure()
-        run: echo 'Delivery failed. Follow docs/deployment.md rollback using previous immutable SHA. Never reset DB or delete volumes.'
+        run: echo 'Delivery failed. Follow docs/deployment.md#rollback with the previous API image SHA and Vercel deployment. Preserve the database and migration history.'

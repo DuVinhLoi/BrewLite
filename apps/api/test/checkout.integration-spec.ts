@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -57,17 +57,43 @@ describe('INT-S2: real PostgreSQL checkout', () => {
     const history = await request(app.getHttpServer()).get('/orders/me').set('Authorization', `Bearer ${other}`).expect(200);
     expect(history.body).toEqual([]);
   });
-  it('INT-S2-03: concurrent replay returns one successful payment, rejects new/reused keys', async () => {
+  it('INT-S2-03: concurrent replay returns one successful payment; key can be reused on another order', async () => {
     const order = (await create().expect(201)).body;
     const key = randomUUID();
     const responses = await Promise.all([pay(order.id, key), pay(order.id, key)]);
     expect(responses.map((r) => r.status).sort()).toEqual([200, 201]);
     expect(responses[0].body).toEqual(responses[1].body);
     expect(await db.payment.count({ where: { orderId: order.id, status: 'SUCCESS' } })).toBe(1);
+    const replay = await pay(order.id, key).expect(200);
+    expect(replay.body.paymentId).toBe(responses[0].body.paymentId);
     await pay(order.id, randomUUID()).expect(409);
     const second = (await create().expect(201)).body;
-    await pay(second.id, key).expect(422);
-    expect((await db.order.findUniqueOrThrow({ where: { id: second.id } })).status).toBe('PENDING');
+    await pay(second.id, key).expect(201);
+    expect((await db.order.findUniqueOrThrow({ where: { id: second.id } })).status).toBe('PAID');
+  });
+  it('INT-S2-08: same key and method with a different card number replays', async () => {
+    const order = (await create().expect(201)).body; const key = randomUUID();
+    const first = await pay(order.id, key, '4242424242424242').expect(201);
+    const replay = await pay(order.id, key, '5555555555554444').expect(200);
+    expect(replay.body).toEqual(first.body);
+    expect(await db.payment.count({ where: { orderId: order.id, status: 'SUCCESS' } })).toBe(1);
+  });
+  it('INT-S2-09: same key with a different method after success returns ORDER_NOT_PAYABLE', async () => {
+    const order = (await create().expect(201)).body; const key = randomUUID();
+    await pay(order.id, key).expect(201);
+    const rejected = await pay(order.id, key, '4242424242424242').expect(409);
+    expect(rejected.body.error).toBe('ORDER_NOT_PAYABLE');
+    expect(await db.payment.count({ where: { orderId: order.id } })).toBe(1);
+  });
+  it('INT-S2-10: replays historical successful rows with a legacy fingerprint', async () => {
+    const order = (await create().expect(201)).body; const key = randomUUID();
+    const first = await pay(order.id, key, '4242424242424242').expect(201);
+    const legacy = createHmac('sha256', process.env.JWT_SECRET!)
+      .update(JSON.stringify([order.id, 'CARD', '4242424242424242'])).digest('hex');
+    await db.payment.update({ where: { id: first.body.paymentId }, data: { fingerprint: legacy } });
+    const replay = await pay(order.id, key, '5555555555554444').expect(200);
+    expect(replay.body).toEqual(first.body);
+    expect(await db.payment.count({ where: { orderId: order.id } })).toBe(1);
   });
   it('INT-S2-04: failed payment persists; same key can retry successfully', async () => {
     const order = (await create().expect(201)).body; const key = randomUUID();
@@ -88,12 +114,11 @@ describe('INT-S2: real PostgreSQL checkout', () => {
     await patch(paid.id, 'COMPLETED', barista).expect(409);
     for (const status of ['PREPARING', 'READY', 'COMPLETED']) await patch(paid.id, status, barista).expect(200);
   });
-  it('INT-S2-07: failed parallel requests remain retryable and timeout is persisted', async () => {
+  it('INT-S2-07: failed parallel requests remain retryable', async () => {
     const order = (await create().expect(201)).body; const key = randomUUID();
     const declines = await Promise.all([pay(order.id, key, '4000000000000002'), pay(order.id, key, '4000000000000002')]);
     expect(declines.map((r) => r.status)).toEqual([402, 402]);
     expect(await db.payment.count({ where: { orderId: order.id, status: 'FAILED' } })).toBe(2);
-    await pay(order.id, key, '4000000000000119').expect(502);
     expect((await db.order.findUniqueOrThrow({ where: { id: order.id } })).status).toBe('PAYMENT_FAILED');
     await pay(order.id, key).expect(201);
     expect(await db.payment.count({ where: { orderId: order.id, status: 'SUCCESS' } })).toBe(1);

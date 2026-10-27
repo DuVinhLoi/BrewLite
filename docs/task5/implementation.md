@@ -35,8 +35,8 @@ Không thêm Promotion/LoyaltyTransaction vì ngoài minimum SRS; Task 2 vẫn c
 - [x] Tài liệu: README, deployment, release notes, review/retro mẫu, traceability bổ sung.
 - [x] Kiểm chứng: lint/test/typecheck/build/diff; ghi rõ NOT RUN/BLOCKED nếu thiếu điều kiện.
 
-Không sửa .env thật; không reset/migrate reset; không commit/push/deploy.
+Không sửa .env thật hoặc reset DB; commit/push/release theo phạm vi người dùng đã giao.
 Chỉ thêm dependency bcryptjs/jsonwebtoken và Playwright phục vụ yêu cầu được giao.
-Production đề xuất VPS Docker Compose + reverse proxy HTTPS do nhóm quản lý;
-chưa có hosting/credentials/URL nên không tuyên bố deploy.
-Delivery checkbox chỉ đánh dấu chuẩn bị cấu hình; production/rollback thực tế còn BLOCKED như verification.md.
+Production dùng Vercel (web) + Render (API image và Postgres internal) theo ADR 004.
+Pha A đã deploy tay và smoke menu tám món ngày 23/10/2026. CR-5.0 lần 2 và PR Người 1–3 đã merge; CR-5.1/5.2 sửa replay/decline, CR-5.3 chuyển CD và migration startup, CR-5.4/5.5 cập nhật tài liệu/truy vết.
+Checkbox delivery mô tả source chuẩn bị; kết quả CI/CD/tag/smoke/rollback phải có bằng chứng thực ở [verification](verification.md), [release notes](release-notes.md) và [report-task5](../planning/handoff/2026-10-21-req-sync/report-task5.md).

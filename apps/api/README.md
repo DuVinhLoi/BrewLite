@@ -24,12 +24,11 @@ Seed không ghi đè sản phẩm có sẵn; SEED_DEMO_USERS=true chỉ dùng de
 - Health: 200 `{status:'ok',database:'up'}`; 503 `{status:'error',database:'down'}`.
 - [Collection Barista](../../tests/postman/BrewLite-Sprint2.postman_collection.json).
 
-## Trạng thái đồng bộ Pha A
+## Thanh toán và triển khai
 
-CR-5.0 lần 1 đã lấy SRS mới từ develop-Assignment2. Code thanh toán chưa được sửa trong Pha A:
-CR-5.1 sẽ đổi replay theo chủ đơn/orderId/key/paymentMethod, không so số thẻ và bỏ unique key xuyên đơn bằng migration mới;
-CR-5.2 sẽ chỉ giữ lỗi decline. Không coi code hiện tại đã đạt D2/D3/C3 mới.
-Production chốt Render image + Render Postgres internal URL; Docker startup/CD sẽ cập nhật ở Pha B CR-5.3.
+API replay theo chủ đơn/`orderId`/key/`paymentMethod` (BR-05, FR-16); simulator không lưu trạng thái. Số thẻ không tham gia fingerprint và không được lưu/log. Request cùng key/phương thức trên cùng đơn đã trả được replay; đổi phương thức hoặc key sau khi PAID trả 409 `ORDER_NOT_PAYABLE`. Cùng key trên đơn khác được xử lý độc lập. Migration mới bỏ ràng buộc key xuyên đơn, giữ index mỗi đơn tối đa một Payment SUCCESS; không sửa migration đã phát hành.
+Simulator chỉ có thành công hoặc decline (402 `PAYMENT_DECLINED`); lần thất bại không khóa key. Health giữ contract DB up/down bên trên.
+Render chạy image API gắn full commit SHA, dùng Render Postgres **Internal Database URL**, `/health`, `JWT_SECRET`, `CORS_ORIGINS` và tắt auto-deploy. Docker CMD chạy `prisma migrate deploy` trước server. Seed là thao tác opt-in riêng, không reset dữ liệu. Chi tiết [deployment](../../docs/deployment.md).
 
 ```powershell
 npm.cmd run lint

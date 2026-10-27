@@ -70,15 +70,14 @@ export class CheckoutService {
     if (input.paymentMethod === 'CARD' && (typeof input.cardNumber !== 'string' || !/^\d{16}$/.test(input.cardNumber))) invalid('cardNumber phải gồm 16 chữ số demo');
     if (input.paymentMethod === 'WALLET' && input.cardNumber !== undefined) invalid('Ví không nhận cardNumber');
     const { orderId, paymentMethod } = input;
-    const fingerprint = createHmac('sha256', process.env.JWT_SECRET!).update(JSON.stringify([orderId, paymentMethod, input.cardNumber ?? null])).digest('hex');
+    const fingerprint = createHmac('sha256', process.env.JWT_SECRET!).update(JSON.stringify([orderId, paymentMethod])).digest('hex');
     const result = await this.prisma.$transaction(async (tx) => {
-      // Cross-process lock: successful keys are scoped to the customer, including different orders.
+      // Serialize customer payment transactions across processes before checking replay.
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${user.sub}))::text`;
       await tx.$queryRaw`SELECT id FROM orders WHERE id = ${orderId} FOR UPDATE`;
       const order = await this.owned(tx, orderId, user);
-      const prior = await tx.payment.findFirst({ where: { userId: user.sub, idempotencyKey: key, status: 'SUCCESS' } });
-      if (prior) {
-        if (prior.fingerprint !== fingerprint) throw new HttpException({ code: 'IDEMPOTENCY_KEY_REUSED', message: 'Key đã dùng cho yêu cầu khác' }, 422);
+      const prior = await tx.payment.findFirst({ where: { userId: user.sub, orderId, idempotencyKey: key, status: 'SUCCESS' } });
+      if (prior?.method === paymentMethod) {
         return { replay: true, paymentId: prior.id, orderId, orderStatus: 'PAID', amount: prior.amount, status: 'SUCCESS' };
       }
       if (!['PENDING', 'PAYMENT_FAILED'].includes(order.status)) throw new ConflictException({ code: 'ORDER_NOT_PAYABLE', message: 'Đơn không thể thanh toán' });
@@ -90,8 +89,7 @@ export class CheckoutService {
       return { replay: false, paymentId: payment.id, orderId, orderStatus: success ? 'PAID' : 'PAYMENT_FAILED', amount: order.total, status: payment.status, outcome };
     }, { maxWait: 20000, timeout: 20000 });
     if ('outcome' in result && result.outcome !== 'SUCCESS') {
-      const unavailable = result.outcome === 'UNAVAILABLE';
-      throw new HttpException({ code: unavailable ? 'PAYMENT_SERVICE_UNAVAILABLE' : 'PAYMENT_DECLINED', message: unavailable ? 'Dịch vụ thanh toán không phản hồi, vui lòng thử lại' : 'Thanh toán bị từ chối, vui lòng thử lại' }, unavailable ? 502 : 402);
+      throw new HttpException({ code: 'PAYMENT_DECLINED', message: 'Thanh toán bị từ chối, vui lòng thử lại' }, 402);
     }
     const { replay, paymentId, orderStatus, amount, status } = result;
     return { replay, body: { paymentId, orderId, orderStatus, amount, status } };

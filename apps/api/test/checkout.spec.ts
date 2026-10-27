@@ -23,12 +23,4 @@ describe('Sprint 2 pricing and validation', () => {
     expect(await simulatePayment('CARD', '4242424242424242')).toBe('SUCCESS');
     expect(await simulatePayment('CARD', '4000000000000002')).toBe('DECLINED');
   });
-  it('simulates provider timeout after five seconds', async () => {
-    jest.useFakeTimers();
-    try {
-      const payment = simulatePayment('CARD', '4000000000000119');
-      await jest.advanceTimersByTimeAsync(5100);
-      expect(await payment).toBe('UNAVAILABLE');
-    } finally { jest.useRealTimers(); }
-  });
 });

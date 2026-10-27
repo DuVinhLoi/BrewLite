@@ -107,3 +107,24 @@ Chưa gửi thông báo Pha A hoàn tất vì chưa có deploy/URL thật. Chưa
 Nội dung sẽ gửi sau khi hosting PASS: tách branch từ origin/feat/assignment2-task5-delivery tại SHA được ghi lúc bàn giao; mỗi người chỉ sửa allowed paths trong card của mình, PR về branch delivery.
 Nếu cần khởi động Pha B trước URL, trưởng nhóm phải xác nhận thay đổi điều kiện bắt đầu; agent không tự bỏ gate Pha A.
 - Kiểm tra tài liệu sau cập nhật URL: python docs/validate_task2.py PASS (All static checks PASSED); git diff --check PASS; diff chỉ ba file docs/deployment.md, docs/task5/verification.md và report-task5.md. Không sửa source API/web nên không chạy lại unit suite trong lượt cập nhật tài liệu này.
+
+## Pha B–D tiếp tục ngày 27/10/2026
+
+Branch feat/assignment2-task5-delivery, worktree C:/BrewLite-a2-Task5. PR21 sync lần2 và PR22/23/24 của Người1–3 đã merge bởi nhóm; đã fetch/fast-forward, review lại nguồn và card. Merge ac4e758 lấy nốt PR20 vào delivery, không còn thiếu commit develop-Assignment2. Không merge lại các PR đã đóng.
+
+CR-5.1/5.2: API D2/D3, migration mới DROP INDEX payments_success_key_per_user, bỏ nhánh simulator cũ. Test đỏ3fail/6pass trước sửa; xanh9/9. Bổ sung INT-S2-10 replay fingerprint cũ: đỏ1fail/9pass rồi xanh10/10. Replay kiểm method sau lookup owner/order/key/success, vẫn ghi fingerprint mới, không cần backfill dữ liệu thật.
+CR-5.3: CD Render/Vercel, Docker migration CMD, bỏ hai file triển khai cũ. YAML parse PASS và9 shell blocks bash -n PASS; actionlint không có sẵn. Render hook bất đồng bộ nên nghiệm thu phải đọc deployment live + đúng image SHA.
+CR-5.4/5.5: tài liệu deployment, README, verification, ma trận cập nhật; giữ nguyên52 bộ requirement/usecase/design. P1/P2 test IDs lấy từ mô tả PR23/22. PR24 không ghi mã nên UNIT-P3-01..05 lấy từ source đã merge, không gán nhầm là mô tả PR.
+
+| Kiểm tra CR-5.6 trước commit | Kết quả thực tế |
+|---|---|
+| API lint / test --runInBand / build | PASS;19unit |
+| Web lint / typecheck / test / build | PASS;8files50tests |
+| Prisma migrate/seed DB test riêng | PASS;3migrations,8products |
+| API test:integration | PASS10/10 |
+| Web test:e2e Chromium | PASS6/6,11.3s |
+| python docs/validate_task2.py | All static checks PASSED |
+| docker compose config --quiet | PASS |
+| git diff --check / scope inspection | PASS; chỉ đường dẫn card; CRLF conversion warnings không phải lỗi whitespace |
+
+Production environment đã tạo; VERCEL_ORG_ID/VERCEL_PROJECT_ID và PRODUCTION_API_URL/PRODUCTION_WEB_URL đã đặt. Chưa có hai credential RENDER_DEPLOY_HOOK_URL/VERCEL_TOKEN; Vercel CLI bị nền tảng từ chối mint token cho app hiện tại. Không xuất session token quyền rộng để lách giới hạn. Các deploy/rollback manual sẽ dùng CLI hiện đã xác thực và được ghi riêng với CD tự động.

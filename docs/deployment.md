@@ -1,65 +1,81 @@
 # Triển khai và rollback — Task 5
 
-Production đã chốt **Vercel (web) + Render (API image + Postgres internal)** theo handoff P1.
-Ngày 23/10/2026 đã deploy tay thành công từ commit 6041b5f: [web Vercel](https://brewlite-a2-web.vercel.app), [API Render](https://brewlite-a2-api.onrender.com), image ghcr.io/duvinhloi/brewlite-api:6041b5f8fa7bba9211d78554f80bb2b2e3a46175 **public**, không cần PAT.
-Render API Free/Singapore dùng DB nội bộ brewlite-a2-db (PostgreSQL 16), health /health, JWT ngẫu nhiên 64 ký tự, CORS_ORIGINS trỏ web trên; Auto-Deploy off. Vercel Root Directory apps/web, production NEXT_PUBLIC_API_URL trỏ API trên, không liên kết Git nên push không auto-deploy.
-Postgres tạo 23/10/2026, hết hạn 22/11/2026; IP allowlist chỉ 127.0.0.1/32 để chặn client công khai.
-Migration và seed đã chạy; HTTPS /health 200 với database up, /products 8 món, Chromium hiển thị 8 món. Docker Command override tạm và deployment IDs có trong báo cáo. Dockerfile/CD mới và rollback thuộc Pha B–D, chưa nghiệm thu ở Pha A.
-Bằng chứng và bước còn lại: [report-task5](planning/handoff/2026-10-21-req-sync/report-task5.md).
+Production theo [Deployment-01](architecture/deployment.svg) và ADR 003/004: **Vercel web + Render API image + Render Postgres internal**.
+Web: https://brewlite-a2-web.vercel.app; API: https://brewlite-a2-api.onrender.com.
+Deploy tay ngày 23/10/2026 đã PASS health, products và menu tám món. Run/tag, smoke và rollback của release hiện tại được ghi ở [báo cáo Task 5](planning/handoff/2026-10-21-req-sync/report-task5.md) và [release notes](task5/release-notes.md); không suy diễn kết quả CD từ lần deploy tay.
 
-Phần VPS/SSH và lệnh rollback ở dưới là cấu hình cũ từ 21/10/2026, sẽ được thay ở Pha B CR-5.3/5.4; không dùng cho triển khai Vercel/Render hiện tại. Compose local vẫn áp dụng.
+## Cấu hình nền tảng
+
+- Render Postgres `brewlite-a2-db`, PostgreSQL 16, Free/Singapore: tạo 23/10/2026, **hết hạn 22/11/2026**. IP allowlist chỉ 127.0.0.1/32 chặn client công khai. API chỉ nhận **Internal Database URL**; không ghi URL/password vào Git hoặc log.
+- Render API `brewlite-a2-api` chạy public image `ghcr.io/duvinhloi/brewlite-api:<FULL_SHA>`, Free/Singapore; Health Check Path `/health`; auto-deploy off. Env: `DATABASE_URL`, JWT ngẫu nhiên ít nhất 32 ký tự trong `JWT_SECRET`, `CORS_ORIGINS=https://brewlite-a2-web.vercel.app`, `PORT=4000`.
+- Vercel project `brewlite-a2-web`: Root Directory `apps/web`, Next.js, Node 24.x; Production `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`. Không liên kết Git, vì vậy push không tự deploy.
+- Docker CMD của API chạy migration trước server. Khi chuyển từ image Pha A, bỏ Docker Command override cũ trên Render để dùng CMD image mới. Migration chỉ thêm một bước bỏ index key xuyên đơn, giữ index mỗi đơn một lần trả thành công; không sửa lịch sử migration.
+- Seed chỉ chạy có chủ đích, không ghi đè sản phẩm/tồn kho đã tồn tại. `SEED_DEMO_USERS=true` chỉ dành cho demo được nhóm cho phép; tài khoản demo không dành cho dữ liệu thật. Payment Service mô phỏng không thu tiền thật và không lưu/log số thẻ.
 
 ## Local Docker trên Windows
 
-Cần Docker Desktop Linux engine. Chạy từ root trong PowerShell:
+Dùng Docker Desktop Linux engine, worktree Task 5. Chỉ tạo `.env` trên clone mới, không ghi đè file có sẵn:
 
 ```powershell
 Copy-Item .env.example .env
-# Tự điền POSTGRES_PASSWORD (chuỗi hex ngẫu nhiên), JWT_SECRET (>=32 ký tự ngẫu nhiên).
-# Không commit .env. Không thay .env đang tồn tại.
+# Điền POSTGRES_PASSWORD (hex ngẫu nhiên), JWT_SECRET (>=32 ký tự).
 docker compose config --quiet
 docker compose up -d --build --wait
-# Chỉ với database demo riêng: seed không ghi đè sản phẩm/tài khoản đã có.
 docker compose run --rm -e SEED_DEMO_USERS=true api npm run prisma:seed
 Invoke-RestMethod http://localhost:4000/health
 Start-Process http://localhost:3000
 ```
 
-Compose chạy migrate deploy trong service một lần trước API; migration cộng thêm, không sửa lịch sử.
-PostgreSQL không publish cổng, dùng named volume `brewlite-task5_pgdata`. Không chạy `down -v`, migrate reset hoặc xóa volume.
-Đổi WEB_PORT phải đổi CORS_ORIGINS; đổi API_PORT phải đổi NEXT_PUBLIC_API_URL và build lại web.
-Demo account (chỉ khi opt-in seed): customer.demo@brewlite.local và barista.demo@brewlite.local, mật khẩu Demo@12345.
-Seed sản phẩm giữ nguyên dữ liệu đã có, tạo đủ tám sản phẩm trên DB sạch; không dùng seed để reset tồn kho.
+DB ở network nội bộ và named volume bền vững; không dùng `down -v`, migration reset hoặc xóa volume. Migration chạy idempotent trước API. Đổi cổng web phải đổi CORS; đổi API URL phải build lại web. Demo opt-in: customer.demo@brewlite.local / barista.demo@brewlite.local, mật khẩu Demo@12345.
 
-## Production đề xuất: VPS Docker Compose + reverse proxy HTTPS
+## GitHub CD theo tag
 
-1. Nhóm duyệt nền tảng VPS, domain web/API và cập nhật deployment diagram Task 3 trước nghiệm thu.
-2. Operator cài Docker Compose v2 có `up --wait`, tạo `/opt/brewlite`, user deploy có quyền Docker.
-3. Operator tạo `/opt/brewlite/.env` quyền 600, không đưa lên Git/CI: POSTGRES_PASSWORD (hex URL-safe), JWT_SECRET (>=32 ngẫu nhiên), CORS_ORIGINS=https://domain-web, REGISTRY_IMAGE=ghcr.io/owner/repo, RELEASE_SHA=SHA đầy đủ. `SEED_DEMO_USERS` không bật.
-4. Operator cấu hình reverse proxy trên host (Caddy/Nginx đã có HTTPS): web upstream 127.0.0.1:3000, API upstream 127.0.0.1:4000. Mở 80/443, hạn chế SSH, không mở 5432. Compose chỉ bind app vào loopback; DB không có public port.
-5. Operator đăng nhập GHCR trên VPS bằng token chỉ có `read:packages`; không lưu token trong repository. Bật backup PostgreSQL và kiểm tra phục hồi trên DB khác.
-6. GitHub: tạo environment `release` và `production`, bật required reviewers và chỉ cho release branch/tag đã duyệt. Nếu không có bảo vệ environment, workflow không tự tạo được lớp phê duyệt này; không dispatch trước khi cấu hình xong.
-7. Biến `PRODUCTION_API_URL` trong **cả release và production**, `PRODUCTION_WEB_URL` trong production: URL HTTPS không có dấu `/` cuối. API URL được nhúng vào web image lúc build.
-8. Secrets production: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS` (host key xác minh ngoài luồng; không dùng ssh-keyscan không kiểm chứng). Publish dùng `GITHUB_TOKEN` với packages:write, không hardcode credentials.
-9. Sau khi được duyệt, người quản lý chạy workflow **Delivery (manual approval)** trên commit đã review hoặc push tag `a2-v*` sau khi được duyệt. Quality gate → phê duyệt release → build/push GHCR tag full SHA → phê duyệt production → pull/migrate/up → smoke HTTPS. Không dùng `latest`.
-10. Ghi URL, run URL, full SHA và kết quả smoke vào release notes; tạo release/tag bằng thao tác của người phụ trách. Agent không tự commit/push/tag/deploy.
+Environment `production` cần secrets (chỉ tên, không ghi giá trị):
 
-Script `scripts/deploy.sh` giữ nguyên volume, pull trước, migrate trước khi thay app, dừng ngay khi lỗi.
-Migration Task 5 là additive nhưng lock bảng có thể chặn giao dịch ngắn; deploy lúc ít tải, backup trước và chỉ chạy một delivery cùng lúc.
-Compose runtime không cấp TLS; production chưa sẵn sàng nếu reverse proxy/domain/certificate chưa cấu hình.
-Payment Service là mô phỏng nội bộ, không thu tiền thật, không ghi/log số thẻ; chỉ dùng số thẻ demo.
+| Secret | Mục đích |
+|---|---|
+| `RENDER_DEPLOY_HOOK_URL` | Hook bí mật của API image service |
+| `VERCEL_TOKEN` | Quyền deploy project Vercel của nhóm |
+| `VERCEL_ORG_ID` | Team ID của project |
+| `VERCEL_PROJECT_ID` | Project ID web |
 
-## Smoke và rollback
+Variables `PRODUCTION_API_URL` và `PRODUCTION_WEB_URL` dùng URL HTTPS trên, không có dấu `/` cuối; đặt ở environment mà job sử dụng. Job publish dùng `GITHUB_TOKEN` với `packages:write`, không dùng PAT quyền rộng. Nhóm cấu hình reviewer/tag policy ở GitHub nếu gói tài khoản hỗ trợ; workflow không tự tạo lớp bảo vệ này.
 
-Workflow gọi `/health`, `/products` và frontend qua HTTPS với curl fail-on-HTTP-error. Health trả 503 khi DB không dùng được.
-Nếu migration fail: pipeline dừng trước khi thay app; điều tra, không đánh dấu migration applied thủ công hoặc reset DB để làm xanh.
-Nếu app/smoke fail: pipeline đỏ. Operator chọn SHA trước đã kiểm chứng (ghi lại trước release), SSH vào VPS:
+Release một commit đã kiểm chứng bằng tag mới `a2-v*`, không di chuyển hoặc ghi đè tag đã phát hành:
 
-```bash
-cd /opt/brewlite
-RELEASE_SHA=<FULL_PREVIOUS_SHA> REGISTRY_IMAGE=ghcr.io/owner/repo bash deploy.sh
+```powershell
+git tag -a a2-v<VERSION> <FULL_SHA> -m "BrewLite Assignment 2 release"
+git push origin a2-v<VERSION>
 ```
 
-Không chạy SQL down migration tự động. Migration additive giữ tương thích app cũ; nếu migration tương lai phá tương thích phải có kế hoạch forward-fix/backup được duyệt trước.
-Sau rollback xác minh health/API/web và ghi kết quả thật vào release notes. Nếu smoke ngoài host fail do DNS/TLS thì sửa proxy/DNS; không rollback DB mù quáng.
-Không tự nhận rollback đã kiểm chứng khi chưa chạy trên hosting thật.
+Workflow `.github/workflows/cd.yml` chạy quality gate, build/push **chỉ API** image full SHA; Render nhận image qua `imgURL` URL-encoded của deploy hook. Vercel CLI cố định phiên bản chạy `pull --environment=production`, `build --prod`, `deploy --prebuilt --prod` từ cấu hình project. Web build dùng env Production; không nhúng secret API vào frontend. Deploy hook được lưu dưới dạng secret; không in full hook URL trong log.
+Trước mỗi release ghi lại image SHA API và deployment ID web đang live để rollback. Migration thất bại phải dừng server/deploy và điều tra, không đánh dấu applied thủ công hoặc reset DB để làm xanh.
+
+## Smoke HTTPS
+
+Sau khi hook Render được chấp nhận và Vercel deploy xong, workflow gọi health, products và web với retry cho cold start Render Free. Hook là bất đồng bộ: health có thể còn thuộc image cũ; người phát hành phải xác nhận Render deployment live và image đúng full SHA trong dashboard/CLI trước khi nghiệm thu release:
+
+```bash
+curl -fsS --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$PRODUCTION_API_URL/health"
+curl -fsS --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$PRODUCTION_API_URL/products"
+curl -fsS --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$PRODUCTION_WEB_URL/"
+```
+
+Nghiệm thu cần health 200 `{"status":"ok","database":"up"}`, products 200 có dữ liệu và trình duyệt web hiển thị menu qua CORS đúng origin. HTTP thành công chưa thay thế kiểm nội dung. Lưu run URL, tag/full SHA, deployment IDs, thời điểm và output đã che secret vào release notes.
+
+## Rollback
+
+1. Chọn **full SHA và deployment ID trước release** đã ghi lại; xác nhận code cũ tương thích schema sau migration.
+2. Gọi Render deploy hook với image SHA trước qua `imgURL` URL-encoded. Ví dụ từ shell có secret được cấp qua env, không bật shell tracing:
+
+```bash
+previous_image="ghcr.io/duvinhloi/brewlite-api:$PREVIOUS_SHA"
+encoded_image=$(printf '%s' "$previous_image" | jq -sRr @uri)
+curl -fsS -X POST "${RENDER_DEPLOY_HOOK_URL}&imgURL=${encoded_image}"
+```
+
+3. Vercel: `vercel rollback <PREVIOUS_DEPLOYMENT_ID_OR_URL> --yes --token "$VERCEL_TOKEN"`, hoặc promote deployment trước theo quyền/gói tài khoản. Dùng đúng team/project đã link; không build lại và gọi đó là rollback deployment cũ.
+4. Chờ Render báo live, Vercel production trỏ deployment trước; chạy lại ba smoke HTTPS và kiểm menu thật.
+5. Ghi thời điểm, image/deployment trước/sau, run URL và kết quả thực tế vào release notes. Sau diễn tập có thể redeploy bản release đã kiểm chứng rồi smoke lại để production kết thúc ở bản mong muốn.
+
+Không tự chạy SQL down migration hoặc rollback/reset DB. Nếu schema tương lai phá tương thích, cần forward-fix/backup plan đã duyệt. Lỗi DNS/TLS phải điều tra riêng. **Chưa có bằng chứng thực thi thì rollback vẫn NOT RUN**, không lấy hướng dẫn này làm bằng chứng PASS.
