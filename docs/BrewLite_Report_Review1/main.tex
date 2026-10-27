@@ -223,10 +223,8 @@ T01.2 & \texttt{GET} \path|{{baseUrl}}/products| & 200, JSON\\
 \textbf{Test.} \path|backend/test/bootstrap-env.spec.ts| kiểm backend dừng khi thiếu \path|DATABASE_URL|; \path|backend/test/task47-auth.spec.ts| kiểm backend dừng khi thiếu \path|JWT_SECRET|.
 
 \begin{figure}[H]\centering
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task01-tree.png}\par\footnotesize (a) Cây thư mục repo\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task01-gitlog.png}\par\footnotesize (b) Kết quả \texttt{git log -{}-oneline}\end{minipage}\par\medskip
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task01-runner.png}\par\footnotesize (c) Postman Runner thư mục Task 01\end{minipage}
-\caption{Minh chứng Task 1}\label{fig:task01}
+\khunganh{0.45\linewidth}{task01-tree.png}
+\caption{Minh chứng Task 1: cây thư mục repo}\label{fig:task01}
 \end{figure}
 
 \subsection{Task 2 — API danh sách sản phẩm}
@@ -267,8 +265,7 @@ Postman chỉ kiểm được phía server. Phần hiển thị dựa vào test 
 
 \begin{figure}[H]\centering
 \begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task03-menu.png}\par\footnotesize (a) Lưới món tại \path|http://localhost:3001|\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task03-loading.png}\par\footnotesize (b) Đang tải, mạng giả lập Slow 3G trong DevTools\end{minipage}\par\medskip
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task03-error.png}\par\footnotesize (c) Lỗi khi tắt backend bằng \texttt{docker compose stop backend}\end{minipage}
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task03-error.png}\par\footnotesize (b) Lỗi khi tắt backend bằng \texttt{docker compose stop backend}\end{minipage}
 \caption{Minh chứng Task 3}\label{fig:task03}
 \end{figure}
 
@@ -314,8 +311,7 @@ T05.3 & Tạo đơn có một dòng 100 ly & 400\\
 
 \begin{figure}[H]\centering
 \begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task05-cart.png}\par\footnotesize (a) Giỏ có 2 món và tổng tiền\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task05-badge.png}\par\footnotesize (b) Badge số lượng trên header\end{minipage}\par\medskip
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task05-reload.png}\par\footnotesize (c) Giỏ còn nguyên sau khi tải lại trang\end{minipage}
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task05-badge.png}\par\footnotesize (b) Badge số lượng trên header\end{minipage}
 \caption{Minh chứng Task 5}\label{fig:task05}
 \end{figure}
 
@@ -366,12 +362,11 @@ Ca sai mật khẩu và ca email không tồn tại trả cùng một thông bá
 
 \begin{figure}[H]\centering
 \begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task07-T07.4.png}\par\footnotesize (a) Ca T07.4: có \texttt{accessToken}\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task07-T07.5.png}\par\footnotesize (b) Ca T07.5: 401\end{minipage}\par\medskip
-\begin{minipage}[t]{0.8\linewidth}\centering\khunganh{\linewidth}{task07-db-hash.png}\par\footnotesize (c) Bảng \texttt{User}: \texttt{passwordHash} bắt đầu bằng \texttt{\$2a\$}, tức chuỗi băm bcrypt\end{minipage}
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task07-db-hash.png}\par\footnotesize (b) Bảng \texttt{User}: \texttt{passwordHash} bắt đầu bằng \texttt{\$2b\$}, tức chuỗi băm bcrypt\end{minipage}
 \caption{Minh chứng Task 7}\label{fig:task07}
 \end{figure}
 
-Lệnh lấy ảnh (c):
+Lệnh lấy ảnh (b):
 \begin{verbatim}
 docker compose exec db psql -U brewlite \
   -c 'select email, left("passwordHash", 7) from "User" limit 3;'
@@ -398,9 +393,8 @@ T08.8 & Phương thức \texttt{CASH} & 400\\
 \textbf{Test.} \path|backend/test/payment-failure.spec.ts|, \path|backend/test/order-payment.integration.spec.ts|, \path|frontend/src/components/PaymentForm.test.ts|, \path|frontend/src/lib/payment/api-gateway.test.ts|, \path|frontend/src/lib/payment/checkout-session.test.ts|.
 
 \begin{figure}[H]\centering
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task08-T08.4.png}\par\footnotesize (a) Ca T08.4: 400 \texttt{Payment failed}\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task08-T08.5.png}\par\footnotesize (b) Ca T08.5: đơn ở \texttt{PAYMENT\_FAILED}\end{minipage}\par\medskip
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task08-web-error.png}\par\footnotesize (c) Màn thanh toán báo lỗi khi chọn Thẻ, giỏ còn nguyên\end{minipage}
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task08-T08.5.png}\par\footnotesize (a) Ca T08.5: đơn ở \texttt{PAYMENT\_FAILED}\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task08-web-error.png}\par\footnotesize (b) Màn thanh toán báo lỗi khi chọn Thẻ, giỏ còn nguyên\end{minipage}
 \caption{Minh chứng Task 8}\label{fig:task08}
 \end{figure}
 
@@ -515,10 +509,8 @@ T10d.6 & Trả kèm mã không hợp lệ \texttt{SAIMA} & \texttt{discount} = 0
 \textbf{Test.} \path|backend/test/order-payment.integration.spec.ts|, các ca của mã \texttt{BREWLITE10}.
 
 \begin{figure}[H]\centering
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task10-runner.png}\par\footnotesize (a) Postman Runner thư mục Task 10, đủ 4 thư mục con\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task10-jest.png}\par\footnotesize (b) \texttt{npx jest order-state order-advance order-payment} chạy xanh\end{minipage}\par\medskip
-\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task10-history.png}\par\footnotesize (c) Trang \path|/history| tự đổi trạng thái khi quầy tiến đơn\end{minipage}
-\caption{Minh chứng Task 10}\label{fig:task10}
+\khunganh{0.8\linewidth}{task10-jest.png}
+\caption{Minh chứng Task 10: \texttt{npx jest order-state order-advance order-payment} chạy xanh}\label{fig:task10}
 \end{figure}
 
 \section{Kiểm thử, Definition of Done và bàn giao}
