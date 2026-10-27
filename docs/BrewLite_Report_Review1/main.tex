@@ -15,7 +15,7 @@
   \renewcommand{\tablename}{Bảng}
 \fi
 \usepackage[margin=2.3cm,headheight=36pt]{geometry}
-\usepackage{graphicx,longtable,booktabs,array,tabularx,fancyhdr,lastpage,xcolor,amsmath}
+\usepackage{graphicx,longtable,booktabs,array,caption,float,fancyhdr,lastpage,xcolor,amsmath}
 \usepackage[unicode,colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
 \usepackage{xurl}
 \usepackage{enumitem}
@@ -24,13 +24,28 @@
 \setlength{\parskip}{6pt}
 \setlength{\emergencystretch}{3em}
 \renewcommand{\arraystretch}{1.25}
+\captionsetup{font=small,labelfont=bf}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\small\textbf{TRƯỜNG ĐẠI HỌC SÀI GÒN}\\Khoa Công nghệ Thông tin}
 \fancyhead[R]{\small BrewLite -- Review 1}
-\fancyfoot[L]{\footnotesize Công nghệ Phần mềm -- HK I, 2026--2027}
+\fancyfoot[L]{\footnotesize Công nghệ phần mềm -- Học kỳ I, 2026--2027}
 \fancyfoot[R]{\footnotesize Trang \thepage/\pageref{LastPage}}
+% Data the team still has to supply.
 \newcommand{\todo}[1]{\textcolor{red!65!black}{[Cần bổ sung: #1]}}
+% Screenshot slot: shows figures/<file> when present, otherwise a framed placeholder.
+\newcommand{\khunganh}[2]{%
+  \IfFileExists{figures/#2}%
+    {\includegraphics[width=#1]{figures/#2}}%
+    {\fbox{\parbox[c][3cm][c]{\dimexpr#1-2\fboxsep-2\fboxrule\relax}{\centering\footnotesize Chưa có ảnh\\\texttt{figures/#2}}}}}
+% Postman case table: code, what is sent, expected result.
+\newenvironment{bangca}{%
+  \begin{longtable}{L{0.11\linewidth}L{0.47\linewidth}L{0.32\linewidth}}
+  \toprule Mã ca & Kiểm tra & Kết quả mong đợi\\\midrule\endfirsthead
+  \toprule Mã ca & Kiểm tra & Kết quả mong đợi\\\midrule\endhead
+  \bottomrule\endfoot}
+  {\end{longtable}}
 \begin{document}
 \begin{titlepage}
 \centering
@@ -50,275 +65,518 @@
 \vspace{0.5cm}
 \begin{tabular}{lll}
 \toprule Thành viên & MSSV & Phân công\\\midrule
-Bảo Tín & Bổ sung & Task 1, 6\\
-Phú & Bổ sung & Task 2, 9\\
-Bảo Thiện & Bổ sung & Task 3, 5\\
-Lợi & Bổ sung & Task 4, 7\\
-Thuận & Bổ sung & Task 8, 10\\\bottomrule
+Bảo Tín & \todo{MSSV} & Task 1, 6\\
+Phú & \todo{MSSV} & Task 2, 9\\
+Bảo Thiện & \todo{MSSV} & Task 3, 5\\
+Lợi & \todo{MSSV} & Task 4, 7\\
+Thuận & \todo{MSSV} & Task 8, 10\\\bottomrule
 \end{tabular}
 \vfill
-GVHD: Từ Lãng Phiêu (theo mẫu, nhóm xác nhận)\\
+GVHD: Từ Lãng Phiêu\\
 Học kỳ I -- Năm học 2026--2027\\
 TP. Hồ Chí Minh, tháng 10 năm 2026
 \end{titlepage}
 \tableofcontents\newpage
-\section{Tóm tắt và phạm vi báo cáo}
-BrewLite phục vụ khách hàng chọn đồ uống, tùy chọn size và topping, quản lý giỏ hàng, đăng nhập, tạo đơn, thanh toán giả lập bằng Ví/Thẻ và theo dõi lịch sử đơn. Frontend dùng Next.js; backend dùng NestJS; dữ liệu lưu bằng PostgreSQL qua Prisma. Docker Compose hỗ trợ bàn giao ba dịch vụ frontend, backend và cơ sở dữ liệu.
 
-Bản báo cáo bám đề \path|docs/BrewLite-CongNghePhanMem-fixed.md|, đặc biệt mục 8, 9 và 10. Mười task có tổng trọng số 10 điểm, mỗi task 1 điểm; đây là trọng số đề bài, không phải điểm tự nghiệm thu. Bố cục bìa, logo SGU, đầu trang và chân trang được điều chỉnh từ mẫu LaTeX đã cung cấp. Các đoạn MATLAB và nội dung thống kê không liên quan trong mẫu không được dùng.
+\section{Tóm tắt và phạm vi}
+BrewLite cho khách chọn đồ uống, chọn size và topping, quản lý giỏ hàng, đăng nhập, tạo đơn, thanh toán bằng Ví hoặc Thẻ qua cổng giả lập và xem lịch sử đơn. Frontend viết bằng Next.js, backend bằng NestJS, dữ liệu lưu trong PostgreSQL qua Prisma. Docker Compose dựng ba dịch vụ: cơ sở dữ liệu ở cổng 5432, backend ở cổng 3000, frontend ở cổng 3001.
 
-Bản review này phân biệt ba loại thông tin: yêu cầu của đề, minh chứng trong repository, và thông tin còn cần nhóm xác nhận. Việc có code hoặc commit không tự chứng minh toàn bộ Definition of Done. Tên thành viên và phân công do nhóm cung cấp; MSSV chưa có nên để trống, không suy diễn từ tài khoản Git.
-\subsection{Mốc đối chiếu}
-Ngày kiểm tra: 23/10/2026. Nhánh: \path|develop-agile|. HEAD: \path|f6caead98e05dcf67ec2948726f3a4324f1c480d|. Các remote-tracking ref được đọc tại máy; phiên này không fetch, không khẳng định đã đồng bộ máy chủ.
+Đề chia sản phẩm thành 10 task, mỗi task 1 điểm. Báo cáo đối chiếu từng task với tiêu chí ở mục 8 và mục 9 của đề. Số liệu kiểm thử lấy từ lần chạy ngày 21/10/2026 trên nhánh \texttt{develop-agile}.
 
-Mẫu nguồn đang là thư mục chưa được Git theo dõi; bản demo chỉ tạo file trong thư mục riêng. Các kết quả test được dẫn ở phần sau là kết quả lịch sử từ tài liệu/log, không phải test ứng dụng được chạy lại trong phiên soạn báo cáo.
-\section{Sản phẩm, yêu cầu và kiến trúc}
-\subsection{Người dùng và phạm vi MVP}
-Khách hàng xem menu, đăng ký/đăng nhập, đặt đồ uống và kiểm tra đơn của mình. Barista và Admin thao tác nghiệp vụ quầy qua API trong phạm vi minh chứng Task 10; bản web tại nhánh này không có màn hình quầy/Admin. Product Owner xác định ưu tiên và nghiệm thu; Scrum Master hỗ trợ quy trình; giảng viên đánh giá sản phẩm và hồ sơ.
+\section{Yêu cầu và kiến trúc}
+\subsection{Bên liên quan}
+\begingroup\small
+\begin{longtable}{L{0.22\linewidth}L{0.48\linewidth}L{0.22\linewidth}}
+\toprule Bên liên quan & Việc làm được trên BrewLite & Kênh\\\midrule\endfirsthead
+\toprule Bên liên quan & Việc làm được trên BrewLite & Kênh\\\midrule\endhead
+\bottomrule\endfoot
+Khách hàng & Xem menu, chọn size và topping, đặt đơn, thanh toán, hủy đơn của mình, xem lịch sử và điểm thưởng & Web\\
+Nhân viên quầy (Barista) & Xem hàng đợi đơn đã thanh toán, chuyển đơn sang các bước pha chế, hủy đơn đã thanh toán khi hết nguyên liệu & REST API, kiểm bằng Postman\\
+Quản lý (Admin) & Mọi việc của Barista, xem kho kể cả món hết hàng, chỉnh tồn kho & REST API, kiểm bằng Postman\\
+Cổng thanh toán giả lập & Chấp nhận hoặc từ chối giao dịch Ví/Thẻ & Backend gọi trực tiếp\\
+\end{longtable}
+\endgroup
+Web không có màn hình cho Barista và Admin. Mục 3.2 của đề xếp chức năng quầy ngoài MVP, nên nhóm chỉ làm phần API phục vụ máy trạng thái đơn hàng của Task 10.
+
 \subsection{Yêu cầu chức năng và phi chức năng}
+\begingroup\small
+\begin{longtable}{L{0.08\linewidth}L{0.62\linewidth}L{0.22\linewidth}}
+\toprule STT & Yêu cầu chức năng (mục 4.1 của đề) & Task\\\midrule\endfirsthead
+\toprule STT & Yêu cầu chức năng (mục 4.1 của đề) & Task\\\midrule\endhead
+\bottomrule\endfoot
+1 & Hiển thị menu đồ uống kèm hình, tên, giá & Task 2, 3\\
+2 & Xem chi tiết sản phẩm, chọn size và topping & Task 4\\
+3 & Thêm, sửa, xóa sản phẩm trong giỏ; tự tính tổng tiền & Task 5\\
+4 & Đăng ký, đăng nhập bằng JWT & Task 7\\
+5 & Tạo đơn và thanh toán không tiền mặt & Task 6, 8\\
+6 & Hiển thị xác nhận đơn và lịch sử đơn & Task 9\\
+\end{longtable}
+
+\begin{longtable}{L{0.30\linewidth}L{0.62\linewidth}}
+\toprule Yêu cầu phi chức năng (mục 4.2 của đề) & Minh chứng\\\midrule\endfirsthead
+\toprule Yêu cầu phi chức năng (mục 4.2 của đề) & Minh chứng\\\midrule\endhead
+\bottomrule\endfoot
+API phản hồi dưới 500 ms với dữ liệu mẫu & Lần chạy Postman ngày 21/10/2026: trung bình 14 ms, lớn nhất 108 ms\\
+Băm mật khẩu, JWT, validate đầu vào & bcrypt trong \path|backend/src/auth/auth.service.ts|; \path|jwt-auth.guard.ts| chặn request thiếu token với mã 401; DTO dùng class-validator trả 400\\
+Dùng được trên các trình duyệt web & \todo{trình duyệt và phiên bản đã thử}\\
+\end{longtable}
+\endgroup
+
+\subsection{Kiến trúc và công nghệ}
+\begingroup\small
+\begin{longtable}{L{0.22\linewidth}L{0.70\linewidth}}
+\toprule Thành phần & Công nghệ\\\midrule\endfirsthead
+\toprule Thành phần & Công nghệ\\\midrule\endhead
+\bottomrule\endfoot
+Frontend & Next.js, TypeScript; giỏ hàng lưu bằng Zustand\\
+Backend & NestJS, REST, class-validator, JWT\\
+Cơ sở dữ liệu & PostgreSQL qua Prisma, đúng 5 thực thể Product, User, Order, OrderItem, Payment\\
+Thanh toán & Cổng giả lập \path|backend/src/payment/mock-payment-gateway.service.ts|\\
+Bàn giao & Docker Compose, README, collection Postman \path|docs/postman/BrewLite.postman_collection.json|\\
+\end{longtable}
+\endgroup
+Backend tính lại giá từ bảng giá ở \path|backend/src/order/pricing.ts| và bỏ qua giá client gửi lên, nên khách không sửa được số tiền phải trả.
+
+\subsection{Luồng đặt món và thanh toán}
 \begin{enumerate}
-\item Menu có ảnh, tên, giá; giao diện xử lý loading, empty và lỗi.
-\item Chi tiết món cho chọn size S/M/L và topping, hiển thị giá thay đổi.
-\item Giỏ hỗ trợ thêm, sửa số lượng, xóa và tính tổng; có badge số lượng.
-\item Tài khoản dùng bcrypt và JWT; route đặt đơn được bảo vệ.
-\item Tạo đơn PENDING trước khi thanh toán; thành công sang PAID, lỗi sang PAYMENT\_FAILED.
-\item Xác nhận có mã đơn và trạng thái; lịch sử chỉ trả đơn của khách hiện tại.
+\item Khách mở menu, chọn món, size và topping rồi thêm vào giỏ.
+\item Khách đăng nhập nếu chưa có phiên, rồi bấm thanh toán.
+\item Frontend gọi \texttt{POST} \path|/orders| để tạo đơn ở trạng thái Chờ thanh toán và nhận mã đơn.
+\item Frontend gọi \texttt{POST} \path|/payments| với mã đơn, phương thức Ví hoặc Thẻ và khóa chống lặp \texttt{Idempotency-Key}, tức chuỗi ngẫu nhiên client gửi trong header để backend nhận ra request lặp lại.
+\item Cổng chấp nhận thì đơn sang Đã thanh toán, web hiện biên lai. Cổng từ chối thì đơn sang Thanh toán lỗi, giỏ giữ nguyên và khách thử lại trên chính đơn đó.
 \end{enumerate}
-Yêu cầu phi chức năng: API phản hồi dưới 500 ms với dữ liệu mẫu; validate đầu vào, băm mật khẩu, bảo vệ bằng JWT; sử dụng được trên trình duyệt. Cần bổ sung ma trận trình duyệt, điều kiện đo và ảnh minh chứng; một lần đo với dữ liệu mẫu không đại diện kiểm thử tải.
-\subsection{Kiến trúc triển khai}
-\begin{center}
-\fbox{Next.js / trình duyệt}\quad$\longrightarrow$\quad\fbox{NestJS / REST API}\\[10pt]
-\fbox{NestJS}\quad$\longrightarrow$\quad\fbox{Prisma / PostgreSQL}\\[10pt]
-\fbox{NestJS}\quad$\longrightarrow$\quad\fbox{Mock Payment Gateway}
-\end{center}
-Frontend quản lý tương tác và giỏ; backend xác thực, tính lại giá, kiểm soát trạng thái, tồn kho và thanh toán. Không tin giá tiền do client gửi. Cổng thanh toán là mô phỏng, không đại diện giao dịch với nhà cung cấp thực.
-\subsection{Kịch bản nghiệp vụ}
-Khách mở menu, chọn món và tùy chọn, thêm giỏ, điều chỉnh số lượng, đăng nhập rồi thanh toán. Frontend gọi tạo đơn trước, nhận mã đơn PENDING, sau đó gọi thanh toán với Idempotency-Key. Thành công thì hiển thị biên lai và lịch sử; thất bại thì giữ giỏ, cho phép thử lại trên đơn cũ. Nhân viên cập nhật tiến trình pha chế bằng API đúng quyền.
+
 \section{Quy trình Agile Scrum}
-\begin{tabularx}{\linewidth}{lXl}
-\toprule Sprint & Mục tiêu theo đề & Task\\\midrule
-1 & Nền tảng và hiển thị menu & 1, 2, 3, 4\\
-2 & Giỏ hàng, đặt đơn, đăng nhập & 5, 6, 7\\
-3 & Thanh toán, bàn giao, nghiệp vụ nâng cao & 8, 9, 10\\\bottomrule
-\end{tabularx}
-Đây là kế hoạch gợi ý của đề, không phải khẳng định lịch Sprint đã diễn ra. Product Backlog được lưu trong \path|docs/product-backlog.md|, hồ sơ nháp Scrum ở \path|docs/scrum-process.md|. Task hoàn thành cần đáp ứng tiêu chí và DoD, không chỉ được merge.
+\begingroup\small
+\begin{longtable}{L{0.10\linewidth}L{0.42\linewidth}L{0.12\linewidth}L{0.22\linewidth}}
+\toprule Sprint & Mục tiêu (mục 2.3 của đề) & Task & Thời gian\\\midrule\endfirsthead
+\toprule Sprint & Mục tiêu (mục 2.3 của đề) & Task & Thời gian\\\midrule\endhead
+\bottomrule\endfoot
+1 & Nền tảng và hiển thị menu & 1, 2, 3, 4 & \todo{ngày}\\
+2 & Giỏ hàng, đặt đơn, đăng nhập & 5, 6, 7 & \todo{ngày}\\
+3 & Thanh toán, bàn giao, nghiệp vụ nâng cao & 8, 9, 10 & \todo{ngày}\\
+\end{longtable}
+\endgroup
+Product Backlog gồm 10 user story ở \path|docs/product-backlog.md|, mỗi story ứng với một task của đề. Một task chỉ tính xong khi đạt Definition of Done ở mục 10 của đề.
 
-\todo{PO, Scrum Master, ngày bắt đầu/kết thúc Sprint, Sprint Planning, Daily Scrum, biên bản Review, người review và phản hồi thực tế.}
+Product Owner: \todo{tên}. Scrum Master: \todo{tên}. Lịch Sprint Planning, Daily Scrum và Sprint Review: \todo{ngày và người dự}.
 
-Burndown nên dùng số việc còn lại theo DoD mỗi ngày. Không lấy số commit làm phần trăm hoàn thành, không coi ngày merge là ngày nghiệm thu. Tài liệu Scrum cũ chứa hash trước khi viết lại lịch sử và đồ thị theo thời điểm tích hợp; cần nhóm xác nhận trước khi dùng làm burndown chính thức.
-\section{Phân công và đối chiếu Git}
-Phân công do nhóm cung cấp: Bảo Tín (Task 1, 6), Phú (Task 2, 9), Bảo Thiện (Task 3, 5), Lợi (Task 4, 7), Thuận (Task 8, 10). Các tài khoản Git của Thuận gồm \texttt{Thuan-Test}, \texttt{Trần Vĩnh Thuận}, \texttt{Thuan-Lap} và \texttt{Thuan-AFK666}, được gộp thành một thành viên. Mỗi dòng dưới đây nêu commit do chính người phụ trách tạo; nhánh chứa commit chỉ là bằng chứng truy cập, không xác định nơi viết code.
+Burndown dưới đây tính cho cả 10 task. Một task tính là xong vào ngày tác giả tạo commit của thành viên phụ trách, theo bảng ở mục 4. Đường lý tưởng giảm đều từ 10 task ngày 30/09/2026, ngày có commit đầu tiên của repo, về 0 ngày 23/10/2026, ngày Review 1.
 
-\small\begin{longtable}{p{2.3cm}p{3.1cm}p{3.5cm}p{5.8cm}}\toprule Phân công & Commit / tác giả & Nhánh & Nội dung\\\midrule\endhead
-Bảo Tín, Task 1 & \texttt{44e3784}\newline Saturlen & main (upload 13/10) & README, Compose, Dockerfile, mã backend ban đầu.\\\addlinespace
-Phú, Task 2 & \texttt{a358930}\newline phu0111 & a1task2-9 & Đặc tả API sản phẩm; \texttt{5d92e1f} hoàn thiện.\\\addlinespace
-Bảo Thiện, Task 3 & \texttt{9ea0933}\newline baothien-s & thien35; merge \texttt{862bf65} & Menu Next.js, gọi API, trạng thái tải/rỗng.\\\addlinespace
-Lợi, Task 4 & \texttt{32831dc}\newline DuVinhLoi & feat/task4-task7; merge \texttt{eaf33f8} & Chi tiết món, loading/lỗi, test.\\\addlinespace
-Bảo Thiện, Task 5 & \texttt{9ea0933}\newline baothien-s & thien35; merge \texttt{862bf65} & Giỏ hàng, tổng tiền, badge.\\\addlinespace
-Bảo Tín, Task 6 & \texttt{44e3784}\newline Saturlen & main (upload 13/10) & Mã tạo đơn: controller, DTO, tính giá.\\\addlinespace
-Lợi, Task 7 & \texttt{32831dc}\newline DuVinhLoi & feat/task4-task7; merge \texttt{eaf33f8} & JWT, chuẩn hóa email, test xác thực.\\\addlinespace
-Thuận, Task 8 & \texttt{bd1adc3}\newline Thuan-Test & feature/task-8-10-payment-order; merge \texttt{03cb553} & Thanh toán mock, đơn PENDING $\to$ PAID/PAYMENT\_FAILED.\\\addlinespace
-Phú, Task 9 & \texttt{ed2e4ee}\newline phu0111 & a1task2-9 & Tài liệu xác nhận đơn và lịch sử đơn.\\\addlinespace
-Thuận, Task 10 & \texttt{bd1adc3}\newline Thuan-Test & feature/task-8-10-payment-order; merge \texttt{03cb553} & State Machine, idempotency, tồn kho, loyalty.\\
-\bottomrule\end{longtable}\normalsize
-\section{Tiêu chí và minh chứng cho 10 task}
-Các tiểu mục sau chuyển biên nội dung minh chứng từ \path|docs/minh-chung-10-task.md| và đối chiếu tiêu chí ở đề. Các test và ảnh được liệt kê là vị trí kiểm tra/kế hoạch chứng minh; không mặc định tất cả ảnh đã tồn tại hoặc test đã chạy ở HEAD hiện tại. Bảng Git phía trên thay thế các thống kê tác giả theo snapshot cũ trong tài liệu nguồn.
+\begin{figure}[H]\centering
+\khunganh{0.9\linewidth}{burndown.png}
+\caption{Burndown 10 task dựng từ ngày commit, sinh bằng \texttt{burndown.py}}\label{fig:burndown}
+\end{figure}
+
+\begingroup\small
+\begin{longtable}{L{0.12\linewidth}L{0.30\linewidth}L{0.20\linewidth}L{0.12\linewidth}L{0.12\linewidth}}
+\toprule Ngày & Task có commit & Commit & Thực tế & Lý tưởng\\\midrule\endfirsthead
+\toprule Ngày & Task có commit & Commit & Thực tế & Lý tưởng\\\midrule\endhead
+\bottomrule\endfoot
+30/09 & Không có, repo được khởi tạo & \texttt{0d022c0} & 10 & 10\\
+07/10 & Task 3, 5, 8, 10 & \texttt{9ea0933}, \texttt{bd1adc3} & 6 & 7,0\\
+13/10 & Task 1, 4, 6, 7 & \texttt{44e3784}, \texttt{32831dc} & 2 & 4,3\\
+21/10 & Task 2, 9 & \texttt{a358930}, \texttt{ed2e4ee} & 0 & 0,9\\
+23/10 & Không có, ngày Review 1 & Không có & 0 & 0\\
+\end{longtable}
+\endgroup
+Những ngày không có trong bảng giữ nguyên số task của ngày liền trước. Theo cách đọc ở mục 2.4 của đề, đường thực tế nằm trên đường lý tưởng là chậm tiến độ. Nhóm chậm trong ba khoảng: 01/10 đến 06/10 khi chưa task nào có commit, 10/10 đến 12/10 trước đợt commit ngày 13/10, và 19/10 đến 20/10 khi Task 2 và Task 9 chưa có commit. Các ngày còn lại nhóm đi trước đường lý tưởng. Không có ngày bắt đầu và kết thúc từng Sprint nên chưa tách được burndown riêng cho mỗi Sprint.
+
+\section{Phân công và commit}
+Thuận commit dưới bốn tên Git: Thuan-Test, Trần Vĩnh Thuận, Thuan-Lap và Thuan-AFK666. Toàn bộ dữ liệu Git nằm ở \path|git-evidence.txt|.
+
+\begingroup\small
+\begin{longtable}{L{0.16\linewidth}L{0.18\linewidth}L{0.24\linewidth}L{0.30\linewidth}}
+\toprule Thành viên & Commit, tác giả & Nhánh & Nội dung\\\midrule\endfirsthead
+\toprule Thành viên & Commit, tác giả & Nhánh & Nội dung\\\midrule\endhead
+\bottomrule\endfoot
+Bảo Tín, Task 1 & \texttt{44e3784}, Saturlen & \texttt{main} & README, Docker Compose, Dockerfile, mã backend\\\addlinespace
+Phú, Task 2 & \texttt{a358930}, \texttt{5d92e1f}, phu0111 & \texttt{a1task2-9} & Đặc tả API danh sách sản phẩm\\\addlinespace
+Bảo Thiện, Task 3 & \texttt{9ea0933}, baothien-s & \texttt{thien35}, merge \texttt{862bf65} & Trang Menu, gọi API, trạng thái tải và rỗng\\\addlinespace
+Lợi, Task 4 & \texttt{32831dc}, DuVinhLoi & \texttt{feat/task4-task7}, merge \texttt{eaf33f8} & Chi tiết món, trạng thái tải và lỗi, test\\\addlinespace
+Bảo Thiện, Task 5 & \texttt{9ea0933}, baothien-s & \texttt{thien35}, merge \texttt{862bf65} & Giỏ hàng, tổng tiền, badge\\\addlinespace
+Bảo Tín, Task 6 & \texttt{44e3784}, Saturlen & \texttt{main} & Controller, DTO và bảng giá của API tạo đơn\\\addlinespace
+Lợi, Task 7 & \texttt{32831dc}, DuVinhLoi & \texttt{feat/task4-task7}, merge \texttt{eaf33f8} & JWT, chuẩn hóa email, test xác thực\\\addlinespace
+Thuận, Task 8 & \texttt{bd1adc3}, Thuan-Test & \path|feature/task-8-10-payment-order|, merge \texttt{03cb553} & Thanh toán qua cổng giả lập, chuyển trạng thái sau thanh toán\\\addlinespace
+Phú, Task 9 & \texttt{ed2e4ee}, phu0111 & \texttt{a1task2-9} & Đặc tả API xác nhận đơn và lịch sử đơn\\\addlinespace
+Thuận, Task 10 & \texttt{bd1adc3}, Thuan-Test & \path|feature/task-8-10-payment-order|, merge \texttt{03cb553} & Máy trạng thái, idempotency, tồn kho, điểm thưởng\\
+\end{longtable}
+\endgroup
+
+\section{Minh chứng cho 10 task}
+Mỗi task gồm tiêu chí của đề, các ca kiểm thử trong collection Postman, file mã nguồn, test tự động và ảnh chụp. Request trong collection đặt tên theo mã ca, ví dụ \texttt{T06.5} là ca thứ 5 của Task 6. Chi tiết từng ca nằm ở \path|docs/minh-chung-10-task.md|.
+
+Ảnh chụp đặt vào thư mục \path|figures/| cạnh \path|main.tex|, đúng tên file ghi trong khung. Khung ghi ``Chưa có ảnh'' là ảnh nhóm chưa chụp.
 
 \subsection{Task 1 — Khởi tạo dự án và cấu trúc}
+\textbf{Tiêu chí của đề.} Repo có thư mục \path|frontend| chạy Next.js và \path|backend| chạy NestJS, chạy được trang chào, có README, Git và \path|.env.example|.
 
-Đề §8: monorepo \path|frontend| (Next.js) + \path|backend| (NestJS), chạy được "Hello", có README, Git, \path|.env.example|.
+\begingroup\small
+\begin{bangca}
+T01.1 & \texttt{GET} \path|{{webUrl}}/| & 200, HTML có chữ ``BrewLite''\\
+T01.2 & \texttt{GET} \path|{{baseUrl}}/products| & 200, JSON\\
+\end{bangca}
+\endgroup
 
-\noindent$\bullet$ Postman \path|Task 01|: \path|T01.1| \path|GET {{webUrl}}/| trả 200 HTML có chữ "BrewLite"; \path|T01.2| \path|GET {{baseUrl}}/products| trả 200 JSON.\par
-\noindent$\bullet$ File: \path|README.md|, \path|.env.example|, \path|frontend/package.json|, \path|backend/package.json|, \path|docker-compose.yml|.\par
-\noindent$\bullet$ Test: \path|backend/test/bootstrap-env.spec.ts| (thiếu \path|DATABASE_URL| thì dừng), \path|backend/test/task47-auth.spec.ts| (thiếu \path|JWT_SECRET| thì dừng).\par
-\noindent$\bullet$ Ảnh cần chụp: cây thư mục repo; \path|git log --oneline|; Runner Postman thư mục \path|Task 01|.\par
+\textbf{Mã nguồn.} \path|README.md|, \path|.env.example|, \path|frontend/package.json|, \path|backend/package.json|, \path|docker-compose.yml|.
 
+\textbf{Test.} \path|backend/test/bootstrap-env.spec.ts| kiểm backend dừng khi thiếu \path|DATABASE_URL|; \path|backend/test/task47-auth.spec.ts| kiểm backend dừng khi thiếu \path|JWT_SECRET|.
+
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task01-tree.png}\par\footnotesize (a) Cây thư mục repo\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task01-gitlog.png}\par\footnotesize (b) Kết quả \texttt{git log -{}-oneline}\end{minipage}\par\medskip
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task01-runner.png}\par\footnotesize (c) Postman Runner thư mục Task 01\end{minipage}
+\caption{Minh chứng Task 1}\label{fig:task01}
+\end{figure}
 
 \subsection{Task 2 — API danh sách sản phẩm}
+\textbf{Tiêu chí của đề.} \texttt{GET} \path|/products| trả JSON menu gồm id, tên, giá, ảnh.
 
-Đề §8: \path|GET /products| trả JSON menu (id, tên, giá, ảnh).
+\begingroup\small
+\begin{bangca}
+T02.1 & \texttt{GET} \path|/products| & Mảng món, mỗi món có \texttt{id}, \texttt{name}, \texttt{price}, \texttt{imageUrl}; không có món \texttt{stock = 0}\\
+T02.2 & \texttt{GET} \path|/products/:id| với id có thật & Đúng món đó\\
+T02.3 & \texttt{GET} \path|/products/:id| với id không có & 404\\
+\end{bangca}
+\endgroup
 
-\noindent$\bullet$ Postman \path|Task 02|: \path|T02.1| trả mảng, mỗi món có \path|id|, \path|name|, \path|price|, \path|imageUrl|, không có món \path|stock = 0|; \path|T02.2| \path|GET /products/:id| trả đúng món; \path|T02.3| id không có trả 404.\par
-\noindent$\bullet$ File: \path|backend/src/product/product.controller.ts|, \path|backend/prisma/seed.ts|.\par
-\noindent$\bullet$ Test: \path|backend/test/order-product.spec.ts| (ca "product list excludes stock-0", "product detail unknown $\rightarrow$ NotFound").\par
-\noindent$\bullet$ Ảnh cần chụp: Postman \path|T02.1| (tab Body và Test Results).\par
+\textbf{Mã nguồn.} \path|backend/src/product/product.controller.ts|, dữ liệu mẫu \path|backend/prisma/seed.ts|.
 
+\textbf{Test.} \path|backend/test/order-product.spec.ts|, ca ``product list excludes stock-0'' và ``product detail unknown → NotFound''.
 
-\subsection{Task 3 — Trang Menu (Frontend)}
+\begin{figure}[H]\centering
+\khunganh{0.8\linewidth}{task02-T02.1.png}
+\caption{Postman ca T02.1: tab Body và Test Results}\label{fig:task02}
+\end{figure}
 
-Đề §8: Next.js gọi \path|/products|, render lưới sản phẩm, có loading / empty state.
+\subsection{Task 3 — Trang Menu}
+\textbf{Tiêu chí của đề.} Next.js gọi \path|/products|, hiện lưới sản phẩm, có trạng thái đang tải và danh sách rỗng.
 
-\noindent$\bullet$ Postman \path|Task 03|: \path|T03.1| trang \path|/| trả 200; \path|T03.2| ảnh \path|imageUrl| của món tải được (\path|image/svg+xml|).\par
-\noindent$\bullet$ File: \path|frontend/src/components/ProductGrid.tsx|, \path|frontend/src/lib/api.ts| (\path|getProducts|).\par
-\noindent$\bullet$ Test: \path|frontend/src/components/ProductGrid.test.ts| (loading, empty, lỗi + "Thử lại"), \path|frontend/src/lib/api.test.ts|.\par
-\noindent$\bullet$ Ảnh cần chụp: trang Menu \path|http://localhost:3001| có lưới món; trạng thái loading (DevTools $\rightarrow$ Network $\rightarrow$ Slow 3G); trạng thái lỗi (tắt backend: \path|docker compose stop backend|).\par
+\begingroup\small
+\begin{bangca}
+T03.1 & \texttt{GET} \path|{{webUrl}}/| & 200\\
+T03.2 & Tải ảnh theo \texttt{imageUrl} của một món & 200, kiểu \texttt{image/svg+xml}\\
+\end{bangca}
+\endgroup
 
+Postman chỉ kiểm được phía server. Phần hiển thị dựa vào test vitest và ảnh chụp trình duyệt.
+
+\textbf{Mã nguồn.} \path|frontend/src/components/ProductGrid.tsx|, hàm \texttt{getProducts} trong \path|frontend/src/lib/api.ts|.
+
+\textbf{Test.} \path|frontend/src/components/ProductGrid.test.ts| kiểm ba trạng thái đang tải, rỗng và lỗi kèm nút ``Thử lại''; \path|frontend/src/lib/api.test.ts|.
+
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task03-menu.png}\par\footnotesize (a) Lưới món tại \path|http://localhost:3001|\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task03-loading.png}\par\footnotesize (b) Đang tải, mạng giả lập Slow 3G trong DevTools\end{minipage}\par\medskip
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task03-error.png}\par\footnotesize (c) Lỗi khi tắt backend bằng \texttt{docker compose stop backend}\end{minipage}
+\caption{Minh chứng Task 3}\label{fig:task03}
+\end{figure}
 
 \subsection{Task 4 — Chi tiết và tùy chọn sản phẩm}
+\textbf{Tiêu chí của đề.} Chọn size S, M, L và topping; giá đổi theo tùy chọn.
 
-Đề §8: chọn size (S/M/L) và topping, tính giá theo tùy chọn.
+Size M cộng 5.000 đồng, size L cộng 10.000 đồng. Topping Trân châu giá 5.000 đồng, Kem cheese giá 8.000 đồng. Frontend và backend dùng cùng bảng giá này.
 
-\noindent$\bullet$ Postman \path|Task 04|: \path|T04.1| size L + Trân châu + Kem cheese thì \path|unitPrice| = giá gốc + 10.000 + 13.000; \path|T04.2| size S không topping thì bằng giá gốc; \path|T04.3| topping lạ trả 400 \path|Unknown topping|. Backend tính giá bằng cùng bảng giá với frontend.\par
-\noindent$\bullet$ File: \path|frontend/src/components/ProductDetailModal.tsx|, \path|frontend/src/lib/pricing.ts|, \path|backend/src/order/pricing.ts|.\par
-\noindent$\bullet$ Test: \path|frontend/src/lib/pricing.test.ts|, \path|frontend/src/components/ProductDetailModal.test.ts|, \path|frontend/src/lib/product-detail.test.ts|, \path|backend/test/pricing-table.spec.ts| (bảng giá hai phía trùng nhau).\par
-\noindent$\bullet$ Ảnh cần chụp: modal chi tiết món trước và sau khi đổi size/topping (giá thay đổi).\par
+\begingroup\small
+\begin{bangca}
+T04.1 & Đặt size L, topping Trân châu và Kem cheese & \texttt{unitPrice} = giá gốc + 10.000 + 13.000\\
+T04.2 & Đặt size S, không topping & \texttt{unitPrice} = giá gốc\\
+T04.3 & Đặt với topping không có trong bảng giá & 400 \texttt{Unknown topping}\\
+\end{bangca}
+\endgroup
 
+\textbf{Mã nguồn.} \path|frontend/src/components/ProductDetailModal.tsx|, \path|frontend/src/lib/pricing.ts|, \path|backend/src/order/pricing.ts|.
 
-\subsection{Task 5 — Giỏ hàng (Cart)}
+\textbf{Test.} \path|frontend/src/lib/pricing.test.ts|, \path|frontend/src/components/ProductDetailModal.test.ts|, \path|frontend/src/lib/product-detail.test.ts|; \path|backend/test/pricing-table.spec.ts| kiểm bảng giá hai phía trùng nhau.
 
-Đề §8: thêm / sửa số lượng / xóa, lưu state (Zustand), tự tính tổng, badge số lượng.
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task04-before.png}\par\footnotesize (a) Trước khi đổi size và topping\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task04-after.png}\par\footnotesize (b) Sau khi đổi, giá tăng tương ứng\end{minipage}
+\caption{Modal chi tiết món}\label{fig:task04}
+\end{figure}
 
-\noindent$\bullet$ Postman \path|Task 05| (phía API của giỏ): \path|T05.1| giỏ 2 dòng thì \path|total| = tổng \path|quantity × unitPrice|; \path|T05.2| 21 dòng trả 400; \path|T05.3| 100 ly một dòng trả 400 (giới hạn 20 dòng, 1–99 ly trùng giới hạn của giỏ).\par
-\noindent$\bullet$ File: \path|frontend/src/store/cart.ts|, \path|frontend/src/components/cart/CartView.tsx|, \path|frontend/src/components/HeaderView.tsx|.\par
-\noindent$\bullet$ Test: \path|frontend/src/store/cart.test.ts|, \path|frontend/src/lib/cart-limits.test.ts|, \path|frontend/src/components/cart/CartView.test.ts|, \path|frontend/src/components/QtyStepper.test.ts|, \path|frontend/src/components/HeaderView.test.ts|.\par
-\noindent$\bullet$ Ảnh cần chụp: giỏ hàng có 2 món và tổng tiền; badge trên header; tải lại trang (F5) giỏ vẫn còn.\par
+\subsection{Task 5 — Giỏ hàng}
+\textbf{Tiêu chí của đề.} Thêm, sửa số lượng, xóa; lưu state; tự tính tổng; badge số lượng.
 
+Giỏ giới hạn 20 dòng và 1 đến 99 ly mỗi dòng; backend kiểm lại cùng giới hạn khi tạo đơn.
+
+\begingroup\small
+\begin{bangca}
+T05.1 & Tạo đơn từ giỏ 2 dòng & \texttt{total} = tổng \texttt{quantity × unitPrice}\\
+T05.2 & Tạo đơn từ giỏ 21 dòng & 400\\
+T05.3 & Tạo đơn có một dòng 100 ly & 400\\
+\end{bangca}
+\endgroup
+
+\textbf{Mã nguồn.} Store Zustand \path|frontend/src/store/cart.ts|, \path|frontend/src/components/cart/CartView.tsx|, badge trong \path|frontend/src/components/HeaderView.tsx|.
+
+\textbf{Test.} \path|frontend/src/store/cart.test.ts|, \path|frontend/src/lib/cart-limits.test.ts|, \path|frontend/src/components/cart/CartView.test.ts|, \path|frontend/src/components/QtyStepper.test.ts|, \path|frontend/src/components/HeaderView.test.ts|.
+
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task05-cart.png}\par\footnotesize (a) Giỏ có 2 món và tổng tiền\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task05-badge.png}\par\footnotesize (b) Badge số lượng trên header\end{minipage}\par\medskip
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task05-reload.png}\par\footnotesize (c) Giỏ còn nguyên sau khi tải lại trang\end{minipage}
+\caption{Minh chứng Task 5}\label{fig:task05}
+\end{figure}
 
 \subsection{Task 6 — API tạo đơn hàng}
+\textbf{Tiêu chí của đề.} \texttt{POST} \path|/orders| nhận giỏ hàng, validate bằng class-validator, lưu đơn ở trạng thái Chờ thanh toán và trả mã đơn.
 
-Đề §8: \path|POST /orders| nhận giỏ hàng, validate (class-validator), lưu \path|PENDING|, trả mã đơn.
+\begingroup\small
+\begin{bangca}
+T06.1 & Gửi không kèm token & 401\\
+T06.2 & Giỏ rỗng & 400\\
+T06.3 & Size \texttt{XL} & 400\\
+T06.4 & Món không có trong menu & 404\\
+T06.5 & Đơn hợp lệ, cố tình gửi kèm \texttt{unitPrice: 1} & 201, \texttt{status} = \texttt{PENDING}, có \texttt{id}; giá do server tính, bỏ qua giá 1 đồng\\
+T06.6 & Gửi bằng token nhân viên quầy & 403\\
+\end{bangca}
+\endgroup
 
-\noindent$\bullet$ Postman \path|Task 06|: \path|T06.1| không token trả 401; \path|T06.2| giỏ rỗng trả 400; \path|T06.3| size \path|XL| trả 400; \path|T06.4| món không có trả 404; \path|T06.5| đơn hợp lệ trả 201, \path|status| \path|PENDING|, có \path|id|, gửi kèm \path|unitPrice: 1| vẫn bị server bỏ qua và tự tính giá; \path|T06.6| token quầy trả 403.\par
-\noindent$\bullet$ File: \path|backend/src/order/order.controller.ts|, \path|backend/src/order/dto/create-order.dto.ts|, \path|backend/src/order/pricing.ts|.\par
-\noindent$\bullet$ Test: \path|backend/test/order-product.spec.ts|, \path|backend/test/pricing-table.spec.ts|, \path|backend/test/customer-only.spec.ts|.\par
-\noindent$\bullet$ Ảnh cần chụp: Postman \path|T06.5| (Body có \path|id|, \path|status: "PENDING"|) và \path|T06.2| (400 với thông báo lỗi validate).\par
+\textbf{Mã nguồn.} \path|backend/src/order/order.controller.ts|, \path|backend/src/order/dto/create-order.dto.ts|, \path|backend/src/order/pricing.ts|.
 
+\textbf{Test.} \path|backend/test/order-product.spec.ts|, \path|backend/test/pricing-table.spec.ts|, \path|backend/test/customer-only.spec.ts|.
 
-\subsection{Task 7 — Đăng ký / Đăng nhập (JWT)}
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task06-T06.5.png}\par\footnotesize (a) Ca T06.5: Body có \texttt{id} và \texttt{status}\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task06-T06.2.png}\par\footnotesize (b) Ca T06.2: 400 kèm thông báo validate\end{minipage}
+\caption{Minh chứng Task 6}\label{fig:task06}
+\end{figure}
 
-Đề §8: \path|POST /auth/register|, \path|/auth/login|; băm mật khẩu (bcrypt); phát JWT; guard bảo vệ route đặt đơn.
+\subsection{Task 7 — Đăng ký và đăng nhập bằng JWT}
+\textbf{Tiêu chí của đề.} \texttt{POST} \path|/auth/register| và \texttt{POST} \path|/auth/login|; băm mật khẩu bằng bcrypt; phát JWT; guard bảo vệ route đặt đơn.
 
-\noindent$\bullet$ Postman \path|Task 07|: \path|T07.1| đăng ký trả 201, không có \path|passwordHash|; \path|T07.2| trùng email (viết hoa) trả 409; \path|T07.3| email sai, mật khẩu ngắn trả 400; \path|T07.4| đăng nhập trả JWT 3 phần, \path|role| \path|CUSTOMER|; \path|T07.5| sai mật khẩu và \path|T07.6| email không tồn tại cùng trả 401 \path|Invalid credentials|; \path|T07.7| token giả trả 401. Guard route đặt đơn: \path|T06.1|.\par
-\noindent$\bullet$ File: \path|backend/src/auth/auth.controller.ts|, \path|backend/src/auth/auth.service.ts| (bcrypt), \path|backend/src/auth/jwt-auth.guard.ts|, \path|frontend/src/app/login/page.tsx|.\par
-\noindent$\bullet$ Test: \path|backend/test/auth.spec.ts|, \path|backend/test/task47-auth.spec.ts|, \path|backend/test/roles.spec.ts|, \path|frontend/src/lib/login.test.ts|, \path|frontend/src/lib/session.test.ts|, \path|frontend/src/components/LoginView.test.ts|.\par
-\noindent$\bullet$ Ảnh cần chụp: Postman \path|T07.4| (có \path|accessToken|), \path|T07.5| (401); bảng \path|User| trong DB có \path|passwordHash| dạng \path|$2a$…| (\path|docker compose exec db psql -U brewlite -c 'select email, left("passwordHash", 7) from "User" limit 3;'|).\par
+\begingroup\small
+\begin{bangca}
+T07.1 & Đăng ký email mới & 201, body không có \texttt{passwordHash}\\
+T07.2 & Đăng ký lại cùng email viết hoa & 409\\
+T07.3 & Email sai định dạng, mật khẩu quá ngắn & 400\\
+T07.4 & Đăng nhập đúng & JWT đủ 3 phần, \texttt{role} = \texttt{CUSTOMER}\\
+T07.5 & Đăng nhập sai mật khẩu & 401 \texttt{Invalid credentials}\\
+T07.6 & Đăng nhập email không tồn tại & 401 \texttt{Invalid credentials}\\
+T07.7 & Gọi API bằng token giả & 401\\
+\end{bangca}
+\endgroup
 
+Ca sai mật khẩu và ca email không tồn tại trả cùng một thông báo, nên người ngoài không dò được email nào đã đăng ký. Guard của route đặt đơn được kiểm ở ca T06.1.
+
+\textbf{Mã nguồn.} \path|backend/src/auth/auth.controller.ts|, \path|backend/src/auth/auth.service.ts|, \path|backend/src/auth/jwt-auth.guard.ts|, \path|frontend/src/app/login/page.tsx|.
+
+\textbf{Test.} \path|backend/test/auth.spec.ts|, \path|backend/test/task47-auth.spec.ts|, \path|backend/test/roles.spec.ts|, \path|frontend/src/lib/login.test.ts|, \path|frontend/src/lib/session.test.ts|, \path|frontend/src/components/LoginView.test.ts|.
+
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task07-T07.4.png}\par\footnotesize (a) Ca T07.4: có \texttt{accessToken}\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task07-T07.5.png}\par\footnotesize (b) Ca T07.5: 401\end{minipage}\par\medskip
+\begin{minipage}[t]{0.8\linewidth}\centering\khunganh{\linewidth}{task07-db-hash.png}\par\footnotesize (c) Bảng \texttt{User}: \texttt{passwordHash} bắt đầu bằng \texttt{\$2a\$}, tức chuỗi băm bcrypt\end{minipage}
+\caption{Minh chứng Task 7}\label{fig:task07}
+\end{figure}
+
+Lệnh lấy ảnh (c):
+\begin{verbatim}
+docker compose exec db psql -U brewlite \
+  -c 'select email, left("passwordHash", 7) from "User" limit 3;'
+\end{verbatim}
 
 \subsection{Task 8 — Thanh toán không tiền mặt}
+\textbf{Tiêu chí của đề.} Chọn Ví hoặc Thẻ, gọi \texttt{POST} \path|/payments|. Thanh toán thành công thì đơn sang Đã thanh toán; lỗi thì đơn sang Thanh toán lỗi và giỏ giữ nguyên.
 
-Đề §8 và §4.3: chọn Ví/Thẻ, gọi \path|POST /payments|; đơn \path|PENDING| $\rightarrow$ \path|PAID| khi thành công, \path|PAYMENT_FAILED| khi lỗi, giỏ giữ nguyên.
+Để tái hiện luồng thanh toán lỗi, nhóm dựng stack với biến môi trường \path|MOCK_GATEWAY_DECLINE_METHOD=CARD|. Biến này buộc cổng giả lập từ chối mọi giao dịch bằng Thẻ, còn Ví vẫn thành công.
 
-\noindent$\bullet$ Postman \path|Task 08|: \path|T08.1| trả bằng Ví trả 201 \path|PAID| kèm \path|paymentId|; \path|T08.2| đọc lại đơn thấy \path|PAID|; \path|T08.3|–\path|T08.5| trả bằng Thẻ bị cổng giả từ chối trả 400 \path|Payment failed|, đơn sang \path|PAYMENT_FAILED|; \path|T08.6| thử lại bằng Ví trả 201 \path|PAID| trên cùng đơn cũ; \path|T08.7| thiếu \path|Idempotency-Key| trả 400; \path|T08.8| phương thức \path|CASH| trả 400.\par
-\noindent$\bullet$ File: \path|backend/src/payment/payment.controller.ts|, \path|backend/src/payment/payment.service.ts|, \path|backend/src/payment/mock-payment-gateway.service.ts|, \path|frontend/src/components/PaymentForm.tsx|.\par
-\noindent$\bullet$ Test: \path|backend/test/payment-failure.spec.ts|, \path|backend/test/order-payment.integration.spec.ts|, \path|frontend/src/components/PaymentForm.test.ts|, \path|frontend/src/lib/payment/api-gateway.test.ts|, \path|frontend/src/lib/payment/checkout-session.test.ts|.\par
-\noindent$\bullet$ Ảnh cần chụp: Postman \path|T08.4| và \path|T08.5|; màn Thanh toán trên web báo lỗi khi chọn Thẻ, giỏ vẫn còn.\par
+\begingroup\small
+\begin{bangca}
+T08.1 & Trả bằng Ví & 201, \texttt{PAID}, có \texttt{paymentId}\\
+T08.2 & Đọc lại đơn vừa trả & \texttt{status} = \texttt{PAID}\\
+T08.3--T08.5 & Trả bằng Thẻ, cổng giả lập từ chối & 400 \texttt{Payment failed}; đơn sang \texttt{PAYMENT\_FAILED}\\
+T08.6 & Trả lại bằng Ví trên đơn vừa lỗi & 201, \texttt{PAID}, cùng mã đơn cũ\\
+T08.7 & Thiếu header \texttt{Idempotency-Key} & 400\\
+T08.8 & Phương thức \texttt{CASH} & 400\\
+\end{bangca}
+\endgroup
 
+\textbf{Mã nguồn.} \path|backend/src/payment/payment.controller.ts|, \path|backend/src/payment/payment.service.ts|, \path|backend/src/payment/mock-payment-gateway.service.ts|, \path|frontend/src/components/PaymentForm.tsx|.
+
+\textbf{Test.} \path|backend/test/payment-failure.spec.ts|, \path|backend/test/order-payment.integration.spec.ts|, \path|frontend/src/components/PaymentForm.test.ts|, \path|frontend/src/lib/payment/api-gateway.test.ts|, \path|frontend/src/lib/payment/checkout-session.test.ts|.
+
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task08-T08.4.png}\par\footnotesize (a) Ca T08.4: 400 \texttt{Payment failed}\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task08-T08.5.png}\par\footnotesize (b) Ca T08.5: đơn ở \texttt{PAYMENT\_FAILED}\end{minipage}\par\medskip
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task08-web-error.png}\par\footnotesize (c) Màn thanh toán báo lỗi khi chọn Thẻ, giỏ còn nguyên\end{minipage}
+\caption{Minh chứng Task 8}\label{fig:task08}
+\end{figure}
 
 \subsection{Task 9 — Xác nhận, lịch sử đơn và bàn giao}
+\textbf{Tiêu chí của đề.} Màn xác nhận có mã đơn và trạng thái; \texttt{GET} \path|/orders/me| trả lịch sử đơn; Docker Compose chạy đủ frontend, backend và cơ sở dữ liệu; có README; demo được trọn luồng.
 
-Đề §8: màn xác nhận (mã đơn, trạng thái), \path|GET /orders/me|, \path|docker-compose| chạy cả 3, README, demo end-to-end.
+\begingroup\small
+\begin{bangca}
+T09.1 & \texttt{GET} \path|/orders/:id| đơn của mình & Có \texttt{id}, \texttt{status}, \texttt{total}, \texttt{items}\\
+T09.2 & \texttt{GET} \path|/orders/me| & Có các đơn vừa tạo, mới nhất trước, mỗi dòng có \texttt{productName}\\
+T09.3 & Khách B gọi \texttt{GET} \path|/orders/me| & Không thấy đơn của khách A\\
+T09.4 & Khách B đọc đơn của khách A & 403\\
+T09.5 & Mã đơn không tồn tại & 404\\
+T09.6 & \texttt{GET} \path|{{webUrl}}/history| & 200\\
+\end{bangca}
+\endgroup
 
-\noindent$\bullet$ Postman \path|Task 09|: \path|T09.1| \path|GET /orders/:id| có \path|id|, \path|status|, \path|total|, \path|items|; \path|T09.2| \path|GET /orders/me| có các đơn vừa tạo, sắp xếp mới nhất trước, mỗi dòng có \path|productName|; \path|T09.3|, \path|T09.4| khách B không thấy và không đọc được đơn của khách A (403); \path|T09.5| mã đơn lạ trả 404; \path|T09.6| trang \path|/history| của frontend trả 200.\par
-\noindent$\bullet$ File: \path|backend/src/order/order.controller.ts|, \path|frontend/src/app/history/page.tsx|, \path|frontend/src/components/PaymentSuccess.tsx|, \path|docker-compose.yml|, \path|README.md|.\par
-\noindent$\bullet$ Test: \path|backend/test/order-product.spec.ts| (ca "listMine returns newest-first"), \path|backend/test/compose-env.spec.ts|, \path|frontend/src/components/HistoryView.test.ts|, \path|frontend/src/components/PaymentSuccess.test.ts|, \path|frontend/src/lib/history.test.ts|, \path|frontend/src/lib/use-order-poll.test.ts|.\par
-\noindent$\bullet$ Ảnh cần chụp: \path|docker compose ps| có 3 service \path|db|, \path|backend|, \path|frontend|; màn biên lai có mã đơn và trạng thái \path|PAID|; trang \path|/history|.\par
+\textbf{Mã nguồn.} \path|backend/src/order/order.controller.ts|, \path|frontend/src/app/history/page.tsx|, \path|frontend/src/components/PaymentSuccess.tsx|, \path|docker-compose.yml|, \path|README.md|.
 
+\textbf{Test.} \path|backend/test/order-product.spec.ts|, ca ``listMine returns newest-first''; \path|backend/test/compose-env.spec.ts|; \path|frontend/src/components/HistoryView.test.ts|, \path|frontend/src/components/PaymentSuccess.test.ts|, \path|frontend/src/lib/history.test.ts|, \path|frontend/src/lib/use-order-poll.test.ts|.
 
-\subsection{Task 10 — Nghiệp vụ backend (đề §9)}
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task09-compose-ps.png}\par\footnotesize (a) \texttt{docker compose ps} có \texttt{db}, \texttt{backend}, \texttt{frontend}\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task09-receipt.png}\par\footnotesize (b) Biên lai có mã đơn, trạng thái Đã thanh toán\end{minipage}\par\medskip
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task09-history.png}\par\footnotesize (c) Trang \path|/history|\end{minipage}
+\caption{Minh chứng Task 9}\label{fig:task09}
+\end{figure}
 
-Tiêu chí chấm của đề: test chứng minh (a) chặn chuyển trạng thái sai; (b) 2 lần cùng Idempotency-Key chỉ tạo 1 đơn; (c) đặt đồng thời không vượt tồn kho.
+\subsection{Task 10 — Nghiệp vụ backend}
+\textbf{Tiêu chí của đề.} Mục 9 của đề yêu cầu đủ bốn phần: máy trạng thái đơn hàng, thanh toán idempotent, kiểm soát tồn kho khi đặt đồng thời, khuyến mãi và điểm thưởng. Test phải chứng minh ba điều: chặn được chuyển trạng thái sai; gửi hai lần cùng \texttt{Idempotency-Key} chỉ tạo một đơn; đặt đồng thời không vượt tồn kho.
 
-(a) Order State Machine. Postman \path|Task 10 / (a)|:
+\textbf{(a) Máy trạng thái đơn hàng.} Hàm \texttt{assertTransition} trong \path|backend/src/state-machine/order-state.machine.ts| chặn mọi chuyển tiếp không có trong bảng dưới với mã 400. Hoàn tất và Đã hủy là trạng thái cuối. Quyền được kiểm riêng trước khi kiểm chuyển tiếp: khách gọi API tiến đơn bị chặn với mã 403 dù chuyển tiếp đó hợp lệ.
 
-\noindent$\bullet$ \path|T10a.1| khách tự tiến đơn trả 403 \path|Only staff can advance orders|.\par
-\noindent$\bullet$ \path|T10a.2| quầy nhảy cóc \path|PAID| $\rightarrow$ \path|READY| trả 400 \path|Invalid transition PAID -> READY|.\par
-\noindent$\bullet$ \path|T10a.3|, \path|T10a.5|, \path|T10a.6| quầy tiến \path|PREPARING| $\rightarrow$ \path|READY| $\rightarrow$ \path|COMPLETED|, mỗi bước 200; \path|T10a.4| khách hủy đơn đang \path|PREPARING| trả 400.\par
-\noindent$\bullet$ \path|T10a.7| \path|COMPLETED| $\rightarrow$ \path|CANCELLED| trả 400 \path|Invalid transition COMPLETED -> CANCELLED|; \path|T10a.8| đơn vẫn \path|COMPLETED|.\par
-\noindent$\bullet$ \path|T10a.9| hàng đợi quầy \path|GET /orders?status=PAID| có đơn đã trả; \path|T10a.10| quầy hủy đơn \path|PAID| trả 200 \path|CANCELLED|.\par
-\noindent$\bullet$ Code: \path|backend/src/state-machine/order-state.machine.ts| (\path|assertTransition|), \path|backend/src/payment/payment.service.ts| (\path|advanceOrder|, \path|cancelOrderAs|).\par
-\noindent$\bullet$ Test: \path|backend/src/state-machine/order-state.machine.spec.ts|, \path|backend/test/order-advance.spec.ts|, \path|backend/test/barista-queue.spec.ts|, \path|frontend/src/lib/order-status.test.ts|.\par
-
-(b) Thanh toán idempotent. Postman \path|Task 10 / (b)|:
-
-\noindent$\bullet$ \path|T10b.2|, \path|T10b.3| \path|POST /orders| 2 lần cùng key: lần 1 trả 201, lần 2 trả 200 cùng \path|id|, \path|isCached: true|.\par
-\noindent$\bullet$ \path|T10b.5|, \path|T10b.6| \path|POST /payments| 2 lần cùng key: lần 2 trả 200 cùng \path|paymentId|.\par
-\noindent$\bullet$ \path|T10b.7| điểm thưởng chỉ cộng 1 lần; \path|T10b.8| tồn kho chỉ trừ 1 lần (đúng 2 ly); \path|T10b.9| khách khác dùng lại key trả 422.\par
-\noindent$\bullet$ Test: \path|backend/test/order-payment.integration.spec.ts| (ca "(b) same Idempotency-Key charges once").\par
-
-(c) Tồn kho khi đặt đồng thời. Postman \path|Task 10 / (c)|:
-
-\noindent$\bullet$ \path|T10c.1| ghi kho với \path|version| cũ trả 409 \path|Stock changed, reload| (optimistic locking theo \path|Product.version|).\par
-\noindent$\bullet$ \path|T10c.2| trừ quá số còn lại trả 400 \path|Stock cannot be negative|.\par
-\noindent$\bullet$ \path|T10c.3| khách gọi API kho trả 403.\par
-\noindent$\bullet$ Postman Runner gửi request tuần tự nên không tạo được tải đồng thời. Phần "nhiều khách đặt cùng lúc" chứng minh bằng test \path|backend/test/order-payment.integration.spec.ts| (ca "(c) concurrent stock never negative") và \path|backend/test/pg-payment.integration.spec.ts| (Postgres thật, chạy khi có \path|DATABASE_URL|, cách chạy ở \path|README.md|).\par
-
-(d) Khuyến mãi và điểm thưởng. Postman \path|Task 10 / (d)|:
-
-\noindent$\bullet$ \path|T10d.3| trả với \path|BREWLITE10|: \path|discount| = \path|floor(total × 0.1)|, \path|amount| = \path|total − discount|, \path|loyaltyPointsEarned| = \path|floor(amount × 0.1 / 1000)|. Lần chạy 2026-10-21: đơn 58.000đ được giảm 5.800đ, trả 52.200đ, cộng 5 điểm.\par
-\noindent$\bullet$ \path|T10d.4| \path|GET /users/me| thấy điểm đã cộng; \path|T10d.6| mã sai \path|SAIMA| thì \path|discount| = 0.\par
-\noindent$\bullet$ Test: \path|backend/test/order-payment.integration.spec.ts| (voucher \path|BREWLITE10|).\par
-
-Ảnh cần chụp cho Task 10: Runner Postman thư mục \path|Task 10| (đủ 4 thư mục con), cửa sổ terminal \path|npx jest order-state order-advance order-payment| xanh; trang \path|/history| của khách tự chuyển bước sau khi chạy \path|T10a.3|–\path|T10a.6|.
-
-
-\section{Task 10: giải thích và điều kiện nghiệm thu}
-\subsection{Máy trạng thái đơn hàng}
-\begin{center}\small
-PENDING $\rightarrow$ PAID $\rightarrow$ PREPARING $\rightarrow$ READY $\rightarrow$ COMPLETED
-\end{center}
-Nhánh lỗi: PENDING $\rightarrow$ PAYMENT\_FAILED; thử lại: PAYMENT\_FAILED $\rightarrow$ PENDING. Nhánh hủy: PENDING, PAID hoặc PAYMENT\_FAILED $\rightarrow$ CANCELLED. COMPLETED và CANCELLED là trạng thái kết thúc. Mọi chuyển tiếp khác bị chặn; khách không được tự tiến trạng thái pha chế. Cần chứng minh cả kiểm tra quyền và kiểm tra chuyển trạng thái, vì hai điều kiện độc lập.
-\subsection{Idempotency, giao dịch và tồn kho}
-Cùng một yêu cầu với cùng khóa phải trả kết quả đã xử lý, không tạo đơn hoặc charge thêm. Cần kiểm tra mã đơn, mã thanh toán, tồn kho và điểm trước/sau, không chỉ HTTP 200. Cần phân biệt retry tạo đơn và retry thanh toán trên đơn đã có.
-
-Optimistic locking dùng phiên bản bản ghi để phát hiện ghi cạnh tranh. Transaction đảm bảo nhóm thay đổi liên quan nhất quán. Minh chứng cần tạo yêu cầu đồng thời, xác nhận kho không âm và số giao dịch thành công phù hợp tồn kho. Runner tuần tự chỉ chứng minh phản hồi lỗi phiên bản cũ; không đủ chứng minh tải cạnh tranh. Test tích hợp PostgreSQL cần môi trường dữ liệu thật và bằng chứng chạy riêng, không dùng test bị skip để kết luận đạt.
-\subsection{Khuyến mãi và điểm thưởng}
-Theo quyết định nhóm trong đề đã hiệu chỉnh, mã BREWLITE10 giảm 10\%:
-\[
-discount=\lfloor total\times0.1\rfloor,\quad amount=total-discount
-\]
-\[
-points=\lfloor amount\times0.1/1000\rfloor.
-\]
-Ví dụ 58.000 đồng được giảm 5.800 đồng, thanh toán 52.200 đồng, cộng 5 điểm sau PAID. Đây là quy tắc nhóm chọn, không phải toàn bộ chi tiết bắt buộc của đề gốc. Cần kiểm tra mã sai, thanh toán lỗi và gửi lại cùng khóa không cộng điểm lặp.
-\section{Kiểm thử, Definition of Done và bàn giao}
-\subsection{Kết quả lịch sử và giới hạn}
-Theo log \path|docs/postman/results/2026-10-21-run.txt| và tài liệu minh chứng ngày 21/10/2026: 74 request, 137 assertion, không thất bại; thời gian phản hồi lớn nhất 108 ms. Tài liệu ghi backend 170 test pass, 3 skip; frontend 733 test pass trong 46 file. Các con số unit test là trích dẫn tài liệu, chưa được chạy lại hoặc xác nhận bằng log độc lập trong phiên này. Không chuyển kết quả đó thành chứng nhận cho HEAD ngày 23/10.
-\subsection{Ma trận nghiệm thu cuối cùng}
-\begin{longtable}{p{4cm}p{7cm}p{4cm}}
-\toprule Điều kiện DoD & Cách xác nhận & Trạng thái review 1\\\midrule\endhead
-Đủ tiêu chí 10 task & Đối chiếu từng tiểu mục với code, test và ảnh & Đã lập hồ sơ; cần nghiệm thu\\
-Code chạy, không lỗi build & Chạy build frontend/backend và lưu log có SHA & Chưa chạy lại\\
-Commit rõ, có review nhóm & Hash trong báo cáo; bổ sung PR/reviewer và kết luận & Git đã tra; review cần bổ sung\\
-API validate, UI loading/lỗi & Các case âm và ảnh UI tương ứng & Đã chỉ vị trí minh chứng\\
-README chạy được & Người khác làm theo README trên môi trường sạch & Cần ghi nhận lần nghiệm thu\\
-Task 10 cạnh tranh & Test PostgreSQL thật, không skip, lưu kết quả & Cần log tại HEAD nghiệm thu\\
-\bottomrule
+\begingroup\small
+\begin{longtable}{L{0.22\linewidth}L{0.22\linewidth}L{0.48\linewidth}}
+\toprule Từ & Sang & Bên thực hiện\\\midrule\endfirsthead
+\toprule Từ & Sang & Bên thực hiện\\\midrule\endhead
+\bottomrule\endfoot
+\texttt{PENDING} & \texttt{PAID} & Backend, khi cổng giả lập chấp nhận giao dịch\\
+\texttt{PENDING} & \texttt{PAYMENT\_FAILED} & Backend, khi cổng giả lập từ chối\\
+\texttt{PAYMENT\_FAILED} & \texttt{PENDING} & Backend, khi khách thanh toán lại đơn đó\\
+\texttt{PAID} & \texttt{PREPARING} & Barista hoặc Admin\\
+\texttt{PREPARING} & \texttt{READY} & Barista hoặc Admin\\
+\texttt{READY} & \texttt{COMPLETED} & Barista hoặc Admin\\
+\texttt{PENDING} & \texttt{CANCELLED} & Khách chủ đơn\\
+\texttt{PAYMENT\_FAILED} & \texttt{CANCELLED} & Khách chủ đơn\\
+\texttt{PAID} & \texttt{CANCELLED} & Khách chủ đơn, hoặc Barista và Admin khi hết nguyên liệu\\
 \end{longtable}
+\endgroup
+Giao diện hiển thị các trạng thái theo nhãn trong \path|frontend/src/lib/order-status.ts|: \texttt{PENDING} là Chờ thanh toán, \texttt{PAID} là Đã thanh toán, \texttt{PREPARING} là Đang pha, \texttt{READY} là Sẵn sàng, \texttt{COMPLETED} là Hoàn tất, \texttt{PAYMENT\_FAILED} là Thanh toán lỗi, \texttt{CANCELLED} là Đã hủy.
+
+\begingroup\small
+\begin{bangca}
+T10a.1 & Khách tự tiến đơn của mình & 403 \texttt{Only staff can advance orders}\\
+T10a.2 & Quầy chuyển thẳng \texttt{PAID} sang \texttt{READY} & 400 \texttt{Invalid transition PAID -> READY}\\
+T10a.3 & Quầy tiến đơn sang \texttt{PREPARING} & 200\\
+T10a.4 & Khách hủy đơn đang \texttt{PREPARING} & 400\\
+T10a.5, T10a.6 & Quầy tiến đơn sang \texttt{READY}, rồi \texttt{COMPLETED} & 200 mỗi bước\\
+T10a.7 & Hủy đơn đã \texttt{COMPLETED} & 400 \texttt{Invalid transition COMPLETED -> CANCELLED}\\
+T10a.8 & Đọc lại đơn & Vẫn \texttt{COMPLETED}\\
+T10a.9 & Quầy gọi \texttt{GET} \path|/orders?status=PAID| & Có đơn vừa thanh toán\\
+T10a.10 & Quầy hủy đơn \texttt{PAID} & 200, \texttt{CANCELLED}\\
+\end{bangca}
+\endgroup
+
+\textbf{Mã nguồn.} \path|backend/src/state-machine/order-state.machine.ts|; hàm \texttt{advanceOrder} và \texttt{cancelOrderAs} trong \path|backend/src/payment/payment.service.ts|.
+
+\textbf{Test.} \path|backend/src/state-machine/order-state.machine.spec.ts|, \path|backend/test/order-advance.spec.ts|, \path|backend/test/barista-queue.spec.ts|, \path|frontend/src/lib/order-status.test.ts|.
+
+\textbf{(b) Thanh toán idempotent.} Backend lưu \texttt{Idempotency-Key} với ràng buộc duy nhất ở bảng Order và bảng Payment. Request lặp lại cùng khóa nhận lại kết quả cũ với mã 200, không tạo đơn mới, không trừ tiền, không trừ kho và không cộng điểm thêm lần nữa.
+
+\begingroup\small
+\begin{bangca}
+T10b.2, T10b.3 & \texttt{POST} \path|/orders| hai lần cùng khóa & Lần 1 trả 201; lần 2 trả 200, cùng \texttt{id}, \texttt{isCached: true}\\
+T10b.5, T10b.6 & \texttt{POST} \path|/payments| hai lần cùng khóa & Lần 2 trả 200, cùng \texttt{paymentId}\\
+T10b.7 & Đọc điểm thưởng & Chỉ cộng một lần\\
+T10b.8 & Đọc tồn kho & Chỉ trừ một lần, đúng 2 ly\\
+T10b.9 & Khách khác dùng lại khóa đó & 422\\
+\end{bangca}
+\endgroup
+
+\textbf{Test.} \path|backend/test/order-payment.integration.spec.ts|, ca ``(b) same Idempotency-Key charges once''.
+
+\textbf{(c) Tồn kho khi đặt đồng thời.} Kho bị trừ lúc thanh toán, trong cùng transaction với việc chuyển đơn sang Đã thanh toán, ghi điểm thưởng và lưu biên lai. Mỗi lần trừ kho so cột \texttt{Product.version}: bản ghi đã bị request khác sửa thì lần ghi thất bại và backend đọc lại, thử tối đa 3 lần. Cách khóa này gọi là optimistic locking. Hết 3 lần vẫn không trừ được thì transaction rollback, backend hoàn tiền và đơn sang Thanh toán lỗi.
+
+\begingroup\small
+\begin{bangca}
+T10c.1 & Admin ghi kho với \texttt{version} cũ & 409 \texttt{Stock changed, reload}\\
+T10c.2 & Admin trừ quá số còn lại & 400 \texttt{Stock cannot be negative}\\
+T10c.3 & Khách gọi API kho & 403\\
+\end{bangca}
+\endgroup
+
+Postman Runner gửi request lần lượt nên không tạo được tải đồng thời. Trường hợp nhiều khách đặt cùng lúc được chứng minh bằng test ``(c) concurrent stock never negative'' trong \path|backend/test/order-payment.integration.spec.ts| và \path|backend/test/pg-payment.integration.spec.ts|. Test thứ hai chạy trên PostgreSQL thật và chỉ chạy khi có biến \path|DATABASE_URL|; lần chạy ngày 21/10/2026 không đặt biến này nên 2 ca của nó bị bỏ qua.
+
+\textbf{(d) Khuyến mãi và điểm thưởng.} Đề không quy định mã và tỉ lệ, nhóm chọn mã \texttt{BREWLITE10} giảm 10\%:
+\[
+\text{giảm giá}=\lfloor \text{tổng}\times0{,}1\rfloor,\qquad
+\text{số tiền trả}=\text{tổng}-\text{giảm giá},\qquad
+\text{điểm}=\left\lfloor \frac{\text{số tiền trả}\times0{,}1}{1000}\right\rfloor.
+\]
+Điểm chỉ cộng sau khi đơn sang Đã thanh toán. Lần chạy ngày 21/10/2026: đơn 58.000 đồng được giảm 5.800 đồng, khách trả 52.200 đồng và được cộng 5 điểm.
+
+\begingroup\small
+\begin{bangca}
+T10d.3 & Trả kèm mã \texttt{BREWLITE10} & \texttt{discount}, \texttt{amount}, \texttt{loyaltyPointsEarned} đúng công thức\\
+T10d.4 & \texttt{GET} \path|/users/me| & Thấy điểm vừa cộng\\
+T10d.6 & Trả kèm mã không hợp lệ \texttt{SAIMA} & \texttt{discount} = 0\\
+\end{bangca}
+\endgroup
+
+\textbf{Test.} \path|backend/test/order-payment.integration.spec.ts|, các ca của mã \texttt{BREWLITE10}.
+
+\begin{figure}[H]\centering
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task10-runner.png}\par\footnotesize (a) Postman Runner thư mục Task 10, đủ 4 thư mục con\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task10-jest.png}\par\footnotesize (b) \texttt{npx jest order-state order-advance order-payment} chạy xanh\end{minipage}\par\medskip
+\begin{minipage}[t]{0.48\linewidth}\centering\khunganh{\linewidth}{task10-history.png}\par\footnotesize (c) Trang \path|/history| tự đổi trạng thái khi quầy tiến đơn\end{minipage}
+\caption{Minh chứng Task 10}\label{fig:task10}
+\end{figure}
+
+\section{Kiểm thử, Definition of Done và bàn giao}
+\subsection{Kết quả kiểm thử ngày 21/10/2026}
+\begingroup\small
+\begin{longtable}{L{0.30\linewidth}L{0.62\linewidth}}
+\toprule Bộ kiểm thử & Kết quả\\\midrule\endfirsthead
+\toprule Bộ kiểm thử & Kết quả\\\midrule\endhead
+\bottomrule\endfoot
+Postman, 74 request & 137 assertion đạt, 0 lỗi; phản hồi trung bình 14 ms, lớn nhất 108 ms\\
+Backend, \texttt{npx jest} & 170 test đạt, 3 test bỏ qua, 173 tổng\\
+Frontend, \texttt{npx vitest run} & 733 test đạt trong 46 file\\
+\end{longtable}
+\endgroup
+Ba test backend bị bỏ qua đều cần PostgreSQL thật qua biến \path|DATABASE_URL|: 2 ca idempotency và tồn kho đồng thời trong \path|pg-payment.integration.spec.ts|, 1 ca dọn dữ liệu thử trong \path|pg-smoke-clean.integration.spec.ts|. Log Postman lưu ở \path|docs/postman/results/2026-10-21-run.txt|.
+
+\subsection{Definition of Done}
+\begingroup\small
+\begin{longtable}{L{0.28\linewidth}L{0.36\linewidth}L{0.28\linewidth}}
+\toprule Điều kiện (mục 10 của đề) & Cách xác nhận & Trạng thái\\\midrule\endfirsthead
+\toprule Điều kiện (mục 10 của đề) & Cách xác nhận & Trạng thái\\\midrule\endhead
+\bottomrule\endfoot
+Code chạy, không lỗi build & Dựng stack bằng \texttt{docker compose up -d -{}-build} & Dựng được ngày 21/10/2026 để chạy Postman\\
+Đúng tiêu chí chấp nhận của task & Ca Postman và test ở mục 5 & 10 task có ca kiểm thử; còn thiếu ảnh\\
+Có commit rõ ràng, được review trong nhóm & Commit ở mục 4 & Có commit; \todo{người review từng task}\\
+API validate đầu vào, UI xử lý đang tải và lỗi & Ca 400 của Task 6, 7, 8; test \path|ProductGrid.test.ts| & Đạt theo lần chạy 21/10/2026\\
+README có hướng dẫn chạy & Người ngoài nhóm làm theo README trên máy mới & \todo{kết quả thử trên máy mới}\\
+\end{longtable}
+\endgroup
+
 \subsection{Kịch bản demo bàn giao}
 \begin{enumerate}
-\item Dựng ba dịch vụ theo README; chụp trạng thái Compose và ghi phiên bản code.
-\item Đăng ký/đăng nhập, xem menu, đổi size/topping, kiểm tra tổng giá.
-\item Thêm hai món, sửa số lượng, xóa một món, kiểm tra badge và lưu giỏ.
-\item Tạo đơn PENDING, thanh toán Ví, xem mã đơn PAID và lịch sử.
-\item Demo cổng giả từ chối Thẻ; giữ giỏ và thử lại trên cùng đơn.
-\item Chạy request sai quyền, sai trạng thái, cùng khóa; trình diễn tiến đơn qua API nhân viên.
-\item Chạy test cạnh tranh với PostgreSQL, đối chiếu kho và điểm thưởng.
-\item Bàn giao source, cấu hình mẫu, README, collection Postman, log và ảnh; ghi phản hồi khách hàng vào backlog.
+\item Dựng ba dịch vụ theo README, chụp \texttt{docker compose ps}.
+\item Đăng ký, đăng nhập, xem menu, đổi size và topping, xem giá đổi.
+\item Thêm hai món, sửa số lượng, xóa một món, xem badge và tổng tiền.
+\item Thanh toán bằng Ví, xem biên lai có mã đơn và trang lịch sử.
+\item Thanh toán bằng Thẻ khi cổng giả lập từ chối, xem giỏ còn nguyên, rồi thanh toán lại bằng Ví trên cùng đơn.
+\item Chạy thư mục Task 10 trong Postman: tiến đơn bằng tài khoản quầy, gửi lặp cùng khóa, ghi kho với \texttt{version} cũ.
+\item Chạy test tồn kho đồng thời trên PostgreSQL thật.
+\item Bàn giao mã nguồn, \path|.env.example|, README, collection Postman và log kiểm thử; ghi phản hồi của khách hàng vào Product Backlog.
 \end{enumerate}
-\subsection{Retrospective và cải tiến đề xuất}
-Nhóm cần tự ghi điều làm tốt, vướng mắc thực tế và hành động ở Sprint sau. Gợi ý review: thống nhất hash sau khi viết lại lịch sử; ghi tác giả code và người viết tài liệu riêng; đặt tên commit có task; lưu minh chứng kiểm thử kèm SHA; xác nhận test đồng thời trên cơ sở dữ liệu thật. Đây là đề xuất cho buổi họp, không phải biên bản đã diễn ra.
-\section{Các mục cần nhóm chốt sau review 1}
-\begin{enumerate}
-\item Điền MSSV của Bảo Tín, Phú, Bảo Thiện, Lợi, Thuận và xác nhận ánh xạ tài khoản Git (đặc biệt Saturlen $\to$ Bảo Tín); không sửa tác giả lịch sử cho khớp bảng phân công.
-\item Xác nhận GVHD, PO/SM, lịch Sprint, biên bản review và ngày đạt DoD từng task.
-\item Bổ sung ảnh menu, chi tiết, giỏ, đăng nhập, lỗi thanh toán, biên lai, lịch sử và Runner vào báo cáo cuối.
-\item Cập nhật log build/test tại một SHA thống nhất, đặc biệt test PostgreSQL đang có điều kiện chạy.
-\item Chốt phần đặc tả Task 2/9 trên nhánh riêng có đưa vào bản bàn giao hay chỉ dẫn làm minh chứng đóng góp; không mặc định đã merge.
-\end{enumerate}
-\section{Nguồn và cách tái kiểm tra}
+
+\subsection{Sprint Retrospective}
+Điều làm tốt: \todo{ý kiến của nhóm}. Điều cần cải thiện: \todo{ý kiến của nhóm}. Hành động cho Sprint sau: \todo{ý kiến của nhóm}.
+
+\section{Nguồn và cách chạy lại}
 \begin{itemize}
-\item \path|docs/BrewLite-CongNghePhanMem-fixed.md|: đề, tiêu chí 10 task và DoD.
-\item \path|docs/Assigment_template_SGU/Assignment_report.tex|: mẫu trình bày SGU.
-\item \path|docs/minh-chung-10-task.md|: ánh xạ request/test/ảnh; có phần snapshot cũ nên bảng Git được tra lại.
-\item \path|docs/product-backlog.md|, \path|docs/scrum-process.md|: backlog và hồ sơ Scrum nháp.
-\item \path|docs/postman/results/2026-10-21-run.txt|: log Postman lịch sử.
-\item \path|git-evidence.txt|: dữ liệu Git trực tiếp phục vụ bản review này.
+\item \path|docs/BrewLite-CongNghePhanMem-fixed.md|: đề, tiêu chí 10 task và Definition of Done.
+\item \path|docs/minh-chung-10-task.md|: chi tiết từng ca Postman, test và ảnh cần chụp.
+\item \path|docs/product-backlog.md|: 10 user story và tiêu chí chấp nhận.
+\item \path|docs/postman/BrewLite.postman_collection.json| và \path|docs/postman/results/2026-10-21-run.txt|: collection và log Postman.
+\item \path|git-evidence.txt|: commit của từng thành viên.
 \end{itemize}
+Chạy lại kiểm thử từ thư mục gốc của repo:
 \begin{verbatim}
-git show --format=fuller --stat <commit>
-git branch -a --contains <commit>
-git merge-base --is-ancestor <commit> HEAD
-git show --no-patch <merge-commit>
+MOCK_GATEWAY_DECLINE_METHOD=CARD docker compose up -d --build
+postman collection run docs/postman/BrewLite.postman_collection.json
+(cd backend && npx jest)
+(cd frontend && npx vitest run)
 \end{verbatim}
-Các lệnh kiểm tra nhánh chứa và quan hệ tổ tiên không xác định duy nhất nhánh tạo commit. Thông điệp merge là bằng chứng lịch sử nhánh nguồn; cần đọc cùng diff và bối cảnh viết lại hash.
 \end{document}
