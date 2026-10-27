@@ -51,3 +51,7 @@ docs/**/*.blg
 docs/**/*.synctex.gz
 docs/**/*.pyg
 docs/**/_minted*/
+
+# Local reference copies, not part of the project
+docs/Assigment_template_SGU/
+docs/BrewLite_Report_Review1/logoITSGUsmall.png
