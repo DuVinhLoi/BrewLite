@@ -128,3 +128,19 @@ CR-5.4/5.5: tài liệu deployment, README, verification, ma trận cập nhật
 | git diff --check / scope inspection | PASS; chỉ đường dẫn card; CRLF conversion warnings không phải lỗi whitespace |
 
 Production environment đã tạo; VERCEL_ORG_ID/VERCEL_PROJECT_ID và PRODUCTION_API_URL/PRODUCTION_WEB_URL đã đặt. Chưa có hai credential RENDER_DEPLOY_HOOK_URL/VERCEL_TOKEN; Vercel CLI bị nền tảng từ chối mint token cho app hiện tại. Không xuất session token quyền rộng để lách giới hạn. Các deploy/rollback manual sẽ dùng CLI hiện đã xác thực và được ghi riêng với CD tự động.
+
+### Kết quả release và diễn tập thật
+
+PR tổng hợp25: https://github.com/DuVinhLoi/BrewLite/pull/25, chưa merge. Source d8dcb870142cfba5fbe75038d33d2f438e77d391 đã push. Tag a2-v0.2.0-rc.1 đã push đúng source, không di chuyển tag. CI40474909189 sau commit/push success, thực thi quality gate đầy đủ trên GitHub. Final read-only review không còn load-bearing code issue; giới hạn hook async đã nêu rõ.
+
+API image mới build/push PASS (digest trong release-evidence.json). Render override PhaA đã xóa; startup migration thành công. Web READY từ snapshot apps/web của đúng source. Release smoke PASS qua HTTPS anonymous và Chromium (8cards, manifest, quantity picker).
+Rollback thủ công PASS: API6041b5f deployment dep-dbg67dt9el5s73c1ccbg live08:42:02Z; web rollback deployment dpl_4P8q8ZvE4TSw12J3637oeEQ2iapW. Health200 DBup, products8, browsermenu8 sau rollback. Schema giữ nguyên.
+Khôi phục release PASS: API dep-dbg682qfngtc738qn3fg live08:43:35Z, image d8dcb87; web promote dpl_4s3z2Diu5TYtzUd4pghwmXnqFShc. Smoke cuối health200 DBup/products8/menu8/manifest200. Production kết thúc ở bản mới. Giờ UTC tương ứng15:42/15:43 Việt Nam27/10.
+Chi tiết trạng thái từng chặng: docs/task5/release-evidence.json và release-notes.md. Rollback dùng REST imageUrl vì chưa có hook; không ghi là hook/CI rollback PASS.
+
+Phần còn thiếu để chốt toàn bộ: thêm hai secret dashboard vào environment production rồi chạy lại CD40475323601. Wizard local %TEMP%/brewlite-hosting-tools/finish-cd-credentials.sh dùng nhập ẩn và gh secret set, bash -n PASS, không commit secret/script tạm. Chưa có bằng chứng CD tự động success thì CR-5.3 cấu hình credential/CD và nghiệm thu PhaD vẫn chưa chốt toàn phần, dù code, tag, deploy thủ công, smoke và rollback đã thực hiện.
+
+### Run CD thật: chưa PASS
+
+Run40475323601 kết thúc failure: quality/ci SUCCESS, image build SUCCESS nhưng push GHCR báo permission_denied: write_package; các job deploy/smoke SKIPPED, rollback-instructions SUCCESS. Package API metadata visibility=public, repository=null; workflow có packages:write. Cần Package settings → Manage Actions access → DuVinhLoi/BrewLite → Write. GitHub GraphQL schema không có mutation cập nhật/link package, REST package metadata không cho cấu hình Actions access; không sử dụng API không có tài liệu hoặc PAT quyền rộng để thay thế.
+Như vậy còn3thao tác dashboard: quyền GHCR Actions, Render hook, Vercel CI token. Tag RC và manual deployment/rollback vẫn đúng bằng chứng, CD tự động không được coi đạt. Chưa merge PR25. Kết quả exact stale-contract grep0matches, diffcheckPASS và validatorPASS sau cập nhật docs.

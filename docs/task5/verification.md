@@ -37,3 +37,7 @@ CD mới publish API image full SHA; Render migrate trước server; Vercel buil
 - Branch/environment protection phụ thuộc quyền và gói GitHub; CI xanh không chứng minh việc chặn merge đã bật.
 - Không tự nâng dependency hoặc audit fix hàng loạt. Giữ report audit lịch sử và để nhóm đánh giá riêng.
 - Source không chứa secret thật; env Production dùng Render internal DB, JWT đủ mạnh và CORS đúng Vercel origin. Seed demo chỉ theo quyết định môi trường demo của nhóm.
+
+## Tích hợp/release27/10/2026
+
+API19unit, web50unit, integration10, Chromium6E2E, lint/typecheck/build và Compose/validator đều PASS. INT-S2-10 kiểm replay fingerprint lịch sử. CI40474909189success trên source d8dcb87. Manual release/rollback/khôi phục và ba lượt smoke production PASS; chi tiết [metadata](release-evidence.json). CD tự động còn thiếu credential, không coi run tag là PASS trước khi xác nhận đủ job.

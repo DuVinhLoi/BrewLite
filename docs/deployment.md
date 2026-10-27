@@ -8,6 +8,7 @@ Deploy tay ngày 23/10/2026 đã PASS health, products và menu tám món. Run/t
 
 - Render Postgres `brewlite-a2-db`, PostgreSQL 16, Free/Singapore: tạo 23/10/2026, **hết hạn 22/11/2026**. IP allowlist chỉ 127.0.0.1/32 chặn client công khai. API chỉ nhận **Internal Database URL**; không ghi URL/password vào Git hoặc log.
 - Render API `brewlite-a2-api` chạy public image `ghcr.io/duvinhloi/brewlite-api:<FULL_SHA>`, Free/Singapore; Health Check Path `/health`; auto-deploy off. Env: `DATABASE_URL`, JWT ngẫu nhiên ít nhất 32 ký tự trong `JWT_SECRET`, `CORS_ORIGINS=https://brewlite-a2-web.vercel.app`, `PORT=4000`.
+- GHCR package brewlite-api public để Render pull anonymous; trong Package settings → Manage Actions access, cấp repository DuVinhLoi/BrewLite quyền Write để GITHUB_TOKEN publish. Public không đồng nghĩa workflow có quyền ghi. Run CD40475323601 đã chứng minh lỗi write_package khi quyền này chưa có.
 - Vercel project `brewlite-a2-web`: Root Directory `apps/web`, Next.js, Node 24.x; Production `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`. Không liên kết Git, vì vậy push không tự deploy.
 - Docker CMD của API chạy migration trước server. Khi chuyển từ image Pha A, bỏ Docker Command override cũ trên Render để dùng CMD image mới. Migration chỉ thêm một bước bỏ index key xuyên đơn, giữ index mỗi đơn một lần trả thành công; không sửa lịch sử migration.
 - Seed chỉ chạy có chủ đích, không ghi đè sản phẩm/tồn kho đã tồn tại. `SEED_DEMO_USERS=true` chỉ dành cho demo được nhóm cho phép; tài khoản demo không dành cho dữ liệu thật. Payment Service mô phỏng không thu tiền thật và không lưu/log số thẻ.
@@ -79,3 +80,7 @@ curl -fsS -X POST "${RENDER_DEPLOY_HOOK_URL}&imgURL=${encoded_image}"
 5. Ghi thời điểm, image/deployment trước/sau, run URL và kết quả thực tế vào release notes. Sau diễn tập có thể redeploy bản release đã kiểm chứng rồi smoke lại để production kết thúc ở bản mong muốn.
 
 Không tự chạy SQL down migration hoặc rollback/reset DB. Nếu schema tương lai phá tương thích, cần forward-fix/backup plan đã duyệt. Lỗi DNS/TLS phải điều tra riêng. **Chưa có bằng chứng thực thi thì rollback vẫn NOT RUN**, không lấy hướng dẫn này làm bằng chứng PASS.
+
+## Diễn tập ngày27/10/2026
+
+Manual Render REST imageUrl và Vercel rollback đã đưa cả hai về bản trước, health/products/menu8PASS; sau đó khôi phục release d8dcb87 và smoke PASS. Không rollback DB. IDs/thời điểm ở [release notes](task5/release-notes.md) và [metadata](task5/release-evidence.json). Chưa nghiệm thu deploy hook trong CI vì hai secret dashboard còn thiếu.
