@@ -10,7 +10,7 @@
 Các bên liên quan (đề §3.2): khách hàng, nhân viên quầy/Barista, quản lý cửa hàng/Product Owner, giảng viên nghiệm thu, nhóm phát triển, đơn vị thanh toán (mô phỏng bằng mock payment).
 
 - **Barista nằm ngoài MVP** (đề §3.2: "nằm ngoài phạm vi MVP và là phần mở rộng"). Web **không có** màn hình quầy hay quản trị. Backend vẫn giữ vai trò `BARISTA` / `ADMIN` để State Machine (US-10) tiến đơn được, và nhân viên thao tác qua API bằng **Postman** (`docs/postman/BrewLite.postman_collection.json`).
-- Đăng nhập tài khoản nhân viên trên web chỉ hiện câu báo, không lưu phiên (câu báo trong code hiện vẫn trỏ sang Swagger `/docs`).
+- Đăng nhập tài khoản nhân viên trên web chỉ hiện câu báo tài khoản nhân viên không dùng được giao diện web, không lưu phiên.
 - **Kiểm thử API bằng Postman.** Ở thời điểm hiện tại nhóm không dùng Swagger để test hay demo; Swagger UI `/docs` vẫn còn trong code.
 
 ## 2. Tổng quan backlog

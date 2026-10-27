@@ -5,7 +5,7 @@
 import { isOrderStatus, STATUS_LABEL, type OrderStatus } from './order-status';
 import type { HistoryItem, HistoryOrder } from './types';
 
-// Trạng thái do nhân viên quầy đẩy (qua Swagger): chỉ khi còn đơn ở đây thì /history còn gì để chờ.
+// Trạng thái do nhân viên quầy đẩy (qua API): chỉ khi còn đơn ở đây thì /history còn gì để chờ.
 const COUNTER_DRIVEN = ['PAID', 'PREPARING', 'READY'];
 
 /**

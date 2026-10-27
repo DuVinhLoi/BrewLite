@@ -55,7 +55,20 @@ describe('ApiPaymentGateway retry', () => {
       .catch((e) => e);
     expect(err).toBeInstanceOf(PaymentError);
     expect(err.message).toMatch(/đăng nhập/);
+    expect(err.message).not.toContain('JWT');
     expect(err.orderId).toBe('order-1');
+  });
+
+  test('/orders 401 → báo cần đăng nhập, không nhắc JWT, không có orderId', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(401, { message: 'Unauthorized' })));
+    const err = await new ApiPaymentGateway()
+      .pay({ amount: 1, method: 'WALLET', idempotencyKey: 'k', items: [{ productId: 'p1', quantity: 1, size: 'M' }] })
+      .catch((e) => e);
+    expect(err).toBeInstanceOf(PaymentError);
+    expect(err.message).toBe('Bạn cần đăng nhập trước khi đặt đơn.');
+    expect(err.message).not.toContain('JWT');
+    expect(err.orderId).toBeUndefined();
+    expect(err.status).toBe(401);
   });
 
   test('/payments 403 (đơn của người khác) → báo không có quyền, vẫn mang orderId', async () => {
@@ -101,6 +114,7 @@ describe('ApiPaymentGateway retry', () => {
     const net = await gw.pay(req).catch((e) => e);
     expect(net).toBeInstanceOf(PaymentError);
     expect(net.status).toBeUndefined();
+    expect(net.message).not.toMatch(/(GET|POST|PATCH) \//);
   });
 
   // Đề §9 tiêu chí (b) cho POST /orders: header Idempotency-Key của đơn khác key của POST /payments
@@ -223,6 +237,24 @@ describe('ApiPaymentGateway retry', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(201, { amount: 40000 })));
     const b = await new ApiPaymentGateway().pay({ amount: 40000, method: 'WALLET', idempotencyKey: 'k', orderId: full });
     expect(b.orderId).toBe(full);
+  });
+
+  // Mạng rớt lúc tạo đơn: người dùng chỉ thấy câu tiếng Việt, không có động từ HTTP hay đường dẫn
+  test('tạo đơn rớt mạng → PaymentError không lộ endpoint, giữ giỏ hàng', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('Failed to fetch')));
+    const err = await new ApiPaymentGateway()
+      .pay({ amount: 1, method: 'WALLET', idempotencyKey: 'k', items: [{ productId: 'p1', quantity: 1 }] })
+      .catch((e) => e);
+    expect(err).toBeInstanceOf(PaymentError);
+    expect(err.message).toBe('Không kết nối được máy chủ để tạo đơn. Giỏ hàng được giữ nguyên.');
+    expect(err.message).not.toMatch(/(GET|POST|PATCH) \//);
+  });
+
+  test('thiếu cả orderId lẫn dòng giỏ → Error tiếng Việt không lộ endpoint hay số Task', async () => {
+    const err = await new ApiPaymentGateway().pay({ amount: 1, method: 'WALLET', idempotencyKey: 'k' }).catch((e) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toBe('Chưa có đơn để thanh toán. Giỏ hàng được giữ nguyên.');
+    expect(err.message).not.toMatch(/(GET|POST|PATCH) \/|Task \d/);
   });
 
   test('tạo đơn lỗi → PaymentError không có orderId (lần sau tạo đơn lại)', async () => {

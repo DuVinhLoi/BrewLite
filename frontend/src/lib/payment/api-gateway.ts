@@ -44,9 +44,9 @@ export class ApiPaymentGateway implements PaymentGateway {
         }),
       });
     } catch {
-      throw new PaymentError('Không kết nối được máy chủ để tạo đơn (POST /orders). Giỏ hàng được giữ nguyên.');
+      throw new PaymentError('Không kết nối được máy chủ để tạo đơn. Giỏ hàng được giữ nguyên.');
     }
-    if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập trước khi đặt đơn (thiếu JWT).', undefined, 401);
+    if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập trước khi đặt đơn.', undefined, 401);
     if (!res.ok) throw new PaymentError(`Tạo đơn thất bại (mã ${res.status}). Giỏ hàng được giữ nguyên.`, undefined, res.status, await readMessage(res));
     const json = await res.json();
     if (!json?.id) throw new PaymentError('Tạo đơn thất bại: backend không trả mã đơn.');
@@ -56,7 +56,7 @@ export class ApiPaymentGateway implements PaymentGateway {
   async pay(req: PaymentRequest): Promise<PaymentResult> {
     const orderId = req.orderId ?? (req.items?.length ? await this.createOrderId(req.items, req.orderIdempotencyKey) : undefined);
     if (!orderId) {
-      throw new Error('Thiếu orderId: cần Task 6 (POST /orders) tạo đơn trước khi gọi POST /payments.');
+      throw new Error('Chưa có đơn để thanh toán. Giỏ hàng được giữ nguyên.');
     }
     // Từ đây đơn đã tồn tại: mọi lỗi mang orderId để UI thử lại đúng đơn này (US-08)
     const token = getToken();
@@ -74,7 +74,7 @@ export class ApiPaymentGateway implements PaymentGateway {
     } catch {
       throw new PaymentError('Không kết nối được máy chủ thanh toán. Giỏ hàng được giữ nguyên.', orderId);
     }
-    if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập trước khi thanh toán (thiếu hoặc hết hạn JWT). Giỏ hàng được giữ nguyên.', orderId, 401);
+    if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập (hoặc đăng nhập lại) trước khi thanh toán. Giỏ hàng được giữ nguyên.', orderId, 401);
     if (res.status === 403) throw new PaymentError('Bạn không có quyền thanh toán đơn này (đơn thuộc tài khoản khác). Giỏ hàng được giữ nguyên.', orderId, 403);
     if (!res.ok) {
       // Lỗi -> UI giữ giỏ (US-05). Backend trả JSON { message, ... }: chỉ lấy message, không đẩy JSON thô lên UI.

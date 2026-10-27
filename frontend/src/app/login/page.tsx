@@ -36,7 +36,7 @@ export default function LoginPage() {
         // 201 không cấp token: về tab Đăng nhập, giữ email, xóa mật khẩu, báo "Đăng ký thành công..."
         setForm(afterRegister);
       } else {
-        // nhân viên không có giao diện web: không lưu phiên, chỉ sang Swagger
+        // nhân viên không có giao diện web: không lưu phiên, chỉ báo tài khoản nhân viên không dùng được web
         const staffMessage = staffLoginMessage(roleFromToken(data.accessToken));
         if (staffMessage) return showError(staffMessage);
         saveToken(data.accessToken);

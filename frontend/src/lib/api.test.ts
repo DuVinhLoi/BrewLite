@@ -341,16 +341,18 @@ describe('ApiError', () => {
       const err = await call().catch((e) => e);
       expect(err).toBeInstanceOf(ApiError);
       expect(err.status).toBe(0);
+      expect(err.message).not.toMatch(/(GET|POST|PATCH) \//);
     }
   });
 
-  test('getProducts: HTTP lỗi → ApiError mang đúng mã, giữ câu "GET /products lỗi (mã N)."', async () => {
+  test('getProducts: HTTP lỗi → ApiError mang đúng mã, giữ câu "Máy chủ trả lỗi (mã N)." không lộ endpoint', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'http://api.test');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(503, {})));
     const err = await getProducts().catch((e) => e);
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(503);
-    expect(err.message).toBe('GET /products lỗi (mã 503).');
+    expect(err.message).toBe('Máy chủ trả lỗi (mã 503).');
+    expect(err.message).not.toMatch(/(GET|POST|PATCH) \//);
   });
 
   test('getProfile: 404 và mã khác → ApiError cùng mã', async () => {

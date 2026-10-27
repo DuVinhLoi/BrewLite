@@ -73,11 +73,11 @@ describe('ErrorState', () => {
 
   // Chi tiết lỗi nằm trong khối role="alert" (trình đọc màn hình đọc cả hai), dưới message, ở thẻ riêng không đậm
   test('detail: nằm trong khối role="alert", sau message, thẻ riêng; không truyền thì không có', () => {
-    const out = html(createElement(ErrorState, { message: 'Không tải được menu.', detail: 'GET /products lỗi (mã 500).', onRetry: () => {} }));
+    const out = html(createElement(ErrorState, { message: 'Không tải được menu.', detail: 'Máy chủ trả lỗi (mã 500).', onRetry: () => {} }));
     const alertBlock = out.slice(out.indexOf('role="alert"'), out.indexOf('</div>'));
-    expect(alertBlock).toContain('GET /products lỗi (mã 500).');
-    expect(alertBlock.indexOf('Không tải được menu.')).toBeLessThan(alertBlock.indexOf('GET /products lỗi (mã 500).'));
-    expect(out).toMatch(/<p class="[^"]*detail[^"]*">GET \/products lỗi \(mã 500\)\.<\/p>/);
+    expect(alertBlock).toContain('Máy chủ trả lỗi (mã 500).');
+    expect(alertBlock.indexOf('Không tải được menu.')).toBeLessThan(alertBlock.indexOf('Máy chủ trả lỗi (mã 500).'));
+    expect(out).toMatch(/<p class="[^"]*detail[^"]*">Máy chủ trả lỗi \(mã 500\)\.<\/p>/);
     expect(out).toMatch(/<p class="(?![^"]*detail)[^"]*message[^"]*">Không tải được menu\.<\/p>/);
 
     const without = html(createElement(ErrorState, { message: 'Lỗi' }));

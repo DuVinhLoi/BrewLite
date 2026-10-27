@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { isActive, navLinks } from './nav';
 
-// Nav của header: khách chỉ có Menu và Lịch sử; nhân viên không có giao diện web (thao tác qua Swagger).
+// Nav của header: khách chỉ có Menu và Lịch sử; nhân viên không có giao diện web (thao tác qua API).
 describe('navLinks', () => {
   test('luôn là Menu, Lịch sử', () => {
     expect(navLinks().map((l) => l.label)).toEqual(['Menu', 'Lịch sử']);

@@ -33,7 +33,7 @@ describe('createAsyncRunner', () => {
   });
 
   test('fn reject bằng ApiError: error giữ nguyên status', async () => {
-    const { runner, last } = setup(() => Promise.reject(new ApiError('GET /products lỗi (mã 500).', 500)));
+    const { runner, last } = setup(() => Promise.reject(new ApiError('Máy chủ trả lỗi (mã 500).', 500)));
     runner.start();
     await flush();
     const s = last();
@@ -41,7 +41,7 @@ describe('createAsyncRunner', () => {
     expect(s.data).toBeUndefined();
     expect(s.error).toBeInstanceOf(ApiError);
     expect(s.error?.status).toBe(500);
-    expect(s.error?.message).toBe('GET /products lỗi (mã 500).');
+    expect(s.error?.message).toBe('Máy chủ trả lỗi (mã 500).');
   });
 
   test('fn reject bằng Error thường hoặc giá trị lạ: bọc thành ApiError status 0', async () => {

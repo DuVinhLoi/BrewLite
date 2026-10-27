@@ -163,9 +163,9 @@ export async function getProducts(): Promise<{ data: Product[]; fromMock: boolea
   try {
     res = await fetch(`${base}/products`, { cache: 'no-store' });
   } catch {
-    throw new ApiError('Không kết nối được máy chủ (GET /products).', 0);
+    throw new ApiError('Không kết nối được máy chủ.', 0);
   }
-  if (!res.ok) throw new ApiError(`GET /products lỗi (mã ${res.status}).`, res.status);
+  if (!res.ok) throw new ApiError(`Máy chủ trả lỗi (mã ${res.status}).`, res.status);
   const json = await res.json();
   const list: RawProduct[] = Array.isArray(json) ? json : json.data ?? json.items ?? [];
   return { data: Array.isArray(list) ? list.map(normalize) : [], fromMock: false };

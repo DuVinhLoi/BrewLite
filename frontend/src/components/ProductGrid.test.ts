@@ -44,21 +44,21 @@ describe('ProductGrid: loading', () => {
 
 describe('ProductGrid: lỗi', () => {
   test('ErrorState với cốc nghiêng, câu tiêu đề, chi tiết lỗi bên dưới và nút Thử lại', () => {
-    const out = render({ error: 'GET /products lỗi (mã 500).' });
+    const out = render({ error: 'Máy chủ trả lỗi (mã 500).' });
     expect(out).toContain('role="alert"');
     expect(out).toContain('src="/doodles/mug.svg"');
     expect(out).toContain('Không tải được menu.');
     expect(out).toContain('Thử lại');
-    expect(out).toContain('GET /products lỗi (mã 500).');
-    expect(out.indexOf('Không tải được menu.')).toBeLessThan(out.indexOf('GET /products lỗi (mã 500).'));
+    expect(out).toContain('Máy chủ trả lỗi (mã 500).');
+    expect(out.indexOf('Không tải được menu.')).toBeLessThan(out.indexOf('Máy chủ trả lỗi (mã 500).'));
   });
 
   test('chi tiết lỗi nằm trong khối role="alert" cùng câu tiêu đề, không phải thẻ rời bên ngoài', () => {
-    const out = render({ error: 'GET /products lỗi (mã 500).' });
+    const out = render({ error: 'Máy chủ trả lỗi (mã 500).' });
     // ErrorState không lồng thẻ div: div đóng đầu tiên sau role="alert" là hết khối
     const alertBlock = out.slice(out.indexOf('role="alert"'), out.indexOf('</div>', out.indexOf('role="alert"')));
     expect(alertBlock).toContain('Không tải được menu.');
-    expect(alertBlock).toContain('GET /products lỗi (mã 500).');
+    expect(alertBlock).toContain('Máy chủ trả lỗi (mã 500).');
     expect(alertBlock).toContain('Thử lại');
   });
 

@@ -175,7 +175,7 @@ describe('app/login/page.tsx giữ nguyên logic sau đăng nhập (R25)', () =>
     expect(page).toContain('router.push(postLoginTarget(window.location.search));');
   });
 
-  test('nhân viên (BARISTA/ADMIN): báo Swagger và return trước saveToken, không lưu phiên', () => {
+  test('nhân viên (BARISTA/ADMIN): báo không dùng được web và return trước saveToken, không lưu phiên', () => {
     const guard = 'if (staffMessage) return showError(staffMessage);';
     expect(page).toContain('staffLoginMessage(roleFromToken(data.accessToken))');
     expect(page.indexOf(guard)).toBeGreaterThan(0);

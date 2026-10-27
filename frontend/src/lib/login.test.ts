@@ -7,7 +7,6 @@ import {
   POINTS_SENTENCE,
   REGISTER_OK_NOTICE,
   STAFF_LOGIN_MESSAGE,
-  SWAGGER_URL,
   afterRegister,
   authErrorMessage,
   staffLoginMessage,
@@ -101,9 +100,10 @@ describe('POINTS_SENTENCE', () => {
 });
 
 describe('staffLoginMessage (web chỉ phục vụ khách)', () => {
-  test('BARISTA và ADMIN: câu chỉ sang Swagger /docs', () => {
-    expect(SWAGGER_URL).toBe('http://localhost:3000/docs');
-    expect(STAFF_LOGIN_MESSAGE).toBe('Tài khoản nhân viên thao tác qua Swagger: http://localhost:3000/docs');
+  test('BARISTA và ADMIN: câu báo tài khoản nhân viên không dùng được web, không có tên công cụ hay URL', () => {
+    expect(STAFF_LOGIN_MESSAGE).toBe('Tài khoản nhân viên không dùng được giao diện web. Hãy đăng nhập bằng tài khoản khách hàng.');
+    expect(STAFF_LOGIN_MESSAGE).not.toContain('Swagger');
+    expect(STAFF_LOGIN_MESSAGE).not.toContain('http');
     expect(staffLoginMessage('BARISTA')).toBe(STAFF_LOGIN_MESSAGE);
     expect(staffLoginMessage('ADMIN')).toBe(STAFF_LOGIN_MESSAGE);
   });

@@ -1,4 +1,4 @@
-// Nav của header: khách chỉ có Menu và Lịch sử. Nhân viên (BARISTA/ADMIN) không có giao diện web, họ thao tác qua Swagger /docs.
+// Nav của header: khách chỉ có Menu và Lịch sử. Nhân viên (BARISTA/ADMIN) không có giao diện web, họ thao tác qua API.
 export interface NavLink {
   href: string;
   label: string;
