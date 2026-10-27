@@ -36,4 +36,18 @@ docs/plans/
 id_rsa*
 id_ed25519*
 .aws/
-aws-credentials*
+aws-credentials*
+
+# LaTeX build artifacts (reports under docs/)
+docs/**/*.aux
+docs/**/*.fdb_latexmk
+docs/**/*.fls
+docs/**/*.out
+docs/**/*.toc
+docs/**/*.lof
+docs/**/*.lot
+docs/**/*.bbl
+docs/**/*.blg
+docs/**/*.synctex.gz
+docs/**/*.pyg
+docs/**/_minted*/
