@@ -1,0 +1,11 @@
+{
+  "info": { "name": "BrewLite Sprint 2 — Barista", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json", "description": "Demo DB only. Run login; set orderId from customer receipt; run GET then PATCH Preparing/Ready/Completed. Repeating/skipping transitions should return 409; using Customer token for barista transitions returns 403." },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:4000" }, { "key": "token", "value": "" }, { "key": "orderId", "value": "" }],
+  "item": [
+    { "name": "1. Login Barista demo", "request": { "method": "POST", "url": "{{baseUrl}}/auth/login", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"barista.demo@brewlite.local\",\"password\":\"Demo@12345\"}" } }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('login 200', () => pm.response.to.have.status(200));", "if (pm.response.code === 200) pm.collectionVariables.set('token', pm.response.json().accessToken);"] } }] },
+    { "name": "2. Read receipt order", "request": { "method": "GET", "url": "{{baseUrl}}/orders/{{orderId}}", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }] } },
+    { "name": "3. PAID to PREPARING", "request": { "method": "PATCH", "url": "{{baseUrl}}/orders/{{orderId}}", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"status\":\"PREPARING\"}" } } },
+    { "name": "4. PREPARING to READY", "request": { "method": "PATCH", "url": "{{baseUrl}}/orders/{{orderId}}", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"status\":\"READY\"}" } } },
+    { "name": "5. READY to COMPLETED", "request": { "method": "PATCH", "url": "{{baseUrl}}/orders/{{orderId}}", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"status\":\"COMPLETED\"}" } } }
+  ]
+}

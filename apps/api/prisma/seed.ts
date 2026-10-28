@@ -1,3 +1,4 @@
+import { hash } from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -73,11 +74,17 @@ async function main(): Promise<void> {
   for (const product of products) {
     await prisma.product.upsert({
       where: { id: product.id },
-      update: product,
+      update: {},
       create: product,
     });
   }
 
+  if (process.env.SEED_DEMO_USERS === 'true') {
+    const passwordHash = await hash('Demo@12345', 12);
+    for (const [email, role] of [['customer.demo@brewlite.local', 'CUSTOMER'], ['barista.demo@brewlite.local', 'BARISTA']] as const) {
+      await prisma.user.upsert({ where: { email }, update: {}, create: { email, role, passwordHash } });
+    }
+  }
   const count = await prisma.product.count();
   console.log(`Seed xong: ${count} sản phẩm trong bảng products.`);
 }

@@ -29,9 +29,9 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className={styles.price}>{formatVnd(product.price)}</p>
           <p className={`${styles.stock} ${styles[badge.tone]}`}>{badge.label}</p>
         </div>
-        <button type="button" className={styles.addButton} disabled={soldOut}>
+        <form action={`/products/${encodeURIComponent(product.id)}`}><button type="submit" className={styles.addButton} disabled={soldOut}>
           Thêm vào giỏ
-        </button>
+        </button></form>
       </div>
     </article>
   );

@@ -43,4 +43,7 @@ docs/plans/
 id_rsa*
 id_ed25519*
 .aws/
-aws-credentials*
+aws-credentials*
+# Browser test output
+playwright-report/
+test-results/

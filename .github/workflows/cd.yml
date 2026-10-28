@@ -1,0 +1,237 @@
+name: Delivery (Render and Vercel)
+on:
+  push:
+    branches: ['feat/assignment2-task5-delivery']
+    tags: ['a2-v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production-delivery
+  cancel-in-progress: false
+jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+  preflight:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    environment: production
+    steps:
+      - name: Check production configuration before publishing or deploying
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          PRODUCTION_API_URL: ${{ vars.PRODUCTION_API_URL }}
+          PRODUCTION_WEB_URL: ${{ vars.PRODUCTION_WEB_URL }}
+        run: |
+          for name in RENDER_DEPLOY_HOOK_URL RENDER_API_KEY RENDER_SERVICE_ID VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID PRODUCTION_API_URL PRODUCTION_WEB_URL; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing production configuration: $name"
+              exit 1
+            fi
+          done
+          [[ "$PRODUCTION_API_URL" == https://* && "$PRODUCTION_WEB_URL" == https://* ]] || { echo '::error::Production URLs must use HTTPS'; exit 1; }
+  publish:
+    needs: [quality, preflight]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Image namespace
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-api" >> "$GITHUB_OUTPUT"
+      - name: Authenticate registry
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - name: Build and push immutable API image
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          docker build -t "$IMAGE:$GITHUB_SHA" apps/api
+          docker push "$IMAGE:$GITHUB_SHA"
+  deploy-api:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Deploy immutable API image on Render and wait for live
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+        run: |
+          python3 - <<'PY'
+          import datetime
+          import json
+          import os
+          import re
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          def fail(message):
+              raise SystemExit(message)
+
+          for name in ('DEPLOY_HOOK', 'RENDER_API_KEY', 'RENDER_SERVICE_ID', 'IMAGE', 'GITHUB_SHA'):
+              if not os.environ.get(name):
+                  fail('Missing production configuration: ' + name)
+          service = os.environ['RENDER_SERVICE_ID']
+          hook = urllib.parse.urlsplit(os.environ['DEPLOY_HOOK'])
+          if (hook.scheme != 'https' or hook.netloc != 'api.render.com'
+                  or hook.path != '/deploy/' + service or not re.fullmatch(r'srv-[a-z0-9]+', service)):
+              fail('Render hook must target the configured service on api.render.com')
+          expected = os.environ['IMAGE'] + ':' + os.environ['GITHUB_SHA']
+          if not re.fullmatch(r'[0-9a-f]{40}', os.environ['GITHUB_SHA']):
+              fail('Expected a full Git commit SHA')
+          api = 'https://api.render.com/v1/services/' + service + '/deploys'
+          deadline = time.monotonic() + 600
+          requested_at = time.time()
+
+          def pause():
+              remaining = deadline - time.monotonic()
+              if remaining <= 0:
+                  fail('Render deployment deadline exceeded; no verified new live deployment')
+              time.sleep(min(10, remaining))
+
+          def request(url, method='GET'):
+              while time.monotonic() < deadline:
+                  headers = {'Accept': 'application/json'}
+                  if method == 'GET':
+                      headers['Authorization'] = 'Bearer ' + os.environ['RENDER_API_KEY']
+                  req = urllib.request.Request(url, headers=headers, method=method)
+                  try:
+                      with urllib.request.urlopen(req, timeout=min(30, deadline - time.monotonic())) as response:
+                          if time.monotonic() >= deadline:
+                              fail('Render deployment deadline exceeded')
+                          return response.status, json.load(response)
+                  except urllib.error.HTTPError as error:
+                      # Never retry a mutation: an uncertain hook response may already have started a deploy.
+                      if method == 'GET' and (error.code == 429 or 500 <= error.code < 600):
+                          pause()
+                          continue
+                      fail('Render ' + method + ' failed with HTTP ' + str(error.code))
+                  except (urllib.error.URLError, TimeoutError):
+                      if method == 'GET':
+                          pause()
+                          continue
+                      fail('Render hook request failed; inspect service before retrying delivery')
+                  except (ValueError, TypeError):
+                      fail('Render returned invalid JSON')
+              fail('Render deployment deadline exceeded; no verified new live deployment')
+
+          # https://render.com/docs/deploy-hooks: 200 => {deploy:{id}}, 202 => queued without ID.
+          query = urllib.parse.parse_qsl(hook.query, keep_blank_values=True)
+          query = [(key, value) for key, value in query if key != 'imgURL'] + [('imgURL', expected)]
+          hook_url = urllib.parse.urlunsplit(hook._replace(query=urllib.parse.urlencode(query)))
+          status, body = request(hook_url, 'POST')
+          hook_deploy = body.get('deploy') if isinstance(body, dict) else None
+          deploy_id = hook_deploy.get('id') if isinstance(hook_deploy, dict) else None
+          if status == 200 and not deploy_id:
+              fail('Render hook HTTP 200 response has no deploy ID')
+          if status not in (200, 202):
+              fail('Render hook returned unexpected HTTP status')
+
+          # Official OpenAPI: deploy.image.ref is the requested image; image.sha is its registry digest.
+          # https://api-docs.render.com/openapi/render-public-api-1.json
+          while not deploy_id:
+              _, entries = request(api + '?' + urllib.parse.urlencode({
+                  'createdAfter': datetime.datetime.fromtimestamp(requested_at, datetime.timezone.utc).isoformat(),
+                  'limit': 100,
+              }))
+              if not isinstance(entries, list) or len(entries) >= 100:
+                  fail('Cannot unambiguously identify queued Render deployment from deploy list')
+              candidates = []
+              try:
+                  for entry in entries:
+                      deploy = entry['deploy']
+                      created = datetime.datetime.fromisoformat(deploy['createdAt'].replace('Z', '+00:00')).timestamp()
+                      if deploy.get('image', {}).get('ref') == expected and created >= requested_at:
+                          candidates.append(deploy['id'])
+              except (KeyError, TypeError, ValueError):
+                  fail('Render deploy list has invalid metadata')
+              if len(set(candidates)) > 1:
+                  fail('Render queued deployment is ambiguous: multiple new matching images')
+              deploy_id = candidates[0] if candidates else None
+              if not deploy_id:
+                  pause()
+          if not isinstance(deploy_id, str) or not re.fullmatch(r'dep-[a-z0-9]+', deploy_id):
+              fail('Render returned invalid deploy ID')
+          while True:
+              _, deploy = request(api + '/' + deploy_id)
+              if not isinstance(deploy, dict) or deploy.get('id') != deploy_id:
+                  fail('Render returned mismatched deploy metadata')
+              status = deploy.get('status')
+              if status in ('build_failed', 'update_failed', 'pre_deploy_failed', 'canceled', 'deactivated'):
+                  fail('Render deployment ' + deploy_id + ' ended: ' + status)
+              if status == 'live':
+                  if deploy.get('image', {}).get('ref') != expected:
+                      fail('Render live deployment image does not match published commit')
+                  print('Render deployment ' + deploy_id + ' is live with the published commit image')
+                  break
+              if status not in ('created', 'queued', 'build_in_progress', 'update_in_progress', 'pre_deploy_in_progress'):
+                  fail('Render returned unknown deploy status')
+              pause()
+          PY
+  deploy-web:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_WEB_URL }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - name: Pull production settings
+        run: npx --yes vercel@65.2.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Build production web
+        run: npx --yes vercel@65.2.0 build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy production web
+        run: npx --yes vercel@65.2.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+  smoke:
+    needs: [deploy-api, deploy-web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: production
+    steps:
+      - name: Production HTTPS smoke
+        env:
+          API_URL: ${{ vars.PRODUCTION_API_URL }}
+          WEB_URL: ${{ vars.PRODUCTION_WEB_URL }}
+        run: |
+          [[ "$API_URL" == https://* && "$WEB_URL" == https://* ]] || exit 1
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$API_URL/health" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d=={"status":"ok","database":"up"}, d'
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$API_URL/products" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert isinstance(d,list) and len(d)==8, "Expected eight demo products"'
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$WEB_URL/" >/dev/null
+  rollback-instructions:
+    needs: [quality, preflight, publish, deploy-api, deploy-web, smoke]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rollback instructions
+        run: echo 'Delivery failed. Follow docs/deployment.md#rollback with the previous API image SHA and Vercel deployment. Preserve the database and migration history.'

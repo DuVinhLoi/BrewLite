@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import { ShopProvider } from '@/components/shop/ShopProvider';
 
 export const metadata: Metadata = {
   title: 'BrewLite – Thực đơn',
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi">
-      <body>{children}</body>
+      <body><ShopProvider>{children}</ShopProvider></body>
     </html>
   );
 }
