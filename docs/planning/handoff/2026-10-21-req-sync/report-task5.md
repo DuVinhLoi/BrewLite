@@ -144,3 +144,13 @@ Phần còn thiếu để chốt toàn bộ: thêm hai secret dashboard vào env
 
 Run40475323601 kết thúc failure: quality/ci SUCCESS, image build SUCCESS nhưng push GHCR báo permission_denied: write_package; các job deploy/smoke SKIPPED, rollback-instructions SUCCESS. Package API metadata visibility=public, repository=null; workflow có packages:write. Cần Package settings → Manage Actions access → DuVinhLoi/BrewLite → Write. GitHub GraphQL schema không có mutation cập nhật/link package, REST package metadata không cho cấu hình Actions access; không sử dụng API không có tài liệu hoặc PAT quyền rộng để thay thế.
 Như vậy còn3thao tác dashboard: quyền GHCR Actions, Render hook, Vercel CI token. Tag RC và manual deployment/rollback vẫn đúng bằng chứng, CD tự động không được coi đạt. Chưa merge PR25. Kết quả exact stale-contract grep0matches, diffcheckPASS và validatorPASS sau cập nhật docs.
+
+## Tự động CI/CD khi push — thực thi 28/10/2026
+
+Người dùng đã yêu cầu thực hiện [kế hoạch deploy](../../../task5/2026-10-28-vercel-render-deploy-plan.md), gồm bổ sung phạm vi `ci.yml`; owner Task 5 giữ một writer mỗi file. Branch `feat/assignment2-task5-delivery`, worktree `C:/BrewLite-a2-Task5`, baseline `8b563bb`. Không sửa source ứng dụng, schema hoặc dependency.
+
+Đã triển khai: Delivery nhận push delivery/tag, CI reusable tránh chạy push trùng, preflight production, Render hook POST một lần và chờ live đúng image trong 600 giây. Thêm 12 regression test chạy code inline thật với fixture. Kiểm local: 12/12 PASS, actionlint 1.7.7 PASS (ShellCheck tắt), diff-check PASS; review riêng không có blocker. Full CI mới và deploy production chưa chạy tại thời điểm ghi đoạn này.
+
+Đối chiếu hạ tầng thật: Render live vẫn là `dep-dbg682qfngtc738qn3fg`, image source `d8dcb870142cfba5fbe75038d33d2f438e77d391`; Docker Command override trống, health `/health`, auto-deploy off. Postgres available, Singapore, hết hạn 22/11/2026. Vercel production READY vẫn `dpl_4s3z2Diu5TYtzUd4pghwmXnqFShc`; project đã được liên kết Git với native deployment enabled khác báo cáo cũ, đã PATCH chính thức `gitProviderOptions.createDeployments=disabled` và xác nhận lại. Không tạo lại resource, không reset/rollback DB.
+
+Đã đặt variable `RENDER_SERVICE_ID` ở production. Ba credential CI `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `RENDER_API_KEY` đang chờ người dùng tạo/lưu qua wizard nhập ẩn; GHCR Actions Write cũng cần xác nhận trên dashboard. Không xuất CLI session token vào CI, không giả lập check xanh. Chưa có bằng chứng run push mới thành công thì trạng thái triển khai vẫn IN PROGRESS.

@@ -9,7 +9,7 @@ Deploy tay ngày 23/10/2026 đã PASS health, products và menu tám món. Run/t
 - Render Postgres `brewlite-a2-db`, PostgreSQL 16, Free/Singapore: tạo 23/10/2026, **hết hạn 22/11/2026**. IP allowlist chỉ 127.0.0.1/32 chặn client công khai. API chỉ nhận **Internal Database URL**; không ghi URL/password vào Git hoặc log.
 - Render API `brewlite-a2-api` chạy public image `ghcr.io/duvinhloi/brewlite-api:<FULL_SHA>`, Free/Singapore; Health Check Path `/health`; auto-deploy off. Env: `DATABASE_URL`, JWT ngẫu nhiên ít nhất 32 ký tự trong `JWT_SECRET`, `CORS_ORIGINS=https://brewlite-a2-web.vercel.app`, `PORT=4000`.
 - GHCR package brewlite-api public để Render pull anonymous; trong Package settings → Manage Actions access, cấp repository DuVinhLoi/BrewLite quyền Write để GITHUB_TOKEN publish. Public không đồng nghĩa workflow có quyền ghi. Run CD40475323601 đã chứng minh lỗi write_package khi quyền này chưa có.
-- Vercel project `brewlite-a2-web`: Root Directory `apps/web`, Next.js, Node 24.x; Production `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`. Không liên kết Git, vì vậy push không tự deploy.
+- Vercel project `brewlite-a2-web`: Root Directory `apps/web`, Next.js, Node 24.x; Production `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`. Project có liên kết repository; `gitProviderOptions.createDeployments=disabled` tắt native Git deployment để GitHub Actions kiểm soát phát hành. Đã kiểm và đặt lại cấu hình này ngày 28/10/2026.
 - Docker CMD của API chạy migration trước server. Khi chuyển từ image Pha A, bỏ Docker Command override cũ trên Render để dùng CMD image mới. Migration chỉ thêm một bước bỏ index key xuyên đơn, giữ index mỗi đơn một lần trả thành công; không sửa lịch sử migration.
 - Seed chỉ chạy có chủ đích, không ghi đè sản phẩm/tồn kho đã tồn tại. `SEED_DEMO_USERS=true` chỉ dành cho demo được nhóm cho phép; tài khoản demo không dành cho dữ liệu thật. Payment Service mô phỏng không thu tiền thật và không lưu/log số thẻ.
 
@@ -29,18 +29,21 @@ Start-Process http://localhost:3000
 
 DB ở network nội bộ và named volume bền vững; không dùng `down -v`, migration reset hoặc xóa volume. Migration chạy idempotent trước API. Đổi cổng web phải đổi CORS; đổi API URL phải build lại web. Demo opt-in: customer.demo@brewlite.local / barista.demo@brewlite.local, mật khẩu Demo@12345.
 
-## GitHub CD theo tag
+## GitHub CD theo push delivery và tag
 
 Environment `production` cần secrets (chỉ tên, không ghi giá trị):
 
 | Secret | Mục đích |
 |---|---|
 | `RENDER_DEPLOY_HOOK_URL` | Hook bí mật của API image service |
+| `RENDER_API_KEY` | Đọc trạng thái deployment mới để chờ đúng image live |
 | `VERCEL_TOKEN` | Quyền deploy project Vercel của nhóm |
 | `VERCEL_ORG_ID` | Team ID của project |
 | `VERCEL_PROJECT_ID` | Project ID web |
 
-Variables `PRODUCTION_API_URL` và `PRODUCTION_WEB_URL` dùng URL HTTPS trên, không có dấu `/` cuối; đặt ở environment mà job sử dụng. Job publish dùng `GITHUB_TOKEN` với `packages:write`, không dùng PAT quyền rộng. Nhóm cấu hình reviewer/tag policy ở GitHub nếu gói tài khoản hỗ trợ; workflow không tự tạo lớp bảo vệ này.
+Variables `PRODUCTION_API_URL` và `PRODUCTION_WEB_URL` dùng URL HTTPS trên, không có dấu `/` cuối; `RENDER_SERVICE_ID=srv-dbdms83ncjis73aodm1g`; đặt ở environment `production`. Render API key cần đọc deploy của service; dùng scope hẹp nếu tài khoản có hỗ trợ. Job publish dùng `GITHUB_TOKEN` với `packages:write`, không dùng PAT quyền rộng. Nhóm cấu hình reviewer/tag/branch policy ở GitHub nếu gói tài khoản hỗ trợ; phải cho phép delivery và tag release. Workflow không tự tạo lớp bảo vệ này.
+
+Push lên `feat/assignment2-task5-delivery` tự chạy Delivery và deploy sau quality thành công, kể cả push chỉ sửa tài liệu. CI reusable giữ lint/unit/integration/build/E2E; không có thêm standalone CI cho cùng sự kiện push delivery/tag. PR vào `develop-Assignment2` và các nhánh được CI hỗ trợ chỉ chạy CI. Reviewer environment nếu được bật sẽ làm run chờ duyệt. Các deploy production dùng chung concurrency và không hủy run đang chạy.
 
 Release một commit đã kiểm chứng bằng tag mới `a2-v*`, không di chuyển hoặc ghi đè tag đã phát hành:
 
@@ -49,12 +52,12 @@ git tag -a a2-v<VERSION> <FULL_SHA> -m "BrewLite Assignment 2 release"
 git push origin a2-v<VERSION>
 ```
 
-Workflow `.github/workflows/cd.yml` chạy quality gate, build/push **chỉ API** image full SHA; Render nhận image qua `imgURL` URL-encoded của deploy hook. Vercel CLI cố định phiên bản chạy `pull --environment=production`, `build --prod`, `deploy --prebuilt --prod` từ cấu hình project. Web build dùng env Production; không nhúng secret API vào frontend. Deploy hook được lưu dưới dạng secret; không in full hook URL trong log.
+Workflow `.github/workflows/cd.yml` chạy quality gate, kiểm đủ cấu hình production trước khi publish/deploy, rồi build/push **chỉ API** image full SHA; Render nhận image qua `imgURL` URL-encoded của deploy hook. Job API chờ tối đa 600 giây, poll deployment mỗi 10 giây; chỉ đạt khi đúng deployment live và `image.ref` khớp image đã publish. Hook không được tự POST lại khi phản hồi không chắc chắn; người vận hành phải kiểm service trước khi rerun. Vercel CLI cố định phiên bản chạy `pull --environment=production`, `build --prod`, `deploy --prebuilt --prod` từ cấu hình project. Web build dùng env Production; không nhúng secret API vào frontend. Deploy hook được lưu dưới dạng secret; không in full hook URL trong log.
 Trước mỗi release ghi lại image SHA API và deployment ID web đang live để rollback. Migration thất bại phải dừng server/deploy và điều tra, không đánh dấu applied thủ công hoặc reset DB để làm xanh.
 
 ## Smoke HTTPS
 
-Sau khi hook Render được chấp nhận và Vercel deploy xong, workflow gọi health, products và web với retry cho cold start Render Free. Hook là bất đồng bộ: health có thể còn thuộc image cũ; người phát hành phải xác nhận Render deployment live và image đúng full SHA trong dashboard/CLI trước khi nghiệm thu release:
+Sau khi Render báo deployment mới live đúng image SHA và Vercel deploy xong, workflow gọi health, products và web với retry cho cold start Render Free. Hook là bất đồng bộ nên workflow phải chờ metadata deployment thay vì lấy health của image cũ làm bằng chứng cho release mới. Khi kiểm tay, cũng phải xác nhận deployment ID/image trên Render trước các lệnh sau:
 
 ```bash
 curl -fsS --retry 60 --retry-delay 10 --retry-max-time 600 --retry-all-errors "$PRODUCTION_API_URL/health"
@@ -84,3 +87,5 @@ Không tự chạy SQL down migration hoặc rollback/reset DB. Nếu schema tư
 ## Diễn tập ngày27/10/2026
 
 Manual Render REST imageUrl và Vercel rollback đã đưa cả hai về bản trước, health/products/menu8PASS; sau đó khôi phục release d8dcb87 và smoke PASS. Không rollback DB. IDs/thời điểm ở [release notes](task5/release-notes.md) và [metadata](task5/release-evidence.json). Chưa nghiệm thu deploy hook trong CI vì hai secret dashboard còn thiếu.
+
+Ngày 28/10 bổ sung trigger push delivery, preflight và chờ Render tự động; trạng thái lần triển khai mới ở [báo cáo Task 5](planning/handoff/2026-10-21-req-sync/report-task5.md). Kết quả manual ngày 27/10 không thay thế nghiệm thu CD mới.

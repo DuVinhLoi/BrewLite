@@ -41,3 +41,9 @@ CD mới publish API image full SHA; Render migrate trước server; Vercel buil
 ## Tích hợp/release27/10/2026
 
 API19unit, web50unit, integration10, Chromium6E2E, lint/typecheck/build và Compose/validator đều PASS. INT-S2-10 kiểm replay fingerprint lịch sử. CI40474909189success trên source d8dcb87. Manual release/rollback/khôi phục và ba lượt smoke production PASS; chi tiết [metadata](release-evidence.json). CD tự động còn thiếu credential, không coi run tag là PASS trước khi xác nhận đủ job.
+
+## Tự động deploy khi push — 28/10/2026
+
+Delivery nhận push đúng nhánh delivery và tag release, gọi CI reusable trên cùng commit. Preflight kiểm tên cấu hình trước publish/deploy. Render phải live đúng image mới trước smoke; CI-only không nhận cùng sự kiện push delivery/tag.
+
+`python -B -m unittest discover -s tests/deployment -v`: 12/12 PASS, kiểm inline workflow thật với HTTP/clock fixture, gồm image cũ, deploy lỗi, timeout, queued/ambiguous và retry không POST trùng. Actionlint 1.7.7 PASS cho hai workflow, ShellCheck tắt; `git diff --check` PASS. Review riêng không có finding chặn triển khai. Các kiểm tra này không chứng minh credential hoặc production deployment; xem trạng thái thực thi mới trong báo cáo Task 5.

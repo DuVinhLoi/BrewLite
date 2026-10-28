@@ -3,8 +3,10 @@ on:
   pull_request:
     branches: [develop-Assignment2]
   push:
-    branches: [develop-Assignment2, 'feat/assignment2-task5-*']
-    tags: ['a2-v*']
+    branches:
+      - develop-Assignment2
+      - 'feat/assignment2-task5-*'
+      - '!feat/assignment2-task5-delivery'
   workflow_dispatch:
   workflow_call:
 permissions:
@@ -57,6 +59,7 @@ jobs:
           npm --prefix apps/web run lint
       - name: Unit Test
         run: |
+          python3 -B -m unittest discover -s tests/deployment -v
           npm --prefix apps/api test -- --runInBand
           npm --prefix apps/web test
       - name: Integration Test (independent database)

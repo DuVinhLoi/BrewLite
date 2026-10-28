@@ -136,7 +136,7 @@ Sau kiểm thử, bỏ các env test khỏi terminal hoặc mở terminal mới 
 ## CI/CD và production
 
 CI giữ job `ci`, mở rộng pipeline Task 4: install → lint → unit → migration/seed/integration DB riêng → typecheck/build → Chromium E2E → Compose validation.
-CD chạy theo tag `a2-v*` hoặc `workflow_dispatch`: quality gate → publish API image full SHA → Render API và Vercel web → smoke HTTPS có retry. Git auto-deploy của hai nền tảng tắt để release đi qua workflow. Vercel CLI được cố định phiên bản; API chạy migration khi khởi động.
+Push lên `feat/assignment2-task5-delivery`, tag `a2-v*` hoặc `workflow_dispatch` chạy Delivery: quality gate → kiểm cấu hình production → publish API image full SHA → Render API và Vercel web → smoke HTTPS có retry. PR và các nhánh CI khác chỉ chạy CI; Delivery gọi lại CI nên không cần thêm một run CI riêng cho cùng push delivery. Git auto-deploy của hai nền tảng tắt để release đi qua workflow. Render phải báo deployment mới live với đúng image commit trước smoke; Vercel CLI được cố định phiên bản; API chạy migration khi khởi động.
 Cấu hình environment, secret, deploy hook, HTTPS/DB nội bộ và rollback theo [deployment.md](docs/deployment.md). Không dùng `continue-on-error` để làm xanh.
 Rollback dùng image SHA trước trên Render và `vercel rollback`/promote deployment web trước, rồi chạy lại smoke; không reset hoặc tự đảo migration DB.
 
