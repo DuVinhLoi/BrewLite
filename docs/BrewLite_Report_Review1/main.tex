@@ -19,6 +19,7 @@
 \usepackage[unicode,colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
 \usepackage{xurl}
 \usepackage{enumitem}
+\usepackage{needspace}
 \setlist{nosep,leftmargin=*}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
@@ -144,20 +145,20 @@ Backend tính lại giá từ bảng giá ở \path|backend/src/order/pricing.ts
 \item Cổng chấp nhận thì đơn sang Đã thanh toán, web hiện biên lai. Cổng từ chối thì đơn sang Thanh toán lỗi, giỏ giữ nguyên và khách thử lại trên chính đơn đó.
 \end{enumerate}
 
+% Keep the heading with the unbreakable Sprint table below it.
+\Needspace{9\baselineskip}
 \section{Quy trình Agile Scrum}
 \begingroup\small
-\begin{longtable}{L{0.10\linewidth}L{0.42\linewidth}L{0.12\linewidth}L{0.22\linewidth}}
-\toprule Sprint & Mục tiêu (mục 2.3 của đề) & Task & Thời gian\\\midrule\endfirsthead
-\toprule Sprint & Mục tiêu (mục 2.3 của đề) & Task & Thời gian\\\midrule\endhead
+\begin{longtable}{L{0.12\linewidth}L{0.58\linewidth}L{0.20\linewidth}}
+\toprule Sprint & Mục tiêu (mục 2.3 của đề) & Task\\\midrule\endfirsthead
+\toprule Sprint & Mục tiêu (mục 2.3 của đề) & Task\\\midrule\endhead
 \bottomrule\endfoot
-1 & Nền tảng và hiển thị menu & 1, 2, 3, 4 & \todo{ngày}\\
-2 & Giỏ hàng, đặt đơn, đăng nhập & 5, 6, 7 & \todo{ngày}\\
-3 & Thanh toán, bàn giao, nghiệp vụ nâng cao & 8, 9, 10 & \todo{ngày}\\
+1 & Nền tảng và hiển thị menu & 1, 2, 3, 4\\*
+2 & Giỏ hàng, đặt đơn, đăng nhập & 5, 6, 7\\*
+3 & Thanh toán, bàn giao, nghiệp vụ nâng cao & 8, 9, 10\\
 \end{longtable}
 \endgroup
 Product Backlog gồm 10 user story ở \path|docs/product-backlog.md|, mỗi story ứng với một task của đề. Một task chỉ tính xong khi đạt Definition of Done ở mục 10 của đề.
-
-Product Owner: \todo{tên}. Scrum Master: \todo{tên}. Lịch Sprint Planning, Daily Scrum và Sprint Review: \todo{ngày và người dự}.
 
 Burndown dưới đây tính cho cả 10 task. Một task tính là xong vào ngày tác giả tạo commit của thành viên phụ trách, theo bảng ở mục 4. Đường lý tưởng giảm đều từ 10 task ngày 30/09/2026, ngày có commit đầu tiên của repo, về 0 ngày 23/10/2026, ngày Review 1.
 
@@ -525,17 +526,18 @@ Frontend, \texttt{npx vitest run} & 733 test đạt trong 46 file\\
 \endgroup
 Ba test backend bị bỏ qua đều cần PostgreSQL thật qua biến \path|DATABASE_URL|: 2 ca idempotency và tồn kho đồng thời trong \path|pg-payment.integration.spec.ts|, 1 ca dọn dữ liệu thử trong \path|pg-smoke-clean.integration.spec.ts|. Log Postman lưu ở \path|docs/postman/results/2026-10-21-run.txt|.
 
+\Needspace{20\baselineskip}
 \subsection{Definition of Done}
 \begingroup\small
-\begin{longtable}{L{0.28\linewidth}L{0.36\linewidth}L{0.28\linewidth}}
-\toprule Điều kiện (mục 10 của đề) & Cách xác nhận & Trạng thái\\\midrule\endfirsthead
-\toprule Điều kiện (mục 10 của đề) & Cách xác nhận & Trạng thái\\\midrule\endhead
+\begin{longtable}{L{0.34\linewidth}L{0.58\linewidth}}
+\toprule Điều kiện (mục 10 của đề) & File xác nhận\\\midrule\endfirsthead
+\toprule Điều kiện (mục 10 của đề) & File xác nhận\\\midrule\endhead
 \bottomrule\endfoot
-Code chạy, không lỗi build & Dựng stack bằng \texttt{docker compose up -d -{}-build} & Dựng được ngày 21/10/2026 để chạy Postman\\
-Đúng tiêu chí chấp nhận của task & Ca Postman và test ở mục 5 & 10 task có ca kiểm thử; còn thiếu ảnh\\
-Có commit rõ ràng, được review trong nhóm & Commit ở mục 4 & Có commit; \todo{người review từng task}\\
-API validate đầu vào, UI xử lý đang tải và lỗi & Ca 400 của Task 6, 7, 8; test \path|ProductGrid.test.ts| & Đạt theo lần chạy 21/10/2026\\
-README có hướng dẫn chạy & Người ngoài nhóm làm theo README trên máy mới & \todo{kết quả thử trên máy mới}\\
+Code chạy, không lỗi build & \path|docker-compose.yml|\newline \path|backend/Dockerfile|\newline \path|frontend/Dockerfile|\\*
+Đúng tiêu chí chấp nhận của task & \path|docs/postman/BrewLite.postman_collection.json|\newline \path|docs/postman/results/2026-10-21-run.txt|\newline \path|docs/minh-chung-10-task.md|\\*
+Có commit rõ ràng, được review trong nhóm & \path|git-evidence.txt|\\*
+API validate đầu vào, UI xử lý đang tải và lỗi & \path|backend/src/order/dto/create-order.dto.ts|\newline \path|frontend/src/components/ProductGrid.tsx|\newline \path|frontend/src/components/ProductGrid.test.ts|\\*
+README có hướng dẫn chạy & \path|README.md|\newline \path|.env.example|\\
 \end{longtable}
 \endgroup
 
@@ -552,7 +554,19 @@ README có hướng dẫn chạy & Người ngoài nhóm làm theo README trên 
 \end{enumerate}
 
 \subsection{Sprint Retrospective}
-Điều làm tốt: \todo{ý kiến của nhóm}. Điều cần cải thiện: \todo{ý kiến của nhóm}. Hành động cho Sprint sau: \todo{ý kiến của nhóm}.
+\textbf{Điều làm tốt.}
+\begin{itemize}
+\item Nghiệp vụ khó đều có test tự động: idempotency (gửi lặp cùng khóa vẫn chỉ tạo một đơn), máy trạng thái và tồn kho khi đặt đồng thời.
+\item Bảo mật được làm ở backend, không phụ thuộc giao diện: server tự tính giá và bỏ qua giá client gửi lên (ca T06.5), mật khẩu băm bằng bcrypt.
+\item Xong đủ 10 task trước hạn.
+\end{itemize}
+
+\textbf{Điều chưa làm tốt.}
+\begin{itemize}
+\item Không làm theo thứ tự Sprint, và commit dồn thành đợt.
+\item Review trong nhóm còn yếu.
+\item Không ghi lại các sự kiện Scrum.
+\end{itemize}
 
 \section{Nguồn và cách chạy lại}
 \begin{itemize}
