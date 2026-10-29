@@ -9,6 +9,12 @@ services:
       - "127.0.0.1:${DEMO_PORT:-3000}:3000"
     environment:
       SEED_DEMO_USERS: "true"
+      # VNPay sandbox, optional: the demo starts without them but cannot create payment URLs. Runtime only.
+      VNP_TMN_CODE: ${VNP_TMN_CODE:-}
+      VNP_HASH_SECRET: ${VNP_HASH_SECRET:-}
+      WEB_URL: ${WEB_URL:-http://localhost:3000}
+      VNP_URL: ${VNP_URL:-}
+      VNP_API_URL: ${VNP_API_URL:-}
     volumes:
       - demo_data:/var/lib/brewlite
     stop_grace_period: 30s

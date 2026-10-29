@@ -1,6 +1,6 @@
 # CI/CD Assignment 2
 
-[`ci.yml`](ci.yml) chạy trên PR vào `develop-Assignment2`, các push được khai báo và workflow thủ công/tái sử dụng, với Node theo `.nvmrc`. Job **`ci`** chạy **Install → Lint → Migration/seed PostgreSQL riêng → Typecheck/Build → Compose validation** cho hai app; mỗi bước dừng khi lệnh lỗi. Prisma Client được generate sau install. Theo yêu cầu chủ dự án, bộ test và các bước Unit/Integration/E2E đã được xóa sau khi chạy kiểm chứng; [báo cáo](../../docs/inventory-verification.md) lưu kết quả trước khi xóa.
+[`ci.yml`](ci.yml) chạy trên PR vào `develop-Assignment2`, các push được khai báo và workflow thủ công/tái sử dụng, với Node theo `.nvmrc`. Job **`ci`** chạy **Install → Lint → Migration/seed PostgreSQL riêng → Typecheck/Build → Compose validation** cho hai app; mỗi bước dừng khi lệnh lỗi. Prisma Client được generate sau install. Theo yêu cầu chủ dự án, bộ test và các bước Unit/Integration/E2E đã được xóa sau khi chạy kiểm chứng; chỉ còn unit test VNPay tối thiểu `apps/api/test/vnpay.test.ts` (D3), chạy tay bằng `node --import tsx --test test/vnpay.test.ts` và chưa nằm trong CI; [báo cáo](../../docs/inventory-verification.md) lưu kết quả trước khi xóa.
 
 Workflow chỉ có quyền `contents: read`; checkout không giữ credential. Cache dùng lockfile cả hai app. Không có path filter để PR tài liệu cũng nhận required check `ci`.
 

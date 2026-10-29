@@ -27,8 +27,8 @@ Seed không ghi đè sản phẩm có sẵn; SEED_DEMO_USERS=true chỉ dùng de
 
 ## Thanh toán và triển khai
 
-API replay theo chủ đơn/`orderId`/key/`paymentMethod` (BR-05, FR-16); simulator không lưu trạng thái. Số thẻ không tham gia fingerprint và không được lưu/log. Request cùng key/phương thức trên cùng đơn đã trả được replay; đổi phương thức hoặc key sau khi PAID trả 409 `ORDER_NOT_PAYABLE`. Cùng key trên đơn khác được xử lý độc lập. Migration mới bỏ ràng buộc key xuyên đơn, giữ index mỗi đơn tối đa một Payment SUCCESS; không sửa migration đã phát hành.
-Simulator chỉ có thành công hoặc decline (402 `PAYMENT_DECLINED`); lần thất bại không khóa key. Health giữ contract DB up/down bên trên.
+API replay theo chủ đơn/`orderId`/key/`paymentMethod` (BR-05, FR-16); kết quả thanh toán đến từ VNPay sandbox qua IPN hoặc QueryDR (`POST /payments/:id/sync`). Số thẻ chỉ nhập trên trang VNPay, API không nhận, không lưu và không log. Request cùng key/phương thức trên cùng đơn đã trả được replay; đổi phương thức hoặc key sau khi PAID trả 409 `ORDER_NOT_PAYABLE`. Cùng key trên đơn khác được xử lý độc lập. Migration mới bỏ ràng buộc key xuyên đơn, giữ index mỗi đơn tối đa một Payment SUCCESS; không sửa migration đã phát hành.
+`POST /payments` chỉ tạo `Payment PENDING` và trả `paymentUrl` (không còn 402 `PAYMENT_DECLINED`); thất bại đến qua IPN hoặc QueryDR và không khóa key. Thiếu `VNP_TMN_CODE`, `VNP_HASH_SECRET` hoặc `WEB_URL` thì API vẫn khởi động, chỉ tạo URL mới trả 502 `PAYMENT_PROVIDER_ERROR`. Health giữ contract DB up/down bên trên.
 Render chạy image API gắn full commit SHA, dùng Render Postgres **Internal Database URL**, `/health`, `JWT_SECRET`, `CORS_ORIGINS` và tắt auto-deploy. Docker CMD chạy `prisma migrate deploy` trước server. Seed là thao tác opt-in riêng, không reset dữ liệu. Chi tiết [deployment](../../docs/deployment.md).
 
 ```powershell
