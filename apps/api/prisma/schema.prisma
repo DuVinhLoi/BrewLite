@@ -23,6 +23,7 @@ enum PaymentMethod {
   CARD
 }
 enum PaymentStatus {
+  PENDING
   SUCCESS
   FAILED
 }
@@ -87,6 +88,15 @@ model Payment {
   idempotencyKey String
   fingerprint String
   createdAt DateTime @default(now())
+  provider String @default("VNPAY")
+  paymentUrl String?
+  expiresAt DateTime?
+  gatewayCreateDate String?
+  gatewayTxnNo String?
+  gatewayResponseCode String?
+  gatewayTransactionStatus String?
+  bankCode String?
+  paidAt DateTime?
   @@index([userId, idempotencyKey])
   @@map("payments")
 }
