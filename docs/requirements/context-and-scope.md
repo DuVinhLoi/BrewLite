@@ -29,7 +29,7 @@ Tại quán cà phê, khách thường phải **xếp hàng để gọi món và
 Hệ thống phải giải quyết bốn việc:
 
 - **Gọi món đúng:** khách thấy menu, giá, tùy chọn trước khi đặt; máy chủ tự tính giá nên không sai tiền.
-- **Trả tiền không tiền mặt an toàn:** thanh toán Ví/Thẻ (mô phỏng), không bị trừ tiền hai lần khi gửi lại yêu cầu.
+- **Trả tiền không tiền mặt an toàn:** thanh toán Ví/Thẻ qua cổng VNPay sandbox (không thu tiền thật), không bị trừ tiền hai lần khi gửi lại yêu cầu.
 - **Không bán quá số lượng còn:** nguyên liệu được cộng gộp theo toàn giỏ, giữ chỗ trong transaction khi đặt đơn và chỉ tiêu thụ khi thanh toán thành công.
 - **Minh bạch trạng thái đơn:** đơn đi qua các trạng thái `PENDING`, `PAID`, `PAYMENT_FAILED`, `PREPARING`, `READY`, `COMPLETED`, `CANCELLED`; khách xem lại được trong lịch sử.
 
@@ -48,7 +48,7 @@ Sáu bên theo đề A2 §3.1 (mô tả gốc: đề A1 §3.2).
 | S3 | Quản lý cửa hàng (Product Owner) | Đặt yêu cầu, ưu tiên backlog, nghiệm thu từng Increment | Tăng số đơn thanh toán không tiền mặt, giảm thời gian xếp hàng, có dữ liệu đơn đáng tin | Phạm vi MVP rõ, bàn giao đúng hạn; số liệu đơn và thanh toán không sai lệch; khuyến mãi và điểm thưởng được mô hình hóa để mở rộng sau; xem số dư nguyên liệu, công thức và nhật ký kho; quản trị menu/voucher để sau |
 | S4 | Giảng viên / khách hàng nghiệm thu | Chấm bài, đánh giá quy trình và sản phẩm | Kiểm chứng nhóm làm đúng chuỗi yêu cầu → thiết kế → code → CI/CD → production | Tạo phẩm đủ và nhất quán (SRS, sơ đồ, ADR, ma trận truy vết); lịch sử commit/PR rõ; URL production sống lúc chấm; nhóm giải thích được từng tạo phẩm, không vibecoding |
 | S5 | Nhóm phát triển | Phân tích, thiết kế, lập trình, kiểm thử, triển khai | Giao hệ thống chạy được, đạt tiêu chí chấp nhận, đúng hạn từng task | Yêu cầu rõ và kiểm chứng được để viết test; phạm vi vừa sức hai Sprint; công cụ miễn phí chạy ổn; không bị đổi yêu cầu giữa chừng nếu không qua PR |
-| S6 | Đơn vị thanh toán (Payment Service) | Cổng Ví/Thẻ; trong bài là dịch vụ **mô phỏng** | Nhận yêu cầu trừ tiền hợp lệ, trả kết quả thành công/thất bại rõ ràng | Hệ thống gọi đúng giao diện (số tiền, phương thức, mã tham chiếu); không gọi trùng cho cùng một giao dịch; xử lý được khi cổng từ chối giao dịch |
+| S6 | Đơn vị thanh toán (VNPay sandbox) | Cổng thanh toán bên thứ ba, là **hệ thống ngoài**; trong bài dùng môi trường sandbox, không thu tiền thật | Nhận yêu cầu thanh toán có chữ ký hợp lệ, báo kết quả thành công/thất bại rõ ràng qua IPN và trả lời được truy vấn QueryDR | Hệ thống tạo URL thanh toán đúng tham số (số tiền, mã tham chiếu `vnp_TxnRef`, hạn thanh toán) và ký đúng; kiểm chữ ký, số tiền, merchant của IPN trước khi ghi nhận; không tạo hai giao dịch chưa kết luận cho cùng một đơn; xử lý được khi cổng từ chối, bảo trì hoặc báo kết quả muộn |
 
 Ghi chú:
 
@@ -71,14 +71,14 @@ MVP phủ đúng luồng của đề A2 §1.1. Mỗi bước gắn với nhóm y
 | Xác thực | Đăng ký, đăng nhập, JWT; bảo vệ chức năng đặt đơn | FR-08, FR-09, FR-10 |
 | Đặt đơn | Tạo đơn `PENDING` trong transaction, server tính giá, cộng nhu cầu và giữ nguyên liệu | FR-11, FR-12, FR-13 |
 | Quản lý kho | Barista nhận/kiểm kê nguyên liệu có lý do, sửa công thức, xem số ly và nguyên liệu giới hạn | FR-29 |
-| Thanh toán | Ví/Thẻ mô phỏng; thành công `PAID`, thất bại `PAYMENT_FAILED`; chống trừ tiền hai lần (Idempotency-Key) | FR-14, FR-15, FR-16 |
+| Thanh toán | Ví/Thẻ qua VNPay sandbox: khách được chuyển sang trang VNPay để trả, kết quả về qua IPN/QueryDR; thành công `PAID`, thất bại `PAYMENT_FAILED`; chống trừ tiền hai lần (Idempotency-Key, BR-10, BR-11) | FR-14, FR-15, FR-16 |
 | Theo dõi đơn | Biên lai sau khi trả; lịch sử đơn; xem trạng thái một đơn | FR-20, FR-21, FR-22 |
 
 Quản lý trạng thái đơn (FR-23/24), chủ đơn hủy chưa trả (FR-25) và quản lý nguyên liệu/công thức (FR-29) là **Must** của BREW-INVENTORY-01. Hủy chỉ giải phóng reserved theo snapshot, không thay onHand; đơn đã trả không được hủy.
 
 Kèm các yêu cầu phi chức năng (hiệu năng, bảo mật, tính khả dụng, triển khai): NFR-01 đến NFR-20.
 
-Hệ thống **làm được** (tóm tắt cho người đọc ngoài nhóm): khách chưa có tài khoản xem menu và gom giỏ; khách có tài khoản đặt đơn, trả tiền mô phỏng và xem lại đơn; nhân viên quầy đổi trạng thái đơn qua API; Barista quản lý nguyên liệu/công thức qua /inventory. Trạng thái production và CI/CD thực tế xem báo cáo triển khai, không suy từ đặc tả.
+Hệ thống **làm được** (tóm tắt cho người đọc ngoài nhóm): khách chưa có tài khoản xem menu và gom giỏ; khách có tài khoản đặt đơn, trả tiền qua VNPay sandbox và xem lại đơn; nhân viên quầy đổi trạng thái đơn qua API; Barista quản lý nguyên liệu/công thức qua /inventory. Trạng thái production và CI/CD thực tế xem báo cáo triển khai, không suy từ đặc tả.
 
 ### 3.2 Phạm vi mở rộng
 
@@ -99,7 +99,7 @@ Những việc **hệ thống không làm** trong Assignment 2:
 |---|---|---|
 | Màn hình quản trị menu (CRUD món, giá, size, topping) | Đề A2 §7.1 không đòi; dữ liệu menu nạp bằng seed. A1 gọi là UC13 | FR-28 |
 | Màn hình quản trị voucher / khuyến mãi | Chỉ seed mã khi triển khai FR-17. A1 gọi là UC15 | FR-30 |
-| Thanh toán thật (Momo, VNPay, Stripe...) | Chỉ dùng dịch vụ mô phỏng, không xử lý thông tin thẻ thật | FR-31 |
+| Cổng thanh toán production thật (Momo, VNPay production, Stripe...) | Chỉ dùng VNPay sandbox, không thu tiền thật; thông tin thẻ chỉ nhập trên trang VNPay, hệ thống không nhận hay lưu | FR-31 |
 | Đổi / trừ điểm thưởng khi thanh toán | Ghi nhận và hiển thị điểm cũng ngoài bản nộp (FR-18, FR-19) | FR-32 |
 | Nhiều chi nhánh, giao hàng tận nơi, đặt trước giờ, thông báo đẩy | Ngoài luồng đề A2 §1.1 | không đánh mã |
 | Vai trò Admin | Đề A2 chỉ có khách và nhân viên quầy; tài khoản Barista do seed tạo | không đánh mã |
@@ -112,7 +112,7 @@ Những việc **hệ thống không làm** trong Assignment 2:
 
 | # | Giả định | Hệ quả nếu sai |
 |---|---|---|
-| A-01 | Thanh toán Ví/Thẻ là **mô phỏng**: dịch vụ giả lập trả thành công hoặc thất bại theo quy ước test (SRS mục 3); không thu tiền thật | Nếu dùng cổng thật phải thêm bảo mật PCI, ngoài phạm vi |
+| A-01 | Thanh toán Ví/Thẻ đi qua **VNPay sandbox** (hệ thống ngoài, ADR-007): khách trả trên trang VNPay bằng thẻ test, kết quả về qua IPN hoặc QueryDR; không thu tiền thật và hệ thống không nhận, không lưu số thẻ. Nhóm đã đăng ký sandbox và giữ `VNP_TMN_CODE`, `VNP_HASH_SECRET` ngoài repo (SRS mục 3.4) | Nếu sandbox không dùng được lúc demo thì không thanh toán được đơn mới; chuyển sang cổng production thật thì phải thêm hợp đồng với VNPay và rà soát bảo mật, ngoài phạm vi |
 | A-02 | Một cửa hàng, một đơn vị tiền tệ **VND**, giá là số nguyên đồng, không có phần thập phân | Phải đổi kiểu dữ liệu giá nếu hỗ trợ nhiều tiền tệ |
 | A-03 | Khách đăng ký bằng email và mật khẩu; không xác minh email, không quên mật khẩu | Thêm luồng email nếu PO yêu cầu |
 | A-04 | Tài khoản Barista do seed tạo sẵn; không có màn đăng ký cho nhân viên | Cần màn quản trị tài khoản nếu muốn tự tạo |
@@ -161,3 +161,6 @@ Mức: C = cao, TB = trung bình, T = thấp. Xác suất × ảnh hưởng đá
 | R-10 | Sao chép sơ đồ/code từ A1 thay vì thiết kế lại | TB | Lệch phạm vi A2, nghi đạo văn | A1 chỉ tham khảo; viết lại theo phạm vi A2 (kế hoạch A2 mục D) |
 | R-11 | Branch protection không bật được trên repo private gói free | TB | Không chứng minh được "PR không merge khi CI đỏ" (đề A2 §6.4) | Kiểm tra sớm ở Task 4.1; dùng repo public hoặc organization hỗ trợ |
 | R-12 | Điều khoản free tier (Vercel, Render) thay đổi | T | Kế hoạch triển khai lệch thực tế | Đọc điều khoản khi chốt ADR 004 và ghi ngày kiểm tra |
+| R-13 | Render free tier đang ngủ nên IPN của VNPay bị timeout | TB | Kết quả thanh toán tới chậm; đơn tạm giữ `PENDING` dù khách đã trả | VNPay gọi lại IPN (tối đa 10 lần, cách 5 phút); khách mở lại trang kết quả thì API chủ động hỏi VNPay bằng QueryDR rồi áp kết quả qua cùng một hàm với IPN; chưa có kết luận thì hiển thị "đang xác minh", không cho thanh toán lần hai |
+| R-14 | Sandbox VNPay bảo trì hoặc phản hồi chậm đúng lúc demo/chấm | TB | Không tạo hoặc không xác nhận được thanh toán; demo luồng trả tiền hỏng | Quay video luồng thanh toán trước; kiểm sandbox trước buổi chấm; đơn đang chờ xác minh giữ `PENDING`, không đoán là thất bại |
+| R-15 | Payment hết hạn hoặc khách bỏ dở trang VNPay nhưng đơn vẫn giữ nguyên liệu (chưa có job tự hủy đơn) | TB | Nguyên liệu bị giữ tới khi đơn được trả hoặc khách hủy; tiền có thể về muộn sau khi payment đã đóng | Hạn thanh toán 15 phút chỉ làm payment cần đối soát, không tự hủy đơn hay tự nhả kho; QueryDR đối soát theo SRS trước khi tạo giao dịch mới hoặc hủy; tiền về sau trạng thái cuối thì ghi cảnh báo `PAYMENT_RECONCILIATION_REQUIRED` để nhân viên đối soát/hoàn tiền tay (`docs/deployment.md`) |
