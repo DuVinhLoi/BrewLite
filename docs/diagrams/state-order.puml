@@ -19,9 +19,10 @@ skinparam NoteBackgroundColor #fef3c7
 skinparam NoteBorderColor #d97706
 skinparam NoteFontColor #1f2937
 ' Exactly 8 business transitions: SRS section 3.6, FR-23/24, BR-08
+' Payment lifecycle (PaymentStatus) is drawn below the order states; EXPIRED is not a PaymentStatus value.
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
-title BrewLite A2 — Order state machine (8 valid transitions)
+title BrewLite A2 — Order state machine (8 valid transitions) and Payment lifecycle
 
 state PENDING
 state PAID
@@ -32,10 +33,10 @@ state COMPLETED #DFF1E5
 state CANCELLED #EAEAEA
 
 [*] --> PENDING : POST /orders creates order
-PENDING --> PAID : successful payment
-PENDING --> PAYMENT_FAILED : payment declined
+PENDING --> PAID : IPN / QueryDR confirms payment (Payment SUCCESS)
+PENDING --> PAYMENT_FAILED : IPN / QueryDR confirms failure (Payment FAILED)
 PENDING --> CANCELLED : Customer cancellation [FR-25 Must]
-PAYMENT_FAILED --> PENDING : retry payment (same Order)
+PAYMENT_FAILED --> PENDING : retry payment (new Payment PENDING, same Order)
 PAYMENT_FAILED --> CANCELLED : Customer cancellation [FR-25 Must]
 PAID --> PREPARING : Barista
 PREPARING --> READY : Barista
@@ -45,11 +46,16 @@ CANCELLED --> [*]
 
 note right of PENDING
   New orders reserve ingredients and snapshot atomically.
-  Decline keeps onHand / reserved and snapshot.
+  Order stays PENDING while it waits for VNPay: Payment PENDING
+  (15 min), and past expiry until QueryDR concludes (E11).
+  Failure keeps onHand / reserved and snapshot.
+  Cancel is blocked (409 PAYMENT_IN_PROGRESS) while a Payment
+  PENDING is still valid, or past expiry but not yet reconciled.
 end note
 note left of PAID
-  First success consumes snapshot: decrease onHand + reserved.
-  Replay returns cached SUCCESS; no further consumption.
+  First confirmed success (IPN or QueryDR) consumes the snapshot:
+  decrease onHand + reserved, once. Replay returns cached SUCCESS;
+  repeated IPN gets 02; no further consumption.
 end note
 note right of PAID
   PAID -> CANCELLED is NOT allowed in A2.
@@ -60,5 +66,37 @@ note bottom of CANCELLED
   Owner unpaid cancellation releases reserved by snapshot once.
   onHand unchanged; repeated cancel rejected.
   Legacy false marker restores original Product.stock.
+  A Payment turning FAILED does not release ingredients.
+end note
+
+state "Payment lifecycle (PaymentStatus)" as PaymentLifecycle {
+  state "PENDING" as PAY_PENDING
+  state "SUCCESS" as PAY_SUCCESS #DFF1E5
+  state "FAILED" as PAY_FAILED #FCE8E5
+
+  [*] --> PAY_PENDING : POST /payments signs URL (at most one per Order, BR-10)
+  PAY_PENDING --> PAY_SUCCESS : IPN or QueryDR 00/00 (verified)
+  PAY_PENDING --> PAY_FAILED : IPN or QueryDR final failure
+  PAY_SUCCESS --> [*]
+  PAY_FAILED --> [*]
+}
+
+note right of PAY_PENDING
+  Return URL never changes the status (BR-11).
+  Past expiresAt the Payment is still PENDING until QueryDR concludes.
+  QueryDR 00/01 after expiry keeps PENDING; the exit route for
+  abandoned payments is decided after the spike (chờ spike).
+end note
+note right of PAY_FAILED
+  IPN counts as failed when vnp_TransactionStatus = 02,
+  including a customer Cancel (24) (chờ spike).
+  QueryDR 91 after expiry: FAILED with gatewayResponseCode = "EXPIRED"
+  (chờ spike). EXPIRED is not a PaymentStatus value.
+  Money arriving after a final state: IPN 02 + warning
+  PAYMENT_RECONCILIATION_REQUIRED; Order and stock unchanged.
+end note
+note bottom of PaymentLifecycle
+  Order.status follows the Payment: SUCCESS -> PAID,
+  FAILED -> PAYMENT_FAILED. A retry creates a new Payment PENDING.
 end note
 @enduml
