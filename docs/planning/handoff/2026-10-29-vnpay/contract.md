@@ -1,13 +1,15 @@
 # Hợp đồng chung Wave 1: tài liệu VNPay
 
-Nguồn nội dung là [plan VNPay](../../2026-10-29-vnpay-payment-plan.md). File này chỉ **chốt tên và mã** để ba worker Wave 1 soạn song song mà không lệch nhau. Integrator soạn ngày 2026-10-29; worker không sửa file này. Cần mã ngoài danh sách thì ghi vào report, không tự đặt.
+Nguồn nội dung là [plan VNPay](../../2026-10-29-vnpay-payment-plan.md). File này chỉ **chốt tên và mã** để ba worker Wave 1 soạn song song mà không lệch nhau. Integrator soạn ngày 2026-10-29; worker không sửa file này. Cần mã ngoài danh sách thì ghi vào report, không tự đặt. Sau Wave 1 (2026-10-29), người dùng chốt bốn điểm; Integrator sửa mục 1, 3, 4 theo đó (xem [ledger](ledger.md)).
 
 ## 1. Mã yêu cầu trong SRS
 
 - **BR-10:** tối đa một `Payment PENDING` cho mỗi đơn; chưa xác định kết quả thì không mở lần thử mới.
 - **BR-11:** chỉ IPN hoặc QueryDR đã xác thực được quyết định kết quả cuối; return URL chỉ hiển thị.
 - **BR-05:** giữ mã, viết lại theo thứ tự replay `SUCCESS`/`PENDING` ở plan mục 1.5.
-- **AC mới:** chỉ SRS đặt. Giữ mã AC cũ khi viết lại nội dung. AC mới đánh tiếp từ `AC-F14.7`, `AC-F15.6`, `AC-F16.8`. Không dùng lại các mã đã bỏ: `AC-F15.2`, `AC-F16.2`, `AC-F16.3`, `AC-F16.7`.
+- **AC mới:** chỉ SRS đặt. Giữ mã AC cũ khi viết lại nội dung. AC mới đánh tiếp từ `AC-F14.7`, `AC-F15.6`, `AC-F16.8`. Không dùng lại các mã đã bỏ: `AC-F15.2`, `AC-F16.2`, `AC-F16.3`, `AC-F16.7`, `AC-F16.13`.
+- **AC-F25.4** (sau Wave 1): chặn hủy khi đơn còn `Payment PENDING` chưa kết luận. Dời từ `AC-F16.13` vì đây là quy tắc hủy đơn của FR-25, không phải idempotency của FR-16.
+- **AC-N12.1** (sau Wave 1): giữ Must. E2E đóng vai VNPay: chặn redirect, ký IPN bằng secret giả của môi trường test, không trả tiền trên sandbox.
 - **FR-31:** giữ Won't, nghĩa mới là "cổng production thật".
 - **NFR-03 / AC-N03.1:** `POST /payments` chỉ tạo `Payment PENDING` và ký URL, không chờ VNPay; bỏ câu "simulator ≤500 ms". Giữ mã.
 
@@ -31,12 +33,12 @@ Giữ mã cũ: A1–A5, E1–E8, E1a/E1b, E4a–E4e, E8a. Các luồng **mới**
 - HTTP: 409 `PAYMENT_IN_PROGRESS`, 502 `PAYMENT_PROVIDER_ERROR`, 404 `PAYMENT_NOT_FOUND`, 409 `ORDER_NOT_PAYABLE` (đã có). Bỏ 402 `PAYMENT_DECLINED` khỏi `POST /payments`.
 - IPN `RspCode`: `00`, `01`, `02`, `04`, `97`, `99` theo plan mục 1.3.
 - Warning log: `PAYMENT_RECONCILIATION_REQUIRED`.
-- `PaymentStatus`: `SUCCESS`, `FAILED`, `PENDING`. `EXPIRED` chỉ là giá trị nội bộ của `gatewayResponseCode`, **không** phải trạng thái enum.
+- `PaymentStatus`: `SUCCESS`, `FAILED`, `PENDING`. `EXPIRED` chỉ là giá trị nội bộ của `gatewayResponseCode`, **không** phải trạng thái enum. Không có `REFUNDED` (FR-26 Won't; enum Prisma hiện chỉ có `SUCCESS`, `FAILED`).
 - `Payment` thêm: `provider`, `paymentUrl`, `expiresAt`, `gatewayCreateDate`, `gatewayTxnNo`, `gatewayResponseCode`, `gatewayTransactionStatus`, `bankCode`, `paidAt` (plan mục 1.4). Hàng cũ có `provider = "SIMULATOR"`.
 
 ## 4. Tên dùng trong sơ đồ
 
-- Actor/participant ngoài: **"VNPay sandbox"** (hệ thống ngoài), giống `use-case-overview.puml` đã merge.
+- Actor/participant ngoài: **"VNPay sandbox"** (hệ thống ngoài), giống `use-case-overview.puml` đã merge. Riêng `sequence-checkout.puml` hiển thị `VNPay sandbox\n(Payment Service)` (alias `Pay`) để bám lifeline tối thiểu của đề A2 §4.2.
 - Participant trong hệ thống: giữ tên đang dùng trong từng file `.puml`; thêm "Browser" nếu file chưa có.
 - Endpoint: `POST /payments`, `GET /payments/vnpay/ipn`, `GET /payments/vnpay/return`, `POST /payments/:id/sync`, `PATCH /orders/:id`, `GET /orders/:id`.
 

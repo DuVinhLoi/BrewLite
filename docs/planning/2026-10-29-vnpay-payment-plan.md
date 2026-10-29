@@ -181,7 +181,7 @@ Chỉ hiển thị thất bại và cho thử lại/hủy sau khi trạng thái 
   - Chữ ký mong đợi tính **độc lập** bằng `openssl dgst -sha512 -hmac` với secret giả, ghi lệnh tính trong comment của test; không lấy kết quả từ chính code đang test.
   - Chạy `node --import tsx --test test/vnpay.test.ts` từ `apps/api`: `node:test` có sẵn trong Node 22, `tsx` đã có. Không thêm dependency, không thêm script vào `package.json`, không sửa CI hay `tsconfig*` ở bản này.
   - Đặt ngoài `src/` vì `tsconfig.build.json` biên dịch mọi `src/**/*.ts` vào `dist/` và image. Đổi lại, lint và typecheck không phủ file test (`tsx` không kiểm kiểu); chấp nhận ở mức tối thiểu.
-  - Không lấp NFR-12/NFR-17 (E2E tự động, CI); ghi rõ khoảng trống đó trong bàn giao, chỉ đổi yêu cầu/CI khi được giao riêng.
+  - Không lấp NFR-12/NFR-17 (E2E tự động, CI) ở bản này; ghi rõ khoảng trống đó trong bàn giao. Cách E2E đạt `AC-N12.1` đã chốt ngày 2026-10-29: test đóng vai VNPay (chặn redirect, ký IPN bằng secret giả của môi trường test), không trả tiền trên sandbox. Test E2E và CI chỉ viết khi được giao riêng.
 - **D4 – Cổng giả.** Hoãn khỏi bản triển khai này (Could). Docker vẫn khởi động được khi thiếu secret, nhưng thao tác thanh toán cần VNPay theo mục 1.8; demo mất mạng dùng video đã quay. Nếu sau này được yêu cầu làm fake, chỉ bật rõ trong local không phải production và kiểm riêng handler fake; không tự đưa endpoint hoàn tất thanh toán vào bản này. Image Docker hiện đặt `NODE_ENV=production`, nên không coi fake là phương án mặc định của image đó.
 - **D5 – Hạn thanh toán.** 15 phút cho `vnp_ExpireDate` và `expiresAt`, cùng một mốc thời gian. Chưa có job tự hết hạn đơn: nguyên liệu vẫn giữ tới khi thanh toán thành công hoặc khách hủy hợp lệ; không hứa tự nhả kho sau 15 phút.
 

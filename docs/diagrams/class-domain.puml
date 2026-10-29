@@ -118,7 +118,6 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   PENDING
-  REFUNDED
 }
 enum LoyaltyType {
   EARN
@@ -160,7 +159,7 @@ note bottom of Payment
   gatewayResponseCode and gatewayTransactionStatus are stored apart.
   "EXPIRED" is an internal gatewayResponseCode value, not a PaymentStatus.
   No card number is stored: the card is entered only on the VNPay page.
-  REFUNDED is an enum value, not an enabled FR-26 flow.
+  No REFUNDED value: refund (FR-26) is Won't.
 end note
 class Ingredient {
   +id: String

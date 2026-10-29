@@ -26,3 +26,9 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
 - 2026-10-29 21:37: chấp nhận các sửa ngoài dòng card mà W1-SRS và W1-UCDIAG đã khai ở mục 6 / mục 5 của report: vẫn nằm trong allowed paths và cần để file không tự mâu thuẫn. CR-1, CR-2 của W1-UCDIAG đã được W1-SRS giải quyết (mục 3.4 viết lại, mã AC cũ giữ nguyên). CR-3 (tên lifeline so với đề §4.2) để nhóm giải thích khi vấn đáp.
 - 2026-10-29 21:37: giữ `PaymentStatus.REFUNDED` trong `srs.md` và `class-domain.puml`. Giá trị này có từ trước và FR-26 vẫn Won't. Contract mục 3 chỉ liệt kê các giá trị VNPay dùng, không chủ ý bỏ `REFUNDED`. Enum Prisma hiện chỉ có `SUCCESS`, `FAILED`; độ lệch này có từ trước và để bước 5 xử lý. Nhóm có thể bỏ khi duyệt.
 - 2026-10-29 21:37: nhận tạm cách chia AC mới giữa FR-14/15/16 (W1-SRS-report mục 6) và cách ánh xạ NFR cho E9–E13 (W1-UCDIAG-report mục 5). `AC-N12.1` (E2E qua redirect VNPay) để nhóm quyết định ở bước 7. Wave 2 (`traceability-matrix.md`, quét toàn repo) chạy sau khi nhóm duyệt hoặc sau spike.
+- 2026-10-29: người dùng chốt bốn điểm còn mở của Wave 1; Integrator sửa trực tiếp trên `a2/payment-vnpay` và cập nhật [contract.md](contract.md) mục 1, 3, 4:
+  - giữ cách chia AC giữa FR-14/15/16, riêng `AC-F16.13` (chặn hủy khi còn `Payment PENDING`) dời thành `AC-F25.4` vì thuộc FR-25; `AC-F16.13` không dùng lại;
+  - bỏ `REFUNDED` khỏi `PaymentStatus` trong `srs.md` và `class-domain.puml` cho khớp enum Prisma; thay ruling "giữ `REFUNDED`" ở trên;
+  - `AC-N12.1` giữ Must, E2E đóng vai VNPay (chặn redirect, ký IPN bằng secret giả của môi trường test); plan D3 ghi lại cách này, test E2E vẫn chỉ viết khi được giao;
+  - `sequence-checkout.puml` hiển thị lifeline `VNPay sandbox\n(Payment Service)` theo đề A2 §4.2 (CR-3 của W1-UCDIAG).
+- 2026-10-29: Wave 2 không còn chờ nhóm duyệt các điểm trên; chỉ còn tùy chọn chờ spike.

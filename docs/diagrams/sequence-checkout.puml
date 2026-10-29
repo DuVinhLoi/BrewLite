@@ -31,7 +31,7 @@ participant "Browser" as Browser
 participant "Next.js UI" as UI
 participant "NestJS API" as API
 database "Database\n(PostgreSQL)" as DB
-participant "VNPay sandbox" as Pay
+participant "VNPay sandbox\n(Payment Service)" as Pay
 
 == E1a: entry and authentication ==
 Customer -> UI : Open cart; press Checkout
