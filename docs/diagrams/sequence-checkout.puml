@@ -1,13 +1,26 @@
 @startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ClassBackgroundColor #eef2fb
+skinparam ClassBorderColor #5b6b8c
+skinparam ClassFontColor #1f2937
+skinparam StateBackgroundColor #eef2fb
+skinparam StateBorderColor #5b6b8c
+skinparam StateFontColor #1f2937
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
 ' BrewLite A2 §4.2 - UC-04, SRS 3.4-3.6, FR-10..16, FR-20, NFR-05/06/13
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
-skinparam ArrowColor #536C83
-skinparam SequenceParticipantBackgroundColor #EAF3FA
-skinparam SequenceParticipantBorderColor #536C83
-skinparam SequenceLifeLineBorderColor #536C83
-skinparam NoteBackgroundColor #FFF4D9
-skinparam NoteBorderColor #BD9754
 skinparam SequenceGroupBackgroundColor #F6F9FB
 hide footbox
 title BrewLite A2 - Sequence: UC-04 Checkout
@@ -52,18 +65,18 @@ alt Bad DTO / unknown product (E6)
   API --> UI : 400 VALIDATION_ERROR / 404 PRODUCT_NOT_FOUND
   UI --> Customer : Fix cart; no Order created; stop checkout
 else DTO accepted
-  API -> DB : Read Product prices, stock, options
+  API -> DB : Read Product prices and options
   DB --> API : Product records
   API -> API : Compute unitPrice, lineTotal and Order.total
-  group Transaction T1: atomic check, stock reservation, order (FR-11/13; NFR-13)
-    API -> DB : BEGIN; lock/check stock for ALL lines
-    alt Any product insufficient (E2)
-      DB --> API : Cannot reserve stock
-      API -> DB : ROLLBACK (no Order, OrderItem, stock change)
-      API --> UI : 409 OUT_OF_STOCK + details
+  group Transaction T1: recipe locks, ingredient reservation, snapshot (FR-11/13; NFR-13)
+    API -> DB : BEGIN; lock recipes in ID order; read base + topping recipes\nAggregate ingredient quantities across ALL cart lines\nLock Ingredient rows in ID order; check onHand - reserved
+    alt Missing/invalid recipe or ingredient shortage (E2)
+      DB --> API : Recipe unavailable or aggregate ingredient shortage
+      API -> DB : ROLLBACK (no Order, OrderItem, snapshot or balance change)
+      API --> UI : 409 RECIPE_UNAVAILABLE / OUT_OF_STOCK + ingredient details
       UI --> Customer : Back to cart; highlight insufficient items
-    else All lines have stock
-      API -> DB : UPDATE Product.stock; INSERT Order(PENDING) + OrderItems
+    else All recipes valid and aggregate demand fits
+      API -> DB : Increase Ingredient.reserved; INSERT Order(PENDING, inventoryTracked=true)\nINSERT OrderItems and immutable aggregate OrderIngredient snapshot
       DB --> API : COMMIT T1; orderId, total
       API --> UI : 201 { id:orderId, status:PENDING, total }
       UI -> UI : Persist orderId/owner/key to continue same order
@@ -95,7 +108,7 @@ alt Expired JWT after Order exists (E1b)
 else JWT valid
 end
 API -> API : Validate payment DTO + key (E6)
-API -> DB : Check order exists; verify owner (E7)
+API -> DB : BEGIN payment transaction; lock Order; verify owner (E7)
 DB --> API : Order or 403/404
 alt Invalid payment DTO/key or wrong order (E6/E7)
   API --> UI : 400 VALIDATION_ERROR / IDEMPOTENCY_KEY_REQUIRED\nor 403 FORBIDDEN / 404 ORDER_NOT_FOUND
@@ -105,7 +118,7 @@ else Valid body, owner verified
   DB --> API : Original SUCCESS or no cache match
   alt E4a: successful replay, API cache hit
     API --> UI : 200 original SUCCESS + same paymentId
-    note over API,Pay : API returns cached result WITHOUT calling simulator again.
+    note over API,Pay : End transaction; cache return without simulator or balance changes.
     UI --> Customer : Show PAID receipt; clear cart
   else New payment request, no SUCCESS cache
     alt Order not PENDING/PAYMENT_FAILED (E4d/E7)
@@ -114,7 +127,7 @@ else Valid body, owner verified
     else Order payable
       opt A3: retry after prior FAILED attempt
         API -> DB : Transition PAYMENT_FAILED -> PENDING
-        DB --> API : Updated PENDING; stock still reserved
+        DB --> API : Updated PENDING; snapshot/reserved unchanged; no new reservation
       end
       API -> Pay : charge(orderId, amount=Order.total, method)
       note right of Pay : Stateless simulator (SRS 3.4).\nDuplicate-charge guard lives in the API:\nSUCCESS replay (E4a) and ORDER_NOT_PAYABLE (E4d).
@@ -122,14 +135,14 @@ else Valid body, owner verified
         Pay --> API : DECLINED (no money collected)
         group Persist failed attempt
           API -> DB : INSERT Payment(FAILED); UPDATE Order PAYMENT_FAILED
-          DB --> API : Saved (stock reservation kept)
+          DB --> API : Saved; onHand, reserved and snapshot unchanged
         end
         API --> UI : 402 PAYMENT_DECLINED
         UI --> Customer : Keep cart/orderId; offer Retry same Order (A3)
       else Payment SUCCESS
         Pay --> API : SUCCESS(transactionRef, amount, method)
-        group Transaction T2: success and Order status together
-          API -> DB : BEGIN; INSERT Payment(SUCCESS, idempotencyKey)\nUPDATE Order PENDING -> PAID; COMMIT
+        group Transaction T2: locked Order + snapshot consumption + payment
+          API -> DB : Within locked Order transaction; lock ingredients in ID order\nDecrease onHand AND reserved by immutable snapshot\nINSERT Payment(SUCCESS, idempotencyKey); UPDATE Order -> PAID; COMMIT
           DB --> API : One Payment SUCCESS; Order PAID
         end
         note over API,DB : E8b: API stops before COMMIT -> Order stays PENDING;\nretry is a new attempt (accepted risk, simulated money, SRS 3.4).
@@ -140,4 +153,26 @@ else Valid body, owner verified
     end
   end
 end
+
+== UC-06: owner cancellation of unpaid order (FR-25 Must) ==
+opt Owner chooses cancel while PENDING / PAYMENT_FAILED
+  Customer -> UI : Confirm cancel
+  UI -> API : PATCH /orders/:id {status:CANCELLED} + JWT
+  API -> DB : BEGIN; lock Order; check owner and transition
+  alt Valid unpaid order, inventoryTracked=true
+    API -> DB : Lock ingredients in ID order; decrease reserved by snapshot\nKeep onHand unchanged; set CANCELLED; COMMIT
+    API --> UI : 200 CANCELLED
+  else Legacy inventoryTracked=false
+    API -> DB : Restore original Product.stock quantities; set CANCELLED; COMMIT
+    API --> UI : 200 CANCELLED; no ingredient changes
+  else Repeated cancel / paid / wrong owner
+    API -> DB : ROLLBACK; no balance changes
+    API --> UI : 409 invalid state / 403 forbidden
+  end
+end
+note over API,DB
+  Legacy false-marker orders preserve original Product.stock payment/cancel lifecycle.
+  New true-marker orders use snapshot, never current recipes for consume/release.
+  No automatic cancellation or reservation expiry.
+end note
 @enduml

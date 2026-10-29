@@ -1,12 +1,26 @@
 @startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ClassBackgroundColor #eef2fb
+skinparam ClassBorderColor #5b6b8c
+skinparam ClassFontColor #1f2937
+skinparam StateBackgroundColor #eef2fb
+skinparam StateBorderColor #5b6b8c
+skinparam StateFontColor #1f2937
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
 ' Exactly 8 business transitions: SRS section 3.6, FR-23/24, BR-08
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
-skinparam ArrowColor #536C83
-skinparam StateBackgroundColor #EDF5FB
-skinparam StateBorderColor #536C83
-skinparam NoteBackgroundColor #FFF4D9
-skinparam NoteBorderColor #B99655
 title BrewLite A2 — Order state machine (8 valid transitions)
 
 state PENDING
@@ -20,9 +34,9 @@ state CANCELLED #EAEAEA
 [*] --> PENDING : POST /orders creates order
 PENDING --> PAID : successful payment
 PENDING --> PAYMENT_FAILED : payment declined
-PENDING --> CANCELLED : Customer cancellation [FR-25 Could]
+PENDING --> CANCELLED : Customer cancellation [FR-25 Must]
 PAYMENT_FAILED --> PENDING : retry payment (same Order)
-PAYMENT_FAILED --> CANCELLED : Customer cancellation [FR-25 Could]
+PAYMENT_FAILED --> CANCELLED : Customer cancellation [FR-25 Must]
 PAID --> PREPARING : Barista
 PREPARING --> READY : Barista
 READY --> COMPLETED : Barista
@@ -30,8 +44,12 @@ COMPLETED --> [*]
 CANCELLED --> [*]
 
 note right of PENDING
-  POST /orders reserves stock atomically.
-  Failure does not release reserved stock.
+  New orders reserve ingredients and snapshot atomically.
+  Decline keeps onHand / reserved and snapshot.
+end note
+note left of PAID
+  First success consumes snapshot: decrease onHand + reserved.
+  Replay returns cached SUCCESS; no further consumption.
 end note
 note right of PAID
   PAID -> CANCELLED is NOT allowed in A2.
@@ -39,8 +57,8 @@ note right of PAID
   409 INVALID_ORDER_TRANSITION.
 end note
 note bottom of CANCELLED
-  FR-25 is Could: both cancel edges exist in
-  model but API/UI not required for minimum.
-  If implemented, release stock atomically.
+  Owner unpaid cancellation releases reserved by snapshot once.
+  onHand unchanged; repeated cancel rejected.
+  Legacy false marker restores original Product.stock.
 end note
 @enduml

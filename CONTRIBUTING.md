@@ -24,7 +24,7 @@ Các type thường dùng: `feat`, `fix`, `test`, `docs`, `ci`, `chore`. Commit 
 
 ## Quality gate và review
 
-Dùng Node trong `.nvmrc`, cài bằng `npm ci` ở từng app và chạy các lệnh [README](README.md#lint-test-và-build). Workflow phải kiểm cả hai app; không dùng `continue-on-error` để che lỗi lint/test/build.
+Dùng Node trong `.nvmrc`, cài bằng `npm ci` ở từng app và chạy các lệnh [README](README.md#kiểm-chứng-và-build). Theo yêu cầu chủ dự án ngày 29/10/2026, bộ test và công cụ test đã được xóa sau khi kiểm chứng tính năng kho; [báo cáo](docs/inventory-verification.md) giữ kết quả trước khi xóa. Workflow kiểm lint, migration/seed và typecheck/build cả hai app; không dùng `continue-on-error` để che lỗi.
 
 Sau lần CI đầu tiên trên PR, quản trị viên cấu hình bảo vệ `develop-Assignment2`:
 
@@ -38,9 +38,9 @@ Sau lần CI đầu tiên trên PR, quản trị viên cấu hình bảo vệ `d
 ## Definition of Done
 
 - [ ] Đạt tiêu chí chấp nhận của task và các phụ thuộc đã được chốt.
-- [ ] Lint, test, typecheck/build liên quan chạy thật và pass; PR có CI xanh.
+- [ ] Lint, typecheck/build liên quan chạy thật và pass; hành vi quan trọng được kiểm chứng và ghi kết quả; PR có CI xanh.
 - [ ] Có kiểm chứng cho hành vi thêm/sửa, gồm lỗi quan trọng; không chỉ kiểm happy path.
-- [ ] README, tài liệu và ma trận truy vết phản ánh đúng code/test hiện có.
+- [ ] README, tài liệu và ma trận truy vết phản ánh đúng code và kết quả kiểm chứng hiện có.
 - [ ] `git diff --check` sạch; đã xem diff và danh sách file mới; không có secret hay thay đổi ngoài allowed paths.
 - [ ] Một reviewer khác tác giả đã approve; không còn blocker; required check `ci` đã đạt.
 - [ ] Với Task 4: có minh chứng PR/CI xanh, CI bắt lỗi và chặn merge; Sprint Review/Retrospective và tag theo kế hoạch sau khi Sprint được chấp nhận.

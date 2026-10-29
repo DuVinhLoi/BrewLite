@@ -46,8 +46,8 @@ node "GHCR – container registry" as REG <<registry>> {
 
 package "CI – GitHub Actions" {
   node "Runner" as CI <<executionEnvironment>> {
-    artifact "ci.yml (PR)\ninstall → lint → unit test → build\nIntegration: Postgres tạm; E2E: Chromium" as CIYML
-    artifact "cd.yml (tag a2-v*)\nlint/test → build image → push → deploy\n→ smoke test (retry ≤ 10 phút / bước)\nSau cả hai deploy; quá hạn: đỏ và dừng\nRollback: image SHA trước + vercel rollback\n→ smoke lại (AC-N18.2–3)" as CDYML
+    artifact "ci.yml (PR)\ninstall → lint → build\nSuite removed after verification; evidence in docs" as CIYML
+    artifact "cd.yml (tag a2-v*)\nlint/build → build image → push → deploy\n→ smoke test (retry ≤ 10 phút / bước)\nSau cả hai deploy; quá hạn: đỏ và dừng\nRollback: compatible inventory image + vercel rollback\n→ smoke lại (AC-N18.2–3)" as CDYML
     artifact "GitHub production secrets\nRENDER_DEPLOY_HOOK_URL, VERCEL_TOKEN,\nVERCEL_ORG_ID, VERCEL_PROJECT_ID\nVars: PRODUCTION_API_URL, PRODUCTION_WEB_URL" as SEC
   }
 }

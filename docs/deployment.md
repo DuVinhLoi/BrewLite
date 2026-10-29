@@ -1,5 +1,7 @@
 # Triển khai và rollback — Task 5
 
+> **BREW-INVENTORY-01:** trước phát hành kho nguyên liệu, bắt buộc thực hiện preflight legacy pending orders và kiểm kê theo [inventory runbook](inventory-runbook.md). Sau khi có đơn inventoryTracked=true, bản rollback API phải hiểu cả marker/snapshot; không dùng image cũ chỉ biết Product.stock. Tài liệu triển khai cũ dưới đây không thay thế gate này.
+
 Production theo [Deployment-01](architecture/deployment.svg) và ADR 003/004: **Vercel web + Render API image + Render Postgres internal**.
 Web: https://brewlite-a2-web.vercel.app; API: https://brewlite-a2-api.onrender.com.
 Deploy tay ngày 23/10/2026 đã PASS health, products và menu tám món. Run/tag, smoke và rollback của release hiện tại được ghi ở [báo cáo Task 5](planning/handoff/2026-10-21-req-sync/report-task5.md) và [release notes](task5/release-notes.md); không suy diễn kết quả CD từ lần deploy tay.
@@ -10,7 +12,7 @@ Deploy tay ngày 23/10/2026 đã PASS health, products và menu tám món. Run/t
 - Render API `brewlite-a2-api` chạy public image `ghcr.io/duvinhloi/brewlite-api:<FULL_SHA>`, Free/Singapore; Health Check Path `/health`; auto-deploy off. Env: `DATABASE_URL`, JWT ngẫu nhiên ít nhất 32 ký tự trong `JWT_SECRET`, `CORS_ORIGINS=https://brewlite-a2-web.vercel.app`, `PORT=4000`.
 - GHCR package brewlite-api public để Render pull anonymous; trong Package settings → Manage Actions access, cấp repository DuVinhLoi/BrewLite quyền Write để GITHUB_TOKEN publish. Public không đồng nghĩa workflow có quyền ghi. Run CD40475323601 đã chứng minh lỗi write_package khi quyền này chưa có.
 - Vercel project `brewlite-a2-web`: Root Directory `apps/web`, Next.js, Node 24.x; Production `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`. Project có liên kết repository; `gitProviderOptions.createDeployments=disabled` tắt native Git deployment để GitHub Actions kiểm soát phát hành. Đã kiểm và đặt lại cấu hình này ngày 28/10/2026.
-- Docker CMD của API chạy migration trước server. Khi chuyển từ image Pha A, bỏ Docker Command override cũ trên Render để dùng CMD image mới. Migration chỉ thêm một bước bỏ index key xuyên đơn, giữ index mỗi đơn một lần trả thành công; không sửa lịch sử migration.
+- Docker CMD của API chạy migration trước server. Khi chuyển từ image Pha A, bỏ Docker Command override cũ trên Render để dùng CMD image mới. Migration trước đây bỏ index key xuyên đơn và giữ index mỗi đơn một lần thành công; BREW-INVENTORY-01 thêm bảng kho/marker/check theo runbook, không sửa lịch sử migration.
 - Seed chỉ chạy có chủ đích, không ghi đè sản phẩm/tồn kho đã tồn tại. `SEED_DEMO_USERS=true` chỉ dành cho demo được nhóm cho phép; tài khoản demo không dành cho dữ liệu thật. Payment Service mô phỏng không thu tiền thật và không lưu/log số thẻ.
 
 ## Local Docker trên Windows
@@ -43,7 +45,7 @@ Environment `production` cần secrets (chỉ tên, không ghi giá trị):
 
 Variables `PRODUCTION_API_URL` và `PRODUCTION_WEB_URL` dùng URL HTTPS trên, không có dấu `/` cuối; `RENDER_SERVICE_ID=srv-dbdms83ncjis73aodm1g`; đặt ở environment `production`. Render API key cần đọc deploy của service; dùng scope hẹp nếu tài khoản có hỗ trợ. Job publish dùng `GITHUB_TOKEN` với `packages:write`, không dùng PAT quyền rộng. Nhóm cấu hình reviewer/tag/branch policy ở GitHub nếu gói tài khoản hỗ trợ; phải cho phép delivery và tag release. Workflow không tự tạo lớp bảo vệ này.
 
-Push lên `feat/assignment2-task5-delivery` tự chạy Delivery và deploy sau quality thành công, kể cả push chỉ sửa tài liệu. CI reusable giữ lint/unit/integration/build/E2E; không có thêm standalone CI cho cùng sự kiện push delivery/tag. PR vào `develop-Assignment2` và các nhánh được CI hỗ trợ chỉ chạy CI. Reviewer environment nếu được bật sẽ làm run chờ duyệt. Các deploy production dùng chung concurrency và không hủy run đang chạy.
+Push lên `feat/assignment2-task5-delivery` tự chạy Delivery và deploy sau quality thành công, kể cả push chỉ sửa tài liệu. CI reusable bản cuối giữ lint/build; unit/integration/E2E đã loại sau kiểm chứng theo yêu cầu, bằng chứng tại inventory-verification.md; không có thêm standalone CI cho cùng sự kiện push delivery/tag. PR vào `develop-Assignment2` và các nhánh được CI hỗ trợ chỉ chạy CI. Reviewer environment nếu được bật sẽ làm run chờ duyệt. Các deploy production dùng chung concurrency và không hủy run đang chạy.
 
 Release một commit đã kiểm chứng bằng tag mới `a2-v*`, không di chuyển hoặc ghi đè tag đã phát hành:
 
@@ -69,7 +71,7 @@ Nghiệm thu cần health 200 `{"status":"ok","database":"up"}`, products 200 c�
 
 ## Rollback
 
-1. Chọn **full SHA và deployment ID trước release** đã ghi lại; xác nhận code cũ tương thích schema sau migration.
+1. Chọn **full SHA và deployment ID trước release** đã ghi lại; xác nhận code đích hiểu cả inventoryTracked true/false và snapshot nguyên liệu theo ADR-006; tương thích schema đơn thuần chưa đủ.
 2. Gọi Render deploy hook với image SHA trước qua `imgURL` URL-encoded. Ví dụ từ shell có secret được cấp qua env, không bật shell tracing:
 
 ```bash

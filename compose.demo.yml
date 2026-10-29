@@ -1,0 +1,16 @@
+name: brewlite-demo
+services:
+  demo:
+    image: brewlite-demo:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:${DEMO_PORT:-3000}:3000"
+    environment:
+      SEED_DEMO_USERS: "true"
+    volumes:
+      - demo_data:/var/lib/brewlite
+    stop_grace_period: 30s
+volumes:
+  demo_data:

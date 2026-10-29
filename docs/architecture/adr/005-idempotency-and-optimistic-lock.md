@@ -24,16 +24,18 @@ Payment Service là thành phần logic chạy trong tiến trình API, mô ph�
 
 ### C. Cập nhật tồn kho an toàn
 
-- Giữ chỗ tồn kho khi **tạo đơn**, trong cùng transaction tạo `Order` và `OrderItem` (BR-03). Dùng cập nhật có điều kiện `UPDATE … WHERE stock >= :n`; kiểm số dòng cập nhật, không dùng chuỗi đọc rồi ghi thiếu điều kiện.
-- Nếu một món không đủ tồn, rollback toàn bộ transaction; trả 409 `OUT_OF_STOCK` kèm chi tiết món thiếu (FR-13). Không để lại đơn hay giữ kho một phần.
-- Thanh toán không trừ tồn kho lần nữa. Thanh toán thất bại vẫn giữ kho; chỉ trả kho khi chuyển đơn sang `CANCELLED` nếu làm FR-25 (Could). Hủy đơn đã `PAID` nằm ngoài bản minimum.
+**BREW-INVENTORY-01 (2026-10-29): phần này được thay bởi [ADR-006](006-ingredient-inventory-snapshots.md) cho đơn mới `inventoryTracked=true`.** Đơn mới dùng Ingredient.onHand/reserved và snapshot, không UPDATE Product.stock. Đơn cũ marker false giữ hành vi dưới đây để không mất lịch sử hoặc suy diễn công thức:
+
+- Legacy giữ chỗ bằng giảm Product.stock trong transaction tạo đơn; thiếu món rollback toàn bộ.
+- Legacy thanh toán không giảm Product.stock lần nữa; thất bại giữ chỗ; chủ đơn hủy chưa trả hoàn Product.stock một lần.
+- Cả hai đường dùng cùng quy tắc replay thành công ở §A; không hủy đơn đã PAID.
 
 ## Hệ quả
 
 ### Ưu điểm
 
 - Retry thành công trả lại cùng kết quả, không gọi simulator lần nữa; ràng buộc một lần thành công cho mỗi đơn.
-- Transaction và cập nhật có điều kiện bảo vệ tồn kho khi đặt đồng thời. Integration test 10 yêu cầu đặt 1 ly khi tồn 5 phải có 5 lần 201, 5 lần 409 `OUT_OF_STOCK`, tồn cuối 0 (AC-F13.3).
+- Transaction bảo vệ tồn kho khi đặt đồng thời. Với đơn mới, khóa nguyên liệu và snapshot theo ADR-006; available cuối bằng 0 khi giữ hết lượng, onHand chưa giảm trước thanh toán (AC-F13.3).
 - Kiểm thử replay cùng key, khác phương thức sau `PAID`, cùng key trên đơn khác và retry sau thất bại bám sát D2/D3.
 
 ### Hạn chế

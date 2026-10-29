@@ -4,5 +4,6 @@ import { AuthGuard } from '../auth/auth.guard';
 import { AuthController } from '../auth/auth.controller';
 import { CheckoutService } from './checkout.service';
 import { CheckoutController, HealthController, OptionsController } from './checkout.controller';
-@Module({ controllers: [AuthController, CheckoutController, HealthController, OptionsController], providers: [AuthService, AuthGuard, CheckoutService] })
+import { InventoryModule } from '../inventory/inventory.module';
+@Module({ imports: [InventoryModule], controllers: [AuthController, CheckoutController, HealthController, OptionsController], providers: [AuthService, AuthGuard, CheckoutService] })
 export class CheckoutModule {}

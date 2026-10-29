@@ -1,12 +1,12 @@
 # Kiến trúc BrewLite — Task 3
 
-> Đã đối chiếu SRS sau PR #11 (2026-10-21), quyết định D2/D3 và card Task 3; cập nhật 2026-10-22.
+> BREW-INVENTORY-01 (2026-10-29) cập nhật kho nguyên liệu cho Assignment 2 Task 1–5. Hợp đồng: [inventory-contract.md](../inventory-contract.md); bằng chứng runtime nằm trong [verification](../inventory-verification.md).
 
 ## 1. Phạm vi và nguồn yêu cầu
 
 Tài liệu mô tả kiến trúc phân lớp theo đề A2 §5.1 và deployment theo §5.2. Nguồn nghiệp vụ là [SRS](../requirements/srs.md), đặc biệt BR-03, BR-05, §3.4 và các NFR; quyết định đồng bộ tại [handoff](../planning/handoff/2026-10-21-req-sync/README.md).
 
-Bản minimum gồm menu/chi tiết, size/topping, giỏ hàng, đăng ký/đăng nhập, đặt đơn, thanh toán Ví/Thẻ mô phỏng, xác nhận, lịch sử và trạng thái đơn. Khuyến mãi, điểm thưởng và hủy đơn đã trả nằm ngoài minimum; hủy đơn chưa trả là FR-25 (Could). Các lớp domain ngoài luồng minimum vẫn có trong class diagram theo đề A2 §4.3.
+Bản minimum gồm menu/chi tiết, size/topping, giỏ hàng, đăng ký/đăng nhập, đặt đơn, thanh toán Ví/Thẻ mô phỏng, xác nhận, lịch sử và trạng thái đơn. Khuyến mãi, điểm thưởng và hủy đơn đã trả nằm ngoài minimum; hủy đơn chưa trả và quản lý nguyên liệu/công thức là FR-25/29 Must của increment này. Các lớp domain ngoài luồng minimum vẫn có trong class diagram theo đề A2 §4.3.
 
 Task 3 chốt thiết kế và ADR. Task 4/5 hiện thực mã nguồn, cấu hình nền tảng, đo hiệu năng và cung cấp minh chứng CI/CD; tài liệu này không xác nhận production đã triển khai hoặc rollback đã diễn tập.
 
@@ -26,7 +26,7 @@ Frontend chịu trách nhiệm hiển thị và trạng thái giỏ hàng; API l
 | Payment mô phỏng | Thành phần logic trong `apps/api`, module `payments`; Ví/Thẻ mô phỏng, thành công/thất bại; không lưu trạng thái | Gọi nội bộ tiến trình; không lưu/log `cardNumber`; theo SRS §3.4 |
 | PostgreSQL | Prisma schema/migrations/seed của `apps/api`; dữ liệu domain theo SRS §3.6 | Local :5432 với named volume; production Render Postgres, internal TCP 5432 và persistent storage |
 | GHCR | Artifact build từ `apps/api/Dockerfile`, do `.github/workflows/cd.yml` phát hành | `ghcr.io/duvinhloi/brewlite-api:<commit-sha>`; Render pull qua HTTPS 443 |
-| GitHub Actions CI/CD | `.github/workflows/ci.yml`, `cd.yml`; kiểm chất lượng, build/push/deploy/smoke | Runner tách production; Postgres tạm cho integration test, không kết nối DB production |
+| GitHub Actions CI/CD | `.github/workflows/ci.yml`, `cd.yml`; kiểm chất lượng, build/push/deploy/smoke | Runner tách production; lint/build trong bản cuối; kiểm chứng DB trước cleanup ghi ở inventory-verification.md |
 | Render logs | Nhận stdout JSON của `apps/api` | `LOG_LEVEL`; lọc dữ liệu nhạy cảm trước khi ghi |
 
 Các đường dẫn trên là vị trí hiện thực của Task 4/5 theo contract, không sao chép mã từ branch phụ thuộc. Ba vùng local, CI và production tách bạch trên Deployment-01; GHCR là registry dùng bởi CD và Render.
@@ -43,7 +43,8 @@ NestJS chia controller → service nghiệp vụ → Prisma/truy cập dữ li�
 
 | Module | Trách nhiệm |
 |---|---|
-| `catalog` | `GET /products`, `GET /products/:id`; đọc sản phẩm, size/topping, mô tả và tồn kho |
+| `catalog` | Đọc sản phẩm/size/topping; stock trả ra là số ly S không topping từ inventory, không đọc số ly legacy làm khả năng bán |
+| `inventory` | Decimal balances, availability tổng hợp giỏ, công thức, movement Barista, reserve/consume/release snapshot; dùng transaction do checkout cung cấp |
 | `auth` | Đăng ký/đăng nhập, băm mật khẩu, JWT, guard vai trò và quyền sở hữu |
 | `orders` | Tính giá server, tạo đơn/giữ tồn trong transaction; lịch sử, chi tiết, kiểm chuyển trạng thái |
 | `payments` | Ví/Thẻ mô phỏng, replay theo BR-05 ở API (ADR-005); cập nhật Payment và trạng thái đơn cùng transaction |
@@ -54,16 +55,16 @@ NestJS chia controller → service nghiệp vụ → Prisma/truy cập dữ li�
 
 1. Browser tải web từ CDN, gọi API đọc menu/chi tiết; giỏ hàng chỉ là state của client.
 2. Guest đi đăng nhập trước checkout; token hết hạn thì giữ giỏ, `orderId`, chủ đơn và key để tiếp tục đúng đơn sau khi đăng nhập lại cùng tài khoản (AC-F10.4).
-3. `POST /orders`: kiểm DTO, quyền Customer, tính giá từ catalog; tạo `Order`, `OrderItem` và giữ tồn kho cùng transaction. Dùng `UPDATE … WHERE stock >= :n`; thiếu tồn ở một món thì rollback toàn bộ và trả 409 `OUT_OF_STOCK` (BR-03, FR-13).
+3. `POST /orders`: kiểm DTO/quyền, tính giá server; khóa recipe theo ID, đọc base+size+topping, cộng nhu cầu toàn giỏ, khóa ingredient theo ID và kiểm onHand-reserved. Một transaction tăng reserved và tạo Order marker true, OrderItem, OrderIngredient bất biến. Thiếu công thức trả RECIPE_UNAVAILABLE; thiếu lượng trả OUT_OF_STOCK có details nguyên liệu, rollback toàn bộ.
 4. `POST /payments`: kiểm xác thực/quyền sở hữu, replay nếu cùng chủ đơn + `orderId` + `Idempotency-Key` + `paymentMethod` đã thành công. `cardNumber` không dùng để so (D2). Yêu cầu mới chỉ xử lý với đơn `PENDING`/`PAYMENT_FAILED`.
-5. Thành công: gọi simulator và lưu `Payment SUCCESS` + `Order PAID` cùng transaction, tối đa một lần thành công/đơn. Thất bại: lưu `FAILED`, giữ đơn và tồn, cho thử lại cùng key; cùng key trên đơn khác là yêu cầu mới (D3). Xem ADR-005 cho đồng thời và các nhánh 409.
+5. Thành công: dưới khóa đơn/nguyên liệu, giảm onHand/reserved theo snapshot và lưu Payment SUCCESS + Order PAID cùng transaction, đúng một lần. Thất bại giữ nguyên snapshot/reserved và ghi FAILED; retry cùng đơn không giữ thêm. Replay thành công trả kết quả trước xét trạng thái và không tiêu thụ thêm. Chủ đơn hủy PENDING/PAYMENT_FAILED chỉ giảm reserved theo snapshot trong transaction với CANCELLED; hủy lặp bị từ chối.
 6. Web xóa giỏ sau thành công và đọc lại `GET /orders/:id` cho biên lai; `GET /orders/me` chỉ trả đơn của chủ token.
 7. Simulator không lưu trạng thái; API dừng giữa bước 13 và 14 của UC-04 là rủi ro chấp nhận (SRS §3.4).
 
 ### Lưu ý nhất quán
 
 - `Product.description` có trong [class diagram](../diagrams/class-domain.puml) (D1).
-- Giữ tồn khi tạo đơn, không giảm lần nữa khi thanh toán; thất bại vẫn giữ kho (BR-09).
+- Đơn mới giữ reserved khi tạo, chỉ giảm onHand khi trả thành công. Không đọc lại công thức để tiêu thụ/giải phóng. Đơn cũ inventoryTracked=false tiếp tục Product.stock lifecycle cũ; không backfill snapshot hoặc chuyển số ly thành nguyên liệu (ADR-006).
 - Đơn đã `PAID` nhận cùng key khác phương thức hoặc key mới: 409 `ORDER_NOT_PAYABLE`, không gọi simulator. Replay thành công được xét trước trạng thái.
 - Tên domain, enum và chuyển trạng thái theo SRS §3.6 và sơ đồ Task 2; không tạo thêm hợp đồng API ở Task 3.
 
@@ -89,11 +90,11 @@ Web/API production dùng HTTPS 443. API chỉ truy cập Postgres qua internal U
 
 ### NFR-12: Trình duyệt và E2E
 
-Luồng menu → giỏ → đăng nhập → thanh toán → xác nhận chạy bằng E2E tự động trên Chromium. Đưa E2E vào CI; yêu cầu dùng được trên trình duyệt theo SRS được kiểm ở §7.
+Luồng menu → giỏ → đăng nhập → thanh toán → xác nhận và inventory được kiểm chứng trước bàn giao. Theo yêu cầu cuối, bộ test dự án được loại khỏi bản phân phối sau kiểm chứng; các lệnh/test ID và mục §7 dưới đây mô tả kế hoạch hoặc bằng chứng lịch sử, không cam kết suite còn được giao. Xem inventory-verification.md cho kết quả thực chạy.
 
 ### NFR-13: Transaction và tồn kho
 
-Tạo đơn/OrderItem/giữ kho là một transaction, cập nhật có điều kiện; lỗi giữa chừng không để lại dữ liệu một phần. Xem ADR-005 §C và test đồng thời AC-F13.3; idempotency thanh toán theo BR-05/FR-16, không gán nhầm cho NFR về trình duyệt.
+Tạo đơn/OrderItem/OrderIngredient/tăng reserved là một transaction; khóa recipe trước ingredient theo ID. Sửa recipe dùng cùng khóa recipe; payment/cancel/nhập/kiểm kê dùng cùng thứ tự ingredient. Availability dùng repeatable-read. DB CHECK giữ 0≤reserved≤onHand; lỗi giữa chừng không để lại dữ liệu một phần. Xem ADR-006; ADR-005 §C chỉ còn áp dụng đơn legacy và test đồng thời AC-F13.3; idempotency thanh toán theo BR-05/FR-16, không gán nhầm cho NFR về trình duyệt.
 
 ### NFR-15: Health check
 
@@ -101,19 +102,19 @@ Tạo đơn/OrderItem/giữ kho là một transaction, cập nhật có điều 
 
 ### NFR-16: Migration và seed
 
-Prisma migration được version trong repo và chỉ thêm bảng/cột khi phát hành, không xóa/đổi tên cột, để image cũ vẫn chạy được khi rollback. Container API khởi động bằng `npx prisma migrate deploy && node dist/main.js`; migration lỗi thì API không bắt đầu phục vụ. CI dùng DB tạm để kiểm migration, không nối DB production.
+Prisma migration được version trong repo và chỉ thêm bảng/cột khi phát hành, không xóa/đổi tên cột, để bảo toàn dữ liệu; với kho nguyên liệu, rollback còn phải dùng image hiểu inventoryTracked/snapshot theo ADR-006. Container API khởi động bằng `npx prisma migrate deploy && node dist/main.js`; migration lỗi thì API không bắt đầu phục vụ. Migration được kiểm trên DB cô lập trước cleanup; bản cuối không giao bộ test, không nối CI vào DB production để kiểm thử.
 
-Seed tái tạo đúng SRS §3.3: 8 sản phẩm, size/topping và 2 tài khoản demo; không seed khuyến mãi. Chạy seed hai lần không tăng số bản ghi. Seed là bước khởi tạo có chủ đích, không chạy lại mỗi lần production restart (ADR-003).
+Seed tạo 8 sản phẩm, size/topping, nguyên liệu missing ở số dư 0 và công thức demo; demo users chỉ khi SEED_DEMO_USERS=true. Upsert update rỗng bảo toàn số dư và công thức đã sửa, chạy lại không tăng bản ghi. Nhập số đếm thật qua movement API, không dùng seed reset kho. Không seed khuyến mãi; không chạy seed mỗi restart. Preflight legacy và rollback tương thích theo [runbook](../inventory-runbook.md).
 
 ### NFR-17: CI
 
-PR vào `develop-Assignment2` chạy Install → Lint → Unit Test → Build cho `apps/api` và `apps/web`. Check `ci` phải xanh mới merge; Task 4/5 cung cấp bằng chứng một lần xanh và một lần phát hiện lỗi. Integration test dùng Postgres tạm và E2E Chromium bổ sung vào CI theo §7.
+Bản phân phối cuối chạy Install → Lint → Build cho API/web; các suite unit/integration/E2E đã được loại theo yêu cầu sau kiểm chứng. Check `ci` vẫn là gate chất lượng cấu hình trong workflow. Bằng chứng test trước cleanup được giữ tại inventory-verification.md và hồ sơ Task 4/5, không phải lệnh chạy từ bản cuối.
 
 ### NFR-18, NFR-19: CD, rollback và bàn giao
 
-Tag `a2-v*` chạy lint/test → build/push image SHA lên GHCR → deploy Render + Vercel. Migration chạy trong startup API. Sau cả hai deploy, smoke test `/health` (200 và `database = "up"`), `/products` và trang web; mỗi bước retry tối đa 10 phút, quá hạn pipeline đỏ và dừng.
+Tag `a2-v*` chạy lint/build (test suite đã loại sau kiểm chứng) → build/push image SHA lên GHCR → deploy Render + Vercel. Migration chạy trong startup API. Sau cả hai deploy, smoke test `/health` (200 và `database = "up"`), `/products` và trang web; mỗi bước retry tối đa 10 phút, quá hạn pipeline đỏ và dừng.
 
-Rollback bằng deploy hook Render với `imgURL` là image SHA trước và `vercel rollback` về web trước, sau đó chạy lại smoke test (AC-N18.3). Task 5 ghi URL HTTPS, ngày hết hạn DB free và minh chứng diễn tập trong README/`docs/deployment.md`; NFR-19 yêu cầu người ngoài nhóm chạy được theo hướng dẫn.
+Rollback chỉ về API hiểu marker/snapshot (ADR-006); bằng deploy hook Render với `imgURL` là image SHA trước và `vercel rollback` về web trước, sau đó chạy lại smoke test (AC-N18.3). Task 5 ghi URL HTTPS, ngày hết hạn DB free và minh chứng diễn tập trong README/`docs/deployment.md`; NFR-19 yêu cầu người ngoài nhóm chạy được theo hướng dẫn.
 
 ### NFR-20: Logging
 
@@ -149,9 +150,9 @@ API ghi một dòng JSON mỗi HTTP request: `timestamp`, `method`, `path`, `sta
 
 ## 7. Kiểm chứng thiết kế và trách nhiệm hiện thực
 
-- Task 3: render PlantUML, kiểm SVG, link nội bộ, thuật ngữ cũ, allowed paths và `python docs/validate_task2.py`. Đây là kiểm tài liệu/sơ đồ, không chứng minh runtime đáp ứng NFR.
-- Task 4/5: unit test domain; integration với PostgreSQL thật cho rollback transaction, 10 yêu cầu tồn kho đồng thời và replay D2/D3; migration/seed hai lần trên DB trống.
-- Task 5: E2E Chromium trong CI cho luồng chính, retry và giữ giỏ/đơn; kiểm mobile/desktop, loading/empty/error, PWA manifest. Đo NFR-01/NFR-03 trên Compose local, Lighthouse mobile cho NFR-02.
+- Task 3: render PlantUML, kiểm SVG, link nội bộ, thuật ngữ cũ và allowed paths. Script smoke tự động cũ đã xóa cùng bộ test; kết quả lịch sử ở [báo cáo kho](../inventory-verification.md). Kiểm tài liệu/sơ đồ không chứng minh runtime đáp ứng NFR.
+- Trước cleanup Task 4/5: kiểm domain và PostgreSQL thật cho rollback, cạnh tranh tồn, replay và seed hai lần; kết quả actual ở inventory-verification.md. Bộ suite không còn trong bản cuối.
+- Bằng chứng E2E Chromium trước cleanup ghi ở verification; bản cuối kiểm thủ công luồng chính, retry, giỏ/đơn và inventory theo runbook, không có lệnh npm test/E2E để chạy lại.
 - Task 5/chủ repo: cấu hình branch protection, HTTPS, DB external access disabled, secret/CORS và log; lưu minh chứng smoke, rollback và URL production theo NFR-18/NFR-19.
 
 ## 8. Ánh xạ NFR sang thiết kế (đầu vào B10)
@@ -170,12 +171,12 @@ Bảng gồm **19 NFR chờ Task 3** (NFR-01–20 trừ NFR-06) theo card B10; N
 | NFR-09 | architecture.md §3 Web, §4, §7 | Viewport, vùng chạm, kích thước chữ |
 | NFR-10 | architecture.md §3 Web PWA, §7 | Manifest và icon 192/512 |
 | NFR-11 | architecture.md §3 Web, §4, §7 | Loading/empty/error tiếng Việt |
-| NFR-12 | architecture.md §5, §7; Deployment-01 CI | E2E Chromium trong CI |
-| NFR-13 | architecture.md §4, §5; ADR-005 §C | Transaction và 10 request tồn kho đồng thời |
+| NFR-12 | architecture.md §5, §7; Deployment-01 CI | Bằng chứng Chromium trước cleanup; runbook thủ công bản cuối |
+| NFR-13 | architecture.md §4, §5; ADR-006; ADR-005 §C chỉ cho đơn legacy | Transaction và 10 request tồn kho đồng thời |
 | NFR-14 | architecture.md §3, §5; ADR-003; Deployment-01 local | Compose startup và volume qua restart |
 | NFR-15 | architecture.md §4 `health`, §5; ADR-004; deployment.puml (smoke /health) | Health 200/503 theo kết nối DB |
 | NFR-16 | architecture.md §5; ADR-003; Deployment-01 startup API | Migrate DB trống, seed hai lần, migration chỉ thêm |
-| NFR-17 | architecture.md §5, §7; ADR-001; Deployment-01 CI | Install/Lint/Unit Test/Build; check ci |
+| NFR-17 | architecture.md §5, §7; ADR-001; Deployment-01 CI | Install/Lint/Build; test evidence trước cleanup; check ci |
 | NFR-18 | architecture.md §5; ADR-004; Deployment-01 CD | Tag a2-v*, image SHA, smoke và rollback |
 | NFR-19 | architecture.md §5, §7; ADR-004; Deployment-01 production | URL HTTPS trong README và bàn giao |
 | NFR-20 | architecture.md §5; ADR-004; Deployment-01 Render logs | Schema JSON, LOG_LEVEL, lọc dữ liệu nhạy cảm |

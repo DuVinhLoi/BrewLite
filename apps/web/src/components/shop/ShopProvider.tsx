@@ -34,6 +34,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     login(value) { setSession(value); try { sessionStorage.setItem('brewlite-session', JSON.stringify(value)); } catch { /* Session remains in memory. */ } },
     logout,
   };
-  return <Context.Provider value={store}><nav className="shop-nav" aria-label="Điều hướng"><Link href="/">BrewLite</Link><Link href="/cart">Giỏ hàng ({cart.reduce((sum, line) => sum + line.quantity, 0)})</Link><Link href="/orders">Đơn hàng</Link>{session ? <><span>{session.email}</span><button onClick={store.logout}>Đăng xuất</button></> : <Link href="/login">Đăng nhập</Link>}</nav>{children}</Context.Provider>;
+  return <Context.Provider value={store}><nav className="shop-nav" aria-label="Điều hướng"><Link href="/">BrewLite</Link><Link href="/cart">Giỏ hàng ({cart.reduce((sum, line) => sum + line.quantity, 0)})</Link><Link href="/orders">Đơn hàng</Link>{session?.role === 'BARISTA' && <Link href="/inventory">Kho nguyên liệu</Link>}{session ? <><span>{session.email}</span><button onClick={store.logout}>Đăng xuất</button></> : <Link href="/login">Đăng nhập</Link>}</nav>{children}</Context.Provider>;
 }
 export function useShop() { const value = useContext(Context); if (!value) throw new Error('ShopProvider missing'); return value; }

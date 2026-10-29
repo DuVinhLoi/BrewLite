@@ -1,180 +1,148 @@
 @startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ClassBackgroundColor #eef2fb
+skinparam ClassBorderColor #5b6b8c
+skinparam ClassFontColor #1f2937
+skinparam StateBackgroundColor #eef2fb
+skinparam StateBorderColor #5b6b8c
+skinparam StateFontColor #1f2937
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
 ' BrewLite Assignment 2 - UC-04; authoritative SRS 3.5-3.6 and uc-checkout.md
 ' A2 §4.1: four swimlanes; three mandatory failures all have explicit ends.
 !pragma useVerticalIf on
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
-skinparam ArrowColor #55738A
 skinparam ActivityBorderColor #46677B
 skinparam ActivityBackgroundColor #EAF3FA
 skinparam ActivityDiamondBackgroundColor #FFF2D8
 skinparam ActivityDiamondBorderColor #B58B45
 skinparam ActivityBarColor #46677B
-title BrewLite A2 - Activity: UC-04 Checkout
-
+title BrewLite A2 - Ingredient checkout: reserve, pay, cancel
 |Customer|
 start
-:Open cart and press "Checkout";
+:Open cart and checkout;
 |Next.js UI|
-if (Customer authenticated?) then (no - E1a)
-  :Keep cart; open /login?next=/checkout;
+:Check selected sizes/toppings and aggregate cart availability;
+if (Customer JWT valid?) then (no - E1a)
+  :Keep cart; navigate /login?next=/checkout;
   |Customer|
   if (Complete login?) then (yes)
     :Log in as CUSTOMER;
     |Next.js UI|
-    :Return to /checkout with same cart;
-  else (no)
-    |Next.js UI|
-    :Remain at login; cart retained;
+    :Resume same cart;
+  else (leave)
     stop
   endif
 else (yes)
 endif
-:Show cart summary and wallet/card choices;
 |Customer|
-:Choose WALLET or CARD; confirm payment;
+:Choose WALLET/CARD; confirm;
 |Next.js UI|
-:Disable confirm button;
-:Create Idempotency-Key for payment session;
-:POST /orders (JWT, items; NO client prices);
+:Validate card; disable confirm; create payment key;
+:POST /orders with JWT and cart; no client prices;
 |NestJS API|
-:JWT guard: role = CUSTOMER;
-if (401 from POST /orders?) then (E1a)
-  :Return 401 UNAUTHORIZED; no order;
+:Validate role/DTO; compute server prices;
+if (Invalid input or unknown product?) then (E6)
+  :400 / 404; no order or balance change;
   |Next.js UI|
-  :Keep cart; redirect to login;
-  |Customer|
-  :Sign in and return to checkout;
-  |Next.js UI|
-  :Retry POST /orders only after login;
-  |NestJS API|
-  :Validate new JWT / CUSTOMER role;
-else (authenticated)
-endif
-:Validate DTO; recompute server-side price (BR-01/02);
-if (Bad DTO or unknown product?) then (yes - E6)
-  :Return 400 VALIDATION_ERROR / 404 PRODUCT_NOT_FOUND;
-  |Next.js UI|
-  :Show validation errors; preserve cart;
-  |Customer|
-  :Correct cart later;
+  :Keep cart; show correction;
   stop
 else (valid)
 endif
-:Start DB transaction; check stock atomically;
-if (Any product OUT_OF_STOCK?) then (yes - E2)
-  :ROLLBACK; return 409 OUT_OF_STOCK;
-  :No Order or stock change;
+|NestJS API|
+:BEGIN; lock recipes in ID order;\nread base and topping recipes; aggregate ALL cart lines;\nlock ingredients in ID order; check onHand - reserved;
+if (Missing recipe or aggregate shortage?) then (E2)
+  :ROLLBACK; 409 RECIPE_UNAVAILABLE / OUT_OF_STOCK;
   |Next.js UI|
-  :Mark unavailable items; return to cart;
-  |Customer|
-  :Edit cart; can try checkout again;
+  :Keep cart; show shortage; link to edit cart;
   stop
-else (no)
-  :Reserve stock; create Order PENDING + OrderItems;
-  :COMMIT transaction; return 201 orderId + total;
+else (fits)
+  |NestJS API|
+  :Increase reserved; create Order PENDING marker true;\ncreate OrderItems and immutable OrderIngredient snapshot; COMMIT;
 endif
 |Next.js UI|
-:Retain orderId, owner and same Idempotency-Key;
-:POST /payments (JWT, orderId, method, key);
+:Keep orderId / owner / same payment key;
+:POST /payments for same order;
 |NestJS API|
-:JWT guard / CUSTOMER role;
-if (401 from POST /payments?) then (yes - E1b)
-  :Return 401; do not change order;
+if (JWT expired after order creation?) then (E1b)
+  :401; keep order and reservation unchanged;
   |Next.js UI|
-  :Keep cart, orderId, owner and key; open login;
-  |Customer|
-  :Log in again;
-  |Next.js UI|
-  :GET /orders/:id with new JWT;
-  |NestJS API|
-  :Verify SAME account owns order;
-  if (Different account / 403?) then (yes)
-    :Reject access; do not create another order;
-    |Next.js UI|
-    :Request correct account or show own history;
-    stop
-  else (owner verified)
-  endif
-  if (Status PAID/PREPARING/READY/COMPLETED?) then (yes)
-    :Return current order details;
-    |Next.js UI|
-    :Show already-paid order; no new charge;
-    stop
-  else (no)
-  endif
-  if (Status CANCELLED?) then (yes)
-    :Return CANCELLED;
-    |Next.js UI|
-    :Show cancelled order; stop payment;
-    stop
-  else (PENDING / PAYMENT_FAILED)
-    :Return payable order;
-    |Next.js UI|
-    :POST /payments again with SAME orderId/key;
-    |NestJS API|
-    :Recheck JWT / DTO / ownership;
-  endif
-else (authenticated)
-endif
-:Validate payment DTO/key and ownership;
-if (Invalid request / unauthorized order?) then (yes - E6/E7)
-  :Return 400/403/404; do not call Payment Service;
-  |Next.js UI|
-  :Explain error; keep cart and order;
+  :Re-login same Customer; GET order and check owner/status;\nresume existing order/key, never POST another order;
   stop
 else (valid)
 endif
-:Look up SUCCESS by owner + order + key + paymentMethod (BR-05);
-if (API SUCCESS replay? E4a) then (yes)
-  :Return 200 original SUCCESS/paymentId;
+|NestJS API|
+:BEGIN payment transaction; lock Order;\nvalidate DTO/key and ownership;
+if (Invalid / forbidden / missing order?) then (E6/E7)
+  :ROLLBACK; 400 / 403 / 404; no charge;
+  stop
+else (valid)
+endif
+|NestJS API|
+if (SUCCESS for same owner/order/key/method?) then (E4a)
+  :Return 200 original paymentId;\nno charge or balance mutation;
   |Next.js UI|
-  :Show PAID receipt; clear cart;
-  |Customer|
-  :See order confirmation;
+  :Show receipt; clear cart;
   stop
 else (new attempt)
 endif
-if (Order PENDING or PAYMENT_FAILED?) then (no - E7)
-  :Return 409 ORDER_NOT_PAYABLE;
-  |Next.js UI|
-  :Show order status; keep cart;
+|NestJS API|
+if (Order PENDING / PAYMENT_FAILED?) then (yes)
+  :If retry, transition PAYMENT_FAILED to PENDING;\nkeep snapshot; no additional reservation;
+else (no)
+  :409 ORDER_NOT_PAYABLE; no charge;
   stop
-else (yes)
-endif
-if (Order status PAYMENT_FAILED?) then (yes - A3)
-  :Transition PAYMENT_FAILED -> PENDING;
-else (PENDING)
 endif
 |Payment Service|
-:charge(orderId, Order.total, method);
-if (Charge successful?) then (no - E3)
-  :Return DECLINED;
-  |NestJS API|
-  :Save Payment FAILED;
-  :Transition PENDING -> PAYMENT_FAILED;
-  :Return 402 PAYMENT_DECLINED;
-  |Next.js UI|
-  :Keep cart, orderId and reserved stock;
-  :Show payment failure + Retry same Order;
-  |Customer|
-  :May retry with new method; no new Order;
-  stop
-else (yes)
+:Simulate charge for Order.total;
+if (Charge accepted?) then (yes)
   :Return SUCCESS;
   |NestJS API|
-  :DB transaction: save one Payment SUCCESS;
-  :Transition PENDING -> PAID; COMMIT;
+  :Lock ingredients in ID order;\ndecrease onHand AND reserved by snapshot;\nsave one Payment SUCCESS + Order PAID; COMMIT;
   note right
-    E8b: If API stops before COMMIT, Order stays
-    PENDING; retry is a new attempt (accepted risk,
-    simulated money, SRS 3.4).
+    Never use edited recipes to consume old snapshots.
+    Failure before commit rolls back; simulator has no real money.
+    Legacy marker false uses original Product.stock lifecycle.
   end note
-  :Return 201 SUCCESS, orderStatus PAID;
   |Next.js UI|
-  :Show receipt; clear cart only on SUCCESS;
-  |Customer|
-  :See order code and track order;
+  :201 SUCCESS; receipt and tracking; clear cart;
+  stop
+else (E3 decline)
+  |Payment Service|
+  :Return DECLINED;
+  |NestJS API|
+  :Save Payment FAILED + Order PAYMENT_FAILED; COMMIT;\nreturn 402; onHand/reserved/snapshot unchanged;
+  |Next.js UI|
+  :Keep cart/order; offer retry same order or cancel;
+endif
+|Customer|
+if (Owner confirms cancel unpaid order?) then (A5)
+  |Next.js UI|
+  :PATCH CANCELLED + JWT;
+  |NestJS API|
+  :BEGIN; lock Order; validate owner and unpaid state;\nlock ingredients by ID; decrease reserved by snapshot;\nkeep onHand; set CANCELLED; COMMIT;
+  note right
+    Repeated cancel returns 409; no second release.
+    Legacy false marker restores Product.stock instead.
+    Same cancellation applies directly to PENDING orders.
+  end note
+  |Next.js UI|
+  :Show CANCELLED; retain cart;
+  stop
+else (retry / leave)
+  |Next.js UI|
+  :Retry same order/key; no new reservation;\nleaving retains reservation, no automatic expiry;
   stop
 endif
 @enduml

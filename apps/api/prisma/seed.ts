@@ -1,5 +1,6 @@
 import { hash } from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
+import { seedInventory } from './inventory.seed';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +11,6 @@ const products = [
     description: 'Cà phê phin đậm vị hòa quyện cùng sữa đặc, thơm béo truyền thống.',
     price: 35000,
     imageUrl: '/images/ca-phe-sua.svg',
-    stock: 50,
   },
   {
     id: 'americano',
@@ -18,7 +18,6 @@ const products = [
     description: 'Espresso pha loãng với nước nóng, vị đậm đà, ít ngọt.',
     price: 40000,
     imageUrl: '/images/americano.svg',
-    stock: 50,
   },
   {
     id: 'cappuccino',
@@ -26,7 +25,6 @@ const products = [
     description: 'Espresso kết hợp sữa nóng và lớp bọt mịn đặc trưng nước Ý.',
     price: 45000,
     imageUrl: '/images/cappuccino.svg',
-    stock: 30,
   },
   {
     id: 'tra-dao',
@@ -34,7 +32,6 @@ const products = [
     description: 'Trà đen thanh mát hòa cùng đào ngâm, thêm chút chanh tươi.',
     price: 39000,
     imageUrl: '/images/tra-dao.svg',
-    stock: 30,
   },
   {
     id: 'tra-sua-tran-chau',
@@ -42,7 +39,6 @@ const products = [
     description: 'Trà sữa béo mịn cùng trân châu dai giòn tự làm.',
     price: 42000,
     imageUrl: '/images/tra-sua-tran-chau.svg',
-    stock: 20,
   },
   {
     id: 'matcha-latte',
@@ -50,7 +46,6 @@ const products = [
     description: 'Matcha Nhật Bản đắng nhẹ hòa cùng sữa tươi mát lạnh.',
     price: 48000,
     imageUrl: '/images/matcha-latte.svg',
-    stock: 20,
   },
   {
     id: 'bac-xiu',
@@ -58,7 +53,6 @@ const products = [
     description: 'Cà phê nhạt pha sữa đặc và sữa tươi, thơm dịu dễ uống.',
     price: 38000,
     imageUrl: '/images/bac-xiu.svg',
-    stock: 3,
   },
   {
     id: 'cold-brew',
@@ -66,7 +60,6 @@ const products = [
     description: 'Cà phê ủ lạnh 12 giờ, vị mượt, thanh và ít chua.',
     price: 45000,
     imageUrl: '/images/cold-brew.svg',
-    stock: 0,
   },
 ];
 
@@ -78,6 +71,8 @@ async function main(): Promise<void> {
       create: product,
     });
   }
+
+  await seedInventory(prisma);
 
   if (process.env.SEED_DEMO_USERS === 'true') {
     const passwordHash = await hash('Demo@12345', 12);

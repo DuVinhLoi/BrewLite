@@ -11,6 +11,7 @@ Task 3 gồm `architecture.md`, `adr/` và `deployment.puml`/`.svg`, đáp ứng
 | [adr/002-layered-nestjs.md](adr/002-layered-nestjs.md) | NestJS theo domain và lớp |
 | [adr/003-containerization.md](adr/003-containerization.md) | Compose/Postgres, Prisma migration khi startup, seed |
 | [adr/004-vercel-render.md](adr/004-vercel-render.md) | Vercel + Render + GHCR, secret, health, smoke và rollback |
+| [adr/006-ingredient-inventory-snapshots.md](adr/006-ingredient-inventory-snapshots.md) | Kho nguyên liệu, snapshot, legacy marker và cutover |
 | [adr/005-idempotency-and-optimistic-lock.md](adr/005-idempotency-and-optimistic-lock.md) | Replay tại API theo BR-05/D2/D3, transaction và giữ tồn kho |
 | [deployment.puml](deployment.puml) | Deployment-01: nguồn UML với local, CI, production |
 | [deployment.svg](deployment.svg) | Deployment-01: SVG do PlantUML 1.2026.8 render |

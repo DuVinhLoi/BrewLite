@@ -6,10 +6,11 @@ import { Identity } from '../auth/auth.service';
 import { invalid, parseItems, record, unitPrice } from './pricing';
 import { simulatePayment } from './payment';
 import { canTransition } from './order-state';
+import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class CheckoutService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly inventory: InventoryService) {}
   customer(user: Identity) { if (user.role !== 'CUSTOMER') throw new ForbiddenException(); }
   private async owned(tx: Prisma.TransactionClient, id: string, user: Identity) {
     const order = await tx.order.findUnique({ where: { id }, include: { items: true } });
@@ -22,17 +23,15 @@ export class CheckoutService {
     const items = parseItems(body);
     return this.prisma.$transaction(async (tx) => {
       const lines = [];
-      // Stable lock order avoids deadlocks when two carts contain the same products.
       for (const item of [...items].sort((a, b) => a.productId.localeCompare(b.productId))) {
         const product = await tx.product.findUnique({ where: { id: item.productId } });
         if (!product) throw new NotFoundException({ code: 'PRODUCT_NOT_FOUND', message: 'Không tìm thấy sản phẩm' });
-        const changed = await tx.product.updateMany({ where: { id: product.id, stock: { gte: item.quantity } }, data: { stock: { decrement: item.quantity } } });
-        if (changed.count !== 1) throw new ConflictException({ code: 'OUT_OF_STOCK', message: `${product.name} không đủ tồn kho` });
         const price = unitPrice(product.price, item.size, item.toppings);
         lines.push({ ...item, name: product.name, unitPrice: price, lineTotal: price * item.quantity });
       }
-      return tx.order.create({ data: { userId: user.sub, total: lines.reduce((total, line) => total + line.lineTotal, 0), items: { create: lines } }, include: { items: true } });
-    });
+      const ingredients = await this.inventory.reserve(tx, items);
+      return tx.order.create({ data: { userId: user.sub, inventoryTracked: true, ingredients: { create: ingredients }, total: lines.reduce((total, line) => total + line.lineTotal, 0), items: { create: lines } }, include: { items: true } });
+    }, { maxWait: 20000, timeout: 20000 });
   }
   async list(user: Identity) {
     this.customer(user);
@@ -54,12 +53,15 @@ export class CheckoutService {
       if (user.role === 'CUSTOMER' && order.status === 'PAID') throw new ForbiddenException();
       if (!cancel && !(user.role === 'BARISTA' && status !== 'CANCELLED' && canTransition(order.status, status as OrderStatus))) throw new ConflictException({ code: 'INVALID_ORDER_TRANSITION', message: 'Không thể chuyển trạng thái đơn' });
       if (cancel) {
-        for (const line of [...order.items].sort((a, b) => a.productId.localeCompare(b.productId))) {
-          await tx.product.update({ where: { id: line.productId }, data: { stock: { increment: line.quantity } } });
+        if (order.inventoryTracked) await this.inventory.settle(tx, order.id, false);
+        else {
+          for (const line of [...order.items].sort((a, b) => a.productId.localeCompare(b.productId))) {
+            await tx.product.update({ where: { id: line.productId }, data: { stock: { increment: line.quantity } } });
+          }
         }
       }
       return tx.order.update({ where: { id }, data: { status: status as OrderStatus }, include: { items: true } });
-    });
+    }, { maxWait: 20000, timeout: 20000 });
   }
   async pay(user: Identity, body: unknown, key?: string) {
     this.customer(user);
@@ -84,6 +86,7 @@ export class CheckoutService {
       if (order.status === 'PAYMENT_FAILED') await tx.order.update({ where: { id: orderId }, data: { status: 'PENDING' } });
       const outcome = await simulatePayment(paymentMethod, input.cardNumber as string | undefined);
       const success = outcome === 'SUCCESS';
+      if (success && order.inventoryTracked) await this.inventory.settle(tx, order.id, true);
       const payment = await tx.payment.create({ data: { orderId, userId: user.sub, method: paymentMethod, status: success ? 'SUCCESS' : 'FAILED', amount: order.total, idempotencyKey: key, fingerprint } });
       await tx.order.update({ where: { id: orderId }, data: { status: success ? 'PAID' : 'PAYMENT_FAILED' } });
       return { replay: false, paymentId: payment.id, orderId, orderStatus: success ? 'PAID' : 'PAYMENT_FAILED', amount: order.total, status: payment.status, outcome };

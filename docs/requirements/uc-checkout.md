@@ -1,5 +1,7 @@
 # Đặc tả use-case trọng tâm: UC-04 Đặt và thanh toán đơn hàng (Task 1.3)
 
+> **BREW-INVENTORY-01:** đơn mới dùng snapshot nguyên liệu; cancellation là Must. Bộ test được loại sau kiểm chứng theo yêu cầu bàn giao; các test ID/đề xuất kiểm dưới đây là truy vết lịch sử, kết quả thực tại [inventory-verification.md](../inventory-verification.md).
+>
 > **Baseline Task 1 theo phạm vi minimum đã chốt trong PR #5, đã rút gọn thêm (SRS mục 1.4).** Thành viên phụ trách phải tự giải thích được từng luồng khi vấn đáp.
 >
 > Đáp ứng đề A2 §3.3. Yêu cầu: [`srs.md`](srs.md) (mã `FR-xx`, `NFR-xx`, quy tắc `BR-xx`, mã lỗi ở mục 3). Phạm vi: [`context-and-scope.md`](context-and-scope.md). Use-case tổng quát: [`use-case-overview.svg`](use-case-overview.svg). Truy vết: [`../traceability-matrix.md`](../traceability-matrix.md).
@@ -68,7 +70,7 @@ Barista không tham gia use-case này (xem UC-07 trong `srs.md` mục 2.3). Các
 
 - Đúng 1 `Order` của Customer ở trạng thái `PAID`, kèm các `OrderItem` khớp giỏ; `Order.total` do server tính (BR-01).
 - Đúng 1 `Payment` `SUCCESS` cho đơn, lưu `Idempotency-Key`.
-- `stock` mỗi sản phẩm đã giảm đúng số lượng đặt (đã giữ chỗ ở bước 8).
+- Đơn mới có snapshot OrderIngredient bất biến. Thành công giảm onHand và reserved đúng snapshot một lần; menu tính lại số ly từ available. Đơn legacy marker false giữ vòng đời Product.stock cũ.
 - Giỏ hàng trên trình duyệt đã bị xóa; Customer thấy màn xác nhận có mã đơn.
 
 **Hậu điều kiện khi thất bại** (mỗi nhánh chi tiết ở mục 7; đây là bảng tổng hợp):
@@ -97,13 +99,13 @@ Luồng thành công nhất: Customer đã đăng nhập, thanh toán Ví, còn 
 | 5 | Next.js UI | Kiểm dữ liệu nhập (định dạng thẻ), vô hiệu nút "Xác nhận trả", tạo `Idempotency-Key` cho phiên thanh toán; gửi `POST /orders` kèm JWT và danh sách dòng (không gửi giá) |
 | 6 | NestJS API | Xác thực JWT và vai trò `CUSTOMER`; kiểm dữ liệu theo DTO (số lượng, size, topping, số dòng) |
 | 7 | NestJS API | Tính giá từng dòng và `total` từ giá trong Database (BR-01) |
-| 8 | NestJS API, Database | Trong **một transaction**: kiểm tồn kho từng sản phẩm; giữ chỗ (trừ `stock`); tạo `Order` ở `PENDING` và các `OrderItem`; commit. Trả 201 với `id`, `status = PENDING`, `total` |
+| 8 | NestJS API, Database | Một transaction: khóa công thức theo ID; tổng hợp nhu cầu base+size+topping của toàn giỏ; khóa nguyên liệu theo ID; kiểm available; tăng reserved; tạo Order PENDING marker true, OrderItems và OrderIngredient snapshot; commit. Thiếu công thức hoặc thiếu lượng thì rollback toàn bộ |
 | 9 | Next.js UI | Gửi `POST /payments` với `orderId`, `paymentMethod` (và `cardNumber` nếu là Thẻ); header `Idempotency-Key` |
 | 10 | NestJS API | Xác thực JWT; kiểm dữ liệu và quyền sở hữu đơn; tra `Idempotency-Key`: nếu cùng chủ đơn/`orderId`/key/`paymentMethod` (BR-05) đã thành công thì trả lại kết quả theo E4a trước khi kiểm trạng thái. Chỉ yêu cầu mới kiểm đơn ở `PENDING` hoặc `PAYMENT_FAILED` (luồng chính chưa có kết quả thành công) |
 | 11 | NestJS API | Số tiền cần thu `amount = total` (bản nộp không áp khuyến mãi) |
 | 12 | NestJS API → Payment Service | Gọi trừ tiền `amount` theo phương thức, kèm mã tham chiếu là `orderId` (SRS mục 3.4) |
 | 13 | Payment Service | Trả `SUCCESS` |
-| 14 | NestJS API, Database | Trong **một transaction**: lưu đúng một `Payment` `SUCCESS` cùng `Idempotency-Key` từ kết quả simulator (mã giao dịch, số tiền và phương thức gốc); đổi `Order` từ `PENDING` sang `PAID`; commit |
+| 14 | NestJS API, Database | Một transaction dưới khóa đơn/nguyên liệu: giảm onHand và reserved theo snapshot; lưu một Payment SUCCESS; chuyển Order sang PAID; commit. Replay không chạy bước này lần hai |
 | 15 | NestJS API | Trả 201 với `orderId`, `paymentId`, `status = SUCCESS`, `orderStatus = PAID`, `amount` |
 | 16 | Next.js UI | Hiển thị màn xác nhận (mã đơn, trạng thái "Đã thanh toán", món, tiền); xóa giỏ hàng; cung cấp nút "Theo dõi đơn". Use-case kết thúc thành công |
 
@@ -130,9 +132,9 @@ Customer đổi giữa Ví và Thẻ, sửa số thẻ bao nhiêu lần tùy ý 
 
 Customer bấm quay lại hoặc đóng trang trước bước 4. Chưa có `Order`, giỏ hàng giữ nguyên, tồn kho không đổi. Use-case kết thúc không có tác dụng phụ.
 
-### A5 — Customer hủy đơn sau khi thanh toán thất bại (sau E3; chỉ khi làm FR-25, Could)
+### A5 — Chủ đơn hủy đơn chưa trả (PENDING hoặc PAYMENT_FAILED; FR-25 Must)
 
-Nếu không làm FR-25, khách không hủy được qua giao diện/API: đơn `PAYMENT_FAILED` còn nguyên và giữ chỗ tồn kho (chấp nhận ở SRS mục 8). Nếu làm: từ màn lỗi (hoặc lịch sử đơn), Customer bấm "Hủy đơn" và xác nhận. UI gọi `PATCH /orders/:id` với `{ "status": "CANCELLED" }`; API chuyển `PAYMENT_FAILED` sang `CANCELLED` và hoàn lại tồn kho giữ chỗ (FR-25). Use-case kết thúc: đơn `CANCELLED`, giỏ hàng vẫn còn để khách đặt lại nếu muốn.
+Customer xác nhận hủy rồi UI gọi PATCH /orders/:id với status=CANCELLED. API kiểm chủ đơn/trạng thái dưới khóa đơn, chỉ giảm reserved theo snapshot trong cùng transaction; onHand không đổi. Hủy lặp trả 409 và không giải phóng thêm. Với legacy marker false chỉ hoàn Product.stock cũ. Không tự hủy theo thời gian.
 
 ## 7. Luồng ngoại lệ
 
@@ -154,16 +156,16 @@ Ba nhánh bắt buộc của đề A2 §4.1 là **E1, E2, E3**; E4 là điều k
 3. Với `PENDING`, tiếp tục bước 9 trên **đơn cũ**; với `PAYMENT_FAILED`, tiếp tục A3. Không quay lại bước 5, không gọi lại `POST /orders` và không trừ kho thêm.
 4. Nếu đơn đã `PAID`/`PREPARING`/`READY`/`COMPLETED`, hiển thị chi tiết/kết quả đã có; nếu `CANCELLED`, dừng thanh toán và hiển thị đơn đã hủy. Không gửi thanh toán mới.
 5. Nếu đăng nhập tài khoản khác, không tự tiếp tục đơn cũ; API đọc/trả tiền đơn của người khác trả 403. UI yêu cầu đăng nhập đúng tài khoản hoặc về lịch sử của tài khoản mới, không tự tạo đơn thay thế.
-6. Không đăng nhập lại thì đơn cũ và tồn kho giữ chỗ vẫn còn; khách có thể trở lại lịch sử bằng tài khoản chủ đơn để tiếp tục (hoặc hủy, nếu làm FR-25).
+6. Không đăng nhập lại thì đơn cũ và tồn kho giữ chỗ vẫn còn; khách có thể trở lại lịch sử bằng tài khoản chủ đơn để tiếp tục (hoặc hủy theo FR-25).
 
 **Yêu cầu:** FR-10 (AC-F10.3–4), FR-14/16, FR-21/22, NFR-05. Nếu mất phản hồi `POST /orders` và chưa biết `orderId`, không coi là E1a: không tự gửi lại; kiểm tra lịch sử theo SRS mục 8.6.
 
 ### E2 — Hết hàng (tại bước 8)
 
-- **Kích hoạt:** số lượng đặt của một sản phẩm lớn hơn `stock` hiện tại (kể cả `stock = 0`), ví dụ đặt 5 Bạc xỉu khi tồn 3, hoặc người khác vừa mua hết trong lúc khách đang trả.
+- **Kích hoạt:** tổng nhu cầu cùng nguyên liệu trên mọi dòng vượt available (onHand-reserved), kể cả khi từng dòng riêng lẻ còn đủ; hoặc công thức thiếu/không hợp lệ. Ví dụ đặt 7 Matcha S với 20g matcha cần 21g.
 - **Phản ứng:**
-  1. API hoàn tác transaction: không tạo `Order`, không đổi `stock` của bất kỳ sản phẩm nào (kể cả dòng hợp lệ).
-  2. API trả 409 `OUT_OF_STOCK` với `details = [{ productId, requested, available }]` (AC-F13.1, AC-F13.2).
+  1. API rollback: không có Order/OrderItem/OrderIngredient mới và không đổi bất kỳ onHand/reserved nào.
+  2. API trả 409 OUT_OF_STOCK với details nguyên liệu `{ingredientId,name,unit,requested,available}` (lượng là string), hoặc RECIPE_UNAVAILABLE nếu thiếu công thức.
   3. UI hiển thị "{Tên món} chỉ còn N ly" hoặc "{Tên món} đã hết hàng", đưa khách về giỏ, đánh dấu dòng liên quan (AC-F13.4).
   4. Customer sửa số lượng hoặc xóa món rồi quay lại bước 1.
 - **Kết quả:** không có đơn mới trong lịch sử (AC-F13.5); không bao giờ bán vượt tồn kho kể cả khi đặt đồng thời (AC-F13.3).
@@ -175,7 +177,7 @@ Ba nhánh bắt buộc của đề A2 §4.1 là **E1, E2, E3**; E4 là điều k
 - **Phản ứng:**
   1. API lưu 1 `Payment` `FAILED`, đổi `Order` từ `PENDING` sang `PAYMENT_FAILED`.
   2. API trả 402 `PAYMENT_DECLINED` (AC-F15.1).
-  3. UI hiển thị "Thanh toán không thành công. Đơn của bạn vẫn được giữ, bạn có thể thử lại hoặc chọn phương thức khác." kèm nút "Thử lại" (và "Hủy đơn" nếu làm FR-25); nút "Xác nhận trả" được bật lại.
+  3. UI hiển thị "Thanh toán không thành công. Đơn của bạn vẫn được giữ, bạn có thể thử lại hoặc chọn phương thức khác." kèm nút "Thử lại" (và "Hủy đơn" theo FR-25); nút "Xác nhận trả" được bật lại.
   4. Customer chọn A3 (thử lại) hoặc, nếu có FR-25, A5 (hủy đơn).
 - **Kết quả:** giỏ hàng và đơn được giữ; tồn kho vẫn giữ chỗ; khách không bị tính tiền (Payment Service không ghi nhận khoản thu).
 - **Yêu cầu:** FR-15, FR-16, NFR-03.
@@ -222,7 +224,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 |---|---|---|
 | BR-01 | Giá do server tính từ catalog; trường giá/tổng tiền client gửi bị từ chối (AC-F12.3) | bước 7; E6 |
 | BR-02 | Số lượng 1 đến 99; tối đa 20 dòng | điều kiện đầu; bước 6; E6 |
-| BR-03 | Giữ chỗ tồn kho khi tạo đơn, hoàn khi đơn `CANCELLED` (A5 chỉ khi làm FR-25) | bước 8; E2; A5 |
+| BR-03 | Giữ chỗ tồn kho khi tạo đơn, hoàn khi đơn `CANCELLED` (A5) | bước 8; E2; A5 |
 | BR-04 | Chỉ chủ đơn thanh toán; chỉ `PENDING` hoặc `PAYMENT_FAILED` thanh toán được | bước 10; E7 |
 | BR-05 | `Idempotency-Key` bắt buộc; chỉ kết quả thành công được giữ | bước 10; E4; A3 |
 | BR-08 | Máy trạng thái đơn (`PENDING → PAID`, `PENDING → PAYMENT_FAILED`, `PAYMENT_FAILED → PENDING`, `PENDING`/`PAYMENT_FAILED → CANCELLED`) | bước 8, 14; E3; A3; A5 |
@@ -250,7 +252,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 | A2 | Đổi phương thức | FR-14 | — |
 | A3 | Thử lại thanh toán | FR-15, FR-16 | — |
 | A4 | Rời màn thanh toán | FR-07 | — |
-| A5 | Hủy đơn sau thất bại (chỉ khi làm FR-25, Could) | FR-25 | — |
+| A5 | Hủy đơn sau thất bại (FR-25 Must) | FR-25 | — |
 | E1a/E1b | Chưa tạo đơn / tiếp tục đơn cũ sau đăng nhập lại cùng tài khoản | FR-10 | NFR-05 |
 | E2 | Hết hàng | FR-13 | NFR-13 |
 | E3 | Thanh toán thất bại | FR-15 | NFR-03 |
@@ -263,15 +265,15 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 
 ## 10. Gợi ý test từ đặc tả
 
-A1 và E5 ngoài bản nộp nên không có test; A5 chỉ có test khi làm FR-25 (Could).
+A1 và E5 ngoài bản nộp nên không có test; A5 bắt buộc kiểm chứng trong BREW-INVENTORY-01 (FR-25 Must).
 
 Mỗi luồng chuyển thành test bằng chính tiêu chí chấp nhận trong `srs.md` (mã test cụ thể ghi ở ma trận truy vết khi Task 4–5 viết):
 
-- **Luồng chính:** một test E2E menu → giỏ → đăng nhập → thanh toán Ví → màn xác nhận (FR-14, FR-20); một integration test `POST /orders` rồi `POST /payments` kiểm `PAID`, `stock`, `Payment`.
+- **Luồng chính:** một test E2E menu → giỏ → đăng nhập → thanh toán Ví → màn xác nhận (FR-14, FR-20); một kiểm chứng integration trước khi loại bộ test khỏi bản phân phối; kết quả ghi tại inventory-verification.md: `POST /orders` rồi `POST /payments` kiểm `PAID`, snapshot, onHand/reserved, `Payment`.
 - **E1a:** Guest bấm "Thanh toán" được chuyển tới đăng nhập, quay lại còn giỏ; 401 ở tạo đơn không tạo Order (AC-F10.1).
 - **E1b:** tạo đơn thành công rồi làm token hết hạn trước thanh toán; đăng nhập lại cùng tài khoản, thanh toán đúng orderId cũ, số Order và tồn kho không đổi thêm. Kiểm cả đơn đã trả/đã hủy và đăng nhập nhầm tài khoản (AC-F10.4).
 - **E2:** integration test đặt quá tồn (AC-F13.1) và đặt đồng thời (AC-F13.3).
 - **E3 và A3:** integration test thẻ `4000000000000002` rồi thẻ `4242424242424242` cùng `orderId` (AC-F15.1, AC-F15.5).
 - **E4:** integration test gửi hai lần cùng key, đếm số lần gọi Payment Service và số `Payment` (AC-F16.1).
-- **A5 (chỉ khi làm FR-25):** API test hủy đơn `PENDING`/`PAYMENT_FAILED` và kiểm `stock` được hoàn lại (AC-F25.1).
+- **A5 (FR-25 Must):** API test hủy đơn `PENDING`/`PAYMENT_FAILED` và kiểm `reserved` được giải phóng, `onHand` không đổi (AC-F25.1).
 - **Máy trạng thái:** unit test 49 cặp: 8 hợp lệ, 41 bị từ chối, bao gồm từ chối PAID → CANCELLED (AC-F23.1).

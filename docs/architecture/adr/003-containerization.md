@@ -22,9 +22,9 @@ Migration chạy trong bước khởi động service container, ví dụ:
 npx prisma migrate deploy && node dist/main.js
 ```
 
-Prisma migration có phiên bản trong repo; khi phát hành chỉ thêm bảng/cột, không xóa hoặc đổi tên cột để image trước vẫn tương thích khi rollback. Migration lỗi thì container không chạy API. CI kiểm migration trên Postgres tạm, không truy cập DB production.
+Prisma migration có phiên bản trong repo; khi phát hành chỉ thêm bảng/cột, không xóa hoặc đổi tên cột để giữ dữ liệu. Với BREW-INVENTORY-01, rollback API còn phải hiểu inventoryTracked/snapshot; không quay về image chỉ dùng Product.stock sau khi có đơn marker true (ADR-006). Migration lỗi thì container không chạy API. CI kiểm migration trên Postgres tạm, không truy cập DB production.
 
-Seed chạy có chủ đích khi khởi tạo DB, tái tạo đúng SRS §3.3 (8 sản phẩm, size/topping, 2 tài khoản demo; không seed khuyến mãi). Chạy lần hai không thêm bản ghi trùng. Không seed lại mỗi lần production restart. DB local dùng named volume để dữ liệu còn sau `docker compose down` rồi `up` (không dùng `-v`); production dùng persistent storage của Render Postgres (ADR-004).
+Seed chạy có chủ đích khi khởi tạo DB: 8 sản phẩm, size/topping, nguyên liệu thiếu ở 0 và công thức demo; update rỗng bảo toàn số dư/công thức đã sửa. Tài khoản demo chỉ bật bằng SEED_DEMO_USERS=true; không seed khuyến mãi. Tồn ban đầu nhập qua API có lý do và StockMovement, không suy từ số ly legacy. Chạy lần hai không thêm bản ghi trùng. Không seed lại mỗi lần production restart. DB local dùng named volume để dữ liệu còn sau `docker compose down` rồi `up` (không dùng `-v`); production dùng persistent storage của Render Postgres (ADR-004).
 
 ## Hệ quả
 

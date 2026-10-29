@@ -19,7 +19,7 @@ title BrewLite - Use-case tổng quát (phạm vi Assignment 2)
 
 actor "Khách vãng lai\n(Guest)" as Guest
 actor "Khách hàng\n(Customer)" as Customer
-actor "Nhân viên quầy\n(Barista)\nAPI / Postman" as Barista
+actor "Nhân viên quầy\n(Barista)\nInventory UI / API" as Barista
 actor "Dịch vụ\nthanh toán\n(Payment Service)" as Pay <<Service>>
 
 Customer --|> Guest
@@ -34,7 +34,8 @@ rectangle "Hệ thống BrewLite" {
   usecase "UC-04.2 Thanh toán đơn hàng\nFR-14..FR-16" as UC042
   usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
   usecase "UC-05 Xem lịch sử và theo dõi đơn\nFR-20..FR-22" as UC05
-  usecase "UC-06 Hủy đơn chưa trả\nFR-25 (Could)" as UC06
+  usecase "UC-06 Hủy đơn chưa trả\nFR-25 (Must)" as UC06
+  usecase "UC-10 Quản lý nguyên liệu và công thức\nFR-29 (Must)" as UC10
   usecase "UC-07 Cập nhật trạng thái đơn\nFR-23, FR-24" as UC07
 }
 
@@ -49,6 +50,7 @@ Customer --- UC06
 
 Barista --- UC03
 Barista --- UC07
+Barista --- UC10
 
 UC04 .> UC041 : <<include>>
 UC04 .> UC042 : <<include>>

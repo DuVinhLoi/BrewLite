@@ -15,8 +15,8 @@ Nhóm cần phục vụ Next.js/PWA, chạy container NestJS với PostgreSQL v�
 - Web và API public qua HTTPS 443; API lắng nghe cổng 4000 phía sau proxy Render. PostgreSQL chỉ được API truy cập nội bộ TCP 5432.
 - Migration chạy trong lệnh khởi động container trên Render (ADR-003): `npx prisma migrate deploy && node dist/main.js`. CI không chạy migration trực tiếp vào DB production.
 - Render cấu hình Health Check Path `/health`. Endpoint công khai trả `{status, database}`: 200 khi DB hoạt động, 503 khi DB mất kết nối (NFR-15).
-- CD chạy khi đẩy tag `a2-v*`: lint/test → build image → push registry → deploy API và web → smoke test. Smoke gọi `/health` (200 và `database = "up"`), `/products` và trang web; mỗi bước retry tới khi 200, tối đa 10 phút. Quá hạn thì pipeline đỏ và dừng (AC-N18.2).
-- Rollback: gọi deploy hook Render với `imgURL` trỏ image SHA bản trước, chạy `vercel rollback` về deployment web trước, rồi chạy lại smoke test như trên (AC-N18.3). Migration chỉ thêm bảng/cột để image trước vẫn tương thích. Task 5 ghi minh chứng diễn tập vào `docs/deployment.md`.
+- CD chạy khi đẩy tag `a2-v*`: lint/build (bản cuối không giao test suite) → build image → push registry → deploy API và web → smoke test. Smoke gọi `/health` (200 và `database = "up"`), `/products` và trang web; mỗi bước retry tới khi 200, tối đa 10 phút. Quá hạn thì pipeline đỏ và dừng (AC-N18.2).
+- Rollback: gọi deploy hook Render với `imgURL` trỏ image SHA bản trước, chạy `vercel rollback` về deployment web trước, rồi chạy lại smoke test như trên (AC-N18.3). Migration chỉ thêm bảng/cột; sau BREW-INVENTORY-01, image rollback phải hiểu inventoryTracked/snapshot theo ADR-006, không chỉ tương thích schema. Task 5 ghi minh chứng diễn tập vào `docs/deployment.md`.
 - Secret runtime nằm trên Render (`DATABASE_URL`, `JWT_SECRET`), secret deploy nằm trong GitHub environment `production` (`RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`). `CORS_ORIGINS` giới hạn đúng origin Vercel. Log JSON ra stdout, được Render thu nhận; không ghi số thẻ, token, mật khẩu hay giá trị secret.
 
 ## Hệ quả

@@ -17,7 +17,7 @@ export function AuthScreen({ register = false }: { register?: boolean }) {
     const email = String(form.get('email') ?? ''); const password = String(form.get('password') ?? '');
     const errors: Record<string, string> = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = 'Email không hợp lệ';
-    if (!password || new TextEncoder().encode(password).length > 72 || (register && (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)))) errors.password = 'Mật khẩu tối đa 72 byte; đăng ký cần ít nhất 8 ký tự gồm chữ và số';
+    if (!password || new TextEncoder().encode(password).length > 72 || (register && (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)))) errors.password = 'Mật Khẩu cần ít nhất 8 ký tự gồm chữ và số';
     setFields(errors); if (Object.keys(errors).length) return;
     setBusy(true); setError('');
     try {
