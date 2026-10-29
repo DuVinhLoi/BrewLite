@@ -292,7 +292,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 - **Phản ứng:** IPN trả `RspCode = 02`; API ghi warning `PAYMENT_RECONCILIATION_REQUIRED` kèm `vnp_TxnRef` và **không** đổi đơn, payment hay kho. Nhân viên tra Merchant Admin theo `vnp_TxnRef` và hoàn tiền tay nếu cần (xem [`../deployment.md`](../deployment.md)).
 - **Không phải E12:** IPN lặp của chính `Payment SUCCESS` trên đơn `PAID` (hoặc đã vào pha chế/hoàn tất) chỉ trả `02`, không cảnh báo; IPN thành công tới sau `expiresAt` nhưng `Payment` và đơn vẫn `PENDING` thì nhận bình thường như bước 18.
 - **Kết quả:** trạng thái cuối trong DB không bị mở lại; khoản tiền thu thừa được xử lý ngoài hệ thống.
-- **Yêu cầu:** FR-14, BR-11, NFR-20.
+- **Yêu cầu:** FR-14, FR-15 (AC-F15.7), BR-11, NFR-20.
 
 ### E13 — Thiếu cấu hình VNPay hoặc lỗi provider (tại bước 12, 17 và 20)
 
@@ -359,7 +359,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 | E9 | Chữ ký, merchant hoặc số tiền sai | FR-14, FR-16 | NFR-07, NFR-08 |
 | E10 | Mất hoặc muộn IPN, `sync` bằng QueryDR | FR-14, FR-16 | NFR-13 |
 | E11 | `Payment PENDING` quá hạn, đối soát QueryDR | FR-14, FR-15, FR-16, FR-25 | NFR-13 |
-| E12 | Tiền về sau trạng thái cuối, warning đối soát | FR-14 | NFR-20 |
+| E12 | Tiền về sau trạng thái cuối, warning đối soát | FR-14, FR-15 | NFR-20 |
 | E13 | Thiếu cấu hình VNPay hoặc lỗi provider | FR-14 | NFR-07, NFR-15 |
 | Trạng thái đơn | Chuyển trạng thái trong use-case | FR-23 | — |
 

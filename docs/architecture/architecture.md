@@ -62,7 +62,7 @@ NestJS chia controller → service nghiệp vụ → Prisma/truy cập dữ li�
 | `inventory` | Decimal balances, availability tổng hợp giỏ, công thức, movement Barista, reserve/consume/release snapshot; dùng transaction do checkout cung cấp |
 | `auth` | Đăng ký/đăng nhập, băm mật khẩu, JWT, guard vai trò và quyền sở hữu |
 | `orders` | Tính giá server, tạo đơn/giữ tồn trong transaction; lịch sử, chi tiết, kiểm chuyển trạng thái |
-| `payments` | Tạo `Payment PENDING` và URL VNPay, nhận IPN/return, đối soát QueryDR, replay theo BR-05 ở API (ADR-005); cập nhật Payment, trạng thái đơn và kho cùng transaction. Chỉ phần cần đăng nhập mới gắn guard; IPN/return công khai |
+| `payments` | Tạo `Payment PENDING` và URL VNPay, nhận IPN/return, đối soát QueryDR, replay theo BR-05 ở API (ADR-005); cập nhật Payment, trạng thái đơn và kho cùng transaction. Chỉ phần cần đăng nhập mới gắn guard; IPN/return công khai. Đây là module logic như `orders`: code dự kiến ở `apps/api/src/payment/`, đăng ký trong `CheckoutModule`, không tạo Nest module riêng (plan bước 5.2–5.5) |
 | `health` | `GET /health` kiểm DB, trả 200/503 (NFR-15) |
 | Logging/cấu hình dùng chung | DTO whitelist, lỗi chuẩn SRS §3.2, log JSON, biến môi trường và CORS |
 

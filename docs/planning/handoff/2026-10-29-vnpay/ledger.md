@@ -10,6 +10,7 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
 | W1-SRS (bước 2.1), branch `ThuanTran260/docs-vnpay-w1-srs`, worktree `E:/orca/workspaces/BrewLite/vnpay-w1-srs`, dispatch `ctx_30691a90d743`, report [W1-SRS-report.md](W1-SRS-report.md) | Orca, claude/sonnet | 2026-10-29 21:21 | 21:34, merge `6da090b` lúc 21:37 | 0 | không áp dụng | không | không | không đo được |
 | W1-UCDIAG (bước 2.3, 3.1–3.5), branch `ThuanTran260/task-vnpay-w1-ucdiag` (Orca đổi tên từ `cory`), worktree `E:/orca/workspaces/BrewLite/vnpay-w1-ucdiag`, dispatch `ctx_b7504e646cf2`, report [W1-UCDIAG-report.md](W1-UCDIAG-report.md) | Orca, claude/sonnet | 2026-10-29 21:21 | 21:36, merge `3db5ec6` lúc 21:37 | 0 | không áp dụng | không | không | không đo được |
 | W1-ADR (bước 4.1–4.2), branch `ThuanTran260/vnpay-w1-adr`, worktree `E:/orca/workspaces/BrewLite/vnpay-w1-adr`, dispatch `ctx_d3c01c3c1b03`, report [W1-ADR-report.md](W1-ADR-report.md) | Orca, claude/sonnet | 2026-10-29 21:21 | 21:30, merge `601d469` lúc 21:37 | 0 | không áp dụng | không | không | không đo được |
+| W2-TRACE (bước 4.5), branch `ThuanTran260/task-vnpay-w2-trace`, worktree `E:/orca/workspaces/BrewLite/vnpay-w2-trace`, dispatch `ctx_bf6853d9f524`, report [W2-TRACE-report.md](W2-TRACE-report.md) | Orca, claude/sonnet | 2026-10-29 22:10 | 22:19, merge `b40e051` lúc 22:19 | 0 | không áp dụng | không | không | không đo được |
 | SPIKE (bước 1), script ngoài repo | Integrator cùng người dùng | | | | không áp dụng | không áp dụng | không áp dụng | |
 
 ## Ruling
@@ -32,3 +33,13 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
   - `AC-N12.1` giữ Must, E2E đóng vai VNPay (chặn redirect, ký IPN bằng secret giả của môi trường test); plan D3 ghi lại cách này, test E2E vẫn chỉ viết khi được giao;
   - `sequence-checkout.puml` hiển thị lifeline `VNPay sandbox\n(Payment Service)` theo đề A2 §4.2 (CR-3 của W1-UCDIAG).
 - 2026-10-29: Wave 2 không còn chờ nhóm duyệt các điểm trên; chỉ còn tùy chọn chờ spike.
+- 2026-10-29 22:10: Wave 2 chia hai phần không chung file, chạy song song. Một worker sửa `traceability-matrix.md`. Integrator tự sửa các dòng còn sót do quét repo phát hiện (commit `6af2dc0`): `architecture.md` (số thẻ demo, ghi chú SRS cũ); plan bước 5.7 thêm `README.md`, `apps/api/README.md`, `docs/inventory-runbook.md`, vì các file này hướng dẫn chạy code simulator hiện hành nên sửa cùng code. Không sửa bản ghi lịch sử: `docs/task5/*`, `PR_DESCRIPTION.md`, `docs/sprint/backlog.md` (ảnh chụp 2026-10-21), plan cũ, đề A1/A2, `docs/render_svg.py` (nhóm đã ghi không dùng).
+- 2026-10-29 22:19: W2-TRACE qua G1–G4: worktree sạch; 2 file trong allowed paths; không trailer; `git diff --check` sạch; report đủ bằng chứng. Merge `--no-ff` không conflict. G6: mọi mã AC trong ma trận có trong `srs.md`, trừ `AC-F16.13` được nhắc như lịch sử "đã dời"; đủ bốn endpoint VNPay. Worker đã release.
+- 2026-10-29 22:20: xử lý change request của W2-TRACE:
+  - CR-1 (`README.md` chưa nêu biến VNPay): đưa vào plan bước 5.7, sửa cùng code;
+  - CR-2: `uc-checkout.md` E12 thêm FR-15 (AC-F15.7) ở bảng mục 9 và mục "Yêu cầu" của E12;
+  - CR-3: không thêm `AC-N13.2`, vì nội dung đã có ở `AC-F16.8`, `AC-F16.12` và ma trận dòng NFR-13 đã dẫn hai mã này; tránh hai AC kiểm cùng một việc. Nhóm có thể thêm khi duyệt;
+  - CR-4: "module `payments`" ở `architecture.md` là module logic như `orders`, không đổi tên; dòng `payments` ở bảng module ghi thêm vị trí code dự kiến `apps/api/src/payment/`, đăng ký trong `CheckoutModule`;
+  - chấp nhận SRS FR-14 chỉ liệt kê luồng chính, bảng mục 9 của `uc-checkout.md` đầy đủ hơn; ma trận theo bảng mục 9.
+- 2026-10-29 22:20: tài liệu bước 2–4 của plan xong (đã đánh dấu). Còn lại: spike bước 1 (chờ `apps/api/.env`), xuất `.svg` (nhóm), ID test cho `vnpay.test.ts` và kiểm sandbox (đặt khi làm bước 5–7), code bước 5–6 (chỉ khi người dùng yêu cầu).
+- Nhận xét đợt tài liệu: chạy song song đáng giá. Ba worker W1 xong trong 9–15 phút, không conflict, nhờ contract chốt mã trước và allowed paths không chồng nhau. Wave 2 một worker là đủ. Lần sau giữ số agent theo số nhóm file độc lập, không tăng thêm.
