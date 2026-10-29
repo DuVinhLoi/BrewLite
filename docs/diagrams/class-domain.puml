@@ -67,6 +67,15 @@ class Payment {
   +status: PaymentStatus
   +amount: Integer
   +idempotencyKey: String
+  +provider: String
+  +paymentUrl: String [0..1]
+  +expiresAt: DateTime [0..1]
+  +gatewayCreateDate: String [0..1]
+  +gatewayTxnNo: String [0..1]
+  +gatewayResponseCode: String [0..1]
+  +gatewayTransactionStatus: String [0..1]
+  +bankCode: String [0..1]
+  +paidAt: DateTime [0..1]
   +createdAt: DateTime
 }
 class Promotion {
@@ -108,6 +117,7 @@ enum PaymentMethod {
 enum PaymentStatus {
   SUCCESS
   FAILED
+  PENDING
   REFUNDED
 }
 enum LoyaltyType {
@@ -143,7 +153,13 @@ note bottom of LoyaltyTransaction
   No runtime accrual in minimum.
 end note
 note bottom of Payment
-  Only SUCCESS results are cached by API key.
+  Only SUCCESS results are cached by API key (BR-05); FAILED does not lock the key.
+  At most one PENDING per Order (BR-10), enforced by a partial unique index.
+  provider = "VNPAY" for new rows; rows created before VNPay keep "SIMULATOR".
+  gatewayCreateDate = the exact signed vnp_CreateDate string; QueryDR needs it unchanged.
+  gatewayResponseCode and gatewayTransactionStatus are stored apart.
+  "EXPIRED" is an internal gatewayResponseCode value, not a PaymentStatus.
+  No card number is stored: the card is entered only on the VNPay page.
   REFUNDED is an enum value, not an enabled FR-26 flow.
 end note
 class Ingredient {

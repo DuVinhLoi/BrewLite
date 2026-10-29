@@ -6,10 +6,12 @@ Thư mục chứa nguồn PlantUML và SVG xuất bằng PlantUML. BREW-INVENTOR
 
 | Sơ đồ | File | Yêu cầu chính | Đề A2 |
 |---|---|---|---|
-| Activity | `activity-checkout.puml` / `.svg` | Điểm bắt đầu và kết thúc, hành động người dùng và hệ thống, decision/merge, swimlane, ba nhánh: hết hàng, chưa đăng nhập, thanh toán thất bại | §4.1 |
-| Sequence | `sequence-checkout.puml` / `.svg` | Lifeline Customer, Next.js UI, NestJS API, Database, Payment Service; JWT và validate; transaction giữ nguyên liệu/snapshot, tiêu thụ khi trả, giải phóng khi hủy; `alt` thanh toán thành công/thất bại; idempotency; thông báo kết quả | §4.2 (bắt buộc) |
-| Class | `class-domain.puml` / `.svg` | Ingredient, Recipe, RecipeLine, StockMovement, OrderIngredient và marker legacy; giữ tối thiểu 7 lớp `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction`; thuộc tính chính, quan hệ, multiplicity, enum trạng thái | §4.3 |
-| State (nên có) | `state-order.puml` / `.svg` | Vòng đời đơn hàng, nhất quán với FR quản lý trạng thái đơn | gợi ý của plan |
+| Activity | `activity-checkout.puml` / `.svg` | Điểm bắt đầu và kết thúc, hành động người dùng và hệ thống, decision/merge, swimlane (Customer, Next.js UI, NestJS API, VNPay sandbox), ba nhánh: hết hàng, chưa đăng nhập, thanh toán thất bại; thêm khách hủy trên VNPay, hết hạn (đối soát QueryDR), chưa kết luận | §4.1 |
+| Sequence | `sequence-checkout.puml` / `.svg` | Lifeline Customer, Browser, Next.js UI, NestJS API, Database, VNPay sandbox; JWT và validate; transaction giữ nguyên liệu/snapshot, tiêu thụ khi trả, giải phóng khi hủy; ba đoạn thanh toán (tạo URL, IPN, return/poll); `alt` thành công/thất bại/chữ ký sai, `opt` QueryDR; idempotency; thông báo kết quả | §4.2 (bắt buộc) |
+| Class | `class-domain.puml` / `.svg` | Ingredient, Recipe, RecipeLine, StockMovement, OrderIngredient và marker legacy; giữ tối thiểu 7 lớp `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction`; thuộc tính chính (`Payment` có thêm cột cổng thanh toán), quan hệ, multiplicity, enum trạng thái (`PaymentStatus.PENDING`) | §4.3 |
+| State (nên có) | `state-order.puml` / `.svg` | Vòng đời đơn hàng, nhất quán với FR quản lý trạng thái đơn; kèm vòng đời `Payment` (`PENDING` → `SUCCESS`/`FAILED`) | gợi ý của plan |
+
+**VNPay sandbox (2026-10-29):** bốn file `.puml` trên và `docs/requirements/uc-checkout.puml` đã được viết lại cho thanh toán VNPay; các ảnh `.svg` tương ứng chưa xuất lại và còn mô tả simulator cho tới khi nhóm xuất từ `.puml`. Các điểm gắn "(chờ spike)" trong sơ đồ phụ thuộc hành vi sandbox chưa đo (xem [plan](../planning/2026-10-29-vnpay-payment-plan.md), bước 1).
 
 ## Tiêu chí nghiệm thu (đề A2 §4.3)
 
