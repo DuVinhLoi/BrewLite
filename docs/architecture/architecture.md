@@ -2,7 +2,7 @@
 
 > BREW-INVENTORY-01 (2026-10-29) cập nhật kho nguyên liệu cho Assignment 2 Task 1–5. Hợp đồng: [inventory-contract.md](../inventory-contract.md); bằng chứng runtime nằm trong [verification](../inventory-verification.md).
 >
-> VNPay sandbox (2026-10-29, theo yêu cầu của giảng viên): thanh toán đi qua cổng ngoài thay cho Payment Service mô phỏng. Kế hoạch: [vnpay-payment-plan](../planning/2026-10-29-vnpay-payment-plan.md); quyết định kiến trúc sẽ ghi ở ADR-007 (chưa soạn). Các mục dưới đây đã đổi theo hướng đó; phần SRS, ADR-005 và truy vết cập nhật ở bước sau của kế hoạch.
+> VNPay sandbox (2026-10-29, theo yêu cầu của giảng viên): thanh toán đi qua cổng ngoài thay cho Payment Service mô phỏng. Kế hoạch: [vnpay-payment-plan](../planning/2026-10-29-vnpay-payment-plan.md); quyết định kiến trúc ghi ở [ADR-007](adr/007-vnpay-sandbox.md) (Proposed, chờ nhóm duyệt). Các mục dưới đây đã đổi theo hướng đó; ADR-005 đã sửa theo ADR-007, phần SRS và truy vết cập nhật ở bước sau của kế hoạch.
 
 ## 1. Phạm vi và nguồn yêu cầu
 
@@ -163,8 +163,8 @@ Các biến `VNP_*`, `WEB_URL`, `PAYMENT_PROVIDER` đặt theo kế hoạch VNPa
 | [ADR-002](adr/002-layered-nestjs.md): NestJS theo domain/lớp | Controller mỏng, nghiệp vụ và transaction tập trung, dễ test | Thêm cấu trúc so với app rất nhỏ; tránh tạo interface không cần thiết |
 | [ADR-003](adr/003-containerization.md): Compose, Postgres, Prisma | Local/CI dùng DB thật; migration/seed tái tạo được | Tốn tài nguyên Docker, cần theo dõi startup; migration chỉ thêm giới hạn thay đổi schema |
 | [ADR-004](adr/004-vercel-render.md): Vercel + Render + GHCR | CDN cho web, container API quản lý sẵn, image SHA chọn lại được | Hai nền tảng/secret/CORS; Render free cold start và DB có hạn dùng |
-| [ADR-005](adr/005-idempotency-and-optimistic-lock.md): API replay, transaction kho | Retry thành công không gọi simulator lại; tránh tồn âm | Đồng bộ theo đơn; API dừng giữa bước 13 và 14 là rủi ro chấp nhận |
-| ADR-007 (chưa soạn): tích hợp VNPay sandbox thay Payment simulator (ADR-005 §B) | Đáp ứng yêu cầu giảng viên về cổng bên thứ ba; kết quả có chữ ký, kiểm chứng được qua IPN/QueryDR; không lưu số thẻ | Bất đồng bộ (đơn chờ kết quả), thêm secret, phụ thuộc sandbox và Render ngủ; tiền về muộn phải đối soát tay |
+| [ADR-005](adr/005-idempotency-and-optimistic-lock.md): API replay `SUCCESS`/`PENDING`, một `Payment PENDING` mỗi đơn, transaction kho | Retry thành công không gọi VNPay lại, retry lúc đang chờ trả URL cũ; partial unique index chặn hai giao dịch chờ cho một đơn (BR-05, BR-10); tránh tồn âm | Cần khóa đơn và transaction ngắn, HTTP ra VNPay phải ngoài transaction; đơn bỏ dở giữ nguyên liệu vì chưa có job tự hủy |
+| [ADR-007](adr/007-vnpay-sandbox.md): tích hợp VNPay sandbox thay Payment simulator (ADR-005 §B) | Đáp ứng yêu cầu giảng viên về cổng bên thứ ba; kết quả có chữ ký, kiểm chứng được qua IPN/QueryDR; không lưu số thẻ | Bất đồng bộ (đơn chờ kết quả), thêm secret, phụ thuộc sandbox và Render ngủ; tiền về muộn phải đối soát tay |
 | Next.js/PWA, ba trạng thái (§3–4) | Mobile-first, manifest và thông báo rõ khi API đang ngủ | Không hỗ trợ offline; phải kiểm viewport, hiệu năng và trạng thái lỗi |
 | JSON stdout, env và health (§5, ADR-004) | Dễ thu log, phát hiện DB lỗi; cấu hình tách khỏi mã | Cần lọc dữ liệu nhạy cảm và cấu hình platform; health không thay thế smoke toàn luồng |
 
