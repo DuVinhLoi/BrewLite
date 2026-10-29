@@ -29,8 +29,7 @@ package "Production" {
   }
   node "Render (cùng region với DB)" as RENDER <<platform>> {
     node "Web Service – Docker container :4000" as RSVC <<executionEnvironment>> {
-      artifact "NestJS API (apps/api)\nGET /health: 200 DB up / 503 DB down\nHealth Check Path: /health\nJSON stdout → Render logs\nPlatform env: DATABASE_URL (internal),\nJWT_SECRET, CORS_ORIGINS, LOG_LEVEL" as API
-      component "Payment simulator\nTrong tiến trình API, không lưu trạng thái" as SIM
+      artifact "NestJS API (apps/api)\nGET /health: 200 DB up / 503 DB down\nHealth Check Path: /health\nJSON stdout → Render logs\nPlatform env: DATABASE_URL (internal),\nJWT_SECRET, CORS_ORIGINS, LOG_LEVEL,\nVNP_TMN_CODE, VNP_HASH_SECRET, WEB_URL\n(mặc định: VNP_URL, VNP_API_URL, PAYMENT_PROVIDER)" as API
     }
     node "Render Postgres – external access disabled" as RPG <<executionEnvironment>> {
       database "PostgreSQL :5432" as DB
@@ -38,6 +37,10 @@ package "Production" {
     }
     artifact "Render logs" as RLOG
   }
+}
+
+node "VNPay sandbox – hệ thống ngoài" as VNPAY <<external system>> {
+  artifact "Trang thanh toán (VNP_URL)\nIPN · Return · QueryDR (VNP_API_URL)\nKhách nhập thẻ test tại đây,\nBrewLite không nhận số thẻ" as VNPAYAPP
 }
 
 node "GHCR – container registry" as REG <<registry>> {
@@ -54,7 +57,7 @@ package "CI – GitHub Actions" {
 
 package "Local" {
   node "Máy phát triển – Docker Compose" as LOCAL <<device>> {
-    artifact "web :3000 · api :4000 · db :5432\nPostgres named volume\n.env từ .env.example (không commit secret)" as DC
+    artifact "web :3000 · api :4000 · db :5432\nPostgres named volume\n.env từ .env.example (không commit secret)\nKhông có VNP_*: chạy chức năng khác,\nkhông demo trả tiền offline" as DC
   }
 }
 
@@ -63,7 +66,10 @@ BROWSER --> RSVC : (2) HTTPS 443 → API :4000\nREST + JWT, CORS
 API --> DB : (3) internal URL · TCP 5432\nPrisma; startup migration (ADR-003)
 DB -- DISK
 API ..> RLOG : (4) stdout JSON, LOG_LEVEL\nKhông log secret / token / số thẻ
-API --> SIM : Gọi nội bộ tiến trình · WALLET / CARD
+BROWSER --> VNPAY : (10) redirect · HTTPS 443\npaymentUrl đã ký HMAC-SHA512
+VNPAY --> RSVC : (11) IPN · HTTPS 443\nGET /payments/vnpay/ipn (công khai)
+VNPAY ..> BROWSER : (12) redirect về web\n/payment/vnpay-return (chỉ hiển thị)
+API --> VNPAY : (13) QueryDR · HTTPS 443\nPOST tới VNP_API_URL, ngoài DB transaction
 SEC ..> CDYML
 CDYML --> IMG : (5) docker push · HTTPS 443
 RSVC ..> IMG : (6) pull theo SHA · HTTPS 443

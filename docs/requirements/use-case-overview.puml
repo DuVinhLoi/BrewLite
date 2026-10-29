@@ -20,7 +20,7 @@ title BrewLite - Use-case tổng quát (phạm vi Assignment 2)
 actor "Khách vãng lai\n(Guest)" as Guest
 actor "Khách hàng\n(Customer)" as Customer
 actor "Nhân viên quầy\n(Barista)\nInventory UI / API" as Barista
-actor "Dịch vụ\nthanh toán\n(Payment Service)" as Pay <<Service>>
+actor "VNPay sandbox\n(hệ thống ngoài)" as Pay <<External>>
 
 Customer --|> Guest
 
