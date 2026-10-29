@@ -65,7 +65,7 @@ Gọi `POST /inventory/availability` với `{"items":[{"productId":"matcha-latte
 
 Có thể chứng minh chuyển đơn vị bằng RECEIVE `0.020 kg` thay 20g hoặc `2 l` thay 2000ml, **không gửi cả hai**. ADJUST quantity là số kiểm kê cuối, còn StockMovement.quantity là delta có dấu; dữ liệu trả về dạng chuỗi thập phân. Không đổi g↔ml; piece phải nguyên.
 
-Đặt 2 Matcha S: reserved tăng 6g/300ml/40ml, onHand giữ nguyên. CARD demo kết thúc 0002 trả 402 và giữ số dư/snapshot; hủy bằng chủ đơn chỉ giảm reserved. Hủy lần hai bị 409. Đơn mới trả WALLET thành công tiêu thụ snapshot; replay cùng key trả 200 không tiêu thụ thêm. Sửa công thức sau giữ chỗ rồi thanh toán/hủy phải vẫn dùng lượng snapshot cũ.
+Đặt 2 Matcha S: reserved tăng 6g/300ml/40ml, onHand giữ nguyên. Thanh toán thất bại trên VNPay (IPN hoặc `sync` đưa đơn về `PAYMENT_FAILED`) giữ số dư/snapshot; hủy bằng chủ đơn chỉ giảm reserved. Hủy lần hai bị 409. Đơn mới trả WALLET thành công trên VNPay (IPN hoặc `POST /payments/:id/sync` xác nhận) tiêu thụ snapshot; replay cùng key trả 200 không tiêu thụ thêm. Sửa công thức sau giữ chỗ rồi thanh toán/hủy phải vẫn dùng lượng snapshot cũ.
 
 ## Công thức seed và giả định demo
 

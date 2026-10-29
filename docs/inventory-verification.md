@@ -75,7 +75,7 @@ Lỗi môi trường ban đầu (cache/network sandbox, Prisma Client chưa gene
 
 ## Xóa test theo yêu cầu chủ dự án
 
-Chủ dự án đã xác nhận “Xóa toàn bộ test của dự án” sau kiểm chứng. Cleanup bao gồm toàn bộ `apps/api/test/`, `tests/`, web `*.test.ts(x)`, script smoke `docs/validate_task2.py`, Vitest/Playwright/Jest config và test-only dependencies/scripts. CI giữ lint, migration/seed DB riêng, typecheck/build và Compose validation; health/smoke vận hành deployment được giữ.
+Chủ dự án đã xác nhận “Xóa toàn bộ test của dự án” sau kiểm chứng. Cleanup bao gồm toàn bộ `apps/api/test/`, `tests/`, web `*.test.ts(x)`, script smoke `docs/validate_task2.py`, Vitest/Playwright/Jest config và test-only dependencies/scripts. CI giữ lint, migration/seed DB riêng, typecheck/build và Compose validation; health/smoke vận hành deployment được giữ. Sau đó (2026-10-29), theo quyết định D3 của kế hoạch VNPay, chỉ thêm lại unit test VNPay tối thiểu `apps/api/test/vnpay.test.ts`; các test còn lại vẫn đã xóa.
 
 Đã xóa **26 tệp** test/cấu hình/tài liệu test, gồm cả test mới dùng để kiểm chứng tính năng rồi được xóa trước bàn giao. Đã gỡ 12 dev dependencies trực tiếp chỉ phục vụ test: API `@nestjs/testing`, `@types/jest`, `@types/supertest`, `cross-env`, `jest`, `supertest`, `ts-jest`; web `@playwright/test`, `@testing-library/jest-dom`, `@testing-library/react`, `jsdom`, `vitest`. npm cập nhật cả hai lockfile; kiểm so sánh không phát hiện thay đổi phiên bản của package còn được giữ.
 

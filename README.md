@@ -98,7 +98,7 @@ Nếu thay cổng web phải thay CORS_ORIGINS; API URL được nhúng khi web 
 | GET /orders/me | CUSTOMER | Tối đa 50 đơn mới nhất, chỉ của người gọi |
 | GET /orders/:id | Chủ đơn/BARISTA | Món, trạng thái và các lần thanh toán |
 | PATCH /orders/:id | Chủ đơn/BARISTA | `{status}`: khách hủy chưa trả; quầy PREPARING→READY→COMPLETED |
-| POST /payments | CUSTOMER chủ đơn | `{orderId,paymentMethod,cardNumber?}`, bắt buộc `Idempotency-Key` |
+| POST /payments | CUSTOMER chủ đơn | `{orderId,paymentMethod}`, bắt buộc `Idempotency-Key`; trả `paymentUrl` của VNPay, kết quả đến qua IPN hoặc `POST /payments/:id/sync` |
 | GET /health | Public | 200 DB up; 503 DB down |
 
 JWT_SECRET tối thiểu 32 ký tự; bcrypt cost 12. Unknown fields bị từ chối (kể cả giá/userId/role do client tự gửi).
@@ -107,8 +107,8 @@ Thanh toán PostgreSQL lock theo khách/đơn; replay thành công theo chủ đ
 Không lưu/log số thẻ; fingerprint HMAC chỉ băm orderId và paymentMethod. Mỗi đơn có tối đa một Payment SUCCESS.
 Token lưu sessionStorage, giỏ lưu localStorage; cần bật browser storage. Khi mất phản hồi tạo đơn, UI chặn tạo lại và hướng tới lịch sử để đối soát.
 
-Ví `WALLET` thành công; thẻ demo `4242424242424242` thành công, `4000000000000002` bị từ chối.
-Chỉ dùng thẻ demo, không thu tiền thật. Thất bại giữ đơn và giỏ; chỉ xóa giỏ sau khi backend xác nhận thanh toán.
+Thanh toán dùng VNPay sandbox. Muốn trả tiền cần `VNP_TMN_CODE`, `VNP_HASH_SECRET`, `WEB_URL` trong `apps/api/.env` (không commit). Thiếu biến thì API vẫn chạy, chỉ tạo URL thanh toán mới trả 502; xem [docs/deployment.md](docs/deployment.md).
+Chỉ dùng sandbox, không thu tiền thật. Thất bại giữ đơn và giỏ; chỉ xóa giỏ sau khi backend xác nhận thanh toán.
 
 Barista đăng nhập để vào `/inventory`; đơn hàng tiếp tục dùng GET chi tiết, PATCH lần lượt PREPARING, READY, COMPLETED. [Runbook](docs/inventory-runbook.md) có request nhập kho, công thức và demo Matcha 6 ly.
 
