@@ -226,7 +226,7 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
 
 ### Bước 2 – Tài liệu Task 1 (agent soạn nháp)
 
-- [ ] 2.1 `docs/requirements/srs.md`:
+- [x] 2.1 `docs/requirements/srs.md`:
   - **§1.4:** thêm ghi chú "VNPay sandbox (2026-10-29)" ghi lý do (yêu cầu giảng viên); thay rủi ro mất kết quả simulator bằng cơ chế IPN/QueryDR và các rủi ro còn lại ở mục 4. Giữ số các thay đổi cũ; không tái dùng mã AC-F16.7/E8b đã bỏ.
   - **§2.1/§2.3:** đổi "Payment Service" thành "VNPay sandbox", kiểu actor hệ thống ngoài.
   - **§3.1, §3.2:** thêm 3 endpoint mới và trường mới của chi tiết đơn theo mục 1.5; thêm `PAYMENT_IN_PROGRESS`, `PAYMENT_PROVIDER_ERROR`, `PAYMENT_NOT_FOUND`; bỏ 402 khỏi `POST /payments`.
@@ -246,28 +246,28 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
   - **FR-31:** giữ Won't nhưng đổi nghĩa thành "cổng production thật" (sandbox không thu tiền thật).
   - **NFR bảo mật:** thêm `VNP_HASH_SECRET` vào danh sách secret; IPN bắt buộc HTTPS.
   - **S6 stakeholder:** VNPay.
-- [ ] 2.2 `docs/requirements/context-and-scope.md`: hệ thống ngoài VNPay; viết lại A-01; thêm rủi ro: Render ngủ làm IPN timeout (đã có QueryDR và VNPay gọi lại), sandbox VNPay bảo trì, hết hạn đơn.
-- [ ] 2.3 `docs/requirements/uc-checkout.md` và `.puml`: viết lại các bước thanh toán (redirect → trả trên VNPay → IPN → return); thêm luồng E cho hủy trên VNPay, sai chữ ký, mất IPN.
-- [ ] 2.4 `docs/requirements/use-case-overview.puml`: đổi tên actor. Nhóm cập nhật `.svg` bằng draw.io.
+- [x] 2.2 `docs/requirements/context-and-scope.md`: hệ thống ngoài VNPay; viết lại A-01; thêm rủi ro: Render ngủ làm IPN timeout (đã có QueryDR và VNPay gọi lại), sandbox VNPay bảo trì, hết hạn đơn.
+- [x] 2.3 `docs/requirements/uc-checkout.md` và `.puml`: viết lại các bước thanh toán (redirect → trả trên VNPay → IPN → return); thêm luồng E cho hủy trên VNPay, sai chữ ký, mất IPN.
+- [x] 2.4 `docs/requirements/use-case-overview.puml`: đổi tên actor. Nhóm cập nhật `.svg` bằng draw.io. Phần `.svg` còn chờ nhóm.
 
 ### Bước 3 – Sơ đồ Task 2 (agent soạn nháp)
 
-- [ ] 3.1 `docs/diagrams/sequence-checkout.puml`: thêm participant Browser, VNPay; ba đoạn: tạo URL, IPN, return/poll; `alt` cho thành công / thất bại / chữ ký sai; `opt` QueryDR.
-- [ ] 3.2 `docs/diagrams/activity-checkout.puml`: thêm swimlane VNPay, nhánh hủy hoặc hết hạn.
-- [ ] 3.3 `docs/diagrams/state-order.puml`: đơn vẫn `PENDING` trong lúc chờ VNPay; thử lại `PAYMENT_FAILED` → `PENDING`; ghi chú hủy bị chặn khi có payment còn hạn hoặc quá hạn nhưng chưa đối soát xong. Ghi vòng đời `Payment PENDING` → `SUCCESS`/`FAILED` trong cùng tài liệu, không thêm trạng thái `EXPIRED` vào enum.
-- [ ] 3.4 `docs/diagrams/class-domain.puml`: thêm cột mới của `Payment` và `PaymentStatus.PENDING`.
-- [ ] 3.5 Render PlantUML ra thư mục tạm, 0 lỗi "Syntax Error". Ảnh `.svg` trong repo do nhóm xuất.
+- [x] 3.1 `docs/diagrams/sequence-checkout.puml`: thêm participant Browser, VNPay; ba đoạn: tạo URL, IPN, return/poll; `alt` cho thành công / thất bại / chữ ký sai; `opt` QueryDR.
+- [x] 3.2 `docs/diagrams/activity-checkout.puml`: thêm swimlane VNPay, nhánh hủy hoặc hết hạn.
+- [x] 3.3 `docs/diagrams/state-order.puml`: đơn vẫn `PENDING` trong lúc chờ VNPay; thử lại `PAYMENT_FAILED` → `PENDING`; ghi chú hủy bị chặn khi có payment còn hạn hoặc quá hạn nhưng chưa đối soát xong. Ghi vòng đời `Payment PENDING` → `SUCCESS`/`FAILED` trong cùng tài liệu, không thêm trạng thái `EXPIRED` vào enum.
+- [x] 3.4 `docs/diagrams/class-domain.puml`: thêm cột mới của `Payment` và `PaymentStatus.PENDING`.
+- [x] 3.5 Render PlantUML ra thư mục tạm, 0 lỗi "Syntax Error". Ảnh `.svg` trong repo do nhóm xuất. Phần `.svg` còn chờ nhóm.
 
 ### Bước 4 – Kiến trúc Task 3 (agent soạn nháp)
 
-- [ ] 4.1 ADR-007 "Tích hợp VNPay sandbox", gồm:
+- [x] 4.1 ADR-007 "Tích hợp VNPay sandbox", gồm:
   - bối cảnh;
   - phương án: giữ simulator / VNPay redirect + IPN / Stripe test;
   - quyết định: redirect + IPN + QueryDR;
   - hệ quả: bất đồng bộ, secret, Render ngủ; API khởi động được khi thiếu cấu hình để chạy Docker/chức năng khác; cấu hình kiểm theo thao tác ở mục 1.8, không tự chuyển sang cổng giả; quyết định đối soát và warning tiền tới muộn.
-- [ ] 4.2 ADR-005: sửa phần idempotency theo BR-05 mới và partial unique index.
-- [ ] 4.3 `docs/architecture/architecture.md` và `deployment.puml`: thêm VNPay là hệ thống ngoài, luồng HTTPS ra/vào, biến môi trường.
-- [ ] 4.4 `docs/deployment.md`: bảng biến môi trường Render, không ghi giá trị credential; đánh dấu biến bắt buộc theo thao tác và biến có mặc định (mục 1.8). Thêm điều kiện lưu biến Render trước deploy VNPay, đăng ký IPN URL và hướng dẫn đối soát/hoàn tiền tay theo `vnp_TxnRef`. Ghi rõ Docker không có secret vẫn chạy chức năng khác nhưng không demo trả tiền offline.
+- [x] 4.2 ADR-005: sửa phần idempotency theo BR-05 mới và partial unique index.
+- [x] 4.3 `docs/architecture/architecture.md` và `deployment.puml`: thêm VNPay là hệ thống ngoài, luồng HTTPS ra/vào, biến môi trường.
+- [x] 4.4 `docs/deployment.md`: bảng biến môi trường Render, không ghi giá trị credential; đánh dấu biến bắt buộc theo thao tác và biến có mặc định (mục 1.8). Thêm điều kiện lưu biến Render trước deploy VNPay, đăng ký IPN URL và hướng dẫn đối soát/hoàn tiền tay theo `vnp_TxnRef`. Ghi rõ Docker không có secret vẫn chạy chức năng khác nhưng không demo trả tiền offline.
 - [ ] 4.5 `docs/traceability-matrix.md`: thêm FR/BR mới → sơ đồ → ADR-007 → file code.
 
 ### Bước 5 – Code API (chỉ khi người dùng yêu cầu)
@@ -288,7 +288,7 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
   - `detail()` trả thêm trường payment đã đặc tả ở mục 1.5; không sửa contract danh sách đơn.
 - [ ] 5.5 Tạo `apps/api/src/payment/vnpay.controller.ts` (không có guard) cho `ipn`, `return`; thêm `sync` vào `apps/api/src/checkout/checkout.controller.ts` có guard. Đăng ký controller mới và provider `VnpayGateway` trong `apps/api/src/checkout/checkout.module.ts`; giữ guard chỉ trên controller cần đăng nhập, không tạo thêm module riêng.
 - [ ] 5.6 Đọc cấu hình theo mục 1.8: thiếu biến thì API **vẫn khởi động** để Docker/local chạy chức năng khác mà không cần secret, ghi một dòng cảnh báo chỉ gồm tên biến thiếu. Kiểm cấu hình theo từng thao tác; không dùng `WEB_URL` để chặn IPN/QueryDR/return. Giá trị provider không hỗ trợ hoặc fake trong production thì dừng khởi động. Không sửa kiểm `JWT_SECRET` hoặc `HealthController`.
-- [ ] 5.7 Xóa `apps/api/src/checkout/payment.ts`. Cập nhật `.env.example` (Compose) và `apps/api/.env.example` (API local), credential để rỗng; cập nhật `docker-compose.yml`, `compose.demo.yml` để truyền biến VNPay tùy chọn vào runtime. Không bake secret vào image/build args và không bắt Compose có secret mới khởi động được. Sửa câu "bộ test đã xóa" ở `.github/workflows/README.md` và `docs/inventory-verification.md` thành: chỉ còn unit test VNPay tối thiểu theo D3.
+- [ ] 5.7 Xóa `apps/api/src/checkout/payment.ts`. Cập nhật `.env.example` (Compose) và `apps/api/.env.example` (API local), credential để rỗng; cập nhật `docker-compose.yml`, `compose.demo.yml` để truyền biến VNPay tùy chọn vào runtime. Không bake secret vào image/build args và không bắt Compose có secret mới khởi động được. Sửa câu "bộ test đã xóa" ở `.github/workflows/README.md` và `docs/inventory-verification.md` thành: chỉ còn unit test VNPay tối thiểu theo D3. Cùng lúc với code, sửa các tài liệu vận hành đang mô tả simulator của code hiện hành (quét Wave 2 ngày 2026-10-29): `README.md` (bảng API `POST /payments` có `cardNumber?`, câu thẻ demo `4242…`/`4000…0002`), `apps/api/README.md` (câu simulator và 402 `PAYMENT_DECLINED`), `docs/inventory-runbook.md` (bước demo "CARD demo kết thúc 0002 trả 402"). Không sửa trước khi code đổi, vì các file này hướng dẫn chạy code hiện hành.
 - [ ] 5.8 Không log toàn bộ query IPN, payment URL hoặc payload QueryDR. Log vận hành chỉ gồm mã sự kiện, `vnp_TxnRef`, `vnp_ResponseCode`, `vnp_TransactionStatus`, `RspCode` nếu có; warning đối soát phải giữ `vnp_TxnRef` để nhân viên tra Merchant Admin. Không log secret/chữ ký/số thẻ.
 
 ### Bước 6 – Code web (chỉ khi người dùng yêu cầu)

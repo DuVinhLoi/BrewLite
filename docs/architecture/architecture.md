@@ -50,7 +50,7 @@ Nguyên tắc: chỉ IPN hoặc QueryDR đã xác thực quyết định thanh t
 
 ### Web
 
-`apps/web` gồm route/page, component trình bày, state giỏ hàng và API client. Client kiểm email/mật khẩu, số thẻ demo và số lượng trước khi gửi; server vẫn kiểm lại. Thiết kế đáp ứng viewport 360×640, 390×844 và desktop 1280×800; vùng chạm chính ≥44×44 px, chữ nội dung ≥16 px. Mỗi màn tải API có loading, empty khi áp dụng, error tiếng Việt và nút thử lại.
+`apps/web` gồm route/page, component trình bày, state giỏ hàng và API client. Client kiểm email/mật khẩu và số lượng trước khi gửi; server vẫn kiểm lại. Web không có ô số thẻ: khách nhập thẻ trên trang VNPay. Thiết kế đáp ứng viewport 360×640, 390×844 và desktop 1280×800; vùng chạm chính ≥44×44 px, chữ nội dung ≥16 px. Mỗi màn tải API có loading, empty khi áp dụng, error tiếng Việt và nút thử lại.
 
 ### API theo domain
 
@@ -91,7 +91,7 @@ Module `catalog` dùng truy vấn Prisma có phạm vi theo dữ liệu mẫu �
 
 ### NFR-03: Thời gian đặt đơn và thanh toán
 
-`orders` giữ transaction ngắn; kiểm soát đồng thời theo đơn. Với dữ liệu mẫu trên local, đo 50 yêu cầu mỗi loại: p95 `POST /orders` ≤1 giây, `POST /payments` thành công ≤2 giây (AC-N03.1). Đây là mục tiêu cần Task 5 đo. Từ khi dùng VNPay, `POST /payments` chỉ tạo `Payment PENDING` và ký URL, không chờ VNPay; thời gian khách trả trên trang VNPay không tính vào mục tiêu này. AC-N03.1 và câu "simulator trả trong 500 ms" trong SRS cần nhóm cập nhật ở bước sau.
+`orders` giữ transaction ngắn; kiểm soát đồng thời theo đơn. Với dữ liệu mẫu trên local, đo 50 yêu cầu mỗi loại: p95 `POST /orders` ≤1 giây, `POST /payments` ≤2 giây (AC-N03.1). Đây là mục tiêu cần Task 5 đo. Từ khi dùng VNPay, `POST /payments` chỉ tạo `Payment PENDING` và ký URL, không chờ VNPay; thời gian khách trả trên trang VNPay không tính vào mục tiêu này.
 
 ### NFR-04, NFR-05, NFR-07: Bảo mật
 
