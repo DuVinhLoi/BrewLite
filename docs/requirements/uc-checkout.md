@@ -207,7 +207,7 @@ Ba nhánh bắt buộc của đề A2 §4.1 là **E1, E2, E3**; E4 là điều k
 - **Phản ứng:**
   1. Trong một transaction giữ khóa đơn, API đổi `Payment` từ `PENDING` sang `FAILED`, lưu riêng `gatewayResponseCode` và `gatewayTransactionStatus`, và đổi `Order` từ `PENDING` sang `PAYMENT_FAILED`. Nguyên liệu vẫn được giữ. IPN trả VNPay `RspCode = 00`.
   2. Không có phản hồi 402 từ `POST /payments`: thất bại luôn đến qua IPN hoặc QueryDR, không đến từ việc API tự gọi cổng.
-  3. Trang return chỉ hiển thị thất bại và cho thử lại/hủy **sau khi DB đã xác nhận** `PAYMENT_FAILED`. Thông báo theo mã VNPay chỉ để tham khảo: `24` khách hủy giao dịch, `11` hết thời gian thanh toán, `51` không đủ số dư, `13` sai OTP, `09`/`10`/`12`/`79` lỗi thẻ hoặc tài khoản, mã còn lại "Thanh toán không thành công". Khi payment còn `PENDING` thì hiển thị "Đang xác minh thanh toán, vui lòng kiểm tra lại", không khuyên trả lần hai.
+  3. Trang return chỉ hiển thị thất bại và cho thử lại/hủy **sau khi DB đã xác nhận** `PAYMENT_FAILED`. Thông báo theo mã VNPay chỉ để tham khảo: `24` khách hủy giao dịch, `11`, `15` và `EXPIRED` (payment bị đóng quá hạn, E11) hết thời gian thanh toán ("Đã hết thời gian thanh toán"), `51` không đủ số dư, `13` sai OTP, `09`/`10`/`12`/`79` lỗi thẻ hoặc tài khoản, mã còn lại "Thanh toán không thành công". Khi payment còn `PENDING` thì hiển thị "Đang xác minh thanh toán, vui lòng kiểm tra lại", không khuyên trả lần hai.
   4. UI giữ giỏ và `orderId`, hiển thị nút "Thử lại" (và "Hủy đơn" theo FR-25).
   5. Customer chọn A3 (thử lại) hoặc, nếu có FR-25, A5 (hủy đơn).
 - **Kết quả:** giỏ hàng và đơn được giữ; tồn kho vẫn giữ chỗ; khách không bị tính tiền (giao dịch thất bại hoặc bị hủy trên VNPay không ghi nhận khoản thu).
@@ -284,14 +284,14 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
   - `00/02` → `FAILED`, đơn `PAYMENT_FAILED`; khách thử lại (A3) hoặc hủy (A5).
   - `91` sau hạn và phản hồi đã xác thực → `FAILED` với `gatewayResponseCode = "EXPIRED"`, đơn `PAYMENT_FAILED`. `EXPIRED` chỉ là giá trị nội bộ của `gatewayResponseCode`, không phải trạng thái của `PaymentStatus`. Nếu còn hạn thì giữ `PENDING`, 409 `PAYMENT_IN_PROGRESS`. Spike chưa quan sát được mã `91` (QueryDR sandbox lỗi); nhánh đóng sau khoảng chờ dưới đây vẫn có hiệu lực dù `91` không bao giờ xuất hiện.
   - `00/01` đã xác thực: còn trong khoảng chờ → giữ `PENDING`, 409 `PAYMENT_IN_PROGRESS`, không tạo giao dịch mới và không hủy; hết khoảng chờ → đóng payment (xem "Đóng payment" dưới đây). Ca bỏ dở (URL đã mở nhưng chưa trả, hoặc khách rời đi) vì vậy không kẹt vĩnh viễn.
-  - Nhóm trạng thái đảo/hoàn tiền/nghi ngờ (`04`/`05`/`06`/`07`/`09`) và phản hồi có chữ ký hợp lệ nhưng sai merchant, mã tham chiếu, số tiền hay loại giao dịch (`MISMATCH`) → giữ `PENDING`, 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB, ghi warning để đối soát. **Không bao giờ tự đóng**, kể cả sau khoảng chờ.
-  - Response `00` kèm status thiếu hoặc chưa hỗ trợ, mã truy vấn khác (`02`/`03`/`94`/`97`/`99`...), hoặc phản hồi không xác thực được (không chữ ký, sai chữ ký, timeout, lỗi mạng, không đọc được, thiếu cấu hình truy vấn, thiếu `gatewayCreateDate`): còn trong khoảng chờ → giữ `PENDING`, 502, không đổi DB (E13); hết khoảng chờ → đóng payment. Việc đóng là chính sách hết hạn của ứng dụng, không coi `94`/`99` hay lỗi truy vấn là bằng chứng giao dịch thất bại.
+  - Nhóm trạng thái đảo/hoàn tiền/nghi ngờ (`04`/`05`/`06`/`07`/`09`) và phản hồi `00` có chữ ký hợp lệ nhưng sai merchant, mã tham chiếu, số tiền hay loại giao dịch (`MISMATCH`, chỉ áp cho phản hồi `00`) → giữ `PENDING`, 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB, ghi warning để đối soát. **Không bao giờ tự đóng**, kể cả sau khoảng chờ.
+  - Response `00` kèm status thiếu hoặc chưa hỗ trợ, mã truy vấn khác (`02`/`03`/`94`/`97`/`99`...), phản hồi mang mã khác `00` (kể cả `91`) có chữ ký hợp lệ nhưng sai hoặc thiếu merchant, mã tham chiếu (`BAD_RESPONSE`; VNPay có thể trả phản hồi lỗi đã ký với các trường rỗng, nên không xếp `MISMATCH` để đơn không kẹt mãi), hoặc phản hồi không xác thực được (không chữ ký, sai chữ ký, timeout, lỗi mạng, không đọc được, thiếu cấu hình truy vấn, thiếu `gatewayCreateDate`): còn trong khoảng chờ → giữ `PENDING`, 502, không đổi DB (E13); hết khoảng chờ → đóng payment. Việc đóng là chính sách hết hạn của ứng dụng, không coi `94`/`99` hay lỗi truy vấn là bằng chứng giao dịch thất bại.
 - **Đóng payment (hết khoảng chờ):**
   1. Trong transaction giữ khóa đơn, API đổi `Payment` từ `PENDING` sang `FAILED` với `gatewayResponseCode = "EXPIRED"` và `gatewayTransactionStatus = null`, đổi `Order` sang `PAYMENT_FAILED`; nguyên liệu và kho không đổi (AC-F15.3).
   2. API ghi warning `PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=<id>` kèm lý do truy vấn lỗi hoặc `vnp_ResponseCode`/`vnp_TransactionStatus` đã xác thực.
-  3. Khách thấy đơn `PAYMENT_FAILED` với thông báo "Đã hết thời gian thanh toán", rồi chọn thử lại (A3, tạo payment mới) hoặc hủy (A5, nhả nguyên liệu). Lời gọi đã đóng payment tiếp tục như với payment `FAILED`: `POST /payments` xét lại từ E4 mục 1, hủy đơn xét tiếp theo A5, `sync` trả trạng thái mới.
+  3. Khách thấy đơn `PAYMENT_FAILED` và thông báo "Đã hết thời gian thanh toán" trên dòng payment ở trang chi tiết đơn (màn này hiển thị thông báo theo `gatewayResponseCode` của payment `FAILED`, ở đây là `EXPIRED`), rồi chọn thử lại (A3, tạo payment mới) hoặc hủy (A5, nhả nguyên liệu). Lời gọi đã đóng payment tiếp tục như với payment `FAILED`: `POST /payments` chạy lại các bước của E4 từ mục 1 ngay trong lời gọi đó nên tạo luôn lần thử mới (201), hủy đơn xét tiếp theo A5, `sync` trả trạng thái mới.
   4. IPN thành công tới sau khi đã đóng đi theo E12: `RspCode 02`, warning `PAYMENT_RECONCILIATION_REQUIRED`, nhân viên hoàn tiền tay.
-- **Kết quả:** còn trong khoảng chờ mà chưa kết luận thì `Payment` giữ `PENDING`, khách không tạo được giao dịch mới và không hủy được (BR-10). Hết khoảng chờ thì payment đóng `FAILED` và khách thử lại hoặc hủy được, trừ nhóm trạng thái nghi ngờ và `MISMATCH` vẫn giữ `PENDING` chờ đối soát tay. Không nhả nguyên liệu chỉ vì payment `FAILED`/`EXPIRED`; chưa có job tự hủy đơn.
+- **Kết quả:** còn trong khoảng chờ mà chưa kết luận thì `Payment` giữ `PENDING`, khách không tạo được giao dịch mới và không hủy được (BR-10). Hết khoảng chờ thì payment đóng `FAILED` và khách thử lại hoặc hủy được, trừ nhóm trạng thái nghi ngờ và `MISMATCH` (phản hồi `00`) vẫn giữ `PENDING` chờ đối soát tay. Không nhả nguyên liệu chỉ vì payment `FAILED`/`EXPIRED`; chưa có job tự hủy đơn.
 - **Yêu cầu:** FR-14, FR-15, FR-16, FR-25, BR-10, NFR-13.
 
 ### E12 — Tiền về sau trạng thái cuối (tại bước 17)
@@ -306,11 +306,11 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 
 - **Kích hoạt:** thiếu `VNP_TMN_CODE`, `VNP_HASH_SECRET` hoặc `WEB_URL` cho thao tác đang chạy (tạo URL mới cần cả ba; IPN, kiểm return và QueryDR chỉ cần hai biến đầu), hoặc QueryDR gặp lỗi mạng, timeout, chữ ký sai, mã truy vấn lạ.
 - **Phản ứng:**
-  1. Tạo URL mới hoặc `sync` → 502 `PAYMENT_PROVIDER_ERROR`; không tạo `Payment`, không đổi trạng thái đơn hay kho. UI hiển thị "Có lỗi xảy ra, vui lòng thử lại"; giỏ và đơn được giữ.
+  1. Tạo URL mới hoặc `sync` → 502 `PAYMENT_PROVIDER_ERROR`; không tạo `Payment`, không đổi trạng thái đơn hay kho (với lỗi QueryDR thì DB không đổi trong khoảng chờ; hết khoảng chờ thì đóng theo AC-F16.10, xem E11). UI hiển thị "Có lỗi xảy ra, vui lòng thử lại"; giỏ và đơn được giữ.
   2. IPN thiếu secret hoặc merchant → `RspCode = 99`, không đọc hay ghi DB, để VNPay gọi lại khi biến được bổ sung (không trả `97`, vì chữ ký chưa kiểm được chứ không phải sai).
   3. Return thiếu cấu hình xác minh → `{ valid: false }`.
   4. Replay (`SUCCESS`, `PENDING` còn hạn) và đọc trạng thái từ DB vẫn chạy, không cần biến VNPay. API vẫn khởi động khi thiếu biến; log khởi động chỉ ghi tên biến thiếu.
-- **Kết quả:** không có tác dụng phụ lên đơn, payment, kho; khách thử lại sau khi cấu hình đủ.
+- **Kết quả:** không có tác dụng phụ lên đơn, payment, kho (trong khoảng chờ; hết khoảng chờ thì đóng theo AC-F16.10); khách thử lại sau khi cấu hình đủ.
 - **Yêu cầu:** FR-14, NFR-07, NFR-15.
 
 ## 8. Quy tắc nghiệp vụ áp dụng

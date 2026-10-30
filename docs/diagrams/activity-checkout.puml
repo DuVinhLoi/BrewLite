@@ -130,6 +130,9 @@ if (Latest Payment PENDING and past expiresAt?) then (E11 expired)
     note right
       04/05/06/07/09 and MISMATCH never auto-close, even after
       the grace; they stay PENDING for manual reconciliation.
+      MISMATCH applies to a signed 00 response only. Any other code
+      (91 too) with a wrong or missing merchant or TxnRef is
+      BAD_RESPONSE: 502 inside the grace, closed after it.
     end note
     |Next.js UI|
     :Show generic error; keep cart and order;
@@ -139,8 +142,8 @@ if (Latest Payment PENDING and past expiresAt?) then (E11 expired)
       QueryDR 91 after expiry, verified ->
       FAILED with gatewayResponseCode "EXPIRED".
       D6: also when now >= expiresAt + 15 min (isPastGrace) and
-      QueryDR gave 00/01, an unsupported status, another code
-      or no verified answer (UNSIGNED, timeout, network).
+      QueryDR gave 00/01, an unsupported status, another code,
+      BAD_RESPONSE or no verified answer (UNSIGNED, timeout, network).
       Warning PAYMENT_EXPIRED_UNCONFIRMED; closed only on a call
       (POST /payments, cancel, sync), no background job.
       EXPIRED is not a PaymentStatus value.
@@ -244,7 +247,7 @@ if (Order status read from DB?) then (PAID / PREPARING / READY / COMPLETED)
   :201 SUCCESS; receipt and tracking; clear cart;
   stop
 elseif (PAYMENT_FAILED) then (E3)
-  :Show failure reason from the response code\n(24 cancelled, 11 expired, 51 insufficient funds, other generic);\nkeep cart and order; offer retry same order or cancel;
+  :Show failure reason from the response code\n(24 cancelled, 11/15/EXPIRED expired, 51 insufficient funds, other generic);\nkeep cart and order; offer retry same order or cancel;
 else (PENDING, or 409/502 from sync)
   :Show "checking payment" with Check again; never advise paying twice;
   stop
