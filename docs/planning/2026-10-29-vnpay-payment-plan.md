@@ -203,8 +203,8 @@ Chỉ hiển thị thất bại và cho thử lại/hủy sau khi trạng thái 
 
 ### Bước 1 – Spike (script ngoài repo, trong scratchpad)
 
-- [ ] 1.1 Script Node một file: ký URL cho 10.000 VND, mở trình duyệt, trả bằng thẻ NCB test. Thông tin thẻ là dữ liệu công khai trong email sandbox, không đưa vào repo.
-- [ ] 1.2 Kiểm chữ ký của tham số trả về trên returnUrl. Thử cả `vnp_OrderInfo` có khoảng trắng để chốt bẫy encode ở mục 1.2.
+- [x] 1.1 Script Node một file: ký URL cho 10.000 VND, mở trình duyệt, trả bằng thẻ NCB test. Thông tin thẻ là dữ liệu công khai trong email sandbox, không đưa vào repo.
+- [x] 1.2 Kiểm chữ ký của tham số trả về trên returnUrl. Thử cả `vnp_OrderInfo` có khoảng trắng để chốt bẫy encode ở mục 1.2.
 - [ ] 1.3 Gọi QueryDR, kiểm chữ ký phản hồi và ghi riêng **cả** `vnp_ResponseCode` lẫn `vnp_TransactionStatus` cho các trường hợp:
   - vừa trả thành công;
   - URL đã tạo nhưng **chưa từng mở**, trước và sau thời hạn thật đã ký;
@@ -212,8 +212,10 @@ Chỉ hiển thị thất bại và cho thử lại/hủy sau khi trạng thái 
   - khách đã hủy trên VNPay.
 
   Ghi tuple merchant/TxnRef/`gatewayCreateDate` đã dùng, trường nào vắng mặt ở response lỗi, và khả năng xác thực response `91`; không suy đoán URL đã mở nhưng chưa trả sẽ nhận `01` hay `91`. Thử lại có kiểm soát để biết giới hạn `94`, không gọi dồn trong vòng lặp.
-- [ ] 1.4 Thử một giao dịch bấm "Hủy" để thấy `vnp_ResponseCode=24`. Ghi cả `vnp_TransactionStatus` trên return (cùng bộ tham số `vnp_*` với IPN) để chốt điều kiện thất bại ở bước 6 mục 1.3, vì IPN không quan sát được ở local.
-- [ ] 1.5 Ghi kết quả (không có secret) vào `docs/payment-vnpay-spike.md`: tham số mẫu đã che chữ ký, các mã đã thấy, chỗ lệch so với tài liệu.
+
+  Chưa xong (2026-10-30): sandbox trả `99` "Unexpected error" không chữ ký cho mọi request QueryDR, kể cả merchant giả. Phần "thử trả tiếp sau hạn" đã có kết quả: VNPay từ chối. Xem [spike](../payment-vnpay-spike.md).
+- [x] 1.4 Thử một giao dịch bấm "Hủy" để thấy `vnp_ResponseCode=24`. Ghi cả `vnp_TransactionStatus` trên return (cùng bộ tham số `vnp_*` với IPN) để chốt điều kiện thất bại ở bước 6 mục 1.3, vì IPN không quan sát được ở local.
+- [x] 1.5 Ghi kết quả (không có secret) vào `docs/payment-vnpay-spike.md`: tham số mẫu đã che chữ ký, các mã đã thấy, chỗ lệch so với tài liệu.
 
 **Điều kiện qua:** chữ ký URL được VNPay chấp nhận, chữ ký return và QueryDR kiểm đúng; có bằng chứng các ca QueryDR ở 1.3. Nếu sandbox khác bảng xử lý mục 1.6 hoặc `91` không xác thực được, dừng pha code liên quan để sửa hợp đồng, không bỏ kiểm chữ ký hay tự cho retry. Không cần chờ tài khoản Render để chạy spike local.
 
@@ -272,7 +274,7 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
 
 ### Bước 5 – Code API (chỉ khi người dùng yêu cầu)
 
-- [ ] 5.1 `apps/api/prisma/schema.prisma` và **hai** migration theo mục 1.4: enum và cột trước, partial index sau. (Schema và hai migration đã viết; còn chạy trên DB local.) Chạy `prisma migrate dev` trên DB local, `prisma validate`. Kiểm index bằng `\d payments` trong `psql`.
+- [x] 5.1 `apps/api/prisma/schema.prisma` và **hai** migration theo mục 1.4: enum và cột trước, partial index sau. Chạy `prisma migrate dev` trên DB local, `prisma validate`. Kiểm index bằng `\d payments` trong `psql`.
 - [x] 5.2 `apps/api/src/payment/vnpay.ts`: chỉ chứa hàm thuần, không phụ thuộc Nest:
   - `buildPaymentUrl`, `verifyReturn`;
   - `buildQueryDr`, `verifyQueryDrResponse`;
@@ -317,18 +319,20 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
   - đặt 2 Cappuccino, trả bằng thẻ NCB;
   - trang return gọi `sync`, đơn thành `PAID`;
   - `onHand` espresso/sữa tươi giảm đúng, `reserved` về 0.
-- [ ] 7.4 Local: bấm Hủy trên VNPay → `PAYMENT_FAILED`, `reserved` vẫn giữ → thử lại thành công.
+
+  Một phần (2026-10-30, Matcha thay Cappuccino): trả thẻ NCB từ app thật; `sync` trả 502 vì QueryDR sandbox lỗi, payment giữ `PENDING`. Gửi lại tham số return đã ký vào IPN thì đơn thành `PAID`, kho trừ đúng và `reserved` về 0. Còn chờ QueryDR để kiểm nhánh `sync`.
+- [x] 7.4 Local: bấm Hủy trên VNPay → `PAYMENT_FAILED`, `reserved` vẫn giữ → thử lại thành công.
 - [ ] 7.5 Production (Render + Vercel): một giao dịch thành công qua IPN thật. Xem log Render có `RspCode=00`; Merchant Admin có giao dịch. Sau mỗi lần deploy, tạo một URL thanh toán và mở thử: trang VNPay phải hiện form nhập thẻ, không báo sai chữ ký. Smoke của CD chỉ gọi `/health`, không bắt được lỗi ký.
 - [ ] 7.6 Chạy kịch bản SIT trên cổng `vnpaygw-sit-testing` của VNPay: thành công, sai chữ ký (97), không có đơn (01), sai tiền (04), đã xác nhận (02). Chụp kết quả cho báo cáo.
-- [ ] 7.7 Gọi lại IPN với cùng tham số → `02`, không trừ kho lần hai. Cho IPN và `sync` cùng xác nhận một payment → một `SUCCESS`, trừ kho một lần; hai yêu cầu tạo thanh toán đồng thời → tối đa một `PENDING`, cùng phương thức dùng chung URL.
-- [ ] 7.7a Chạy API local không có `VNP_HASH_SECRET`:
+- [ ] 7.7 Gọi lại IPN với cùng tham số → `02`, không trừ kho lần hai. Cho IPN và `sync` cùng xác nhận một payment → một `SUCCESS`, trừ kho một lần; hai yêu cầu tạo thanh toán đồng thời → tối đa một `PENDING`, cùng phương thức dùng chung URL. Đã đạt (2026-10-30): gọi lại IPN, tạo thanh toán đồng thời. Còn ca IPN cùng `sync` (chờ QueryDR).
+- [x] 7.7a Chạy API local không có `VNP_HASH_SECRET`:
   - `/health` trả đúng `{ status, database }`;
   - tạo URL mới và QueryDR trả 502; replay `PENDING` còn hạn/`SUCCESS` đã có vẫn 200; `sync` payment đã có trạng thái cuối vẫn 200;
   - IPN trả `99`, bảng `payments` không đổi;
   - log khởi động chỉ có tên biến thiếu.
   - thiếu **riêng** `WEB_URL`: tạo URL mới trả 502, nhưng IPN/return/QueryDR có đủ merchant+secret vẫn xử lý được.
 - [ ] 7.7b Chỉ dùng DB local, payment có URL **chưa từng mở**, và không mở URL cũ trong suốt phép thử. Có thể sửa `expiresAt` về quá khứ để kích hoạt nhánh, nhưng chỉ kỳ vọng `FAILED EXPIRED` nếu QueryDR trả `91` đã xác thực như spike 1.3. Dùng hai đơn riêng: một đơn thử tạo URL mới, một đơn thử hủy sau đối soát để kiểm nhả nguyên liệu. Không thử hủy ngay sau khi đã tạo payment mới còn hạn. Ca URL **đã mở nhưng chưa trả** phải theo mã thực tế đã ghi ở spike, không mặc định là `91`.
-- [ ] 7.7c Thử lại từ `PAYMENT_FAILED`: đơn về `PENDING`, `reserved` không tăng.
+- [x] 7.7c Thử lại từ `PAYMENT_FAILED`: đơn về `PENDING`, `reserved` không tăng.
 - [ ] 7.7d Dùng response QueryDR kiểm soát được trong scratchpad/local: `00/00` → `SUCCESS`; `00/01` → 409, giữ `PENDING`; `00/02` → `FAILED` nhưng không phải `EXPIRED`; `91` trước/sau hạn → 409/`FAILED EXPIRED`; `94`/`99`, chữ ký sai, sai merchant/TxnRef/số tiền, timeout → 502, không đổi DB/kho. Nhóm status `04`/`05`/`06`/`07`/`09` không mở lần thu mới.
 - [ ] 7.7e Payment quá hạn được QueryDR xác nhận thành công: gọi lại cùng chủ đơn/key/phương thức → 200 replay `SUCCESS`; key hoặc phương thức khác → 409 `ORDER_NOT_PAYABLE`. Kiểm một IPN cập nhật trong lúc đang chờ QueryDR: kết quả cũ không ghi đè DB.
 - [ ] 7.7f Trong local, IPN thành công có chữ ký hợp lệ tới sau `FAILED EXPIRED`, sau hủy đơn hoặc sau khi payment khác đã trả → `02`, có warning `PAYMENT_RECONCILIATION_REQUIRED` và `vnp_TxnRef`, đơn/kho không đổi. IPN thành công chỉ qua giờ hết hạn nhưng DB vẫn `PENDING` → nhận bình thường. IPN lặp đúng payment đã thành công không tạo warning đối soát. Lặp lại ca trả thành công/hủy trên đơn cũ `inventoryTracked=false`: không gọi settle snapshot thiếu và giữ nhánh hoàn `Product.stock` khi hủy.
