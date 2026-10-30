@@ -1,44 +1,59 @@
 @startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ClassBackgroundColor #eef2fb
+skinparam ClassBorderColor #5b6b8c
+skinparam ClassFontColor #1f2937
+skinparam StateBackgroundColor #eef2fb
+skinparam StateBorderColor #5b6b8c
+skinparam StateFontColor #1f2937
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
 ' BrewLite A2 SRS section 3.6 is the authoritative source.
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
 skinparam classAttributeIconSize 0
-skinparam ClassBackgroundColor #EDF5FB
-skinparam ClassBorderColor #58758A
-skinparam ArrowColor #58758A
-skinparam NoteBackgroundColor #FFF4D9
-skinparam NoteBorderColor #B99655
 skinparam linetype ortho
 hide empty members
 title BrewLite A2 — Class: Domain model (SRS 3.6)
 
 class User {
-  +id: UUID
+  +id: String
   +email: String
   +passwordHash: String
   +role: Role
 }
 class Product {
-  +id: UUID
+  +id: String
   +name: String
   +description: String
   +price: Integer
   +imageUrl: String
-  +stock: Integer
+  +stock: Integer <<legacy>>
 }
 class Order {
-  +id: UUID
-  +userId: UUID
+  +id: String
+  +userId: String
   +status: OrderStatus
+  +inventoryTracked: Boolean
   +total: Integer
   +discountAmount: Integer
-  +promotionId: UUID [0..1]
+  +promotionId: String [0..1]
   +createdAt: DateTime
 }
 class OrderItem {
-  +id: UUID
-  +orderId: UUID
-  +productId: UUID
+  +id: String
+  +orderId: String
+  +productId: String
   +size: String
   +toppings: String[*]
   +quantity: Integer
@@ -46,16 +61,25 @@ class OrderItem {
   +lineTotal: Integer
 }
 class Payment {
-  +id: UUID
-  +orderId: UUID
+  +id: String
+  +orderId: String
   +method: PaymentMethod
   +status: PaymentStatus
   +amount: Integer
   +idempotencyKey: String
+  +provider: String
+  +paymentUrl: String [0..1]
+  +expiresAt: DateTime [0..1]
+  +gatewayCreateDate: String [0..1]
+  +gatewayTxnNo: String [0..1]
+  +gatewayResponseCode: String [0..1]
+  +gatewayTransactionStatus: String [0..1]
+  +bankCode: String [0..1]
+  +paidAt: DateTime [0..1]
   +createdAt: DateTime
 }
 class Promotion {
-  +id: UUID
+  +id: String
   +code: String
   +discountPercent: Decimal
   +validFrom: DateTime
@@ -65,9 +89,9 @@ class Promotion {
   +active: Boolean
 }
 class LoyaltyTransaction {
-  +id: UUID
-  +userId: UUID
-  +orderId: UUID [0..1]
+  +id: String
+  +userId: String
+  +orderId: String [0..1]
   +type: LoyaltyType
   +points: Integer
   +createdAt: DateTime
@@ -93,7 +117,7 @@ enum PaymentMethod {
 enum PaymentStatus {
   SUCCESS
   FAILED
-  REFUNDED
+  PENDING
 }
 enum LoyaltyType {
   EARN
@@ -115,7 +139,8 @@ Payment ..> PaymentStatus
 LoyaltyTransaction ..> LoyaltyType
 
 note bottom of Product
-  stock reserved by POST /orders (BR-03).
+  Product.stock used only for legacy orders (marker false).
+  Public stock = ingredient capacity for S without toppings.
   Client size/toppings are validated, prices recomputed on server.
 end note
 note bottom of Promotion
@@ -127,7 +152,77 @@ note bottom of LoyaltyTransaction
   No runtime accrual in minimum.
 end note
 note bottom of Payment
-  Only SUCCESS results are cached by API key.
-  REFUNDED is an enum value, not an enabled FR-26 flow.
+  Only SUCCESS results are cached by API key (BR-05); FAILED does not lock the key.
+  At most one PENDING per Order (BR-10), enforced by a partial unique index.
+  provider = "VNPAY" for new rows; rows created before VNPay keep "SIMULATOR".
+  gatewayCreateDate = the exact signed vnp_CreateDate string; QueryDR needs it unchanged.
+  gatewayResponseCode and gatewayTransactionStatus are stored apart.
+  "EXPIRED" is an internal gatewayResponseCode value, not a PaymentStatus.
+  No card number is stored: the card is entered only on the VNPay page.
+  No REFUNDED value: refund (FR-26) is Won't.
+end note
+class Ingredient {
+  +id: String
+  +name: String
+  +unit: IngredientUnit
+  +tracked: Boolean
+  +onHand: Decimal(18,3)
+  +reserved: Decimal(18,3)
+}
+class Recipe {
+  +id: String
+  +productId: String [0..1]
+  +size: String [0..1]
+  +topping: String [0..1]
+}
+class RecipeLine {
+  +recipeId: String
+  +ingredientId: String
+  +quantity: Decimal(18,3)
+}
+class StockMovement {
+  +id: String
+  +ingredientId: String
+  +actorId: String
+  +kind: RECEIVE | ADJUST
+  +quantity: Decimal(18,3) <<signed delta>>
+  +onHandAfter: Decimal(18,3)
+  +reason: String
+  +createdAt: DateTime
+}
+class OrderIngredient {
+  +orderId: String
+  +ingredientId: String
+  +quantity: Decimal(18,3) <<immutable>>
+}
+enum IngredientUnit {
+  g
+  ml
+  piece
+}
+Product "0..1" -- "0..*" Recipe : product + size selector
+Recipe "1" *-- "1..*" RecipeLine : contains
+Ingredient "1" -- "0..*" RecipeLine : requires
+Ingredient "1" -- "0..*" StockMovement : balance audit
+User "1" -- "0..*" StockMovement : records
+Order "1" *-- "0..*" OrderIngredient : aggregate snapshot
+Ingredient "1" -- "0..*" OrderIngredient : reserved / consumed
+Ingredient ..> IngredientUnit
+note bottom of Ingredient
+  available = onHand - reserved; 0 <= reserved <= onHand.
+  Water / ice unlimited; only tracked lines limit cups.
+  HTTP amounts are decimal strings; canonical units.
+end note
+note right of Recipe
+  Exactly one selector: productId+size OR topping.
+  Unique product+size and unique topping.
+  Unique recipeId+ingredientId; positive quantities.
+  Empty/missing base or no tracked base line is unavailable.
+end note
+note bottom of OrderIngredient
+  Unique orderId+ingredientId; quantities aggregate ALL cart lines.
+  New orders marker true: reserve snapshot; payment consumes;
+  decline keeps; owner cancel releases reserved exactly once.
+  Recipe edits never modify snapshot; legacy false has no snapshot.
 end note
 @enduml

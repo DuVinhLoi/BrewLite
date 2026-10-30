@@ -11,7 +11,9 @@ Task 3 gồm `architecture.md`, `adr/` và `deployment.puml`/`.svg`, đáp ứng
 | [adr/002-layered-nestjs.md](adr/002-layered-nestjs.md) | NestJS theo domain và lớp |
 | [adr/003-containerization.md](adr/003-containerization.md) | Compose/Postgres, Prisma migration khi startup, seed |
 | [adr/004-vercel-render.md](adr/004-vercel-render.md) | Vercel + Render + GHCR, secret, health, smoke và rollback |
-| [adr/005-idempotency-and-optimistic-lock.md](adr/005-idempotency-and-optimistic-lock.md) | Replay tại API theo BR-05/D2/D3, transaction và giữ tồn kho |
+| [adr/006-ingredient-inventory-snapshots.md](adr/006-ingredient-inventory-snapshots.md) | Kho nguyên liệu, snapshot, legacy marker và cutover |
+| [adr/005-idempotency-and-optimistic-lock.md](adr/005-idempotency-and-optimistic-lock.md) | Replay `SUCCESS`/`PENDING` tại API theo BR-05/D2/D3, một `Payment PENDING` mỗi đơn (BR-10), transaction và giữ tồn kho |
+| [adr/007-vnpay-sandbox.md](adr/007-vnpay-sandbox.md) | Thanh toán qua VNPay sandbox: redirect + IPN + QueryDR, đối soát, cấu hình kiểm theo thao tác (Proposed) |
 | [deployment.puml](deployment.puml) | Deployment-01: nguồn UML với local, CI, production |
 | [deployment.svg](deployment.svg) | Deployment-01: SVG do PlantUML 1.2026.8 render |
 
@@ -19,7 +21,7 @@ Task 3 gồm `architecture.md`, `adr/` và `deployment.puml`/`.svg`, đáp ứng
 
 - [SRS](../requirements/srs.md) và [handoff](../planning/handoff/2026-10-21-req-sync/README.md) là nguồn contract. Các quyết định có trạng thái Accepted (2026-10-21).
 - Health trả `{status, database}`; CD smoke `/health`, `/products` và web, mỗi bước retry tối đa 10 phút.
-- API dừng giữa bước 13 và 14 của UC-04 là rủi ro chấp nhận vì thanh toán chỉ mô phỏng; không cam kết xử lý khoảng dừng này.
+- Từ 2026-10-29 thanh toán đi qua VNPay sandbox (ADR-007, Proposed): kết quả đến bất đồng bộ qua IPN hoặc QueryDR, tiền về sau trạng thái cuối được đối soát tay. Khoảng dừng giữa bước 13 và 14 của UC-04 kiểu simulator không còn là rủi ro chấp nhận.
 - Task 4/5 hiện thực code và minh chứng vận hành. §3 của architecture.md ánh xạ từng thành phần với vị trí mã nguồn dự kiến.
 - Ma trận nằm ngoài PR này. B10 dùng bảng §8 của architecture.md trong PR riêng sau T2-M.
 - Kết quả kiểm Task 3 nằm trong [report](../planning/handoff/2026-10-21-req-sync/report-task3.md).

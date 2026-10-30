@@ -1,0 +1,126 @@
+# Ledger: thanh toán VNPay sandbox
+
+Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.md). Branch tích hợp: `a2/payment-vnpay` (worktree `.worktrees/payment-vnpay`). Chỉ Integrator ghi file này. Orca run: `run_591f7434cdb5`.
+
+## Card
+
+| Card | Agent / công cụ | Bắt đầu | Xong | Vòng sửa | Test đỏ trước xanh | Conflict khi merge | File ngoài phạm vi bị chặn | Token |
+|---|---|---|---|---|---|---|---|---|
+| W0-DOCS (bước 2.2, 2.4, 4.3, 4.4), branch `ThuanTran260/task-vnpay-w0-docs` (Orca đổi tên từ `gurnard`), worktree `E:/orca/workspaces/BrewLite/vnpay-w0-docs`, dispatch `ctx_46d86d48e0b1`, report [W0-report.md](W0-report.md) | Orca, claude/sonnet | 2026-10-29 21:09 | 21:15, merge `7ec24e6` lúc 21:16 | 0 | không áp dụng | không | không | không đo được |
+| W1-SRS (bước 2.1), branch `ThuanTran260/docs-vnpay-w1-srs`, worktree `E:/orca/workspaces/BrewLite/vnpay-w1-srs`, dispatch `ctx_30691a90d743`, report [W1-SRS-report.md](W1-SRS-report.md) | Orca, claude/sonnet | 2026-10-29 21:21 | 21:34, merge `6da090b` lúc 21:37 | 0 | không áp dụng | không | không | không đo được |
+| W1-UCDIAG (bước 2.3, 3.1–3.5), branch `ThuanTran260/task-vnpay-w1-ucdiag` (Orca đổi tên từ `cory`), worktree `E:/orca/workspaces/BrewLite/vnpay-w1-ucdiag`, dispatch `ctx_b7504e646cf2`, report [W1-UCDIAG-report.md](W1-UCDIAG-report.md) | Orca, claude/sonnet | 2026-10-29 21:21 | 21:36, merge `3db5ec6` lúc 21:37 | 0 | không áp dụng | không | không | không đo được |
+| W1-ADR (bước 4.1–4.2), branch `ThuanTran260/vnpay-w1-adr`, worktree `E:/orca/workspaces/BrewLite/vnpay-w1-adr`, dispatch `ctx_d3c01c3c1b03`, report [W1-ADR-report.md](W1-ADR-report.md) | Orca, claude/sonnet | 2026-10-29 21:21 | 21:30, merge `601d469` lúc 21:37 | 0 | không áp dụng | không | không | không đo được |
+| W2-TRACE (bước 4.5), branch `ThuanTran260/task-vnpay-w2-trace`, worktree `E:/orca/workspaces/BrewLite/vnpay-w2-trace`, dispatch `ctx_bf6853d9f524`, report [W2-TRACE-report.md](W2-TRACE-report.md) | Orca, claude/sonnet | 2026-10-29 22:10 | 22:19, merge `b40e051` lúc 22:19 | 0 | không áp dụng | không | không | không đo được |
+| C1-WEB (bước 6.1–6.4), worktree `E:/orca/workspaces/BrewLite/vnpay-c1-web`, branch `ThuanTran260/task-47f146ac95df`; lần 1 dispatch `ctx_80f768582602` (failed: hết usage), lần 2 `ctx_f9b2e369c6b3`, report [C1-WEB-report.md](C1-WEB-report.md) | Orca, claude/sonnet | 2026-10-29 22:41 | 2026-10-30 06:43, merge `89a9559` | 1 (chạy lại) | không áp dụng | không | không | không đo được |
+| C1-API (bước 5.1–5.3, phần đọc cấu hình 5.6), worktree `E:/orca/workspaces/BrewLite/vnpay-c1-api`, branch `ThuanTran260/chore-multi-agent-workflow` (tên do Orca đặt); lần 1 `ctx_5fd012103197` (failed: terminal mất sau khi hết usage), lần 2 `ctx_607a33cad782`, report [C1-API-report.md](C1-API-report.md) | Orca, claude/sonnet | 2026-10-29 22:41 | 2026-10-30 06:44, merge `a1116d4` | 1 (chạy lại) | 1 (test đỏ vì thiếu `src/payment`, rồi 69/69 xanh) | không | không | không đo được |
+| C2-API (bước 5.4, 5.5, nối 5.6, 5.7, 5.8), worktree `E:/orca/workspaces/BrewLite/vnpay-c2-api`, branch `ThuanTran260/chore-multi-agent-workflow-2` (tên do Orca đặt), dispatch `ctx_9664527b2aed`, report [C2-API-report.md](C2-API-report.md) | Orca, claude/sonnet | 2026-10-30 06:46 | 06:58, merge `c8bb411` lúc 06:59 | 0 | không áp dụng (card không yêu cầu TDD) | không | không | không đo được |
+| SPIKE (bước 1), script ngoài repo gọi hàm của `vnpay.ts`, trình duyệt Playwright; kết quả [payment-vnpay-spike.md](../../../payment-vnpay-spike.md) | Integrator | 2026-10-30 07:31 | 07:50; 1.3 chưa xong (QueryDR sandbox lỗi) | 0 | không áp dụng | không áp dụng | không áp dụng | không đo được |
+| W3-DOCS (D6 vào SRS, UC, sơ đồ, ADR, plan, ma trận), branch `ThuanTran260/docs-vnpay-w3`, worktree `E:/orca/workspaces/BrewLite/langostino`, dispatch `ctx_0d2796a7677f`, report [W3-DOCS-report.md](W3-DOCS-report.md) | Orca, claude/sonnet | 2026-10-30 13:55 | 14:06, merge `9f7a40e` | 0 | không áp dụng | không | không (3 CR ghi trong report) | không đo được |
+| C3-API (code D6), branch `ThuanTran260/task-vnpay-c3-api` (Orca đổi tên từ `tripodfish`), worktree `E:/orca/workspaces/BrewLite/tripodfish`, dispatch `ctx_f7216149d557`, report [C3-API-report.md](C3-API-report.md) | Orca, claude/sonnet | 2026-10-30 13:55 | 14:04, merge `3566cb2` lúc 14:06 | 0 | 1 (15/84 đỏ, rồi 84/84 xanh) | không | không | không đo được |
+| REVIEW-D6 (đọc `a5164b3..3566cb2`, chỉ đọc) | Agent tool, opus | 2026-10-30 14:08 | 14:15 | không áp dụng | không áp dụng | không áp dụng | không áp dụng | khoảng 180k (subagent) |
+| F1-API (sửa code theo review: finding 1, 5, 7, 9), branch `ThuanTran260/task-3a91c11b` (tên do Orca đặt), worktree `E:/orca/workspaces/BrewLite/vnpay-f1-api`, dispatch `ctx_11b3ab077a24`, report [F1-API-report.md](F1-API-report.md) | Orca, claude/`claude-sonnet-5-5` | 2026-10-30 14:20 | merge `3fe434c` | 0 | 1 (2 test đỏ đúng lý do, rồi 89/89 xanh) | không | không | không đo được |
+| F1-DOCS (sửa tài liệu theo review và CR-1..CR-3 của W3-DOCS), branch `ThuanTran260/task-da7af175-vnpay-f1` (tên do Orca đặt), worktree `E:/orca/workspaces/BrewLite/vnpay-f1-docs`, dispatch `ctx_f7625acf4d25`, report [F1-DOCS-report.md](F1-DOCS-report.md) | Orca, claude/`claude-sonnet-5-5` | 2026-10-30 14:20 | merge `3686254` | 0 | không áp dụng | không | không (3 CR ghi trong report) | không đo được |
+
+## Ruling
+
+- 2026-10-29 21:05: fast-forward `a2/payment-vnpay` từ `73a6ccb` lên `jumbo` (`51f5330`), sau đó commit plan `c6d3403`. Fast-forward trước để không làm nhánh rẽ khỏi `jumbo`.
+- 2026-10-29 21:09: chạy W0 (tài liệu không phụ thuộc kết quả spike) song song với spike. SRS, use case checkout, sơ đồ và ADR chờ spike vì AC của FR-14/15/16 lấy từ bảng mục 1.6.
+- 2026-10-29 21:09: W0 dùng `--setup skip` vì chỉ sửa tài liệu, không cần `node_modules`.
+- 2026-10-29 21:16: W0 qua G1–G6: worktree sạch; 6 file đều trong allowed paths; không trailer; `git diff --check` sạch; report đủ bằng chứng; merge `--no-ff` không conflict; render lại `use-case-overview.puml`, `deployment.puml` ra thư mục tạm: 0 "Syntax Error". Worker đã release.
+- 2026-10-29 21:16: nhận tạm mã rủi ro R-13..R-15 do W0 đánh số tiếp bảng rủi ro; nhóm xác nhận khi duyệt. Các điểm còn lại trong mục 4 của W0-report chuyển sang wave sau: NFR-03/AC-N03.1 xử lý ở bước 2.1 (SRS); quy trình đối soát tay chờ nhóm duyệt; câu Docker trong `deployment.md` chỉ đúng sau bước 5.7.
+- 2026-10-29 21:16: `deployment.svg` và `use-case-overview.svg` trong repo còn cũ; nhóm xuất lại theo bước 2.4 và 3.5.
+- 2026-10-29 21:21: chạy Wave 1 (SRS, UC-04 + sơ đồ, ADR) song song trước spike vì `apps/api/.env` chưa có. Rủi ro khoanh bằng [contract.md](contract.md): chốt mã dùng chung trước, hành vi sandbox chưa đo gắn nhãn "(chờ spike)" ở đúng ba điểm (contract mục 6). Ruling 21:09 (SRS/UC/ADR chờ spike) được thay bằng ruling này.
+- 2026-10-29 21:37: ba card W1 qua G1–G4: worktree sạch; file đổi nằm trong allowed paths; không trailer; `git diff --check` sạch; report đủ bằng chứng. Ba branch không chung file nào. Merge `--no-ff` theo thứ tự SRS → UCDIAG → ADR, không conflict. Cả ba worker đã release.
+- 2026-10-29 21:37: G6 sau merge: render 7 file `.puml` (5 file W1 cùng `use-case-overview.puml`, `deployment.puml`) ra thư mục tạm, 0 "Syntax Error". Mọi luồng `UC-04` mà `srs.md` dẫn chiếu đều có trong `uc-checkout.md`. Mọi mã AC mà `uc-checkout.md`, `docs/diagrams/*.puml` và ADR-005/007 dẫn chiếu đều có trong `srs.md`. Không dùng lại `AC-F15.2`, `AC-F16.2`, `AC-F16.3`, `AC-F16.7`. Không còn "ADR-007 (chưa soạn)". Link tương đối trong các file `.md` đã đổi đều trỏ tới file tồn tại (một khớp giả trong `W1-ADR-report.md` nằm trong inline code).
+- 2026-10-29 21:37: chấp nhận các sửa ngoài dòng card mà W1-SRS và W1-UCDIAG đã khai ở mục 6 / mục 5 của report: vẫn nằm trong allowed paths và cần để file không tự mâu thuẫn. CR-1, CR-2 của W1-UCDIAG đã được W1-SRS giải quyết (mục 3.4 viết lại, mã AC cũ giữ nguyên). CR-3 (tên lifeline so với đề §4.2) để nhóm giải thích khi vấn đáp.
+- 2026-10-29 21:37: giữ `PaymentStatus.REFUNDED` trong `srs.md` và `class-domain.puml`. Giá trị này có từ trước và FR-26 vẫn Won't. Contract mục 3 chỉ liệt kê các giá trị VNPay dùng, không chủ ý bỏ `REFUNDED`. Enum Prisma hiện chỉ có `SUCCESS`, `FAILED`; độ lệch này có từ trước và để bước 5 xử lý. Nhóm có thể bỏ khi duyệt.
+- 2026-10-29 21:37: nhận tạm cách chia AC mới giữa FR-14/15/16 (W1-SRS-report mục 6) và cách ánh xạ NFR cho E9–E13 (W1-UCDIAG-report mục 5). `AC-N12.1` (E2E qua redirect VNPay) để nhóm quyết định ở bước 7. Wave 2 (`traceability-matrix.md`, quét toàn repo) chạy sau khi nhóm duyệt hoặc sau spike.
+- 2026-10-29: người dùng chốt bốn điểm còn mở của Wave 1; Integrator sửa trực tiếp trên `a2/payment-vnpay` và cập nhật [contract.md](contract.md) mục 1, 3, 4:
+  - giữ cách chia AC giữa FR-14/15/16, riêng `AC-F16.13` (chặn hủy khi còn `Payment PENDING`) dời thành `AC-F25.4` vì thuộc FR-25; `AC-F16.13` không dùng lại;
+  - bỏ `REFUNDED` khỏi `PaymentStatus` trong `srs.md` và `class-domain.puml` cho khớp enum Prisma; thay ruling "giữ `REFUNDED`" ở trên;
+  - `AC-N12.1` giữ Must, E2E đóng vai VNPay (chặn redirect, ký IPN bằng secret giả của môi trường test); plan D3 ghi lại cách này, test E2E vẫn chỉ viết khi được giao;
+  - `sequence-checkout.puml` hiển thị lifeline `VNPay sandbox\n(Payment Service)` theo đề A2 §4.2 (CR-3 của W1-UCDIAG).
+- 2026-10-29: Wave 2 không còn chờ nhóm duyệt các điểm trên; chỉ còn tùy chọn chờ spike.
+- 2026-10-29 22:10: Wave 2 chia hai phần không chung file, chạy song song. Một worker sửa `traceability-matrix.md`. Integrator tự sửa các dòng còn sót do quét repo phát hiện (commit `6af2dc0`): `architecture.md` (số thẻ demo, ghi chú SRS cũ); plan bước 5.7 thêm `README.md`, `apps/api/README.md`, `docs/inventory-runbook.md`, vì các file này hướng dẫn chạy code simulator hiện hành nên sửa cùng code. Không sửa bản ghi lịch sử: `docs/task5/*`, `PR_DESCRIPTION.md`, `docs/sprint/backlog.md` (ảnh chụp 2026-10-21), plan cũ, đề A1/A2, `docs/render_svg.py` (nhóm đã ghi không dùng).
+- 2026-10-29 22:19: W2-TRACE qua G1–G4: worktree sạch; 2 file trong allowed paths; không trailer; `git diff --check` sạch; report đủ bằng chứng. Merge `--no-ff` không conflict. G6: mọi mã AC trong ma trận có trong `srs.md`, trừ `AC-F16.13` được nhắc như lịch sử "đã dời"; đủ bốn endpoint VNPay. Worker đã release.
+- 2026-10-29 22:20: xử lý change request của W2-TRACE:
+  - CR-1 (`README.md` chưa nêu biến VNPay): đưa vào plan bước 5.7, sửa cùng code;
+  - CR-2: `uc-checkout.md` E12 thêm FR-15 (AC-F15.7) ở bảng mục 9 và mục "Yêu cầu" của E12;
+  - CR-3: không thêm `AC-N13.2`, vì nội dung đã có ở `AC-F16.8`, `AC-F16.12` và ma trận dòng NFR-13 đã dẫn hai mã này; tránh hai AC kiểm cùng một việc. Nhóm có thể thêm khi duyệt;
+  - CR-4: "module `payments`" ở `architecture.md` là module logic như `orders`, không đổi tên; dòng `payments` ở bảng module ghi thêm vị trí code dự kiến `apps/api/src/payment/`, đăng ký trong `CheckoutModule`;
+  - chấp nhận SRS FR-14 chỉ liệt kê luồng chính, bảng mục 9 của `uc-checkout.md` đầy đủ hơn; ma trận theo bảng mục 9.
+- 2026-10-29 22:20: tài liệu bước 2–4 của plan xong (đã đánh dấu). Còn lại: spike bước 1 (chờ `apps/api/.env`), xuất `.svg` (nhóm), ID test cho `vnpay.test.ts` và kiểm sandbox (đặt khi làm bước 5–7), code bước 5–6 (chỉ khi người dùng yêu cầu).
+- 2026-10-29 22:40: người dùng yêu cầu rõ làm code bước 5–6 trước, phần Admin xét sau. Chạy code trước spike vì điều kiện qua bước 1 chỉ dừng "pha code liên quan"; ba điểm "(chờ spike)" gom ở `vnpay.ts` (hàm `queryDrAction`, `ipnAction`) để sửa một chỗ sau spike. Chia: C1-API (5.1–5.3, đọc cấu hình) song song C1-WEB (6.x, theo hợp đồng mục 1.5); C2-API (5.4, 5.5, nối 5.6, 5.7, 5.8) sau khi C1-API merge, vì 5.4 là phần rủi ro nhất và dùng hàm của C1. Integrator chạy `npm ci` ở worktree tích hợp và nối `node_modules` (junction) sang worktree worker; mốc trước khi sửa: lint/build API đạt sau `prisma generate`, lint/typecheck web đạt.
+- 2026-10-30 06:36: hai worker C1 dừng giữa chừng vì hết usage, phần dở chưa commit vẫn nằm trong worktree. `--retry-of` đòi `--task` cũ nên giao task mới (`--spec` kèm ghi chú RETRY) trên đúng worktree cũ để làm tiếp, không làm lại từ đầu.
+- 2026-10-30 06:44: C1-WEB qua G1–G4 (5 file web + report, không trailer, `diff --check` sạch, không secret, không còn `cardNumber`). G6 ở worktree tích hợp: `lint` 0 lỗi, `typecheck` đạt, `next build` đạt, route `/payment/vnpay-return` prerender được. Chưa thử trên trình duyệt với API thật.
+- 2026-10-30 06:45: C1-API qua G1–G4 (7 file + report). G6: `prisma validate`/`generate` đạt; `node --import tsx --test test/vnpay.test.ts` 69/69; `lint` 0 lỗi; `build` đạt. Chưa áp migration lên Postgres vì Docker chưa chạy. Điểm cần spike xác nhận thêm (từ report): tham số `vnp_*` rỗng có được ký không, và response `91` có đủ `vnp_TmnCode`/`vnp_TxnRef` để xác thực không. `prisma format --check` đỏ từ trước ở HEAD, không do card này.
+- 2026-10-30 06:59: C2-API (`DONE_WITH_CONCERNS`) qua G1–G4: worktree sạch; file đổi nằm trong allowed paths; đã xóa `checkout/payment.ts`; không trailer; `diff --check` sạch; không secret. G6 ở worktree tích hợp: `prisma generate` đạt; `vnpay.test.ts` 69/69; `lint` 0 lỗi; `build` API đạt; `typecheck` web đạt; grep `simulatePayment|PAYMENT_DECLINED|cardNumber` trong `src` rỗng. Service chưa chạy trên Postgres thật (Docker chưa chạy). Worker đã chạy harness Prisma giả ngoài repo (14/14 kịch bản) và `NestFactory.create` để xác nhận API khởi động khi thiếu biến; không thay được bước 7.7* (`FOR UPDATE`, partial index, race thật).
+- 2026-10-30 07:05: nhận cả ba change request của C2-API, Integrator sửa trực tiếp:
+  - CR-1 `README.md` mục "Kiểm chứng và build": thêm câu còn unit test VNPay tối thiểu `apps/api/test/vnpay.test.ts` và lệnh chạy;
+  - CR-2 `apps/api/README.md`: thêm vế tương tự, kèm lệnh chạy;
+  - CR-3: bảng API của `README.md` thêm `POST /payments/:id/sync`, `GET /payments/vnpay/ipn`, `GET /payments/vnpay/return`; mục "API hiện có" của `apps/api/README.md` thêm hai route công khai và `sync` cho CUSTOMER.
+- 2026-10-30 07:50: spike chạy xong, trừ 1.3. Đạt: VNPay nhận URL do `buildPaymentUrl` ký; `verifyReturn` đúng với 6 lần return thật; hủy cho `24/02`, hết hạn ở bước OTP cho `15/02`, đều khớp luật thất bại của `ipnAction`; VNPay từ chối thanh toán sau `vnp_ExpireDate`. Chưa đạt: QueryDR sandbox trả `99` "Unexpected error" không chữ ký cho mọi request đủ tham số, kể cả merchant giả. Đã đối chiếu request với tài liệu chính thức và đổi từng yếu tố một, nên đây là lỗi phía sandbox. Chưa sửa `vnpay.ts`: nhãn "(chờ spike)" của `ipnAction` đã gỡ được, nhưng hai nhánh của `queryDrAction` vẫn chờ.
+- 2026-10-30 07:50: kiểm local trên Postgres 16 (container riêng, cổng 5433, không dùng cổng 5432 chung):
+  - 6 migration áp vào DB trống; `prisma migrate diff` không lệch; `\d payments` có hai partial index;
+  - nâng cấp DB có dữ liệu cũ: payment cũ được gắn `provider=SIMULATOR`;
+  - index chặn `PENDING` thứ hai;
+  - app thật (API build + `next dev`) qua 7.4, 7.7a, 7.7c và một phần 7.3, 7.7, 7.7f: IPN gửi lại bằng tham số return đã ký (`00`, `02`, `97`, `01`, `04`, warning đối soát), hai request đồng thời cùng key chung một payment/URL, hủy đơn khi còn `PENDING` trả 409.
+- 2026-10-30 07:50: phát hiện chặn. Khi QueryDR không kết luận được, payment `PENDING` quá hạn mà không có IPN làm đơn kẹt: `sync`, hủy đơn, tạo thanh toán mới đều 502. Đây đúng là tình huống plan bước 1 cấm ("Không để đơn vừa không trả tiếp được vừa không hủy được"). Chờ người dùng chọn lối thoát trước khi sửa `checkout.service.ts`/`vnpay.ts`.
+- 2026-10-30 13:55: người dùng chọn phương án A (D6) và yêu cầu: worker dùng Sonnet, review dùng Opus 5.5, sửa sau review dùng Sonnet 5.5. Integrator ghi D6 vào [contract.md](contract.md) mục 8 (commit `a5164b3`). Sau đó chia hai card song song không chung file: W3-DOCS (tài liệu) và C3-API (code), cùng theo contract mục 8. C3-API dùng junction `node_modules` từ worktree tích hợp; worker hỏi một lần (`ask`) vì junction tạo sau khi worker khởi động.
+- 2026-10-30 14:06: hai card qua G1–G4:
+  - worktree sạch; file đổi nằm trong allowed paths; không trailer; `diff --check` sạch;
+  - C3-API có output đỏ trước xanh;
+  - nhận warning mới `PAYMENT_RECONCILIATION_REQUIRED vnp_TxnRef=<id> reason=MISMATCH` do C3-API thêm, vì contract mục 8 ghi "warning đối soát" cho `MISMATCH`;
+  - `POST /payments` khi chính lời gọi đóng payment: `pay` chạy lại `tryPay` và tạo lần thử mới (201), khớp tài liệu W3-DOCS;
+  - merge `--no-ff` tài liệu trước, code sau, không conflict.
+- 2026-10-30 14:06: G6 ở worktree tích hợp:
+  - `prisma generate` đạt; `lint` API 0 lỗi; `build` API đạt; `vnpay.test.ts` 84/84; web `lint` 0 lỗi, `typecheck` đạt;
+  - render `state-order`, `activity-checkout`, `sequence-checkout`: 0 "Syntax Error";
+  - "chờ spike"/"pending spike" chỉ còn ở `docs/payment-vnpay-spike.md`, do Integrator sửa.
+- 2026-10-30 14:14: kiểm D6 trên Postgres local (cổng 5433, API build cổng 4003, script ngoài repo), 13/13 đạt:
+  - quá khoảng chờ: `sync` đóng (`FAILED`/`EXPIRED`/`null`, đơn `PAYMENT_FAILED`, kho không đổi); `sync` lần hai không đổi gì; hủy đơn đóng rồi hủy; thanh toán lại cùng key đóng rồi tạo payment mới (201);
+  - quá hạn 5 phút (còn trong khoảng chờ): `sync`, hủy, thanh toán lại đều 502, DB không đổi;
+  - IPN `00/00` đã ký tới sau khi đóng: `RspCode=02`, warning đối soát, payment giữ `FAILED`;
+  - log thật đúng contract: `VNPAY_QUERYDR_FAILED ... reason=UNSIGNED vnp_ResponseCode=99`, `PAYMENT_EXPIRED_UNCONFIRMED ... reason=UNSIGNED`.
+  - DB thử được nạp thêm nguyên liệu bằng SQL vì các lần thử trước đã dùng hết espresso.
+- 2026-10-30 14:16: review Opus không có lỗi Critical; bảng D6 khớp contract. Quyết định:
+  - nhận finding 1 (phản hồi lỗi đã ký mà trường rỗng bị xếp `MISMATCH`, đơn kẹt mãi). Integrator sửa contract mục 8 (đoạn "Sửa sau review"): `MISMATCH` chỉ cho `00`, mã khác xếp `BAD_RESPONSE`. Chọn `BAD_RESPONSE` cho cả `91` sai TxnRef để `91` không đóng sớm trước khoảng chờ;
+  - nhận finding 3, 4, 6, 10 (tài liệu), 5 (web không bao giờ hiện thông báo `EXPIRED`), 7 (`|| !answer.ok`), 9 (test ranh giới), và CR-1..CR-3 của W3-DOCS (CR-1 thêm `EXPIRED` vì finding 5 được sửa);
+  - không nhận finding 2 (đổi chữ ký `queryDrAction`): tên đã ghi trong contract, phần nối dây đã kiểm local 13/13;
+  - không nhận finding 8 (ghi log sau commit): `applyGatewayResult` và IPN cũng ghi trong transaction, giữ một kiểu;
+  - Integrator tự sửa `docs/payment-vnpay-spike.md` mục 4, 5;
+  - giao F1-API và F1-DOCS (Sonnet) song song.
+- 2026-10-30 14:20: giao hai card bằng `--model claude-sonnet-5-5` (người dùng yêu cầu "sonnet 5.5 sửa"). Lần giao đầu lỗi `invalid_argument`: PowerShell 5.1 làm vỡ tham số `--spec` có dấu `"`. Escape `"` thành `\"` thì giao được.
+- 2026-10-30 14:36: hai card F1 qua G1–G4:
+  - worktree sạch; file đổi nằm trong allowed paths; không trailer; `diff --check` sạch;
+  - F1-API có test đỏ trước xanh;
+  - `prisma generate` của F1-API báo EPERM vì API thử của Integrator (cổng 4003) đang giữ file engine. Integrator dừng API đó rồi chạy lại ở G6: đạt;
+  - merge `--no-ff` tài liệu trước, code sau, không conflict. Hai worker đã release.
+- 2026-10-30 14:36: G6 sau F1:
+  - `prisma generate` đạt; `lint` API 0 lỗi; `build` đạt; `vnpay.test.ts` 89/89; web `lint` 0 lỗi, `typecheck` đạt;
+  - render ba `.puml`: 0 "Syntax Error";
+  - chạy lại bộ kiểm D6 trên Postgres local: 13/13. Log: `VNPAY_QUERYDR_FAILED ... reason=UNSIGNED vnp_ResponseCode=99`, `PAYMENT_EXPIRED_UNCONFIRMED ... reason=UNSIGNED`.
+  - Chưa xem dòng thông báo mới ở trang chi tiết đơn trên trình duyệt; chỉ có lint và typecheck.
+- 2026-10-30 14:40: nhận cả ba change request của F1-DOCS, Integrator sửa trực tiếp:
+  - CR-F1-1: `payment-vnpay-spike.md` mục 4 viết lại câu để không còn chuỗi "chờ spike";
+  - CR-F1-2: `sequence-checkout.puml`, khối E11 của `POST /payments`, thêm "inside the grace" và vế "past the grace the Payment is closed, D6";
+  - CR-F1-3: ma trận, ghi chú đầu trang (code đã merge, simulator đã xóa) và ô Code của FR-14; cột kiểm chứng FR-14/15/16/25 ghi kết quả đã chạy (89/89, kiểm local D6 13/13). Phần cần QueryDR thật vẫn ghi "dự kiến".
+  - Contract mục 8 ghi thêm dạng log `PAYMENT_RECONCILIATION_REQUIRED ... reason=MISMATCH`.
+  - Không sửa các chỗ nhắc `MISMATCH` mà F1-DOCS ghi "vẫn đúng" (`BR-10`, plan D6, rủi ro, ADR ca biên).
+- 2026-10-30 18:50: Integrator chạy toàn bộ các bước kiểm còn làm được ở local (người dùng yêu cầu "làm hết ở local"). Không sửa code, không giao worker:
+  - 7.7d, 7.7e, ca IPN cùng `sync` của 7.7, phần còn lại của 7.7f: API build (cổng 4010), Postgres local, server QueryDR giả trong scratchpad trỏ bằng `VNP_API_URL`, secret giả. Lượt đầu 72/74: hai ca 7.7e sai vì script đọc mã lỗi ở `code` thay vì `error`; ca đơn cũ dừng vì `Product.stock` của món thử bằng 0. Sửa script và tăng `stock` trong DB tạm, lượt chạy đầy đủ cuối cùng: 75/75;
+  - 7.7b: đánh dấu theo kết quả 13/13 đã có;
+  - 7.8: quét secret `51f5330..e5403be`, chỉ in số lần gặp. 0 giá trị thật; 10 chuỗi hex 128 ký tự trong `vnpay.test.ts` là chữ ký mẫu ký bằng secret giả của test;
+  - trình duyệt (`next dev` cổng 3010, tài khoản demo): payment `FAILED` `EXPIRED` hiện "Đã hết thời gian thanh toán"; `FAILED` `00/02` hiện "Thanh toán không thành công";
+  - QueryDR sandbox thử lại lúc 18:55: vẫn `99` không chữ ký, 7.3 còn mở;
+  - 7.7g chưa chạy: build image không kéo được `node:24-bookworm-slim` (Docker Hub: `personal access token is expired`). Thử kéo ẩn danh bằng `DOCKER_CONFIG` tạm cũng bị daemon từ chối;
+  - `git diff --check` sạch; file đổi so với `jumbo` nằm trong phạm vi plan. Đã dọn `apps/web/next-env.d.ts` và `apps/web/AGENTS.md` (do `next dev` sinh ra), cùng `.playwright-mcp/`.
+- 2026-10-30 19:30: người dùng đăng nhập lại Docker Hub; Integrator chạy 7.7g:
+  - project Compose riêng `brewlite-vnpay-sit`, cổng 4020/3020, build image mới. Không có biến VNPay: 9/9 kiểm đạt (lượt đầu 4/9, vì script gửi `quantity` dạng số trong khi API yêu cầu chuỗi);
+  - image production với `PAYMENT_PROVIDER=fake` dừng lúc khởi động;
+  - tạo lại riêng container `api` với `VNP_*` nạp từ `apps/api/.env` lúc chạy: sandbox nhận URL ký; hủy trên VNPay → return `24/02` hợp lệ; chuyển tiếp vào IPN → `00`, gửi lặp → `02`;
+  - đã `down -v` stack và volume test, xóa `.playwright-mcp/` (ảnh chụp trang có URL return đã ký). Worktree sạch.
+- Ruling 2026-10-30 18:50: kiểm 7.7d bằng QueryDR giả thay cho sandbox. Plan 7.7d vốn ghi "response QueryDR kiểm soát được trong scratchpad/local", nên đánh dấu 7.7d là đạt. 7.3 không đánh dấu, vì bước này cần sandbox xác nhận một giao dịch thật.
+- Nhận xét đợt D6: chạy song song tài liệu và code (2 + 2 card) đáng giá. Mỗi lượt xong trong 10–15 phút, không conflict, vì contract mục 8 chốt tên và bảng quyết định trước. Review Opus tìm được một lỗi thật mà test và kiểm local không phát hiện: phản hồi lỗi đã ký mà trường rỗng làm đơn kẹt. Lần sau giữ 2 worker và một lượt review trước khi chốt. Nên nối junction trước khi worker khởi động để khỏi mất một lượt `ask`.
+- Nhận xét đợt tài liệu: chạy song song đáng giá. Ba worker W1 xong trong 9–15 phút, không conflict, nhờ contract chốt mã trước và allowed paths không chồng nhau. Wave 2 một worker là đủ. Lần sau giữ số agent theo số nhóm file độc lập, không tăng thêm.
+- Nhận xét đợt code (bước 5–6): chạy C1-API song song C1-WEB đáng giá vì hai bên chỉ chung hợp đồng mục 1.5, không chung file; nhưng cả hai dừng giữa chừng vì hết usage, tốn một lần giao lại. C2-API chạy một mình sau C1-API là đúng, vì dùng hàm của C1 và sửa file dùng chung của `checkout`. Lần sau giữ hai worker cho phần code, giao card nhỏ hơn để mỗi lượt xong trước khi hết usage.

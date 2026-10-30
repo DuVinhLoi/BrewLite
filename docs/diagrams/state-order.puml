@@ -1,13 +1,28 @@
 @startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ClassBackgroundColor #eef2fb
+skinparam ClassBorderColor #5b6b8c
+skinparam ClassFontColor #1f2937
+skinparam StateBackgroundColor #eef2fb
+skinparam StateBorderColor #5b6b8c
+skinparam StateFontColor #1f2937
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
 ' Exactly 8 business transitions: SRS section 3.6, FR-23/24, BR-08
+' Payment lifecycle (PaymentStatus) is drawn below the order states; EXPIRED is not a PaymentStatus value.
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
-skinparam ArrowColor #536C83
-skinparam StateBackgroundColor #EDF5FB
-skinparam StateBorderColor #536C83
-skinparam NoteBackgroundColor #FFF4D9
-skinparam NoteBorderColor #B99655
-title BrewLite A2 — Order state machine (8 valid transitions)
+title BrewLite A2 — Order state machine (8 valid transitions) and Payment lifecycle
 
 state PENDING
 state PAID
@@ -18,11 +33,11 @@ state COMPLETED #DFF1E5
 state CANCELLED #EAEAEA
 
 [*] --> PENDING : POST /orders creates order
-PENDING --> PAID : successful payment
-PENDING --> PAYMENT_FAILED : payment declined
-PENDING --> CANCELLED : Customer cancellation [FR-25 Could]
-PAYMENT_FAILED --> PENDING : retry payment (same Order)
-PAYMENT_FAILED --> CANCELLED : Customer cancellation [FR-25 Could]
+PENDING --> PAID : IPN / QueryDR confirms payment (Payment SUCCESS)
+PENDING --> PAYMENT_FAILED : IPN / QueryDR confirms failure (Payment FAILED)
+PENDING --> CANCELLED : Customer cancellation [FR-25 Must]
+PAYMENT_FAILED --> PENDING : retry payment (new Payment PENDING, same Order)
+PAYMENT_FAILED --> CANCELLED : Customer cancellation [FR-25 Must]
 PAID --> PREPARING : Barista
 PREPARING --> READY : Barista
 READY --> COMPLETED : Barista
@@ -30,8 +45,20 @@ COMPLETED --> [*]
 CANCELLED --> [*]
 
 note right of PENDING
-  POST /orders reserves stock atomically.
-  Failure does not release reserved stock.
+  New orders reserve ingredients and snapshot atomically.
+  Order stays PENDING while it waits for VNPay: Payment PENDING
+  (15 min), and past expiry until QueryDR concludes or the
+  15-min grace after expiresAt ends (E11).
+  Failure keeps onHand / reserved and snapshot.
+  Cancel is blocked (409 PAYMENT_IN_PROGRESS) while a Payment
+  PENDING is still valid, or past expiry but not yet reconciled
+  (past the grace a Payment is closed FAILED first, except
+  04/05/06/07/09 and MISMATCH).
+end note
+note left of PAID
+  First confirmed success (IPN or QueryDR) consumes the snapshot:
+  decrease onHand + reserved, once. Replay returns cached SUCCESS;
+  repeated IPN gets 02; no further consumption.
 end note
 note right of PAID
   PAID -> CANCELLED is NOT allowed in A2.
@@ -39,8 +66,45 @@ note right of PAID
   409 INVALID_ORDER_TRANSITION.
 end note
 note bottom of CANCELLED
-  FR-25 is Could: both cancel edges exist in
-  model but API/UI not required for minimum.
-  If implemented, release stock atomically.
+  Owner unpaid cancellation releases reserved by snapshot once.
+  onHand unchanged; repeated cancel rejected.
+  Legacy false marker restores original Product.stock.
+  A Payment turning FAILED does not release ingredients.
+end note
+
+state "Payment lifecycle (PaymentStatus)" as PaymentLifecycle {
+  state "PENDING" as PAY_PENDING
+  state "SUCCESS" as PAY_SUCCESS #DFF1E5
+  state "FAILED" as PAY_FAILED #FCE8E5
+
+  [*] --> PAY_PENDING : POST /payments signs URL (at most one per Order, BR-10)
+  PAY_PENDING --> PAY_SUCCESS : IPN or QueryDR 00/00 (verified)
+  PAY_PENDING --> PAY_FAILED : IPN or QueryDR final failure
+  PAY_SUCCESS --> [*]
+  PAY_FAILED --> [*]
+}
+
+note right of PAY_PENDING
+  Return URL never changes the status (BR-11).
+  Past expiresAt the Payment is still PENDING until QueryDR concludes.
+  QueryDR 00/01 or no verified answer keeps PENDING until
+  expiresAt + 15 min (grace), then FAILED "EXPIRED" (D6).
+  Closed only when a call arrives (POST /payments, cancel, sync);
+  no background job. 04/05/06/07/09 and MISMATCH never auto-close.
+  MISMATCH is a signed 00 response only; any other code with a wrong
+  or missing merchant or TxnRef is BAD_RESPONSE (502, closed after the grace).
+end note
+note right of PAY_FAILED
+  IPN counts as failed when vnp_TransactionStatus = 02,
+  including a customer Cancel (24) and an OTP-step timeout (15).
+  QueryDR 91 after expiry, or the grace elapsed without a verdict:
+  FAILED with gatewayResponseCode = "EXPIRED", warning
+  PAYMENT_EXPIRED_UNCONFIRMED. EXPIRED is not a PaymentStatus value.
+  Money arriving after a final state: IPN 02 + warning
+  PAYMENT_RECONCILIATION_REQUIRED; Order and stock unchanged.
+end note
+note bottom of PaymentLifecycle
+  Order.status follows the Payment: SUCCESS -> PAID,
+  FAILED -> PAYMENT_FAILED. A retry creates a new Payment PENDING.
 end note
 @enduml

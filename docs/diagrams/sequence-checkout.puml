@@ -1,22 +1,37 @@
 @startuml
-' BrewLite A2 §4.2 - UC-04, SRS 3.4-3.6, FR-10..16, FR-20, NFR-05/06/13
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ClassBackgroundColor #eef2fb
+skinparam ClassBorderColor #5b6b8c
+skinparam ClassFontColor #1f2937
+skinparam StateBackgroundColor #eef2fb
+skinparam StateBorderColor #5b6b8c
+skinparam StateFontColor #1f2937
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
+' BrewLite A2 §4.2 - UC-04, SRS 3.4-3.6, FR-10..16, FR-20, BR-05/10/11, NFR-05/06/13
+' VNPay sandbox flow: docs/planning/2026-10-29-vnpay-payment-plan.md, sections 1.3, 1.5, 1.6
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
-skinparam ArrowColor #536C83
-skinparam SequenceParticipantBackgroundColor #EAF3FA
-skinparam SequenceParticipantBorderColor #536C83
-skinparam SequenceLifeLineBorderColor #536C83
-skinparam NoteBackgroundColor #FFF4D9
-skinparam NoteBorderColor #BD9754
 skinparam SequenceGroupBackgroundColor #F6F9FB
 hide footbox
-title BrewLite A2 - Sequence: UC-04 Checkout
+title BrewLite A2 - Sequence: UC-04 Checkout (VNPay sandbox)
 autonumber
 actor "Customer" as Customer
+participant "Browser" as Browser
 participant "Next.js UI" as UI
 participant "NestJS API" as API
 database "Database\n(PostgreSQL)" as DB
-participant "Payment Service\n(simulator)" as Pay
+participant "VNPay sandbox\n(Payment Service)" as Pay
 
 == E1a: entry and authentication ==
 Customer -> UI : Open cart; press Checkout
@@ -31,8 +46,8 @@ alt No Customer JWT (E1a)
 else Already authenticated
   UI --> Customer : Show checkout summary
 end
-Customer -> UI : Select WALLET or CARD; confirm
-UI -> UI : Validate input; disable confirm; generate Idempotency-Key
+Customer -> UI : Select WALLET or CARD; press Pay with VNPay
+UI -> UI : Disable button; generate Idempotency-Key (no card field)
 
 == UC-04.1: order creation ==
 UI -> API : POST /orders (JWT, items: productId/size/toppings/quantity)
@@ -52,18 +67,18 @@ alt Bad DTO / unknown product (E6)
   API --> UI : 400 VALIDATION_ERROR / 404 PRODUCT_NOT_FOUND
   UI --> Customer : Fix cart; no Order created; stop checkout
 else DTO accepted
-  API -> DB : Read Product prices, stock, options
+  API -> DB : Read Product prices and options
   DB --> API : Product records
   API -> API : Compute unitPrice, lineTotal and Order.total
-  group Transaction T1: atomic check, stock reservation, order (FR-11/13; NFR-13)
-    API -> DB : BEGIN; lock/check stock for ALL lines
-    alt Any product insufficient (E2)
-      DB --> API : Cannot reserve stock
-      API -> DB : ROLLBACK (no Order, OrderItem, stock change)
-      API --> UI : 409 OUT_OF_STOCK + details
+  group Transaction T1: recipe locks, ingredient reservation, snapshot (FR-11/13; NFR-13)
+    API -> DB : BEGIN; lock recipes in ID order; read base + topping recipes\nAggregate ingredient quantities across ALL cart lines\nLock Ingredient rows in ID order; check onHand - reserved
+    alt Missing/invalid recipe or ingredient shortage (E2)
+      DB --> API : Recipe unavailable or aggregate ingredient shortage
+      API -> DB : ROLLBACK (no Order, OrderItem, snapshot or balance change)
+      API --> UI : 409 RECIPE_UNAVAILABLE / OUT_OF_STOCK + ingredient details
       UI --> Customer : Back to cart; highlight insufficient items
-    else All lines have stock
-      API -> DB : UPDATE Product.stock; INSERT Order(PENDING) + OrderItems
+    else All recipes valid and aggregate demand fits
+      API -> DB : Increase Ingredient.reserved; INSERT Order(PENDING, inventoryTracked=true)\nINSERT OrderItems and immutable aggregate OrderIngredient snapshot
       DB --> API : COMMIT T1; orderId, total
       API --> UI : 201 { id:orderId, status:PENDING, total }
       UI -> UI : Persist orderId/owner/key to continue same order
@@ -72,8 +87,12 @@ else DTO accepted
 end
 note over UI,API : Only the successful POST /orders branch continues to payment.
 
-== UC-04.2: payment API ==
-UI -> API : POST /payments (JWT, orderId, paymentMethod, cardNumber?)\nHeader Idempotency-Key
+== UC-04.2 (1/3): create Payment PENDING and signed VNPay URL ==
+note over API,Pay
+  HTTP calls to VNPay (QueryDR) are always made OUTSIDE any DB transaction that holds the Order lock.
+  Signing the payment URL is local HMAC-SHA512; it needs no network call.
+end note
+UI -> API : POST /payments (JWT, orderId, paymentMethod)\nHeader Idempotency-Key
 API -> API : JWT guard + CUSTOMER role
 alt Expired JWT after Order exists (E1b)
   API --> UI : 401 UNAUTHORIZED; no Payment or new Order
@@ -86,7 +105,7 @@ alt Expired JWT after Order exists (E1b)
   DB --> API : Current Order or ownership mismatch
   alt Different owner (403) / CANCELLED / already PAID+
     API --> UI : 403 or 200 current status
-    UI --> Customer : Require original account or show current order\nNo additional POST /orders or charge
+    UI --> Customer : Require original account or show current order\nNo additional POST /orders or Payment
   else PENDING or PAYMENT_FAILED, owner verified
     API --> UI : 200 payable order
     UI -> API : Retry POST /payments SAME orderId and key (new JWT)
@@ -95,49 +114,227 @@ alt Expired JWT after Order exists (E1b)
 else JWT valid
 end
 API -> API : Validate payment DTO + key (E6)
-API -> DB : Check order exists; verify owner (E7)
+API -> DB : Read Order (no lock yet); verify owner (E7)
 DB --> API : Order or 403/404
 alt Invalid payment DTO/key or wrong order (E6/E7)
   API --> UI : 400 VALIDATION_ERROR / IDEMPOTENCY_KEY_REQUIRED\nor 403 FORBIDDEN / 404 ORDER_NOT_FOUND
-  UI --> Customer : Explain error; keep cart; no simulator call
+  UI --> Customer : Explain error; keep cart; no Payment created
 else Valid body, owner verified
   API -> DB : Lookup SUCCESS by owner + orderId + key + paymentMethod (BR-05)
-  DB --> API : Original SUCCESS or no cache match
-  alt E4a: successful replay, API cache hit
-    API --> UI : 200 original SUCCESS + same paymentId
-    note over API,Pay : API returns cached result WITHOUT calling simulator again.
+  DB --> API : Original SUCCESS or no match
+  alt E4a: successful replay
+    API --> UI : 200 { paymentId, orderId, orderStatus:PAID, amount, status:SUCCESS }
+    note over API,Pay : Replay needs no signing, no VNPay configuration and no new Payment.
     UI --> Customer : Show PAID receipt; clear cart
-  else New payment request, no SUCCESS cache
+  else New payment request, no SUCCESS match
     alt Order not PENDING/PAYMENT_FAILED (E4d/E7)
-      API --> UI : 409 ORDER_NOT_PAYABLE; NO charge
+      API --> UI : 409 ORDER_NOT_PAYABLE; no Payment, no URL
       UI --> Customer : Show current order status
     else Order payable
-      opt A3: retry after prior FAILED attempt
-        API -> DB : Transition PAYMENT_FAILED -> PENDING
-        DB --> API : Updated PENDING; stock still reserved
+      opt E11: latest Payment PENDING is past expiresAt
+        API -> Pay : POST querydr (vnp_TxnRef, gatewayCreateDate)\nOutside any DB transaction; 10 s timeout
+        Pay --> API : vnp_ResponseCode + vnp_TransactionStatus (signed)
+        API -> API : Verify response signature, merchant, TxnRef; amount for 00
+        group Transaction T3: apply QueryDR result (same applyGatewayResult as IPN)
+          API -> DB : BEGIN; lock Order; re-read THAT Payment\nIf IPN finalized it meanwhile: keep DB state, discard stale result
+          alt 00/00 paid
+            API -> DB : Payment SUCCESS; consume snapshot (onHand AND reserved); Order PAID; COMMIT
+          else 00/02 final failure
+            API -> DB : Payment FAILED (codes kept apart); Order PAYMENT_FAILED; COMMIT
+          else 91 after expiry (verified), or grace elapsed without a verdict (D6)
+            API -> DB : Payment FAILED, gatewayResponseCode="EXPIRED"; Order PAYMENT_FAILED; COMMIT
+            note right of DB : D6: now >= expiresAt + 15 min (isPastGrace) with 00/01, unsupported status,\nanother code, BAD_RESPONSE or no verified answer -> FAILED + "EXPIRED", warning PAYMENT_EXPIRED_UNCONFIRMED.\nEXPIRED is an internal gatewayResponseCode, not a PaymentStatus.
+          else 00/01 inside the grace, or 91 before expiry
+            API -> DB : ROLLBACK; Payment stays PENDING
+            note right of DB : QueryDR 00/01 keeps PENDING only until expiresAt + 15 min,\nthen the branch above closes it. Closed only on a call; no background job.
+          else 04/05/06/07/09 or MISMATCH (never auto-closed), or an unanswered query inside the grace
+            API -> DB : ROLLBACK; DB unchanged; warning if money may have moved
+            note right of DB : MISMATCH applies to a signed 00 response only. Any other code (91 too) with a wrong or\nmissing merchant or TxnRef is BAD_RESPONSE: 502 inside the grace, closed after it.
+          end
+        end
       end
-      API -> Pay : charge(orderId, amount=Order.total, method)
-      note right of Pay : Stateless simulator (SRS 3.4).\nDuplicate-charge guard lives in the API:\nSUCCESS replay (E4a) and ORDER_NOT_PAYABLE (E4d).
-      alt E3: card declined
-        Pay --> API : DECLINED (no money collected)
-        group Persist failed attempt
-          API -> DB : INSERT Payment(FAILED); UPDATE Order PAYMENT_FAILED
-          DB --> API : Saved (stock reservation kept)
+      alt Reconciliation found SUCCESS: Order now PAID (E11)
+        alt Same owner + orderId + key + paymentMethod (BR-05 checked FIRST)
+          API --> UI : 200 SUCCESS replay (E4a)
+          UI --> Customer : Show PAID receipt; clear cart
+        else Different key or method
+          API --> UI : 409 ORDER_NOT_PAYABLE
+          UI --> Customer : Show current order status
         end
-        API --> UI : 402 PAYMENT_DECLINED
-        UI --> Customer : Keep cart/orderId; offer Retry same Order (A3)
-      else Payment SUCCESS
-        Pay --> API : SUCCESS(transactionRef, amount, method)
-        group Transaction T2: success and Order status together
-          API -> DB : BEGIN; INSERT Payment(SUCCESS, idempotencyKey)\nUPDATE Order PENDING -> PAID; COMMIT
-          DB --> API : One Payment SUCCESS; Order PAID
+      else Payment still PENDING after reconciliation (E11)
+        API --> UI : 409 PAYMENT_IN_PROGRESS; no new URL, no new Payment (BR-10)
+        UI --> Customer : "Checking payment" with Check again button; do not advise paying twice
+      else QueryDR failed inside the grace: network, signature or configuration (E13)
+        API --> UI : 502 PAYMENT_PROVIDER_ERROR; DB and Order unchanged (past the grace the Payment is closed, D6)
+        UI --> Customer : Generic error; keep cart and orderId
+      else Payment PENDING within expiresAt (E4 / A6)
+        alt Same paymentMethod
+          API --> UI : 200 SAME paymentUrl + expiresAt, even with a new key\nNo new Payment, no re-signing
+        else Different paymentMethod
+          API --> UI : 409 PAYMENT_IN_PROGRESS
+          UI --> Customer : Continue the existing payment or check status
         end
-        note over API,DB : E8b: API stops before COMMIT -> Order stays PENDING;\nretry is a new attempt (accepted risk, simulated money, SRS 3.4).
-        API --> UI : 201 {orderId, paymentId, status:SUCCESS,\norderStatus:PAID, amount}
-        UI -> UI : Clear cart
-        UI --> Customer : Show paid receipt, order code, tracking (FR-20)
+      else No open Payment: create a new attempt
+        alt Missing VNP_TMN_CODE / VNP_HASH_SECRET / WEB_URL (E13)
+          API --> UI : 502 PAYMENT_PROVIDER_ERROR; no Payment, Order unchanged
+          UI --> Customer : Generic error; keep cart and orderId
+        else Configuration complete
+          API -> API : Build and sign URL (HMAC-SHA512, local)\nvnp_TxnRef=Payment.id; vnp_Amount=amount x 100; GMT+7 create/expire dates (+15 min)
+          group Transaction T2: Payment PENDING (no HTTP call inside this lock)
+            API -> DB : BEGIN; lock Order; re-read open Payment (BR-10)\nINSERT Payment(PENDING, paymentUrl, expiresAt, gatewayCreateDate, idempotencyKey)
+            opt A3: retry after a FAILED attempt
+              API -> DB : UPDATE Order PAYMENT_FAILED -> PENDING (snapshot kept; no new reservation)
+            end
+            DB --> API : COMMIT T2; one Payment PENDING; Order PENDING
+          end
+          API --> UI : 201 { paymentId, orderId, orderStatus:PENDING, amount,\nstatus:PENDING, paymentUrl, expiresAt }
+          UI -> UI : Save { orderId, key, paymentId, paymentMethod } in sessionStorage; keep cart
+          UI -> Browser : window.location.assign(paymentUrl)
+        end
       end
     end
   end
 end
+opt A6: Customer returns to checkout while the Payment PENDING is still valid
+  UI -> API : GET /orders/:id (JWT)
+  API --> UI : 200 order with payments[ ] (paymentUrl, expiresAt)
+  UI --> Customer : Show "Continue payment"; no new URL
+  UI -> Browser : window.location.assign(OLD paymentUrl)
+end
+
+== UC-04.2 (2/3): customer pays on VNPay; IPN ==
+Browser -> Pay : GET paymentUrl (VNPay payment page)
+Customer -> Pay : Enter NCB test card and OTP on the VNPay page\n(BrewLite never receives card data)
+Pay -> API : GET /payments/vnpay/ipn?vnp_* (server-to-server, public, no JWT)
+API -> API : Check VNP configuration; verify HMAC-SHA512 signature and vnp_TmnCode
+alt Configuration missing (E13)
+  API --> Pay : {"RspCode":"99"}; no DB read or write; VNPay retries later
+else Invalid signature or merchant (E9)
+  API --> Pay : {"RspCode":"97","Message":"Invalid signature"}; DB unchanged
+else Signature valid
+  API -> DB : Find Payment by vnp_TxnRef
+  DB --> API : Payment or none
+  alt No Payment for vnp_TxnRef
+    API --> Pay : {"RspCode":"01"}
+  else vnp_Amount differs from Payment.amount x 100 (E9)
+    API --> Pay : {"RspCode":"04"}; DB unchanged
+  else Payment found, amount matches
+    group Transaction T3: applyGatewayResult (shared with QueryDR)
+      API -> DB : BEGIN; lock Order; re-read Payment and Order
+      alt Payment not PENDING, or Order not PENDING
+        opt E12: success IPN after FAILED / EXPIRED, CANCELLED order, or paid by another Payment
+          API -> API : Log warning PAYMENT_RECONCILIATION_REQUIRED with vnp_TxnRef\nStaff checks Merchant Admin and refunds by hand
+        end
+        API --> Pay : {"RspCode":"02"}; Order, Payment and stock unchanged\n(a repeated IPN for an already successful Payment only gets 02)
+      else vnp_ResponseCode=00 AND vnp_TransactionStatus=00 (success)
+        API -> DB : UPDATE Payment SUCCESS (gatewayTxnNo, bankCode, paidAt, both gateway codes)\nIf inventoryTracked: lock ingredients in ID order; decrease onHand AND reserved by snapshot\nUPDATE Order -> PAID; COMMIT
+        DB --> API : One Payment SUCCESS; Order PAID
+        API --> Pay : {"RspCode":"00","Message":"Confirm Success"}
+      else vnp_TransactionStatus=02 (E3 failure)
+        note right of DB : IPN counts as failed when vnp_TransactionStatus = 02,\nincluding a customer Cancel (vnp_ResponseCode 24) and an OTP-step timeout (15).
+        API -> DB : UPDATE Payment FAILED (gatewayResponseCode, gatewayTransactionStatus kept apart)\nUPDATE Order -> PAYMENT_FAILED; onHand, reserved and snapshot unchanged; COMMIT
+        DB --> API : Payment FAILED; Order PAYMENT_FAILED
+        API --> Pay : {"RspCode":"00"}
+      else Status 01, reversal/refund group, unsupported or conflicting codes
+        API -> DB : ROLLBACK; DB unchanged
+        API --> Pay : {"RspCode":"99"}; warning if money may have moved
+      end
+    end
+  end
+end
+
+== UC-04.2 (3/3): return page, polling and optional QueryDR ==
+Pay --> Browser : Redirect to vnp_ReturnUrl /payment/vnpay-return?vnp_*
+Browser -> UI : Load return page (display only; never decides the result, BR-11)
+UI -> API : GET /payments/vnpay/return?vnp_* (public; no DB write)
+API -> API : Verify signature and vnp_TmnCode
+alt Invalid signature/merchant, unknown Payment or configuration missing (E9/E13)
+  API --> UI : { valid:false }; no IDs taken from the unverified query
+  UI -> UI : Recover only orderId/paymentId stored in this customer's sessionStorage
+else Verified
+  API -> DB : Read Payment by vnp_TxnRef
+  DB --> API : Payment
+  API --> UI : { valid:true, paymentId, orderId, responseCode }
+end
+loop every 2 s, at most 30 s, until a final state
+  UI -> API : GET /orders/:id (JWT)
+  API -> DB : Read Order and payments
+  DB --> API : Order status; payments with paymentUrl, expiresAt, gateway codes
+  API --> UI : 200 order detail
+end
+opt E10: Payment still PENDING (IPN lost or late: Render asleep, or local run with no IPN)
+  UI -> API : POST /payments/:id/sync (JWT; one call, no retry loop)
+  API -> DB : Verify Payment and Order owner
+  DB --> API : Payment/Order or 401/403/404 PAYMENT_NOT_FOUND
+  alt Payment already SUCCESS / FAILED
+    API --> UI : 200 { paymentId, orderId, orderStatus, status } from DB; no QueryDR
+  else Payment PENDING (even before expiry)
+    API -> Pay : POST querydr (outside any DB transaction; 10 s timeout)
+    Pay --> API : vnp_ResponseCode + vnp_TransactionStatus (signed)
+    API -> API : Verify response signature, merchant, TxnRef; amount for 00
+    alt Inside the grace: network/timeout, bad or missing signature (UNSIGNED), config missing, BAD_RESPONSE or another query code (E13)
+      API --> UI : 502 PAYMENT_PROVIDER_ERROR; DB unchanged
+    else MISMATCH of a 00 response (wrong amount, merchant, TxnRef or type), or 00 with 04/05/06/07/09 (never auto-closed)
+      API --> UI : 502 PAYMENT_PROVIDER_ERROR; DB unchanged; reconciliation warning
+    else Grace elapsed (now >= expiresAt + 15 min) with no verdict: 00/01, unsupported status, another code, BAD_RESPONSE or no verified answer (D6, E11)
+      API -> DB : BEGIN; lock Order; re-read THAT Payment; if still PENDING:\nPayment FAILED, gatewayResponseCode="EXPIRED"; Order PAYMENT_FAILED; COMMIT
+      API --> UI : 200 { orderStatus:PAYMENT_FAILED, status:FAILED }; warning PAYMENT_EXPIRED_UNCONFIRMED
+    else Verified response
+      group Transaction T3: applyGatewayResult (same function as IPN; mapping of E11)
+        API -> DB : BEGIN; lock Order; re-read THAT Payment; keep the DB state if IPN already finalized it
+        alt 00/00 paid
+          API -> DB : Payment SUCCESS; consume snapshot once; Order PAID; COMMIT
+          API --> UI : 200 { orderStatus:PAID, status:SUCCESS }
+        else 00/02 final failure
+          API -> DB : Payment FAILED; Order PAYMENT_FAILED; COMMIT
+          API --> UI : 200 { orderStatus:PAYMENT_FAILED, status:FAILED }
+        else Not concluded inside the grace: 00/01, or 91 before expiry (91 after expiry: see E11)
+          API -> DB : ROLLBACK; Payment stays PENDING
+          API --> UI : 409 PAYMENT_IN_PROGRESS
+        end
+      end
+    end
+  end
+end
+alt DB says Order PAID / PREPARING / READY / COMPLETED
+  UI -> UI : Clear cart and checkout session of exactly this order
+  UI --> Customer : Show paid receipt, order code, tracking (FR-20)
+else DB says Order PAYMENT_FAILED (E3)
+  UI --> Customer : Failure message by response code (24 cancelled, 11/15/EXPIRED expired, 51 insufficient funds, other generic)\nKeep cart and orderId; offer Retry (A3, back to POST /payments) or Cancel (A5)
+else Payment PENDING, or 409 / 502 from sync
+  UI --> Customer : "Checking payment, please check again"; Check again button\nNever advise paying a second time
+end
+
+== UC-06: owner cancellation of unpaid order (FR-25 Must) ==
+opt Owner chooses cancel while PENDING / PAYMENT_FAILED
+  Customer -> UI : Confirm cancel
+  UI -> API : PATCH /orders/:id {status:CANCELLED} + JWT
+  API -> DB : Verify owner; read Order and its latest Payment (no lock held)
+  opt E11: latest Payment PENDING is past expiresAt
+    API -> Pay : POST querydr (outside any DB transaction)
+    Pay --> API : vnp_ResponseCode + vnp_TransactionStatus (signed)
+    API -> DB : BEGIN; lock Order; re-read THAT Payment; apply the E11 mapping; COMMIT
+  end
+  API -> DB : BEGIN; lock Order; re-read Payment; check owner and transition
+  alt Payment PENDING within expiresAt, or still unresolved (A5 blocked)
+    API -> DB : ROLLBACK; no balance changes
+    API --> UI : 409 PAYMENT_IN_PROGRESS (502 PAYMENT_PROVIDER_ERROR if QueryDR failed)
+    UI --> Customer : Explain payment in progress; continue (A6) or check status
+  else Valid unpaid order, inventoryTracked=true, no unresolved Payment
+    API -> DB : Lock ingredients in ID order; decrease reserved by snapshot\nKeep onHand unchanged; set CANCELLED; COMMIT
+    API --> UI : 200 CANCELLED
+  else Legacy inventoryTracked=false
+    API -> DB : Restore original Product.stock quantities; set CANCELLED; COMMIT
+    API --> UI : 200 CANCELLED; no ingredient changes
+  else Repeated cancel / paid / wrong owner
+    API -> DB : ROLLBACK; no balance changes
+    API --> UI : 409 invalid state / 403 forbidden
+  end
+end
+note over API,DB
+  Legacy false-marker orders preserve original Product.stock payment/cancel lifecycle.
+  New true-marker orders use snapshot, never current recipes for consume/release.
+  Ingredients are released only by owner cancellation, never because a Payment became FAILED/EXPIRED.
+  No automatic cancellation or reservation expiry.
+end note
 @enduml

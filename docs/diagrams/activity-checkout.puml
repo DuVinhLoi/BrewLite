@@ -1,180 +1,283 @@
 @startuml
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ClassBackgroundColor #eef2fb
+skinparam ClassBorderColor #5b6b8c
+skinparam ClassFontColor #1f2937
+skinparam StateBackgroundColor #eef2fb
+skinparam StateBorderColor #5b6b8c
+skinparam StateFontColor #1f2937
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam SequenceParticipantBackgroundColor #eef2fb
+skinparam SequenceParticipantBorderColor #5b6b8c
+skinparam SequenceLifeLineBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam NoteFontColor #1f2937
 ' BrewLite Assignment 2 - UC-04; authoritative SRS 3.5-3.6 and uc-checkout.md
-' A2 §4.1: four swimlanes; three mandatory failures all have explicit ends.
+' A2 §4.1: four swimlanes (the external lane is VNPay sandbox); three mandatory failures all have explicit ends.
 !pragma useVerticalIf on
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
-skinparam ArrowColor #55738A
 skinparam ActivityBorderColor #46677B
 skinparam ActivityBackgroundColor #EAF3FA
 skinparam ActivityDiamondBackgroundColor #FFF2D8
 skinparam ActivityDiamondBorderColor #B58B45
 skinparam ActivityBarColor #46677B
-title BrewLite A2 - Activity: UC-04 Checkout
-
+title BrewLite A2 - Ingredient checkout: reserve, pay with VNPay sandbox, cancel
 |Customer|
 start
-:Open cart and press "Checkout";
+:Open cart and checkout;
 |Next.js UI|
-if (Customer authenticated?) then (no - E1a)
-  :Keep cart; open /login?next=/checkout;
+:Check selected sizes/toppings and aggregate cart availability;
+if (Customer JWT valid?) then (no - E1a)
+  :Keep cart; navigate /login?next=/checkout;
   |Customer|
   if (Complete login?) then (yes)
     :Log in as CUSTOMER;
     |Next.js UI|
-    :Return to /checkout with same cart;
-  else (no)
-    |Next.js UI|
-    :Remain at login; cart retained;
+    :Resume same cart;
+  else (leave)
     stop
   endif
 else (yes)
 endif
-:Show cart summary and wallet/card choices;
 |Customer|
-:Choose WALLET or CARD; confirm payment;
+:Choose WALLET/CARD; press Pay with VNPay;
 |Next.js UI|
-:Disable confirm button;
-:Create Idempotency-Key for payment session;
-:POST /orders (JWT, items; NO client prices);
+:Disable button; create payment key (no card field);
+:POST /orders with JWT and cart; no client prices;
 |NestJS API|
-:JWT guard: role = CUSTOMER;
-if (401 from POST /orders?) then (E1a)
-  :Return 401 UNAUTHORIZED; no order;
+:Validate role/DTO; compute server prices;
+if (Invalid input or unknown product?) then (E6)
+  :400 / 404; no order or balance change;
   |Next.js UI|
-  :Keep cart; redirect to login;
-  |Customer|
-  :Sign in and return to checkout;
-  |Next.js UI|
-  :Retry POST /orders only after login;
-  |NestJS API|
-  :Validate new JWT / CUSTOMER role;
-else (authenticated)
-endif
-:Validate DTO; recompute server-side price (BR-01/02);
-if (Bad DTO or unknown product?) then (yes - E6)
-  :Return 400 VALIDATION_ERROR / 404 PRODUCT_NOT_FOUND;
-  |Next.js UI|
-  :Show validation errors; preserve cart;
-  |Customer|
-  :Correct cart later;
+  :Keep cart; show correction;
   stop
 else (valid)
 endif
-:Start DB transaction; check stock atomically;
-if (Any product OUT_OF_STOCK?) then (yes - E2)
-  :ROLLBACK; return 409 OUT_OF_STOCK;
-  :No Order or stock change;
+|NestJS API|
+:BEGIN; lock recipes in ID order;\nread base and topping recipes; aggregate ALL cart lines;\nlock ingredients in ID order; check onHand - reserved;
+if (Missing recipe or aggregate shortage?) then (E2)
+  :ROLLBACK; 409 RECIPE_UNAVAILABLE / OUT_OF_STOCK;
   |Next.js UI|
-  :Mark unavailable items; return to cart;
-  |Customer|
-  :Edit cart; can try checkout again;
+  :Keep cart; show shortage; link to edit cart;
   stop
-else (no)
-  :Reserve stock; create Order PENDING + OrderItems;
-  :COMMIT transaction; return 201 orderId + total;
+else (fits)
+  |NestJS API|
+  :Increase reserved; create Order PENDING marker true;\ncreate OrderItems and immutable OrderIngredient snapshot; COMMIT;
 endif
 |Next.js UI|
-:Retain orderId, owner and same Idempotency-Key;
-:POST /payments (JWT, orderId, method, key);
+:Keep orderId / owner / same payment key;
+:POST /payments for same order;
 |NestJS API|
-:JWT guard / CUSTOMER role;
-if (401 from POST /payments?) then (yes - E1b)
-  :Return 401; do not change order;
+if (JWT expired after order creation?) then (E1b)
+  :401; keep order and reservation unchanged;
   |Next.js UI|
-  :Keep cart, orderId, owner and key; open login;
-  |Customer|
-  :Log in again;
-  |Next.js UI|
-  :GET /orders/:id with new JWT;
-  |NestJS API|
-  :Verify SAME account owns order;
-  if (Different account / 403?) then (yes)
-    :Reject access; do not create another order;
-    |Next.js UI|
-    :Request correct account or show own history;
-    stop
-  else (owner verified)
-  endif
-  if (Status PAID/PREPARING/READY/COMPLETED?) then (yes)
-    :Return current order details;
-    |Next.js UI|
-    :Show already-paid order; no new charge;
-    stop
-  else (no)
-  endif
-  if (Status CANCELLED?) then (yes)
-    :Return CANCELLED;
-    |Next.js UI|
-    :Show cancelled order; stop payment;
-    stop
-  else (PENDING / PAYMENT_FAILED)
-    :Return payable order;
-    |Next.js UI|
-    :POST /payments again with SAME orderId/key;
-    |NestJS API|
-    :Recheck JWT / DTO / ownership;
-  endif
-else (authenticated)
-endif
-:Validate payment DTO/key and ownership;
-if (Invalid request / unauthorized order?) then (yes - E6/E7)
-  :Return 400/403/404; do not call Payment Service;
-  |Next.js UI|
-  :Explain error; keep cart and order;
+  :Re-login same Customer; GET order and check owner/status;\nresume existing order/key, never POST another order;
   stop
 else (valid)
 endif
-:Look up SUCCESS by owner + order + key + paymentMethod (BR-05);
-if (API SUCCESS replay? E4a) then (yes)
-  :Return 200 original SUCCESS/paymentId;
+|NestJS API|
+:Validate DTO/key; read Order and verify ownership (no lock yet);
+if (Invalid / forbidden / missing order?) then (E6/E7)
+  :400 / 403 / 404; no Payment created, no URL;
+  stop
+else (valid)
+endif
+|NestJS API|
+if (SUCCESS for same owner/order/key/method?) then (E4a)
+  :Return 200 original paymentId;\nno new Payment, no signing, no balance mutation;
   |Next.js UI|
-  :Show PAID receipt; clear cart;
-  |Customer|
-  :See order confirmation;
+  :Show receipt; clear cart;
   stop
 else (new attempt)
 endif
-if (Order PENDING or PAYMENT_FAILED?) then (no - E7)
-  :Return 409 ORDER_NOT_PAYABLE;
-  |Next.js UI|
-  :Show order status; keep cart;
+|NestJS API|
+if (Order PENDING / PAYMENT_FAILED?) then (yes)
+else (no)
+  :409 ORDER_NOT_PAYABLE; no Payment;
   stop
-else (yes)
 endif
-if (Order status PAYMENT_FAILED?) then (yes - A3)
-  :Transition PAYMENT_FAILED -> PENDING;
-else (PENDING)
-endif
-|Payment Service|
-:charge(orderId, Order.total, method);
-if (Charge successful?) then (no - E3)
-  :Return DECLINED;
+|NestJS API|
+if (Latest Payment PENDING and past expiresAt?) then (E11 expired)
+  |VNPay sandbox|
+  :Return QueryDR result (signed);\nHTTP call is made outside any DB transaction holding the Order lock;
   |NestJS API|
-  :Save Payment FAILED;
-  :Transition PENDING -> PAYMENT_FAILED;
-  :Return 402 PAYMENT_DECLINED;
+  :BEGIN; lock Order; re-read THAT Payment;\napply result with the same function as IPN; COMMIT;
+  if (Reconciliation result?) then (SUCCESS: Order PAID)
+    :Same owner/key/method: 200 replay (checked first);\notherwise 409 ORDER_NOT_PAYABLE;
+    |Next.js UI|
+    :Show receipt or current order status;
+    stop
+  elseif (Not concluded inside the grace: 00/01, or 91 before expiry?) then (stays PENDING)
+    :409 PAYMENT_IN_PROGRESS; no new URL, no new Payment, no cancel;
+    note right
+      D6: QueryDR 00/01 keeps PENDING only until
+      expiresAt + 15 min (grace). After that the payment is
+      closed as FAILED "EXPIRED" (last branch below), so an
+      abandoned payment cannot block the order forever.
+    end note
+    |Next.js UI|
+    :Show "checking payment" with Check again; never advise paying twice;
+    stop
+  elseif (QueryDR failed inside the grace, or special status 04/05/06/07/09, or MISMATCH?) then (E13)
+    :502 PAYMENT_PROVIDER_ERROR; DB unchanged;
+    note right
+      04/05/06/07/09 and MISMATCH never auto-close, even after
+      the grace; they stay PENDING for manual reconciliation.
+      MISMATCH applies to a signed 00 response only. Any other code
+      (91 too) with a wrong or missing merchant or TxnRef is
+      BAD_RESPONSE: 502 inside the grace, closed after it.
+    end note
+    |Next.js UI|
+    :Show generic error; keep cart and order;
+    stop
+  else (FAILED, or FAILED + EXPIRED)
+    note right
+      QueryDR 91 after expiry, verified ->
+      FAILED with gatewayResponseCode "EXPIRED".
+      D6: also when now >= expiresAt + 15 min (isPastGrace) and
+      QueryDR gave 00/01, an unsupported status, another code,
+      BAD_RESPONSE or no verified answer (UNSIGNED, timeout, network).
+      Warning PAYMENT_EXPIRED_UNCONFIRMED; closed only on a call
+      (POST /payments, cancel, sync), no background job.
+      EXPIRED is not a PaymentStatus value.
+    end note
+    :Order PAYMENT_FAILED; reservation kept;\ncontinue as a new attempt (A3);
+  endif
+else (not expired)
+endif
+|NestJS API|
+if (Open Payment PENDING still valid, same paymentMethod?) then (E4 / A6)
+  :200 with the SAME paymentUrl and expiresAt (even with a new key);\nno new Payment, no re-signing (BR-10);
+else (no open Payment, or other method)
+  if (Open Payment PENDING with another paymentMethod?) then (yes)
+    :409 PAYMENT_IN_PROGRESS;
+    |Next.js UI|
+    :Offer to continue the existing payment or check status;
+    stop
+  else (none)
+  endif
+  |NestJS API|
+  if (VNP_TMN_CODE, VNP_HASH_SECRET and WEB_URL present?) then (yes)
+  else (missing - E13)
+    :502 PAYMENT_PROVIDER_ERROR; no Payment; Order unchanged;
+    |Next.js UI|
+    :Show generic error; keep cart and order;
+    stop
+  endif
+  |NestJS API|
+  :Sign payment URL (HMAC-SHA512, local, vnp_TxnRef = Payment.id);\nBEGIN; lock Order; INSERT Payment PENDING\n(paymentUrl, expiresAt, gatewayCreateDate);\nif retry, Order PAYMENT_FAILED to PENDING; no new reservation; COMMIT;
+  :Return 201 with paymentUrl and expiresAt (15 minutes);
+endif
+|Next.js UI|
+:Save orderId/key/paymentId/method in sessionStorage;\nredirect browser to paymentUrl; keep cart;
+|VNPay sandbox|
+:Show payment page;
+|Customer|
+if (Customer action on the VNPay page?) then (pays with NCB test card)
+  |VNPay sandbox|
+  :Charge test card; transaction status 00;
+elseif (Presses Cancel?) then (cancel)
+  |VNPay sandbox|
+  :Cancel transaction; response code 24, transaction status 02;
+else (abandons the page)
+  |VNPay sandbox|
+  :No result is sent; transaction stays open until expiry;
   |Next.js UI|
-  :Keep cart, orderId and reserved stock;
-  :Show payment failure + Retry same Order;
-  |Customer|
-  :May retry with new method; no new Order;
+  :Order and reservation stay as they are (Payment PENDING);\ncustomer may return later (A6), or E11 applies after expiry;
   stop
+endif
+|VNPay sandbox|
+:Call IPN GET /payments/vnpay/ipn (server-to-server);
+|NestJS API|
+:Check configuration, signature, vnp_TmnCode, Payment and amount;
+if (Valid IPN?) then (no - E9 / E13)
+  :RspCode 97 bad signature or merchant, 01 no Payment, 04 wrong amount,\n99 configuration missing; DB unchanged;
 else (yes)
-  :Return SUCCESS;
+  :BEGIN; lock Order; re-read Payment and Order;
+  if (Payment and Order still PENDING?) then (no)
+    if (Success IPN after FAILED/EXPIRED, CANCELLED order or paid by another Payment?) then (E12)
+      :Log warning PAYMENT_RECONCILIATION_REQUIRED with vnp_TxnRef;
+    else (repeated IPN)
+    endif
+    :RspCode 02; Order, Payment and stock unchanged;
+  else (yes)
+    if (vnp_ResponseCode 00 and vnp_TransactionStatus 00?) then (success)
+      :Payment SUCCESS; lock ingredients in ID order;\ndecrease onHand AND reserved by snapshot; Order PAID; COMMIT;
+      note right
+        Never use edited recipes to consume old snapshots.
+        Legacy marker false uses original Product.stock lifecycle.
+      end note
+      :RspCode 00;
+    elseif (vnp_TransactionStatus 02?) then (E3 failure)
+      note right
+        IPN counts as failed when vnp_TransactionStatus = 02,
+        including a customer Cancel (24) and an OTP-step timeout (15).
+      end note
+      :Payment FAILED; Order PAYMENT_FAILED; COMMIT;\nonHand/reserved/snapshot unchanged;
+      :RspCode 00;
+    else (01, reversal group or unsupported)
+      :ROLLBACK; DB unchanged; RspCode 99;
+    endif
+  endif
+endif
+|VNPay sandbox|
+:Redirect browser to /payment/vnpay-return;
+|Next.js UI|
+:Return page checks signature via GET /payments/vnpay/return (display only);\npoll GET /orders/:id every 2 s, at most 30 s;
+if (Payment still PENDING after polling?) then (E10 lost or late IPN)
+  :POST /payments/:id/sync once;
   |NestJS API|
-  :DB transaction: save one Payment SUCCESS;
-  :Transition PENDING -> PAID; COMMIT;
+  :Verify owner; Payment already SUCCESS/FAILED returns DB state without QueryDR;
+  |VNPay sandbox|
+  :Return QueryDR result (signed);
+  |NestJS API|
+  :Verify response; BEGIN; lock Order; re-read THAT Payment;\napply same function as IPN (00/00 SUCCESS, 00/02 FAILED);\n00/01 or 91 before expiry: 409 PAYMENT_IN_PROGRESS; errors: 502 (past expiresAt + 15 min: closed FAILED EXPIRED, E11); COMMIT;
+  |Next.js UI|
+else (no)
+endif
+|Next.js UI|
+if (Order status read from DB?) then (PAID / PREPARING / READY / COMPLETED)
+  :201 SUCCESS; receipt and tracking; clear cart;
+  stop
+elseif (PAYMENT_FAILED) then (E3)
+  :Show failure reason from the response code\n(24 cancelled, 11/15/EXPIRED expired, 51 insufficient funds, other generic);\nkeep cart and order; offer retry same order or cancel;
+else (PENDING, or 409/502 from sync)
+  :Show "checking payment" with Check again; never advise paying twice;
+  stop
+endif
+|Customer|
+if (Owner confirms cancel unpaid order?) then (A5)
+  |Next.js UI|
+  :PATCH CANCELLED + JWT;
+  |NestJS API|
+  if (Payment PENDING still valid, or unresolved after QueryDR reconciliation (E11)?) then (A5 blocked)
+    :409 PAYMENT_IN_PROGRESS; no release;
+    |Next.js UI|
+    :Explain payment in progress; continue (A6) or check status;
+    stop
+  else (none open)
+  endif
+  |NestJS API|
+  :BEGIN; lock Order; validate owner and unpaid state;\nlock ingredients by ID; decrease reserved by snapshot;\nkeep onHand; set CANCELLED; COMMIT;
   note right
-    E8b: If API stops before COMMIT, Order stays
-    PENDING; retry is a new attempt (accepted risk,
-    simulated money, SRS 3.4).
+    Repeated cancel returns 409; no second release.
+    Legacy false marker restores Product.stock instead.
+    Same cancellation applies directly to PENDING orders.
+    Ingredients are never released just because a Payment became FAILED.
   end note
-  :Return 201 SUCCESS, orderStatus PAID;
   |Next.js UI|
-  :Show receipt; clear cart only on SUCCESS;
-  |Customer|
-  :See order code and track order;
+  :Show CANCELLED; retain cart;
+  stop
+else (retry / leave)
+  |Next.js UI|
+  :Retry same order/key (back to POST /payments); no new reservation;\nleaving retains reservation, no automatic expiry;
   stop
 endif
 @enduml

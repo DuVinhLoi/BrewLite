@@ -19,7 +19,7 @@ title UC-04 Đặt và thanh toán đơn hàng - phạm vi use-case
 
 actor "Khách vãng lai\n(Guest)" as Guest
 actor "Khách hàng\n(Customer)" as Customer
-actor "Dịch vụ\nthanh toán\n(Payment Service)" as Pay <<Service>>
+actor "VNPay sandbox\n(hệ thống ngoài)" as Pay <<External>>
 
 Customer --|> Guest
 
@@ -28,10 +28,12 @@ rectangle "Hệ thống BrewLite" {
   usecase "UC-04.1 Tạo đơn hàng\nFR-11, FR-12, FR-13" as UC041
   usecase "UC-04.2 Thanh toán đơn hàng\nFR-14, FR-15, FR-16" as UC042
   usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
+  usecase "UC-06 Hủy đơn chưa trả\nFR-25 Must; giải phóng snapshot" as UC06
   usecase "UC-03 Đăng nhập\nFR-09, FR-10" as UC03
 }
 
 Customer --- UC04
+Customer --- UC06
 Guest --- UC03
 
 UC04 .> UC041 : <<include>>
@@ -51,9 +53,26 @@ end note
 
 note right of UC045
   Điều kiện extend: lần thanh toán trước
-  bị từ chối, đơn đang PAYMENT_FAILED.
+  thất bại (IPN/QueryDR xác nhận, kể cả khách
+  hủy trên VNPay), đơn đang PAYMENT_FAILED.
   Khách bấm "Thử lại": trả lại cho đúng
   đơn cũ, không tạo đơn mới.
+end note
+
+note right of UC042
+  Bất đồng bộ: API tạo Payment PENDING và URL
+  đã ký, khách trả trên trang VNPay. Kết quả
+  do IPN hoặc QueryDR đã xác thực quyết định
+  (BR-11); trang return chỉ hiển thị.
+  Quay lại khi còn Payment PENDING còn hạn:
+  tiếp tục bằng URL cũ (A6); tối đa một
+  PENDING cho mỗi đơn (BR-10).
+end note
+
+note right of UC06
+  Bị chặn 409 PAYMENT_IN_PROGRESS khi có
+  Payment PENDING còn hạn; quá hạn thì
+  đối soát QueryDR trước rồi mới xét hủy.
 end note
 
 @enduml

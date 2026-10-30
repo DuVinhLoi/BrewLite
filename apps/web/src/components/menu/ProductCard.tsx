@@ -27,7 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <h3 className={styles.name}>{product.name}</h3>
         <div className={styles.meta}>
           <p className={styles.price}>{formatVnd(product.price)}</p>
-          <p className={`${styles.stock} ${styles[badge.tone]}`}>{badge.label}</p>
+          <p className={`${styles.stock} ${styles[badge.tone]}`}>{soldOut ? 'Hết hàng' : 'Còn hàng'}</p>
         </div>
         <form action={`/products/${encodeURIComponent(product.id)}`}><button type="submit" className={styles.addButton} disabled={soldOut}>
           Thêm vào giỏ
