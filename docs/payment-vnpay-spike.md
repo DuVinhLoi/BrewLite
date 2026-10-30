@@ -40,13 +40,21 @@ Kết luận: VNPay từ chối thanh toán sau `vnp_ExpireDate` ở cả hai đ
 
 ## 4. Ảnh hưởng tới code
 
-- **Luật thất bại của IPN** (`ipnAction`, "pending spike"): khớp dữ liệu thật (`24/02` và `15/02` đều thành `FAILED`). Có thể gỡ nhãn chờ spike.
-- **`91` sau hạn → `EXPIRED`** (`queryDrAction`): chưa kiểm được, giữ nhãn chờ.
-- **`00/01` sau hạn → `IN_PROGRESS`**: chưa kiểm được. Bằng chứng ở mục 2 cho thấy VNPay không cho trả sau hạn.
-- **Hành vi hiện tại khi QueryDR lỗi:** code đóng an toàn (fail closed). Phản hồi `99` không chữ ký bị xếp `BAD_SIGNATURE`, `sync` trả 502, DB không đổi. Hệ quả: payment `PENDING` quá hạn mà không có IPN (khách mở URL rồi bỏ, hoặc không mở) làm đơn kẹt. `sync`, hủy đơn và tạo thanh toán mới đều trả 502 cho tới khi QueryDR chạy lại. Ở local (không có IPN) app cũng không tự xác nhận được giao dịch đã trả.
+- **Luật thất bại của IPN** (`ipnAction`): khớp dữ liệu thật (`24/02` và `15/02` đều thành `FAILED`). Đã gỡ nhãn chờ spike.
+- **Phát hiện chặn trước D6.** Code cũ xếp phản hồi `99` không chữ ký vào `BAD_SIGNATURE`: `sync` trả 502, DB không đổi. Payment `PENDING` quá hạn mà không có IPN (khách mở URL rồi bỏ, hoặc không mở) làm đơn kẹt: `sync`, hủy đơn và tạo thanh toán mới đều trả 502.
+- **Quyết định D6** (người dùng chốt 2026-10-30; [contract mục 8](planning/handoff/2026-10-29-vnpay/contract.md)):
+  - phản hồi không chữ ký nay xếp `UNSIGNED`;
+  - khi QueryDR không kết luận được, payment giữ `PENDING` tới `expiresAt + 15 phút` (`EXPIRY_GRACE_MS`), sau đó đóng `FAILED` `EXPIRED` kèm warning `PAYMENT_EXPIRED_UNCONFIRMED`;
+  - status nghi ngờ `04/05/06/07/09` và `MISMATCH` không bao giờ tự đóng.
+- **`91` sau hạn → `EXPIRED`** và **`00/01` sau khoảng chờ → đóng**: vẫn chưa quan sát được phản hồi thật, vì QueryDR sandbox lỗi. Mục 2 cho thấy VNPay từ chối thanh toán sau hạn, nên đóng sau khoảng chờ là an toàn. Ca biên (IPN tới muộn hơn 15 phút) có warning đối soát.
+- **Kiểm local sau D6** (Postgres 16 cổng 5433, API build, script ngoài repo): 13/13 kịch bản đạt.
+  - Quá khoảng chờ: `sync`, hủy đơn và thanh toán lại đều đóng payment (`FAILED`/`EXPIRED`), kho không đổi. Thanh toán lại tạo lần thử mới.
+  - Còn trong khoảng chờ: ba lời gọi trên đều trả 502, DB không đổi.
+  - IPN thành công tới sau khi đóng: trả `RspCode=02` và ghi `PAYMENT_RECONCILIATION_REQUIRED`.
+  - Log thật: `VNPAY_QUERYDR_FAILED ... reason=UNSIGNED vnp_ResponseCode=99` và `PAYMENT_EXPIRED_UNCONFIRMED ... reason=UNSIGNED`.
 
 ## 5. Còn phải làm
 
 - Thử lại QueryDR khi sandbox hồi phục; nếu vẫn `99`, hỏi hỗ trợ VNPay (`hotrovnpay@vnpay.vn`) kèm `vnp_TxnRef` và thời điểm.
-- Nhóm chốt lối thoát cho payment quá hạn khi QueryDR không kết luận được (plan bước 1, "Không để đơn vừa không trả tiếp được vừa không hủy được").
+- Khi QueryDR chạy được: kiểm các nhánh đã xác thực (`91`, `00/01`, status nghi ngờ) theo bước 7.7b, 7.7d của plan. Lối thoát cho payment quá hạn đã chốt ở D6.
 - IPN thật chỉ quan sát được trên Render (bước 7.5, 7.6).

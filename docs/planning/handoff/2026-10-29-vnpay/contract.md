@@ -84,7 +84,8 @@ R-13, R-14, R-15 đã có trong `context-and-scope.md` (W0). Không đánh thêm
 | Đã xác thực `00/02` | `FAILED` (như cũ) | như cũ |
 | Đã xác thực `91` | quá hạn thì `FAILED` `EXPIRED`, còn hạn thì 409 (như cũ) | như cũ |
 | Đã xác thực `00` kèm status nghi ngờ `04/05/06/07/09` | giữ `PENDING`, 502, warning đối soát | **như cũ, không bao giờ tự đóng** |
-| Chữ ký hợp lệ nhưng sai merchant, TxnRef, số tiền hoặc type (`MISMATCH`) | giữ `PENDING`, 502, warning đối soát | **như cũ, không bao giờ tự đóng** |
+| Phản hồi `00` có chữ ký hợp lệ nhưng sai merchant, TxnRef, số tiền hoặc type (`MISMATCH`) | giữ `PENDING`, 502, warning đối soát | **như cũ, không bao giờ tự đóng** |
+| Phản hồi mã khác `00` có chữ ký hợp lệ nhưng sai hoặc thiếu merchant, TxnRef (`BAD_RESPONSE`, sửa sau review) | 502 | đóng |
 | Đã xác thực `00/01` | 409 `PAYMENT_IN_PROGRESS` | đóng |
 | Đã xác thực `00` kèm status thiếu hoặc chưa hỗ trợ | 502 | đóng |
 | Đã xác thực mã truy vấn khác (`02`, `03`, `94`, `97`, `99`...) | 502 | đóng |
@@ -93,7 +94,7 @@ R-13, R-14, R-15 đã có trong `context-and-scope.md` (W0). Không đánh thêm
 **"Đóng" làm gì.**
 - `Payment` chuyển `FAILED`, `gatewayResponseCode = "EXPIRED"`, `gatewayTransactionStatus = null`.
 - Đơn chuyển `PAYMENT_FAILED`, kho không đổi (AC-F15.3).
-- Ghi warning `PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=<id>`, kèm `reason=<QueryDrFailure>` hoặc `vnp_ResponseCode=<..> vnp_TransactionStatus=<..>` đã xác thực.
+- Ghi warning `PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=<id>`, kèm `reason=<QueryFailureReason>` (gồm `QueryDrFailure` và `NOT_CONFIGURED`, `MISSING_CREATE_DATE`, `TIMEOUT`, `NETWORK`) hoặc `vnp_ResponseCode=<..> vnp_TransactionStatus=<..>` đã xác thực.
 - Sau đó khách thanh toán lại (tạo payment mới) hoặc hủy đơn (nhả nguyên liệu).
 - IPN thành công tới sau khi đã đóng thì đi theo AC-F15.7: trả `02`, ghi warning `PAYMENT_RECONCILIATION_REQUIRED`, nhân viên hoàn tiền tay.
 
@@ -114,3 +115,9 @@ R-13, R-14, R-15 đã có trong `context-and-scope.md` (W0). Không đánh thêm
 - `BR-10` và đoạn "Hạn thanh toán 15 phút" thêm vế đóng sau khoảng chờ.
 
 **Web.** Mã `15` (quan sát được ở spike) và `EXPIRED` dùng thông báo "Đã hết thời gian thanh toán", giống mã `11`. Plan mục 1.7 thêm hai mã này.
+
+**Sửa sau review (2026-10-30).**
+- `MISMATCH` chỉ áp cho phản hồi `00`, vì chỉ `00` mới dẫn tới `SUCCESS` theo status.
+- Phản hồi mang mã khác (kể cả `91`) mà sai hoặc thiếu `vnp_TmnCode`/`vnp_TxnRef` xếp `BAD_RESPONSE`. Trước khoảng chờ trả 502, hết khoảng chờ thì đóng.
+- Lý do: VNPay có thể trả phản hồi lỗi đã ký với các trường rỗng. Nếu xếp `MISMATCH`, đơn sẽ kẹt mãi, đúng lỗi mà D6 sinh ra để sửa.
+- Màn chi tiết đơn hiện `vnpayMessage(gatewayResponseCode)` trên dòng của payment `FAILED` có mã. Nhờ vậy khách thấy "Đã hết thời gian thanh toán" sau khi payment bị đóng; trước đây chỉ màn return gọi `vnpayMessage`.

@@ -15,6 +15,9 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
 | C1-API (bước 5.1–5.3, phần đọc cấu hình 5.6), worktree `E:/orca/workspaces/BrewLite/vnpay-c1-api`, branch `ThuanTran260/chore-multi-agent-workflow` (tên do Orca đặt); lần 1 `ctx_5fd012103197` (failed: terminal mất sau khi hết usage), lần 2 `ctx_607a33cad782`, report [C1-API-report.md](C1-API-report.md) | Orca, claude/sonnet | 2026-10-29 22:41 | 2026-10-30 06:44, merge `a1116d4` | 1 (chạy lại) | 1 (test đỏ vì thiếu `src/payment`, rồi 69/69 xanh) | không | không | không đo được |
 | C2-API (bước 5.4, 5.5, nối 5.6, 5.7, 5.8), worktree `E:/orca/workspaces/BrewLite/vnpay-c2-api`, branch `ThuanTran260/chore-multi-agent-workflow-2` (tên do Orca đặt), dispatch `ctx_9664527b2aed`, report [C2-API-report.md](C2-API-report.md) | Orca, claude/sonnet | 2026-10-30 06:46 | 06:58, merge `c8bb411` lúc 06:59 | 0 | không áp dụng (card không yêu cầu TDD) | không | không | không đo được |
 | SPIKE (bước 1), script ngoài repo gọi hàm của `vnpay.ts`, trình duyệt Playwright; kết quả [payment-vnpay-spike.md](../../../payment-vnpay-spike.md) | Integrator | 2026-10-30 07:31 | 07:50; 1.3 chưa xong (QueryDR sandbox lỗi) | 0 | không áp dụng | không áp dụng | không áp dụng | không đo được |
+| W3-DOCS (D6 vào SRS, UC, sơ đồ, ADR, plan, ma trận), branch `ThuanTran260/docs-vnpay-w3`, worktree `E:/orca/workspaces/BrewLite/langostino`, dispatch `ctx_0d2796a7677f`, report [W3-DOCS-report.md](W3-DOCS-report.md) | Orca, claude/sonnet | 2026-10-30 13:55 | 14:06, merge `9f7a40e` | 0 | không áp dụng | không | không (3 CR ghi trong report) | không đo được |
+| C3-API (code D6), branch `ThuanTran260/task-vnpay-c3-api` (Orca đổi tên từ `tripodfish`), worktree `E:/orca/workspaces/BrewLite/tripodfish`, dispatch `ctx_f7216149d557`, report [C3-API-report.md](C3-API-report.md) | Orca, claude/sonnet | 2026-10-30 13:55 | 14:04, merge `3566cb2` lúc 14:06 | 0 | 1 (15/84 đỏ, rồi 84/84 xanh) | không | không | không đo được |
+| REVIEW-D6 (đọc `a5164b3..3566cb2`, chỉ đọc) | Agent tool, opus | 2026-10-30 14:08 | 14:15 | không áp dụng | không áp dụng | không áp dụng | không áp dụng | khoảng 180k (subagent) |
 
 ## Ruling
 
@@ -61,5 +64,29 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
   - index chặn `PENDING` thứ hai;
   - app thật (API build + `next dev`) qua 7.4, 7.7a, 7.7c và một phần 7.3, 7.7, 7.7f: IPN gửi lại bằng tham số return đã ký (`00`, `02`, `97`, `01`, `04`, warning đối soát), hai request đồng thời cùng key chung một payment/URL, hủy đơn khi còn `PENDING` trả 409.
 - 2026-10-30 07:50: phát hiện chặn. Khi QueryDR không kết luận được, payment `PENDING` quá hạn mà không có IPN làm đơn kẹt: `sync`, hủy đơn, tạo thanh toán mới đều 502. Đây đúng là tình huống plan bước 1 cấm ("Không để đơn vừa không trả tiếp được vừa không hủy được"). Chờ người dùng chọn lối thoát trước khi sửa `checkout.service.ts`/`vnpay.ts`.
+- 2026-10-30 13:55: người dùng chọn phương án A (D6) và yêu cầu: worker dùng Sonnet, review dùng Opus 5.5, sửa sau review dùng Sonnet 5.5. Integrator ghi D6 vào [contract.md](contract.md) mục 8 (commit `a5164b3`). Sau đó chia hai card song song không chung file: W3-DOCS (tài liệu) và C3-API (code), cùng theo contract mục 8. C3-API dùng junction `node_modules` từ worktree tích hợp; worker hỏi một lần (`ask`) vì junction tạo sau khi worker khởi động.
+- 2026-10-30 14:06: hai card qua G1–G4:
+  - worktree sạch; file đổi nằm trong allowed paths; không trailer; `diff --check` sạch;
+  - C3-API có output đỏ trước xanh;
+  - nhận warning mới `PAYMENT_RECONCILIATION_REQUIRED vnp_TxnRef=<id> reason=MISMATCH` do C3-API thêm, vì contract mục 8 ghi "warning đối soát" cho `MISMATCH`;
+  - `POST /payments` khi chính lời gọi đóng payment: `pay` chạy lại `tryPay` và tạo lần thử mới (201), khớp tài liệu W3-DOCS;
+  - merge `--no-ff` tài liệu trước, code sau, không conflict.
+- 2026-10-30 14:06: G6 ở worktree tích hợp:
+  - `prisma generate` đạt; `lint` API 0 lỗi; `build` API đạt; `vnpay.test.ts` 84/84; web `lint` 0 lỗi, `typecheck` đạt;
+  - render `state-order`, `activity-checkout`, `sequence-checkout`: 0 "Syntax Error";
+  - "chờ spike"/"pending spike" chỉ còn ở `docs/payment-vnpay-spike.md`, do Integrator sửa.
+- 2026-10-30 14:14: kiểm D6 trên Postgres local (cổng 5433, API build cổng 4003, script ngoài repo), 13/13 đạt:
+  - quá khoảng chờ: `sync` đóng (`FAILED`/`EXPIRED`/`null`, đơn `PAYMENT_FAILED`, kho không đổi); `sync` lần hai không đổi gì; hủy đơn đóng rồi hủy; thanh toán lại cùng key đóng rồi tạo payment mới (201);
+  - quá hạn 5 phút (còn trong khoảng chờ): `sync`, hủy, thanh toán lại đều 502, DB không đổi;
+  - IPN `00/00` đã ký tới sau khi đóng: `RspCode=02`, warning đối soát, payment giữ `FAILED`;
+  - log thật đúng contract: `VNPAY_QUERYDR_FAILED ... reason=UNSIGNED vnp_ResponseCode=99`, `PAYMENT_EXPIRED_UNCONFIRMED ... reason=UNSIGNED`.
+  - DB thử được nạp thêm nguyên liệu bằng SQL vì các lần thử trước đã dùng hết espresso.
+- 2026-10-30 14:16: review Opus không có lỗi Critical; bảng D6 khớp contract. Quyết định:
+  - nhận finding 1 (phản hồi lỗi đã ký mà trường rỗng bị xếp `MISMATCH`, đơn kẹt mãi). Integrator sửa contract mục 8 (đoạn "Sửa sau review"): `MISMATCH` chỉ cho `00`, mã khác xếp `BAD_RESPONSE`. Chọn `BAD_RESPONSE` cho cả `91` sai TxnRef để `91` không đóng sớm trước khoảng chờ;
+  - nhận finding 3, 4, 6, 10 (tài liệu), 5 (web không bao giờ hiện thông báo `EXPIRED`), 7 (`|| !answer.ok`), 9 (test ranh giới), và CR-1..CR-3 của W3-DOCS (CR-1 thêm `EXPIRED` vì finding 5 được sửa);
+  - không nhận finding 2 (đổi chữ ký `queryDrAction`): tên đã ghi trong contract, phần nối dây đã kiểm local 13/13;
+  - không nhận finding 8 (ghi log sau commit): `applyGatewayResult` và IPN cũng ghi trong transaction, giữ một kiểu;
+  - Integrator tự sửa `docs/payment-vnpay-spike.md` mục 4, 5;
+  - giao F1-API và F1-DOCS (Sonnet) song song.
 - Nhận xét đợt tài liệu: chạy song song đáng giá. Ba worker W1 xong trong 9–15 phút, không conflict, nhờ contract chốt mã trước và allowed paths không chồng nhau. Wave 2 một worker là đủ. Lần sau giữ số agent theo số nhóm file độc lập, không tăng thêm.
 - Nhận xét đợt code (bước 5–6): chạy C1-API song song C1-WEB đáng giá vì hai bên chỉ chung hợp đồng mục 1.5, không chung file; nhưng cả hai dừng giữa chừng vì hết usage, tốn một lần giao lại. C2-API chạy một mình sau C1-API là đúng, vì dùng hàm của C1 và sửa file dùng chung của `checkout`. Lần sau giữ hai worker cho phần code, giao card nhỏ hơn để mỗi lượt xong trước khi hết usage.
