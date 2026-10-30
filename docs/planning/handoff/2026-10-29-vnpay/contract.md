@@ -101,6 +101,7 @@ R-13, R-14, R-15 đã có trong `context-and-scope.md` (W0). Không đánh thêm
 **Log QueryDR lỗi.**
 - Dạng chung: `VNPAY_QUERYDR_FAILED vnp_TxnRef=<id> reason=<reason>`.
 - Phản hồi không có `vnp_SecureHash` dùng `reason=UNSIGNED`. Nếu `vnp_ResponseCode` gồm đúng 2 chữ số thì thêm `vnp_ResponseCode=<mã>`, chỉ để vận hành, không dùng để quyết định.
+- Warning đối soát cho `MISMATCH` có dạng `PAYMENT_RECONCILIATION_REQUIRED vnp_TxnRef=<id> reason=MISMATCH`, ghi ở mỗi lần đối soát. C3-API thêm dạng này, Integrator đã nhận.
 
 **Tên trong code** (tài liệu và code dùng chung):
 - `vnpay.ts`: hằng `EXPIRY_GRACE_MS = 15 * 60 * 1000` và hàm thuần `isPastGrace(expiresAt, now)`.

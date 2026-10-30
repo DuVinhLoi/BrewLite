@@ -18,6 +18,8 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
 | W3-DOCS (D6 vào SRS, UC, sơ đồ, ADR, plan, ma trận), branch `ThuanTran260/docs-vnpay-w3`, worktree `E:/orca/workspaces/BrewLite/langostino`, dispatch `ctx_0d2796a7677f`, report [W3-DOCS-report.md](W3-DOCS-report.md) | Orca, claude/sonnet | 2026-10-30 13:55 | 14:06, merge `9f7a40e` | 0 | không áp dụng | không | không (3 CR ghi trong report) | không đo được |
 | C3-API (code D6), branch `ThuanTran260/task-vnpay-c3-api` (Orca đổi tên từ `tripodfish`), worktree `E:/orca/workspaces/BrewLite/tripodfish`, dispatch `ctx_f7216149d557`, report [C3-API-report.md](C3-API-report.md) | Orca, claude/sonnet | 2026-10-30 13:55 | 14:04, merge `3566cb2` lúc 14:06 | 0 | 1 (15/84 đỏ, rồi 84/84 xanh) | không | không | không đo được |
 | REVIEW-D6 (đọc `a5164b3..3566cb2`, chỉ đọc) | Agent tool, opus | 2026-10-30 14:08 | 14:15 | không áp dụng | không áp dụng | không áp dụng | không áp dụng | khoảng 180k (subagent) |
+| F1-API (sửa code theo review: finding 1, 5, 7, 9), branch `ThuanTran260/task-3a91c11b` (tên do Orca đặt), worktree `E:/orca/workspaces/BrewLite/vnpay-f1-api`, dispatch `ctx_11b3ab077a24`, report [F1-API-report.md](F1-API-report.md) | Orca, claude/`claude-sonnet-5-5` | 2026-10-30 14:20 | merge `3fe434c` | 0 | 1 (2 test đỏ đúng lý do, rồi 89/89 xanh) | không | không | không đo được |
+| F1-DOCS (sửa tài liệu theo review và CR-1..CR-3 của W3-DOCS), branch `ThuanTran260/task-da7af175-vnpay-f1` (tên do Orca đặt), worktree `E:/orca/workspaces/BrewLite/vnpay-f1-docs`, dispatch `ctx_f7625acf4d25`, report [F1-DOCS-report.md](F1-DOCS-report.md) | Orca, claude/`claude-sonnet-5-5` | 2026-10-30 14:20 | merge `3686254` | 0 | không áp dụng | không | không (3 CR ghi trong report) | không đo được |
 
 ## Ruling
 
@@ -88,5 +90,23 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
   - không nhận finding 8 (ghi log sau commit): `applyGatewayResult` và IPN cũng ghi trong transaction, giữ một kiểu;
   - Integrator tự sửa `docs/payment-vnpay-spike.md` mục 4, 5;
   - giao F1-API và F1-DOCS (Sonnet) song song.
+- 2026-10-30 14:20: giao hai card bằng `--model claude-sonnet-5-5` (người dùng yêu cầu "sonnet 5.5 sửa"). Lần giao đầu lỗi `invalid_argument`: PowerShell 5.1 làm vỡ tham số `--spec` có dấu `"`. Escape `"` thành `\"` thì giao được.
+- 2026-10-30 14:36: hai card F1 qua G1–G4:
+  - worktree sạch; file đổi nằm trong allowed paths; không trailer; `diff --check` sạch;
+  - F1-API có test đỏ trước xanh;
+  - `prisma generate` của F1-API báo EPERM vì API thử của Integrator (cổng 4003) đang giữ file engine. Integrator dừng API đó rồi chạy lại ở G6: đạt;
+  - merge `--no-ff` tài liệu trước, code sau, không conflict. Hai worker đã release.
+- 2026-10-30 14:36: G6 sau F1:
+  - `prisma generate` đạt; `lint` API 0 lỗi; `build` đạt; `vnpay.test.ts` 89/89; web `lint` 0 lỗi, `typecheck` đạt;
+  - render ba `.puml`: 0 "Syntax Error";
+  - chạy lại bộ kiểm D6 trên Postgres local: 13/13. Log: `VNPAY_QUERYDR_FAILED ... reason=UNSIGNED vnp_ResponseCode=99`, `PAYMENT_EXPIRED_UNCONFIRMED ... reason=UNSIGNED`.
+  - Chưa xem dòng thông báo mới ở trang chi tiết đơn trên trình duyệt; chỉ có lint và typecheck.
+- 2026-10-30 14:40: nhận cả ba change request của F1-DOCS, Integrator sửa trực tiếp:
+  - CR-F1-1: `payment-vnpay-spike.md` mục 4 viết lại câu để không còn chuỗi "chờ spike";
+  - CR-F1-2: `sequence-checkout.puml`, khối E11 của `POST /payments`, thêm "inside the grace" và vế "past the grace the Payment is closed, D6";
+  - CR-F1-3: ma trận, ghi chú đầu trang (code đã merge, simulator đã xóa) và ô Code của FR-14; cột kiểm chứng FR-14/15/16/25 ghi kết quả đã chạy (89/89, kiểm local D6 13/13). Phần cần QueryDR thật vẫn ghi "dự kiến".
+  - Contract mục 8 ghi thêm dạng log `PAYMENT_RECONCILIATION_REQUIRED ... reason=MISMATCH`.
+  - Không sửa các chỗ nhắc `MISMATCH` mà F1-DOCS ghi "vẫn đúng" (`BR-10`, plan D6, rủi ro, ADR ca biên).
+- Nhận xét đợt D6: chạy song song tài liệu và code (2 + 2 card) đáng giá. Mỗi lượt xong trong 10–15 phút, không conflict, vì contract mục 8 chốt tên và bảng quyết định trước. Review Opus tìm được một lỗi thật mà test và kiểm local không phát hiện: phản hồi lỗi đã ký mà trường rỗng làm đơn kẹt. Lần sau giữ 2 worker và một lượt review trước khi chốt. Nên nối junction trước khi worker khởi động để khỏi mất một lượt `ask`.
 - Nhận xét đợt tài liệu: chạy song song đáng giá. Ba worker W1 xong trong 9–15 phút, không conflict, nhờ contract chốt mã trước và allowed paths không chồng nhau. Wave 2 một worker là đủ. Lần sau giữ số agent theo số nhóm file độc lập, không tăng thêm.
 - Nhận xét đợt code (bước 5–6): chạy C1-API song song C1-WEB đáng giá vì hai bên chỉ chung hợp đồng mục 1.5, không chung file; nhưng cả hai dừng giữa chừng vì hết usage, tốn một lần giao lại. C2-API chạy một mình sau C1-API là đúng, vì dùng hàm của C1 và sửa file dùng chung của `checkout`. Lần sau giữ hai worker cho phần code, giao card nhỏ hơn để mỗi lượt xong trước khi hết usage.

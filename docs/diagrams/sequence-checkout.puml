@@ -164,8 +164,8 @@ else Valid body, owner verified
       else Payment still PENDING after reconciliation (E11)
         API --> UI : 409 PAYMENT_IN_PROGRESS; no new URL, no new Payment (BR-10)
         UI --> Customer : "Checking payment" with Check again button; do not advise paying twice
-      else QueryDR failed: network, signature or configuration (E13)
-        API --> UI : 502 PAYMENT_PROVIDER_ERROR; DB and Order unchanged
+      else QueryDR failed inside the grace: network, signature or configuration (E13)
+        API --> UI : 502 PAYMENT_PROVIDER_ERROR; DB and Order unchanged (past the grace the Payment is closed, D6)
         UI --> Customer : Generic error; keep cart and orderId
       else Payment PENDING within expiresAt (E4 / A6)
         alt Same paymentMethod

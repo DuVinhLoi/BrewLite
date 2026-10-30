@@ -40,7 +40,7 @@ Kết luận: VNPay từ chối thanh toán sau `vnp_ExpireDate` ở cả hai đ
 
 ## 4. Ảnh hưởng tới code
 
-- **Luật thất bại của IPN** (`ipnAction`): khớp dữ liệu thật (`24/02` và `15/02` đều thành `FAILED`). Đã gỡ nhãn chờ spike.
+- **Luật thất bại của IPN** (`ipnAction`): khớp dữ liệu thật (`24/02` và `15/02` đều thành `FAILED`). Nhãn tạm cho điểm này đã được gỡ.
 - **Phát hiện chặn trước D6.** Code cũ xếp phản hồi `99` không chữ ký vào `BAD_SIGNATURE`: `sync` trả 502, DB không đổi. Payment `PENDING` quá hạn mà không có IPN (khách mở URL rồi bỏ, hoặc không mở) làm đơn kẹt: `sync`, hủy đơn và tạo thanh toán mới đều trả 502.
 - **Quyết định D6** (người dùng chốt 2026-10-30; [contract mục 8](planning/handoff/2026-10-29-vnpay/contract.md)):
   - phản hồi không chữ ký nay xếp `UNSIGNED`;
