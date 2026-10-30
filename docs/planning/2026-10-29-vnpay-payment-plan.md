@@ -131,16 +131,25 @@ Bước 4–6 nằm trong một hàm `applyGatewayResult(tx, paymentId, result)`
 3. Dù nhận kết quả hay lỗi, mở transaction, khóa đơn, đọc lại **đúng payment đã hỏi**. Nếu IPN đã xử lý trong lúc chờ, không ghi đè bằng kết quả cũ hay trả lỗi cũ thay cho trạng thái DB; xét cảnh báo tiền đến muộn theo mục 1.3. Không áp kết quả payment cũ lên một lần thử mới.
 4. Nếu payment vẫn `PENDING`, phân biệt **response code của truy vấn** và **transaction status của thanh toán**:
 
-   | `vnp_ResponseCode` | `vnp_TransactionStatus` | Xử lý |
-   | --- | --- | --- |
-   | `00` | `00` | Áp `SUCCESS`, đơn → `PAID`, trừ kho đúng một lần nếu `inventoryTracked`. |
-   | `00` | `01` | Chưa hoàn tất: giữ `PENDING`, trả 409 `PAYMENT_IN_PROGRESS`, kể cả đã quá hạn, trong giới hạn điều kiện kết thúc chốt ở bước 1; đơn không được kẹt vĩnh viễn. |
-   | `00` | `02` | Thất bại cuối cùng: áp `FAILED`, đơn → `PAYMENT_FAILED`; lưu riêng response `00` và status `02`, không gắn nhãn `EXPIRED`. |
-   | `91` | Không dùng | Chỉ khi đã quá hạn và phản hồi đã xác thực: áp `FAILED`, `gatewayResponseCode="EXPIRED"`, đơn → `PAYMENT_FAILED`. Nếu còn hạn thì giữ `PENDING`, trả 409 `PAYMENT_IN_PROGRESS`. |
-   | `00` | `04`/`05`/`06`/`07`/`09`, thiếu hoặc mã chưa hỗ trợ | Giữ `PENDING`, trả 502 `PAYMENT_PROVIDER_ERROR`, ghi warning để đối soát nếu có dấu hiệu trừ/hoàn tiền. |
-   | Mọi mã khác (`02`/`03`/`94`/`97`/`99`...) | Không dùng | Lỗi truy vấn: trả 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB. |
+   | `vnp_ResponseCode` | `vnp_TransactionStatus` | Chưa hết khoảng chờ | Hết khoảng chờ (D6) |
+   | --- | --- | --- | --- |
+   | `00` | `00` | Áp `SUCCESS`, đơn → `PAID`, trừ kho đúng một lần nếu `inventoryTracked`. | Như cũ. |
+   | `00` | `01` | Chưa hoàn tất: giữ `PENDING`, trả 409 `PAYMENT_IN_PROGRESS`. | Đóng: `FAILED`, `gatewayResponseCode="EXPIRED"`. Đơn không kẹt vĩnh viễn. |
+   | `00` | `02` | Thất bại cuối cùng: áp `FAILED`, đơn → `PAYMENT_FAILED`; lưu riêng response `00` và status `02`, không gắn nhãn `EXPIRED`. | Như cũ. |
+   | `91` | Không dùng | Chỉ khi đã quá hạn và phản hồi đã xác thực: áp `FAILED`, `gatewayResponseCode="EXPIRED"`, đơn → `PAYMENT_FAILED`. Nếu còn hạn thì giữ `PENDING`, trả 409 `PAYMENT_IN_PROGRESS`. | Như cũ. |
+   | `00` | `04`/`05`/`06`/`07`/`09` | Giữ `PENDING`, trả 502 `PAYMENT_PROVIDER_ERROR`, ghi warning để đối soát nếu có dấu hiệu trừ/hoàn tiền. | Như cũ, **không bao giờ tự đóng**. |
+   | `00` | Thiếu hoặc mã chưa hỗ trợ | Giữ `PENDING`, trả 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB. | Đóng. |
+   | Mọi mã khác (`02`/`03`/`94`/`97`/`99`...) | Không dùng | Lỗi truy vấn: trả 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB. | Đóng. |
+   | Chữ ký hợp lệ nhưng sai merchant, `vnp_TxnRef`, số tiền hoặc `vnp_TransactionType` (`MISMATCH`) | Không dùng | Giữ `PENDING`, trả 502, ghi warning đối soát. | Như cũ, **không bao giờ tự đóng**. |
+   | Không chữ ký, sai chữ ký, timeout, lỗi mạng, không đọc được phản hồi, thiếu cấu hình truy vấn hoặc thiếu `gatewayCreateDate` | Không dùng | Trả 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB. | Đóng. |
 
-   Lỗi mạng, timeout, chữ ký sai hoặc thiếu cấu hình cũng trả 502, không đổi DB. Quyết định giữ `PENDING` với nhóm mã đặc biệt là chính sách an toàn của ứng dụng: bảng VNPay có cả giao dịch đảo/đang hoàn tiền/nghi ngờ, nên không gom mọi status khác `00` thành thất bại cho phép thu lại. [Quy tắc và mã QueryDR](https://sandbox.vnpayment.vn/apis/docs/truy-van-hoan-tien/querydr%26refund.html)
+   Quyết định giữ `PENDING` với nhóm mã đặc biệt là chính sách an toàn của ứng dụng: bảng VNPay có cả giao dịch đảo/đang hoàn tiền/nghi ngờ, nên không gom mọi status khác `00` thành thất bại cho phép thu lại. [Quy tắc và mã QueryDR](https://sandbox.vnpayment.vn/apis/docs/truy-van-hoan-tien/querydr%26refund.html)
+
+   **Khoảng chờ (D6).** Hết khoảng chờ nghĩa là `now >= expiresAt + 15 phút`, với `now` là lúc gửi QueryDR. Hằng `EXPIRY_GRACE_MS = 15 * 60 * 1000` và hàm thuần `isPastGrace(expiresAt, now)` nằm trong `vnpay.ts`; payment có `expiresAt = null` không bao giờ hết khoảng chờ. Cột phải của bảng áp sau khi đọc lại payment dưới khóa đơn, và chỉ khi có lời gọi `POST /payments`, hủy đơn hoặc `sync`; không có job nền. `queryDrAction(responseCode, transactionStatus, expired, pastGrace)` quyết định cho phản hồi đã xác thực, `unansweredQueryAction(reason, pastGrace)` cho phản hồi không xác thực được.
+
+   **Đóng** là: `Payment` → `FAILED`, `gatewayResponseCode = "EXPIRED"`, `gatewayTransactionStatus = null`; đơn → `PAYMENT_FAILED`; kho không đổi (AC-F15.3); ghi warning `PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=<id>` kèm `reason=<QueryDrFailure>` hoặc `vnp_ResponseCode=<..> vnp_TransactionStatus=<..>` đã xác thực. Sau đó khách thanh toán lại (tạo payment mới) hoặc hủy đơn (nhả nguyên liệu). IPN thành công tới sau khi đã đóng đi theo mục 1.3: trả `02`, ghi warning `PAYMENT_RECONCILIATION_REQUIRED`, nhân viên hoàn tiền tay. Việc đóng là chính sách hết hạn của ứng dụng, không coi `94`/`99` hay lỗi truy vấn là bằng chứng giao dịch thất bại.
+
+   **Log QueryDR lỗi:** `VNPAY_QUERYDR_FAILED vnp_TxnRef=<id> reason=<reason>`. Phản hồi không có `vnp_SecureHash` dùng `reason=UNSIGNED` (kiểu `QueryDrFailure` thêm giá trị này); nếu `vnp_ResponseCode` gồm đúng 2 chữ số thì thêm `vnp_ResponseCode=<mã>`, chỉ để vận hành, không dùng để quyết định.
 
 5. Sau đối soát: `POST /payments` **xét replay BR-05 trước** rồi mới xét tạo giao dịch mới; hủy đơn chỉ tiếp tục nếu đơn còn hủy được và không còn payment chưa kết luận. Hủy nhả nguyên liệu nếu `inventoryTracked`, còn đơn cũ giữ nhánh trả `Product.stock` hiện có. `sync` trả trạng thái hiện tại. Không nhả nguyên liệu chỉ vì payment `FAILED`/`EXPIRED`.
 
@@ -148,6 +157,8 @@ Bước 4–6 nằm trong một hàm `applyGatewayResult(tx, paymentId, result)`
 
 - `24`: khách hủy giao dịch.
 - `11`: hết thời gian thanh toán.
+- `15`: hết thời gian thanh toán ("Đã hết thời gian thanh toán", như mã `11`). Mã quan sát được ở spike: return `15`/`02` khi hết hạn ở bước OTP.
+- `EXPIRED` (giá trị nội bộ của `gatewayResponseCode` khi payment bị đóng quá hạn, mục 1.6): cùng thông báo "Đã hết thời gian thanh toán".
 - `51`: tài khoản không đủ số dư.
 - `13`: sai OTP.
 - `09`, `10`, `12`, `79`: lỗi thẻ hoặc tài khoản.
@@ -184,6 +195,7 @@ Chỉ hiển thị thất bại và cho thử lại/hủy sau khi trạng thái 
   - Không lấp NFR-12/NFR-17 (E2E tự động, CI) ở bản này; ghi rõ khoảng trống đó trong bàn giao. Cách E2E đạt `AC-N12.1` đã chốt ngày 2026-10-29: test đóng vai VNPay (chặn redirect, ký IPN bằng secret giả của môi trường test), không trả tiền trên sandbox. Test E2E và CI chỉ viết khi được giao riêng.
 - **D4 – Cổng giả.** Hoãn khỏi bản triển khai này (Could). Docker vẫn khởi động được khi thiếu secret, nhưng thao tác thanh toán cần VNPay theo mục 1.8; demo mất mạng dùng video đã quay. Nếu sau này được yêu cầu làm fake, chỉ bật rõ trong local không phải production và kiểm riêng handler fake; không tự đưa endpoint hoàn tất thanh toán vào bản này. Image Docker hiện đặt `NODE_ENV=production`, nên không coi fake là phương án mặc định của image đó.
 - **D5 – Hạn thanh toán.** 15 phút cho `vnp_ExpireDate` và `expiresAt`, cùng một mốc thời gian. Chưa có job tự hết hạn đơn: nguyên liệu vẫn giữ tới khi thanh toán thành công hoặc khách hủy hợp lệ; không hứa tự nhả kho sau 15 phút.
+- **D6 – Đóng payment quá hạn sau khoảng chờ (người dùng chốt ngày 2026-10-30, phương án A).** QueryDR sandbox trả `99` không chữ ký cho mọi request, nên payment `PENDING` quá hạn mà không có IPN làm đơn kẹt: `sync`, hủy đơn và thanh toán lại đều trả 502. Spike chứng minh VNPay từ chối thanh toán sau `vnp_ExpireDate`, đúng điều kiện bước 1 đặt cho cách "đóng sau khoảng chờ". Vì vậy payment `PENDING` mà `now >= expiresAt + 15 phút` (`EXPIRY_GRACE_MS`, `isPastGrace`) và QueryDR vẫn chưa kết luận thì bị đóng: `FAILED`, `gatewayResponseCode = "EXPIRED"`, đơn `PAYMENT_FAILED`, kho không đổi, warning `PAYMENT_EXPIRED_UNCONFIRMED`. Việc đóng chỉ diễn ra khi có lời gọi (`POST /payments`, hủy đơn, `sync`), không có job nền (D5 giữ nguyên). Nhóm status nghi ngờ `04`/`05`/`06`/`07`/`09` và `MISMATCH` không bao giờ tự đóng. Đánh đổi: khách trả sát giờ mà IPN mất hơn 15 phút thì đơn bị đóng khi tiền đã trừ; có warning, nhân viên hoàn tiền tay. Không chọn: nhân viên đóng tay (cần endpoint, giao diện và vai trò; không tự kết thúc) và giữ nguyên (đơn kẹt, nguyên liệu bị giữ). Bảng quyết định đầy đủ, tên trong code và định dạng log ở [contract Wave 1](handoff/2026-10-29-vnpay/contract.md) mục 8; áp vào mục 1.6 và ADR-007 §E.
 
 ---
 
@@ -221,10 +233,10 @@ Chỉ hiển thị thất bại và cho thử lại/hủy sau khi trạng thái 
 
 Mọi ca bỏ dở phải kết thúc trong thời gian hữu hạn. Nếu `00/01` kéo dài sau hạn, chốt một trong hai cách trước pha code và sửa mục 1.6:
 
-- `01` sau `expiresAt` cộng khoảng chờ đã đo → `FAILED EXPIRED`, chỉ khi spike chứng minh VNPay từ chối trả sau `vnp_ExpireDate`;
-- thao tác nhân viên đóng payment sau khi tra Merchant Admin.
+- `01` sau `expiresAt` cộng khoảng chờ đã đo → `FAILED EXPIRED`, chỉ khi spike chứng minh VNPay từ chối trả sau `vnp_ExpireDate`. **Đã chọn (D6, người dùng chốt 2026-10-30):** spike chứng minh VNPay từ chối trả sau `vnp_ExpireDate` (mở URL hết hạn ra trang lỗi `code=15`; đang ở bước OTP thì return `15`/`02`), khoảng chờ là 15 phút; mục 1.6 đã sửa theo bảng D6, gồm cả phản hồi QueryDR không xác thực được như `99` của sandbox;
+- thao tác nhân viên đóng payment sau khi tra Merchant Admin. Không chọn: cần endpoint, giao diện và vai trò, và không tự kết thúc.
 
-Không để đơn vừa không trả tiếp được vừa không hủy được.
+Không để đơn vừa không trả tiếp được vừa không hủy được. Việc kiểm các ca QueryDR ở 1.3 vẫn còn khi sandbox hồi phục.
 
 ### Bước 2 – Tài liệu Task 1 (agent soạn nháp)
 
@@ -331,9 +343,9 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
   - IPN trả `99`, bảng `payments` không đổi;
   - log khởi động chỉ có tên biến thiếu.
   - thiếu **riêng** `WEB_URL`: tạo URL mới trả 502, nhưng IPN/return/QueryDR có đủ merchant+secret vẫn xử lý được.
-- [ ] 7.7b Chỉ dùng DB local, payment có URL **chưa từng mở**, và không mở URL cũ trong suốt phép thử. Có thể sửa `expiresAt` về quá khứ để kích hoạt nhánh, nhưng chỉ kỳ vọng `FAILED EXPIRED` nếu QueryDR trả `91` đã xác thực như spike 1.3. Dùng hai đơn riêng: một đơn thử tạo URL mới, một đơn thử hủy sau đối soát để kiểm nhả nguyên liệu. Không thử hủy ngay sau khi đã tạo payment mới còn hạn. Ca URL **đã mở nhưng chưa trả** phải theo mã thực tế đã ghi ở spike, không mặc định là `91`.
+- [ ] 7.7b Chỉ dùng DB local, payment có URL **chưa từng mở**, và không mở URL cũ trong suốt phép thử. Có thể sửa `expiresAt` về quá khứ để kích hoạt nhánh. Kỳ vọng theo D6, không cần QueryDR trả `91` (sandbox đang trả `99` không chữ ký, nên chạy được ngay): khi `now < expiresAt + 15 phút`, `sync`, hủy đơn và tạo lại đều trả 502 (hoặc 409 nếu QueryDR trả `00/01`) và payment giữ `PENDING`; khi `now >= expiresAt + 15 phút` (sửa `expiresAt` về trước đó hơn 15 phút), cùng lời gọi đóng payment `FAILED` với `gatewayResponseCode = "EXPIRED"`, đơn `PAYMENT_FAILED`, kho không đổi, log có warning `PAYMENT_EXPIRED_UNCONFIRMED`. Dùng hai đơn riêng: một đơn thử tạo URL mới, một đơn thử hủy sau khi đóng để kiểm nhả nguyên liệu. Không thử hủy ngay sau khi đã tạo payment mới còn hạn. Ca URL **đã mở nhưng chưa trả** cũng đóng theo D6 sau khoảng chờ; không mặc định mã `91` hay `01`.
 - [x] 7.7c Thử lại từ `PAYMENT_FAILED`: đơn về `PENDING`, `reserved` không tăng.
-- [ ] 7.7d Dùng response QueryDR kiểm soát được trong scratchpad/local: `00/00` → `SUCCESS`; `00/01` → 409, giữ `PENDING`; `00/02` → `FAILED` nhưng không phải `EXPIRED`; `91` trước/sau hạn → 409/`FAILED EXPIRED`; `94`/`99`, chữ ký sai, sai merchant/TxnRef/số tiền, timeout → 502, không đổi DB/kho. Nhóm status `04`/`05`/`06`/`07`/`09` không mở lần thu mới.
+- [ ] 7.7d Dùng response QueryDR kiểm soát được trong scratchpad/local: `00/00` → `SUCCESS`; `00/01` trong khoảng chờ → 409, giữ `PENDING`, quá `expiresAt + 15 phút` → đóng `FAILED EXPIRED` kèm warning `PAYMENT_EXPIRED_UNCONFIRMED`; `00/02` → `FAILED` nhưng không phải `EXPIRED`; `91` trước/sau hạn → 409/`FAILED EXPIRED`; `94`/`99`, phản hồi không chữ ký (log `reason=UNSIGNED`), chữ ký sai, timeout → 502, không đổi DB/kho trong khoảng chờ, quá khoảng chờ thì đóng như trên; sai merchant/TxnRef/số tiền (`MISMATCH`) → 502, không đổi DB/kho và không bao giờ tự đóng. Nhóm status `04`/`05`/`06`/`07`/`09` không mở lần thu mới và không bao giờ tự đóng, kể cả quá khoảng chờ.
 - [ ] 7.7e Payment quá hạn được QueryDR xác nhận thành công: gọi lại cùng chủ đơn/key/phương thức → 200 replay `SUCCESS`; key hoặc phương thức khác → 409 `ORDER_NOT_PAYABLE`. Kiểm một IPN cập nhật trong lúc đang chờ QueryDR: kết quả cũ không ghi đè DB.
 - [ ] 7.7f Trong local, IPN thành công có chữ ký hợp lệ tới sau `FAILED EXPIRED`, sau hủy đơn hoặc sau khi payment khác đã trả → `02`, có warning `PAYMENT_RECONCILIATION_REQUIRED` và `vnp_TxnRef`, đơn/kho không đổi. IPN thành công chỉ qua giờ hết hạn nhưng DB vẫn `PENDING` → nhận bình thường. IPN lặp đúng payment đã thành công không tạo warning đối soát. Lặp lại ca trả thành công/hủy trên đơn cũ `inventoryTracked=false`: không gọi settle snapshot thiếu và giữ nhánh hoàn `Product.stock` khi hủy.
 - [ ] 7.7g Chạy Docker không có biến VNPay: API khởi động, `/health` giữ đúng contract, chức năng không thanh toán dùng được; tạo URL mới trả 502. Có đủ biến: chạy lại luồng trả tiền local. Không bật fake trong image `NODE_ENV=production`.
@@ -352,8 +364,8 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
 - **Render free tier ngủ:** IPN đầu tiên có thể timeout. VNPay quy định tối đa 10 lần gọi cách 5 phút; return có `sync` để phục hồi khi API và VNPay truy cập được. Nếu API còn ngủ hoặc QueryDR lỗi/chưa hoàn tất, khách vẫn phải chờ và payment giữ `PENDING`.
 - **IPN báo thành công nhưng `settle` báo `INVENTORY_INCONSISTENT`:** tiền đã thu. Trả `99` để VNPay gọi lại và ghi log để nhân viên xử lý; hoàn tiền (refund API) nằm ngoài phạm vi. Xác suất thấp vì nguyên liệu đã giữ từ lúc tạo đơn.
 - **IPN/QueryDR báo đã trả sau khi payment đã `FAILED EXPIRED`, đơn đã hủy hoặc đã trả bằng lần thử khác:** không tự mở lại đơn/trừ kho. IPN trả `02`, ghi warning theo `vnp_TxnRef`; nhân viên tra Merchant Admin và hoàn tiền tay nếu cần. Partial unique index chỉ chặn hai payment `PENDING`, không loại trừ hoàn toàn tình huống kết quả tới muộn.
-- **QueryDR không kết luận được hoặc có trạng thái đảo/hoàn tiền/nghi ngờ:** giữ `PENDING`, khóa lần thử mới/hủy và báo đang xác minh; có thể phải đối soát tay. Không dùng `94`/`99` làm bằng chứng thất bại. Nhánh `91` sau hạn chỉ được bật khi spike chứng minh tra cứu đúng tuple và kiểm được phản hồi.
-- **Đơn bỏ dở giữ nguyên liệu:** chưa có job tự hủy/nhả kho; hết 15 phút chỉ làm payment cần đối soát, không tự hủy đơn. Đây là giới hạn giữ nguyên của phạm vi hiện tại.
+- **QueryDR không kết luận được hoặc có trạng thái đảo/hoàn tiền/nghi ngờ:** trong khoảng chờ 15 phút sau `expiresAt`, giữ `PENDING`, khóa lần thử mới/hủy và báo đang xác minh; hết khoảng chờ thì đóng `FAILED EXPIRED` (D6), trừ nhóm trạng thái đảo/hoàn tiền/nghi ngờ và `MISMATCH` vốn không bao giờ tự đóng nên vẫn phải đối soát tay. Không dùng `94`/`99` làm bằng chứng thất bại; việc đóng là chính sách hết hạn. Ca biên: khách trả sát giờ mà IPN mất hơn 15 phút thì đơn bị đóng khi tiền đã trừ; có warning `PAYMENT_EXPIRED_UNCONFIRMED` và `PAYMENT_RECONCILIATION_REQUIRED`, nhân viên hoàn tiền tay. Nhánh `91` sau hạn chỉ dùng khi phản hồi đã xác thực đúng tuple; sandbox hiện trả `99` không chữ ký nên chưa kiểm được.
+- **Đơn bỏ dở giữ nguyên liệu:** chưa có job tự hủy/nhả kho; hết 15 phút chỉ làm payment cần đối soát, qua thêm 15 phút khoảng chờ payment bị đóng `FAILED` khi có lời gọi (D6) nhưng không tự hủy đơn, nguyên liệu vẫn giữ tới khi khách hủy. Đây là giới hạn giữ nguyên của phạm vi hiện tại.
 - **Chỉ có unit test VNPay tối thiểu, chạy tay, không có trong CI** (D3): test không chứng minh VNPay chấp nhận chữ ký và không phủ DB/race; quên chạy thì lỗi ký chỉ lộ khi khách thanh toán. Bù bằng spike, smoke mở URL sau deploy (7.5) và output test đính kèm PR (8.2).
 - **Sandbox VNPay bảo trì hoặc chậm** đúng lúc demo: chuẩn bị video quay trước. Cổng giả hoãn theo D4, không phải điều kiện để nghiệm thu bản này.
 - **Secret đã nằm trong email và lịch sử chat:** chỉ là sandbox nên không thu tiền thật. Dù vậy, không đưa vào repo, ảnh chụp báo cáo hay log.

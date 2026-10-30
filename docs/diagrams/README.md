@@ -11,7 +11,7 @@ Thư mục chứa nguồn PlantUML và SVG xuất bằng PlantUML. BREW-INVENTOR
 | Class | `class-domain.puml` / `.svg` | Ingredient, Recipe, RecipeLine, StockMovement, OrderIngredient và marker legacy; giữ tối thiểu 7 lớp `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction`; thuộc tính chính (`Payment` có thêm cột cổng thanh toán), quan hệ, multiplicity, enum trạng thái (`PaymentStatus.PENDING`) | §4.3 |
 | State (nên có) | `state-order.puml` / `.svg` | Vòng đời đơn hàng, nhất quán với FR quản lý trạng thái đơn; kèm vòng đời `Payment` (`PENDING` → `SUCCESS`/`FAILED`) | gợi ý của plan |
 
-**VNPay sandbox (2026-10-29):** bốn file `.puml` trên và `docs/requirements/uc-checkout.puml` đã được viết lại cho thanh toán VNPay; các ảnh `.svg` tương ứng chưa xuất lại và còn mô tả simulator cho tới khi nhóm xuất từ `.puml`. Các điểm gắn "(chờ spike)" trong sơ đồ phụ thuộc hành vi sandbox chưa đo (xem [plan](../planning/2026-10-29-vnpay-payment-plan.md), bước 1).
+**VNPay sandbox (2026-10-29):** bốn file `.puml` trên và `docs/requirements/uc-checkout.puml` đã được viết lại cho thanh toán VNPay; các ảnh `.svg` tương ứng chưa xuất lại và còn mô tả simulator cho tới khi nhóm xuất từ `.puml`. Spike ngày 2026-10-30 ([kết quả](../payment-vnpay-spike.md)) đã gỡ các nhãn chờ trong sơ đồ: khách hủy trả `24`/`02`, hết hạn ở bước OTP trả `15`/`02`. QueryDR sandbox lỗi, nên các ghi chú về payment quá hạn theo D6: QueryDR `00/01` hoặc chưa kết luận thì giữ `PENDING` tới `expiresAt + 15 phút`, sau đó `FAILED` với `gatewayResponseCode = "EXPIRED"` (xem [plan](../planning/2026-10-29-vnpay-payment-plan.md), mục 2 và 1.6).
 
 ## Tiêu chí nghiệm thu (đề A2 §4.3)
 

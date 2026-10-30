@@ -141,13 +141,13 @@ else Valid body, owner verified
             API -> DB : Payment SUCCESS; consume snapshot (onHand AND reserved); Order PAID; COMMIT
           else 00/02 final failure
             API -> DB : Payment FAILED (codes kept apart); Order PAYMENT_FAILED; COMMIT
-          else 91 after expiry, response verified
+          else 91 after expiry (verified), or grace elapsed without a verdict (D6)
             API -> DB : Payment FAILED, gatewayResponseCode="EXPIRED"; Order PAYMENT_FAILED; COMMIT
-            note right of DB : QueryDR 91 after expiry -> FAILED + "EXPIRED" (chờ spike).\nEXPIRED is an internal gatewayResponseCode, not a PaymentStatus.
-          else 00/01 after expiry, or 91 before expiry
+            note right of DB : D6: now >= expiresAt + 15 min (isPastGrace) with 00/01, unsupported status,\nanother code or no verified answer -> FAILED + "EXPIRED", warning PAYMENT_EXPIRED_UNCONFIRMED.\nEXPIRED is an internal gatewayResponseCode, not a PaymentStatus.
+          else 00/01 inside the grace, or 91 before expiry
             API -> DB : ROLLBACK; Payment stays PENDING
-            note right of DB : QueryDR 00/01 after expiry and the exit route for abandoned\npayments (auto FAILED after a measured wait, or staff closes it) (chờ spike).
-          else 04/05/06/07/09, unsupported code, 94/99, bad signature, timeout
+            note right of DB : QueryDR 00/01 keeps PENDING only until expiresAt + 15 min,\nthen the branch above closes it. Closed only on a call; no background job.
+          else 04/05/06/07/09 or MISMATCH (never auto-closed), or an unanswered query inside the grace
             API -> DB : ROLLBACK; DB unchanged; warning if money may have moved
           end
         end
@@ -230,7 +230,7 @@ else Signature valid
         DB --> API : One Payment SUCCESS; Order PAID
         API --> Pay : {"RspCode":"00","Message":"Confirm Success"}
       else vnp_TransactionStatus=02 (E3 failure)
-        note right of DB : IPN counts as failed when vnp_TransactionStatus = 02,\nincluding a customer Cancel (vnp_ResponseCode 24) (chờ spike).
+        note right of DB : IPN counts as failed when vnp_TransactionStatus = 02,\nincluding a customer Cancel (vnp_ResponseCode 24) and an OTP-step timeout (15).
         API -> DB : UPDATE Payment FAILED (gatewayResponseCode, gatewayTransactionStatus kept apart)\nUPDATE Order -> PAYMENT_FAILED; onHand, reserved and snapshot unchanged; COMMIT
         DB --> API : Payment FAILED; Order PAYMENT_FAILED
         API --> Pay : {"RspCode":"00"}

@@ -6,7 +6,7 @@
 >
 > Đáp ứng đề A2 §3.3. Yêu cầu: [`srs.md`](srs.md) (mã `FR-xx`, `NFR-xx`, quy tắc `BR-xx`, mã lỗi ở mục 3). Phạm vi: [`context-and-scope.md`](context-and-scope.md). Use-case tổng quát: [`use-case-overview.svg`](use-case-overview.svg). Truy vết: [`../traceability-matrix.md`](../traceability-matrix.md).
 >
-> **VNPay sandbox (2026-10-29):** giảng viên yêu cầu thanh toán qua sandbox của bên thứ ba thay cho simulator. Thanh toán chạy bất đồng bộ: API tạo `Payment PENDING` và URL ký sẵn, khách trả trên trang VNPay, kết quả về qua IPN (hoặc QueryDR khi IPN không tới), trang return chỉ hiển thị. Kế hoạch: [`../planning/2026-10-29-vnpay-payment-plan.md`](../planning/2026-10-29-vnpay-payment-plan.md). Nhãn **(chờ spike)** đánh dấu câu phụ thuộc hành vi sandbox chưa đo; gỡ hoặc sửa sau spike.
+> **VNPay sandbox (2026-10-29):** giảng viên yêu cầu thanh toán qua sandbox của bên thứ ba thay cho simulator. Thanh toán chạy bất đồng bộ: API tạo `Payment PENDING` và URL ký sẵn, khách trả trên trang VNPay, kết quả về qua IPN (hoặc QueryDR khi IPN không tới), trang return chỉ hiển thị. Kế hoạch: [`../planning/2026-10-29-vnpay-payment-plan.md`](../planning/2026-10-29-vnpay-payment-plan.md). Spike ngày 2026-10-30 ([kết quả](../payment-vnpay-spike.md)) xác nhận hành vi khi khách hủy và khi hết hạn; QueryDR sandbox lỗi nên payment quá hạn mà chưa kết luận được sẽ bị đóng sau khoảng chờ 15 phút (D6, E11).
 >
 > Use-case này là đầu vào cho Task 2: activity diagram (ba nhánh hết hàng, chưa đăng nhập, thanh toán thất bại; thêm các nhánh khách hủy trên VNPay, hết hạn và chưa kết luận) và sequence diagram (Customer, Browser, Next.js UI, NestJS API, Database, VNPay sandbox) phải khớp các luồng dưới đây.
 
@@ -93,7 +93,8 @@ Barista không tham gia use-case này (xem UC-07 trong `srs.md` mục 2.3). Các
 | A6 Quay lại khi `Payment PENDING` còn hạn | giữ `PENDING` | không thêm; dùng lại URL cũ | vẫn giữ chỗ | giữ |
 | E9 Chữ ký, merchant hoặc số tiền sai | không đổi | không đổi | không đổi | giữ |
 | E10 Mất hoặc muộn IPN | `PENDING` cho tới khi QueryDR/IPN xác nhận, rồi `PAID` hoặc `PAYMENT_FAILED` | `PENDING` → `SUCCESS` hoặc `FAILED` | trừ một lần khi `SUCCESS`; giữ chỗ khi `FAILED` | giữ tới khi DB xác nhận đã trả |
-| E11 `Payment PENDING` quá hạn, chưa kết luận | giữ `PENDING` | giữ `PENDING`; không tạo thêm | vẫn giữ chỗ | giữ |
+| E11 `Payment PENDING` quá hạn, chưa kết luận, còn trong khoảng chờ 15 phút | giữ `PENDING` | giữ `PENDING`; không tạo thêm | vẫn giữ chỗ | giữ |
+| E11 Hết khoảng chờ (`expiresAt + 15 phút`) mà chưa kết luận | `PAYMENT_FAILED` | `PENDING` → `FAILED` (`gatewayResponseCode = "EXPIRED"`); warning `PAYMENT_EXPIRED_UNCONFIRMED` | vẫn giữ chỗ | giữ |
 | E12 Tiền về sau trạng thái cuối | không đổi | không đổi; ghi warning đối soát | không đổi | không đổi |
 | E13 Thiếu cấu hình hoặc lỗi provider | không đổi | không tạo (hoặc không đổi) | không đổi | giữ |
 
@@ -155,7 +156,7 @@ Customer xác nhận hủy rồi UI gọi PATCH /orders/:id với status=CANCELL
 Hủy bị chặn khi còn payment chưa kết luận, để tránh khách vừa trả tiền vừa hủy:
 
 - Có `Payment PENDING` còn hạn: API trả 409 `PAYMENT_IN_PROGRESS`, không hủy; đơn và nguyên liệu giữ nguyên.
-- `Payment PENDING` đã quá hạn: API đối soát QueryDR trước (E11), rồi mới xét hủy. Hủy chỉ tiếp tục nếu đơn còn hủy được và không còn payment chưa kết luận; nếu kết quả là đã trả thì đơn thành `PAID` và không hủy được.
+- `Payment PENDING` đã quá hạn: API đối soát QueryDR trước (E11), rồi mới xét hủy. Hủy chỉ tiếp tục nếu đơn còn hủy được và không còn payment chưa kết luận; nếu kết quả là đã trả thì đơn thành `PAID` và không hủy được. Quá `expiresAt + 15 phút` mà vẫn chưa kết luận thì payment bị đóng `FAILED` (E11), khi đó không còn payment chưa kết luận.
 - Payment đã `FAILED` (kể cả hết hạn): hủy như thường; nguyên liệu chỉ được nhả khi đơn bị hủy, không nhả chỉ vì payment `FAILED`.
 
 ### A6 — Quay lại checkout khi đã có Payment PENDING còn hạn
@@ -202,7 +203,7 @@ Ba nhánh bắt buộc của đề A2 §4.1 là **E1, E2, E3**; E4 là điều k
 
 ### E3 — Thanh toán thất bại do IPN hoặc QueryDR xác nhận (tại bước 16 đến 18)
 
-- **Kích hoạt:** IPN (hoặc QueryDR ở E10/E11) xác nhận giao dịch thất bại cuối cùng. IPN được coi là thất bại khi `vnp_TransactionStatus = 02`, kể cả khi khách bấm "Hủy" trên trang VNPay (`vnp_ResponseCode = 24`) (chờ spike). QueryDR trả `vnp_ResponseCode = 00` kèm `vnp_TransactionStatus = 02` cũng là thất bại cuối cùng.
+- **Kích hoạt:** IPN (hoặc QueryDR ở E10/E11) xác nhận giao dịch thất bại cuối cùng. IPN được coi là thất bại khi `vnp_TransactionStatus = 02`, kể cả khi khách bấm "Hủy" trên trang VNPay (`vnp_ResponseCode = 24`); spike 2026-10-30 xác nhận hủy trả `24`/`02` và hết hạn ở bước OTP trả `15`/`02`. QueryDR trả `vnp_ResponseCode = 00` kèm `vnp_TransactionStatus = 02` cũng là thất bại cuối cùng.
 - **Phản ứng:**
   1. Trong một transaction giữ khóa đơn, API đổi `Payment` từ `PENDING` sang `FAILED`, lưu riêng `gatewayResponseCode` và `gatewayTransactionStatus`, và đổi `Order` từ `PENDING` sang `PAYMENT_FAILED`. Nguyên liệu vẫn được giữ. IPN trả VNPay `RspCode = 00`.
   2. Không có phản hồi 402 từ `POST /payments`: thất bại luôn đến qua IPN hoặc QueryDR, không đến từ việc API tự gọi cổng.
@@ -270,20 +271,27 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
   1. Trang return poll `GET /orders/:id`; nếu `Payment` vẫn `PENDING` thì gọi `POST /payments/:id/sync` một lần.
   2. API kiểm quyền trước: chưa đăng nhập 401, sai chủ đơn hoặc sai vai trò 403, không có payment 404 `PAYMENT_NOT_FOUND`. `Payment` đã `SUCCESS`/`FAILED` thì trả 200 từ DB, không gọi QueryDR.
   3. Payment còn `PENDING` (kể cả chưa hết hạn): API gọi QueryDR **bên ngoài** mọi transaction giữ khóa đơn, kiểm chữ ký phản hồi, merchant, mã tham chiếu và số tiền. Sau đó mở transaction, khóa đơn, đọc lại đúng payment đã hỏi rồi áp kết quả qua cùng hàm với IPN: `00/00` → `SUCCESS`, đơn `PAID`, trừ kho đúng một lần (như bước 18); `00/02` → `FAILED`, đơn `PAYMENT_FAILED` (E3); `00/01` hoặc `91` khi còn hạn → giữ `PENDING`, 409 `PAYMENT_IN_PROGRESS`.
-  4. Lỗi mạng, timeout, chữ ký sai, thiếu cấu hình hoặc mã truy vấn khác → 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB (E13). Khi nhận 409 hoặc 502, UI hiển thị "Đang xác minh thanh toán, vui lòng kiểm tra lại" kèm nút kiểm tra lại; không tạo vòng lặp QueryDR.
+  4. Lỗi mạng, timeout, chữ ký sai, thiếu cấu hình hoặc mã truy vấn khác → 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB (E13); payment đã quá `expiresAt + 15 phút` thì đóng theo E11. Khi nhận 409 hoặc 502, UI hiển thị "Đang xác minh thanh toán, vui lòng kiểm tra lại" kèm nút kiểm tra lại; không tạo vòng lặp QueryDR.
 - **Kết quả:** trạng thái cuối do DB quyết định. Nếu IPN thật tới trong lúc API chờ QueryDR thì kết quả đọc lại dưới khóa không bị ghi đè bởi kết quả cũ, và kho chỉ bị trừ một lần.
 - **Yêu cầu:** FR-14, FR-16, BR-11, NFR-13.
 
 ### E11 — Payment PENDING quá hạn (tại bước 10, khi hủy đơn ở A5 hoặc khi `sync`)
 
-- **Kích hoạt:** `now >= expiresAt` (hạn 15 phút, cùng mốc với `vnp_ExpireDate` đã ký) mà `Payment` vẫn `PENDING`, và khách tạo thanh toán lại, hủy đơn hoặc kiểm tra trạng thái. Hết hạn không có nghĩa là không thu tiền: khách có thể trả sát giờ mà IPN tới muộn, nên API phải hỏi VNPay trước khi kết luận.
+- **Kích hoạt:** `now >= expiresAt` (hạn 15 phút, cùng mốc với `vnp_ExpireDate` đã ký) mà `Payment` vẫn `PENDING`, và khách tạo thanh toán lại, hủy đơn hoặc kiểm tra trạng thái. Hết hạn không có nghĩa là không thu tiền: khách có thể trả sát giờ mà IPN tới muộn, nên API phải hỏi VNPay trước khi kết luận. Spike 2026-10-30 cho thấy VNPay từ chối thanh toán sau `vnp_ExpireDate`, nhưng QueryDR sandbox trả `99` không chữ ký cho mọi request, nên payment bỏ dở không thể chỉ chờ QueryDR để kết thúc.
+- **Khoảng chờ (D6):** 15 phút sau `expiresAt` (`EXPIRY_GRACE_MS`). Hết khoảng chờ nghĩa là `now >= expiresAt + 15 phút` (`isPastGrace`), với `now` là lúc gửi QueryDR; `Payment` không có `expiresAt` không bao giờ hết khoảng chờ. Việc đóng chỉ diễn ra khi có lời gọi (tạo thanh toán lại, hủy đơn hoặc `sync`), không có job nền.
 - **Phản ứng:** sau kiểm quyền, API gọi QueryDR ngoài transaction, kiểm phản hồi như E10 rồi mở transaction, khóa đơn, đọc lại đúng payment đã hỏi. Kết quả:
   - `00/00` → `SUCCESS`, đơn `PAID`. Với `POST /payments`, API xét replay BR-05 **trước**: cùng chủ đơn/key/`paymentMethod` → 200 `SUCCESS` (E4a); key hoặc phương thức khác → 409 `ORDER_NOT_PAYABLE`. Với hủy đơn thì đơn đã `PAID` nên không hủy được.
   - `00/02` → `FAILED`, đơn `PAYMENT_FAILED`; khách thử lại (A3) hoặc hủy (A5).
-  - `00/01` sau hạn → giữ `PENDING`, 409 `PAYMENT_IN_PROGRESS`, không tạo giao dịch mới và không hủy; ca bỏ dở (URL đã mở nhưng chưa trả) không được kẹt vĩnh viễn, lối thoát (tự chuyển `FAILED` sau khoảng chờ đã đo, hoặc nhân viên đóng payment sau khi tra Merchant Admin) chốt sau spike (chờ spike).
-  - `91` sau hạn và phản hồi đã xác thực → `FAILED` với `gatewayResponseCode = "EXPIRED"`, đơn `PAYMENT_FAILED` (chờ spike). `EXPIRED` chỉ là giá trị nội bộ của `gatewayResponseCode`, không phải trạng thái của `PaymentStatus`. Nếu còn hạn thì giữ `PENDING`, 409 `PAYMENT_IN_PROGRESS`.
-  - Nhóm trạng thái đảo/hoàn tiền/nghi ngờ (`04`/`05`/`06`/`07`/`09`), mã chưa hỗ trợ, hoặc lỗi truy vấn (`94`/`99`, chữ ký sai, timeout) → giữ `PENDING`, 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB; có dấu hiệu trừ hoặc hoàn tiền thì ghi warning để đối soát.
-- **Kết quả:** chưa kết luận thì `Payment` giữ `PENDING`, khách không tạo được giao dịch mới và không hủy được (BR-10). Không nhả nguyên liệu chỉ vì payment `FAILED`/`EXPIRED`; chưa có job tự hủy đơn.
+  - `91` sau hạn và phản hồi đã xác thực → `FAILED` với `gatewayResponseCode = "EXPIRED"`, đơn `PAYMENT_FAILED`. `EXPIRED` chỉ là giá trị nội bộ của `gatewayResponseCode`, không phải trạng thái của `PaymentStatus`. Nếu còn hạn thì giữ `PENDING`, 409 `PAYMENT_IN_PROGRESS`. Spike chưa quan sát được mã `91` (QueryDR sandbox lỗi); nhánh đóng sau khoảng chờ dưới đây vẫn có hiệu lực dù `91` không bao giờ xuất hiện.
+  - `00/01` đã xác thực: còn trong khoảng chờ → giữ `PENDING`, 409 `PAYMENT_IN_PROGRESS`, không tạo giao dịch mới và không hủy; hết khoảng chờ → đóng payment (xem "Đóng payment" dưới đây). Ca bỏ dở (URL đã mở nhưng chưa trả, hoặc khách rời đi) vì vậy không kẹt vĩnh viễn.
+  - Nhóm trạng thái đảo/hoàn tiền/nghi ngờ (`04`/`05`/`06`/`07`/`09`) và phản hồi có chữ ký hợp lệ nhưng sai merchant, mã tham chiếu, số tiền hay loại giao dịch (`MISMATCH`) → giữ `PENDING`, 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB, ghi warning để đối soát. **Không bao giờ tự đóng**, kể cả sau khoảng chờ.
+  - Response `00` kèm status thiếu hoặc chưa hỗ trợ, mã truy vấn khác (`02`/`03`/`94`/`97`/`99`...), hoặc phản hồi không xác thực được (không chữ ký, sai chữ ký, timeout, lỗi mạng, không đọc được, thiếu cấu hình truy vấn, thiếu `gatewayCreateDate`): còn trong khoảng chờ → giữ `PENDING`, 502, không đổi DB (E13); hết khoảng chờ → đóng payment. Việc đóng là chính sách hết hạn của ứng dụng, không coi `94`/`99` hay lỗi truy vấn là bằng chứng giao dịch thất bại.
+- **Đóng payment (hết khoảng chờ):**
+  1. Trong transaction giữ khóa đơn, API đổi `Payment` từ `PENDING` sang `FAILED` với `gatewayResponseCode = "EXPIRED"` và `gatewayTransactionStatus = null`, đổi `Order` sang `PAYMENT_FAILED`; nguyên liệu và kho không đổi (AC-F15.3).
+  2. API ghi warning `PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=<id>` kèm lý do truy vấn lỗi hoặc `vnp_ResponseCode`/`vnp_TransactionStatus` đã xác thực.
+  3. Khách thấy đơn `PAYMENT_FAILED` với thông báo "Đã hết thời gian thanh toán", rồi chọn thử lại (A3, tạo payment mới) hoặc hủy (A5, nhả nguyên liệu). Lời gọi đã đóng payment tiếp tục như với payment `FAILED`: `POST /payments` xét lại từ E4 mục 1, hủy đơn xét tiếp theo A5, `sync` trả trạng thái mới.
+  4. IPN thành công tới sau khi đã đóng đi theo E12: `RspCode 02`, warning `PAYMENT_RECONCILIATION_REQUIRED`, nhân viên hoàn tiền tay.
+- **Kết quả:** còn trong khoảng chờ mà chưa kết luận thì `Payment` giữ `PENDING`, khách không tạo được giao dịch mới và không hủy được (BR-10). Hết khoảng chờ thì payment đóng `FAILED` và khách thử lại hoặc hủy được, trừ nhóm trạng thái nghi ngờ và `MISMATCH` vẫn giữ `PENDING` chờ đối soát tay. Không nhả nguyên liệu chỉ vì payment `FAILED`/`EXPIRED`; chưa có job tự hủy đơn.
 - **Yêu cầu:** FR-14, FR-15, FR-16, FR-25, BR-10, NFR-13.
 
 ### E12 — Tiền về sau trạng thái cuối (tại bước 17)
@@ -318,7 +326,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 | BR-05 | `Idempotency-Key` bắt buộc; replay theo thứ tự `SUCCESS` rồi `Payment PENDING` còn hạn; `FAILED` không khóa key | bước 10; E4; E11; A3; A6 |
 | BR-08 | Máy trạng thái đơn (`PENDING → PAID`, `PENDING → PAYMENT_FAILED`, `PAYMENT_FAILED → PENDING`, `PENDING`/`PAYMENT_FAILED → CANCELLED`); đơn vẫn `PENDING` trong lúc chờ VNPay | bước 8, 13, 18; E3; E10; A3; A5 |
 | BR-09 | Thanh toán thất bại không xóa giỏ, không hủy đơn | E3 |
-| BR-10 | Tối đa một `Payment PENDING` cho mỗi đơn; chưa xác định kết quả thì không mở lần thử mới | bước 13; E4; E11; A5; A6 |
+| BR-10 | Tối đa một `Payment PENDING` cho mỗi đơn; chưa xác định kết quả thì không mở lần thử mới, trừ khi payment đã hết khoảng chờ 15 phút sau `expiresAt` và bị đóng `FAILED` (E11) | bước 13; E4; E11; A5; A6 |
 | BR-11 | Chỉ IPN hoặc QueryDR đã xác thực được quyết định kết quả cuối; return URL chỉ hiển thị | bước 17 đến 20; E9; E10; E12 |
 
 ## 9. Liên kết bước và luồng với yêu cầu
@@ -358,7 +366,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để không đổi số hiệu c�
 | E8 | Mất phản hồi sau commit (E8a); E8b đã bỏ | FR-16 (AC-F16.1) | NFR-13 |
 | E9 | Chữ ký, merchant hoặc số tiền sai | FR-14, FR-16 | NFR-07, NFR-08 |
 | E10 | Mất hoặc muộn IPN, `sync` bằng QueryDR | FR-14, FR-16 | NFR-13 |
-| E11 | `Payment PENDING` quá hạn, đối soát QueryDR | FR-14, FR-15, FR-16, FR-25 | NFR-13 |
+| E11 | `Payment PENDING` quá hạn, đối soát QueryDR; hết khoảng chờ 15 phút thì đóng `FAILED` (`EXPIRED`) | FR-14, FR-15, FR-16, FR-25 | NFR-13 |
 | E12 | Tiền về sau trạng thái cuối, warning đối soát | FR-14, FR-15 | NFR-20 |
 | E13 | Thiếu cấu hình VNPay hoặc lỗi provider | FR-14 | NFR-07, NFR-15 |
 | Trạng thái đơn | Chuyển trạng thái trong use-case | FR-23 | — |

@@ -47,10 +47,13 @@ CANCELLED --> [*]
 note right of PENDING
   New orders reserve ingredients and snapshot atomically.
   Order stays PENDING while it waits for VNPay: Payment PENDING
-  (15 min), and past expiry until QueryDR concludes (E11).
+  (15 min), and past expiry until QueryDR concludes or the
+  15-min grace after expiresAt ends (E11).
   Failure keeps onHand / reserved and snapshot.
   Cancel is blocked (409 PAYMENT_IN_PROGRESS) while a Payment
-  PENDING is still valid, or past expiry but not yet reconciled.
+  PENDING is still valid, or past expiry but not yet reconciled
+  (past the grace a Payment is closed FAILED first, except
+  04/05/06/07/09 and MISMATCH).
 end note
 note left of PAID
   First confirmed success (IPN or QueryDR) consumes the snapshot:
@@ -84,14 +87,17 @@ state "Payment lifecycle (PaymentStatus)" as PaymentLifecycle {
 note right of PAY_PENDING
   Return URL never changes the status (BR-11).
   Past expiresAt the Payment is still PENDING until QueryDR concludes.
-  QueryDR 00/01 after expiry keeps PENDING; the exit route for
-  abandoned payments is decided after the spike (chờ spike).
+  QueryDR 00/01 or no verified answer keeps PENDING until
+  expiresAt + 15 min (grace), then FAILED "EXPIRED" (D6).
+  Closed only when a call arrives (POST /payments, cancel, sync);
+  no background job. 04/05/06/07/09 and MISMATCH never auto-close.
 end note
 note right of PAY_FAILED
   IPN counts as failed when vnp_TransactionStatus = 02,
-  including a customer Cancel (24) (chờ spike).
-  QueryDR 91 after expiry: FAILED with gatewayResponseCode = "EXPIRED"
-  (chờ spike). EXPIRED is not a PaymentStatus value.
+  including a customer Cancel (24) and an OTP-step timeout (15).
+  QueryDR 91 after expiry, or the grace elapsed without a verdict:
+  FAILED with gatewayResponseCode = "EXPIRED", warning
+  PAYMENT_EXPIRED_UNCONFIRMED. EXPIRED is not a PaymentStatus value.
   Money arriving after a final state: IPN 02 + warning
   PAYMENT_RECONCILIATION_REQUIRED; Order and stock unchanged.
 end note
