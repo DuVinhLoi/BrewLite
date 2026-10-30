@@ -263,7 +263,7 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
   - **S6 stakeholder:** VNPay.
 - [x] 2.2 `docs/requirements/context-and-scope.md`: hệ thống ngoài VNPay; viết lại A-01; thêm rủi ro: Render ngủ làm IPN timeout (đã có QueryDR và VNPay gọi lại), sandbox VNPay bảo trì, hết hạn đơn.
 - [x] 2.3 `docs/requirements/uc-checkout.md` và `.puml`: viết lại các bước thanh toán (redirect → trả trên VNPay → IPN → return); thêm luồng E cho hủy trên VNPay, sai chữ ký, mất IPN.
-- [x] 2.4 `docs/requirements/use-case-overview.puml`: đổi tên actor. Nhóm cập nhật `.svg` bằng draw.io. Phần `.svg` còn chờ nhóm.
+- [x] 2.4 `docs/requirements/use-case-overview.puml`: đổi tên actor. Nhóm cập nhật `.svg` bằng draw.io. Phần `.svg`: 2026-10-30 người dùng yêu cầu đồng bộ, xuất lại bằng PlantUML 1.2026.8 từ `.puml` (không dùng draw.io); nhóm mở ảnh kiểm trước khi nộp.
 
 ### Bước 3 – Sơ đồ Task 2 (agent soạn nháp)
 
@@ -271,7 +271,7 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
 - [x] 3.2 `docs/diagrams/activity-checkout.puml`: thêm swimlane VNPay, nhánh hủy hoặc hết hạn.
 - [x] 3.3 `docs/diagrams/state-order.puml`: đơn vẫn `PENDING` trong lúc chờ VNPay; thử lại `PAYMENT_FAILED` → `PENDING`; ghi chú hủy bị chặn khi có payment còn hạn hoặc quá hạn nhưng chưa đối soát xong. Ghi vòng đời `Payment PENDING` → `SUCCESS`/`FAILED` trong cùng tài liệu, không thêm trạng thái `EXPIRED` vào enum.
 - [x] 3.4 `docs/diagrams/class-domain.puml`: thêm cột mới của `Payment` và `PaymentStatus.PENDING`.
-- [x] 3.5 Render PlantUML ra thư mục tạm, 0 lỗi "Syntax Error". Ảnh `.svg` trong repo do nhóm xuất. Phần `.svg` còn chờ nhóm.
+- [x] 3.5 Render PlantUML ra thư mục tạm, 0 lỗi "Syntax Error". Ảnh `.svg` trong repo do nhóm xuất. Phần `.svg`: cả 7 ảnh đã xuất lại ngày 2026-10-30 theo yêu cầu người dùng, 0 "Syntax Error".
 
 ### Bước 4 – Kiến trúc Task 3 (agent soạn nháp)
 

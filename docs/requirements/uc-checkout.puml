@@ -73,6 +73,8 @@ note right of UC06
   Bị chặn 409 PAYMENT_IN_PROGRESS khi có
   Payment PENDING còn hạn; quá hạn thì
   đối soát QueryDR trước rồi mới xét hủy.
+  Chưa kết luận: chặn tới expiresAt + 15 phút,
+  sau đó payment đóng FAILED (EXPIRED, D6).
 end note
 
 @enduml
