@@ -53,8 +53,17 @@ Kết luận: VNPay từ chối thanh toán sau `vnp_ExpireDate` ở cả hai đ
   - IPN thành công tới sau khi đóng: trả `RspCode=02` và ghi `PAYMENT_RECONCILIATION_REQUIRED`.
   - Log thật: `VNPAY_QUERYDR_FAILED ... reason=UNSIGNED vnp_ResponseCode=99` và `PAYMENT_EXPIRED_UNCONFIRMED ... reason=UNSIGNED`.
 
+- **Kiểm các nhánh đã xác thực bằng QueryDR giả** (2026-10-30, bước 7.7d–7.7f). API build thật và Postgres local; `VNP_API_URL` trỏ tới một server giả trong scratchpad, ký bằng secret giả. Kết quả 75/75 kiểm đạt:
+  - `00/00` → `PAID`, kho trừ một lần; `00/01` trong khoảng chờ → 409, quá khoảng chờ → đóng; `00/02` → `FAILED` giữ mã `00/02`;
+  - `91` trước hạn → 409, sau hạn → đóng, không có warning;
+  - signed `94`/`99`, không chữ ký, chữ ký sai, timeout, HTTP 500, body không phải JSON, signed `97`/`91` sai TxnRef: trong khoảng chờ 502 và DB/kho không đổi, quá khoảng chờ đóng kèm `PAYMENT_EXPIRED_UNCONFIRMED`;
+  - `MISMATCH` (số tiền, TxnRef, TmnCode) và status `04–09`: 502 cho cả `sync`, thanh toán lại và hủy đơn; không bao giờ đóng; có warning đối soát;
+  - IPN tới khi `sync` đang chờ QueryDR, hoặc tới cùng lúc: một `SUCCESS`, kho trừ một lần, kết quả QueryDR cũ không ghi đè.
+
+  Phép thử này chứng minh code xử lý đúng từng loại phản hồi, nhưng chưa chứng minh sandbox thật gửi đúng những phản hồi đó.
+
 ## 5. Còn phải làm
 
-- Thử lại QueryDR khi sandbox hồi phục; nếu vẫn `99`, hỏi hỗ trợ VNPay (`hotrovnpay@vnpay.vn`) kèm `vnp_TxnRef` và thời điểm.
-- Khi QueryDR chạy được: kiểm các nhánh đã xác thực (`91`, `00/01`, status nghi ngờ) theo bước 7.7b, 7.7d của plan. Lối thoát cho payment quá hạn đã chốt ở D6.
+- Thử lại QueryDR lúc 18:55 ngày 2026-10-30 (giao dịch đã trả và giao dịch chưa mở): vẫn `99` không chữ ký. Cần hỏi hỗ trợ VNPay (`hotrovnpay@vnpay.vn`) kèm `vnp_TxnRef` và thời điểm.
+- Khi QueryDR chạy được: lặp lại các nhánh `91`, `00/01` và `sync` → `PAID` (bước 7.3) với phản hồi thật.
 - IPN thật chỉ quan sát được trên Render (bước 7.5, 7.6).
