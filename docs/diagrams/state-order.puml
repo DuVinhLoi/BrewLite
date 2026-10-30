@@ -91,6 +91,8 @@ note right of PAY_PENDING
   expiresAt + 15 min (grace), then FAILED "EXPIRED" (D6).
   Closed only when a call arrives (POST /payments, cancel, sync);
   no background job. 04/05/06/07/09 and MISMATCH never auto-close.
+  MISMATCH is a signed 00 response only; any other code with a wrong
+  or missing merchant or TxnRef is BAD_RESPONSE (502, closed after the grace).
 end note
 note right of PAY_FAILED
   IPN counts as failed when vnp_TransactionStatus = 02,
