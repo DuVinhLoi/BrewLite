@@ -54,6 +54,63 @@ Gắn nhãn hiển thị **"(chờ spike)"** ngay sau câu hoặc AC phụ thu�
 2. QueryDR `91` sau hạn → `FAILED`, `gatewayResponseCode = "EXPIRED"`.
 3. IPN coi là thất bại khi `vnp_TransactionStatus = 02`, kể cả khách hủy (`24`).
 
+Sau spike ngày 2026-10-30 ([kết quả](../../../payment-vnpay-spike.md)), gỡ cả ba nhãn:
+
+- Điểm 1 thay bằng D6 (mục 8).
+- Điểm 2 giữ nguyên hành vi. Spike chưa quan sát được mã `91` vì QueryDR sandbox lỗi, nhưng D6 vẫn bảo đảm lối ra dù `91` không bao giờ xuất hiện.
+- Điểm 3 đã được xác nhận: hủy trả `24/02`, hết hạn ở bước OTP trả `15/02`.
+
 ## 7. Rủi ro
 
 R-13, R-14, R-15 đã có trong `context-and-scope.md` (W0). Không đánh thêm mã `R-` ở Wave 1.
+
+## 8. D6: đóng payment quá hạn sau khoảng chờ (người dùng chốt 2026-10-30, phương án A)
+
+**Lý do.**
+- QueryDR sandbox trả `99` không có chữ ký cho mọi request.
+- Payment `PENDING` quá hạn mà không có IPN làm đơn kẹt: `sync`, hủy đơn và thanh toán lại đều trả 502.
+- Spike chứng minh VNPay từ chối thanh toán sau `vnp_ExpireDate`, đúng điều kiện plan đặt cho cách "đóng sau khoảng chờ".
+
+**Khoảng chờ.**
+- Dài 15 phút sau `expiresAt`. "Hết khoảng chờ" nghĩa là `now >= expiresAt + 15 phút`, với `now` là lúc gửi QueryDR.
+- Payment có `expiresAt = null` không bao giờ hết khoảng chờ.
+- Việc đóng diễn ra khi có lời gọi: `POST /payments`, hủy đơn hoặc `sync`. Không có job chạy nền (D5 giữ nguyên).
+
+**Bảng quyết định.** Áp khi đối soát một `Payment PENDING`, sau khi đọc lại payment dưới khóa đơn:
+
+| Kết quả QueryDR | Chưa hết khoảng chờ | Hết khoảng chờ |
+| --- | --- | --- |
+| Đã xác thực `00/00` | `SUCCESS` (như cũ) | như cũ |
+| Đã xác thực `00/02` | `FAILED` (như cũ) | như cũ |
+| Đã xác thực `91` | quá hạn thì `FAILED` `EXPIRED`, còn hạn thì 409 (như cũ) | như cũ |
+| Đã xác thực `00` kèm status nghi ngờ `04/05/06/07/09` | giữ `PENDING`, 502, warning đối soát | **như cũ, không bao giờ tự đóng** |
+| Chữ ký hợp lệ nhưng sai merchant, TxnRef, số tiền hoặc type (`MISMATCH`) | giữ `PENDING`, 502, warning đối soát | **như cũ, không bao giờ tự đóng** |
+| Đã xác thực `00/01` | 409 `PAYMENT_IN_PROGRESS` | đóng |
+| Đã xác thực `00` kèm status thiếu hoặc chưa hỗ trợ | 502 | đóng |
+| Đã xác thực mã truy vấn khác (`02`, `03`, `94`, `97`, `99`...) | 502 | đóng |
+| Không chữ ký, sai chữ ký, timeout, lỗi mạng, không đọc được phản hồi, thiếu cấu hình truy vấn, thiếu `gatewayCreateDate` | 502 | đóng |
+
+**"Đóng" làm gì.**
+- `Payment` chuyển `FAILED`, `gatewayResponseCode = "EXPIRED"`, `gatewayTransactionStatus = null`.
+- Đơn chuyển `PAYMENT_FAILED`, kho không đổi (AC-F15.3).
+- Ghi warning `PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=<id>`, kèm `reason=<QueryDrFailure>` hoặc `vnp_ResponseCode=<..> vnp_TransactionStatus=<..>` đã xác thực.
+- Sau đó khách thanh toán lại (tạo payment mới) hoặc hủy đơn (nhả nguyên liệu).
+- IPN thành công tới sau khi đã đóng thì đi theo AC-F15.7: trả `02`, ghi warning `PAYMENT_RECONCILIATION_REQUIRED`, nhân viên hoàn tiền tay.
+
+**Log QueryDR lỗi.**
+- Dạng chung: `VNPAY_QUERYDR_FAILED vnp_TxnRef=<id> reason=<reason>`.
+- Phản hồi không có `vnp_SecureHash` dùng `reason=UNSIGNED`. Nếu `vnp_ResponseCode` gồm đúng 2 chữ số thì thêm `vnp_ResponseCode=<mã>`, chỉ để vận hành, không dùng để quyết định.
+
+**Tên trong code** (tài liệu và code dùng chung):
+- `vnpay.ts`: hằng `EXPIRY_GRACE_MS = 15 * 60 * 1000` và hàm thuần `isPastGrace(expiresAt, now)`.
+- `queryDrAction(responseCode, transactionStatus, expired, pastGrace)` cho phản hồi đã xác thực.
+- `unansweredQueryAction(reason, pastGrace)` cho phản hồi không xác thực được.
+- `QueryDrFailure` thêm `'UNSIGNED'`.
+
+**Mã AC.** Không thêm mã mới:
+- viết lại `AC-F16.10` (lối thoát);
+- `AC-F16.11` thêm ngoại lệ sau khoảng chờ;
+- gỡ "(chờ spike)" ở `AC-F15.8` và `AC-F16.10`;
+- `BR-10` và đoạn "Hạn thanh toán 15 phút" thêm vế đóng sau khoảng chờ.
+
+**Web.** Mã `15` (quan sát được ở spike) và `EXPIRED` dùng thông báo "Đã hết thời gian thanh toán", giống mã `11`. Plan mục 1.7 thêm hai mã này.
