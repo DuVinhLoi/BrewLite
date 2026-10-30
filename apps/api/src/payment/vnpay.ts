@@ -88,6 +88,8 @@ export function buildQueryDr(input: {
 }
 
 // Checks signature, then merchant and reference of the request. A 00 response also needs the amount (Payment.amount * 100) and type 01.
+// A signed error answer can carry empty fields and only 00 leads to SUCCESS, so a wrong or empty merchant or reference is
+// MISMATCH (never closed) for 00 only; for any other code, 91 included, it is BAD_RESPONSE, which the grace can still close.
 // UNSIGNED (spike 2026-10-30: the sandbox answers 99 with no vnp_SecureHash) carries the response code for the log only:
 // it is the code of an unverified body, so it is kept only when it is exactly 2 digits and is never used to decide anything.
 export function verifyQueryDrResponse(body: unknown, expected: { secret: string; tmnCode: string; txnRef: string; amountVnd: number }):
@@ -104,8 +106,11 @@ export function verifyQueryDrResponse(body: unknown, expected: { secret: string;
   if (typeof received !== 'string' || !sameSignature(received, sign(expected.secret, joinFields(QUERYDR_RESPONSE_FIELDS, fields)))) {
     return { ok: false, reason: 'BAD_SIGNATURE' };
   }
-  if (fields.vnp_TmnCode !== expected.tmnCode || fields.vnp_TxnRef !== expected.txnRef) return { ok: false, reason: 'MISMATCH' };
-  if (fields.vnp_ResponseCode === '00' && (fields.vnp_Amount !== String(expected.amountVnd * 100) || fields.vnp_TransactionType !== '01')) {
+  const isSuccessCode = fields.vnp_ResponseCode === '00';
+  if (fields.vnp_TmnCode !== expected.tmnCode || fields.vnp_TxnRef !== expected.txnRef) {
+    return { ok: false, reason: isSuccessCode ? 'MISMATCH' : 'BAD_RESPONSE' };
+  }
+  if (isSuccessCode && (fields.vnp_Amount !== String(expected.amountVnd * 100) || fields.vnp_TransactionType !== '01')) {
     return { ok: false, reason: 'MISMATCH' };
   }
   return { ok: true, fields };
@@ -148,9 +153,10 @@ export function queryDrAction(responseCode: string, transactionStatus: string, e
   return pastGrace ? { kind: 'EXPIRED' } : { kind: 'PROVIDER_ERROR', reconcile: false };
 }
 
-// D6 for a QueryDR call with no verified answer. MISMATCH is a signed answer about another merchant, reference, amount or type:
+// D6 for a QueryDR call with no verified answer. MISMATCH is a signed 00 answer about another merchant, reference, amount or type:
 // a human must look, so it is never closed. Every other reason closes the payment once the grace has ended.
-export function unansweredQueryAction(reason: QueryFailureReason, pastGrace: boolean): QueryDrAction {
+// Without a verified answer there is no SUCCESS, FAILED or IN_PROGRESS, hence the narrower return type.
+export function unansweredQueryAction(reason: QueryFailureReason, pastGrace: boolean): Extract<QueryDrAction, { kind: 'EXPIRED' | 'PROVIDER_ERROR' }> {
   if (reason === 'MISMATCH') return { kind: 'PROVIDER_ERROR', reconcile: true };
   return pastGrace ? { kind: 'EXPIRED' } : { kind: 'PROVIDER_ERROR', reconcile: false };
 }
