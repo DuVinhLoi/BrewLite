@@ -28,7 +28,7 @@ Các ràng buộc cố định:
 ### B. Một hàm `applyGatewayResult` cho IPN và QueryDR
 
 - `applyGatewayResult(tx, paymentId, result)` do caller gọi trong transaction đã giữ khóa đơn. Hàm đọc lại đúng `Payment` và `Order`, bảo vệ trạng thái cuối, rồi cập nhật payment, đơn và kho cùng transaction.
-- Thành công: `Payment SUCCESS`, đơn `PAID`, gọi `settle(consume=true)` đúng một lần và chỉ khi `inventoryTracked`. Thất bại: `Payment FAILED`, đơn `PAYMENT_FAILED`, nguyên liệu vẫn giữ để khách thử lại hoặc hủy (E3). Với IPN, thất bại chỉ được áp khi `vnp_TransactionStatus = 02`, kể cả khi khách hủy trên VNPay (mã `24`) (chờ spike).
+- Thành công: `Payment SUCCESS`, đơn `PAID`, gọi `settle(consume=true)` đúng một lần và chỉ khi `inventoryTracked`. Thất bại: `Payment FAILED`, đơn `PAYMENT_FAILED`, nguyên liệu vẫn giữ để khách thử lại hoặc hủy (E3). Với IPN, thất bại chỉ được áp khi `vnp_TransactionStatus = 02`, kể cả khi khách hủy trên VNPay (mã `24`). Spike 2026-10-30 ([kết quả](../../payment-vnpay-spike.md)) xác nhận hủy trả `24`/`02` và hết hạn ở bước OTP trả `15`/`02`, cùng được áp là thất bại.
 - IPN và QueryDR chuẩn hóa mã theo từng giao thức trước khi gọi hàm. Lỗi QueryDR (mạng, timeout, chữ ký, cấu hình) không bao giờ thành "thanh toán thất bại": trả 502 `PAYMENT_PROVIDER_ERROR`, không đổi DB.
 - Payment hoặc đơn không còn `PENDING` thì IPN trả `02`. Nếu VNPay báo đã thu tiền nhưng payment đã `FAILED`/hết hạn, đơn đã hủy hoặc đã trả bằng payment khác, hệ thống không mở lại đơn, không đổi kho; IPN trả `02` và ghi warning `PAYMENT_RECONCILIATION_REQUIRED` kèm `vnp_TxnRef` (E12).
 - Lý do gom một hàm: IPN và `sync` có thể cùng xác nhận một payment. Bất biến "một `SUCCESS`, trừ kho một lần" chỉ cần giữ ở một chỗ.
@@ -47,12 +47,20 @@ Các ràng buộc cố định:
 
 ### E. Payment `PENDING` quá hạn và hủy đơn
 
-- Quá hạn không có nghĩa là chưa thu tiền: khách có thể trả sát giờ mà IPN tới muộn. Trước khi tạo giao dịch mới hoặc hủy đơn, API hỏi QueryDR (E11). Chưa kết luận được thì giữ `PENDING` và trả 409 `PAYMENT_IN_PROGRESS`.
+- Quá hạn không có nghĩa là chưa thu tiền: khách có thể trả sát giờ mà IPN tới muộn. Trước khi tạo giao dịch mới hoặc hủy đơn, API hỏi QueryDR (E11). Chưa kết luận được thì giữ `PENDING` và trả 409 `PAYMENT_IN_PROGRESS` (hoặc 502 nếu QueryDR lỗi), nhưng chỉ trong khoảng chờ của D6 dưới đây.
 - Cách xử lý theo cặp mã của QueryDR:
   - `vnp_ResponseCode`/`vnp_TransactionStatus` `00/00`: áp `SUCCESS`; `00/02`: áp `FAILED`;
-  - `00/01` sau hạn: giữ `PENDING`, 409; ca bỏ dở phải kết thúc trong thời gian hữu hạn, chốt lối thoát trước pha code (chờ spike);
-  - `91` sau hạn: `FAILED` với `gatewayResponseCode = "EXPIRED"` (chờ spike); còn hạn thì giữ `PENDING`, 409;
-  - nhóm trạng thái đảo/hoàn tiền/nghi ngờ hoặc mã chưa hỗ trợ: giữ `PENDING`, 502, ghi warning; mọi mã khác: 502, không đổi DB.
+  - `91` đã xác thực: sau hạn thì `FAILED` với `gatewayResponseCode = "EXPIRED"`; còn hạn thì giữ `PENDING`, 409. Spike chưa quan sát được `91` (QueryDR sandbox lỗi), nên D6 không dựa vào nó;
+  - `00/01` đã xác thực: trong khoảng chờ giữ `PENDING`, 409; hết khoảng chờ thì đóng theo D6;
+  - nhóm trạng thái đảo/hoàn tiền/nghi ngờ (`04`/`05`/`06`/`07`/`09`) và `MISMATCH` (chữ ký hợp lệ nhưng sai merchant, mã tham chiếu, số tiền hoặc loại giao dịch): giữ `PENDING`, 502, ghi warning; không bao giờ tự đóng;
+  - status `00` thiếu hoặc chưa hỗ trợ, mã truy vấn khác (`02`/`03`/`94`/`97`/`99`...), hoặc phản hồi không xác thực được: trong khoảng chờ thì 502, không đổi DB; hết khoảng chờ thì đóng theo D6.
+- **D6: đóng payment quá hạn sau khoảng chờ 15 phút (người dùng chốt 2026-10-30, phương án A).** Chi tiết và bảng quyết định ở [kế hoạch VNPay](../../planning/2026-10-29-vnpay-payment-plan.md) mục 1.6 và 2.
+  - **Khoảng chờ.** "Hết khoảng chờ" nghĩa là `now >= expiresAt + 15 phút` (`EXPIRY_GRACE_MS`, hàm thuần `isPastGrace(expiresAt, now)`), với `now` là lúc gửi QueryDR; `Payment` có `expiresAt = null` không bao giờ hết khoảng chờ. `queryDrAction` quyết định cho phản hồi đã xác thực, `unansweredQueryAction` cho phản hồi không xác thực được.
+  - **Đóng** là: `Payment` sang `FAILED`, `gatewayResponseCode = "EXPIRED"`, `gatewayTransactionStatus = null`; đơn sang `PAYMENT_FAILED`; kho không đổi; ghi warning `PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=<id>` kèm lý do hoặc mã đã xác thực. Khách thanh toán lại hoặc hủy đơn. Việc đóng chỉ diễn ra khi có lời gọi (`POST /payments`, hủy đơn, `sync`); không có job nền (D5 giữ nguyên).
+  - **Log QueryDR lỗi:** `VNPAY_QUERYDR_FAILED vnp_TxnRef=<id> reason=<reason>`. Phản hồi không có `vnp_SecureHash` dùng `reason=UNSIGNED` (kiểu `QueryDrFailure` thêm giá trị này); nếu `vnp_ResponseCode` gồm đúng 2 chữ số thì ghi thêm, chỉ để vận hành, không dùng để quyết định.
+  - **Lý do.** QueryDR sandbox trả `99` không chữ ký cho mọi request (spike), nên payment bỏ dở quá hạn khiến `sync`, hủy đơn và thanh toán lại đều trả 502 và đơn kẹt. Spike cũng chứng minh VNPay từ chối thanh toán sau `vnp_ExpireDate` (mở URL hết hạn ra trang lỗi `code=15`; đang ở bước OTP thì return `15`/`02`), đúng điều kiện kế hoạch đặt ra cho cách "đóng sau khoảng chờ". Đóng là chính sách hết hạn của ứng dụng, không coi `94`/`99` hay lỗi truy vấn là bằng chứng giao dịch thất bại.
+  - **Đánh đổi.** Ca biên: khách trả sát giờ, rồi IPN mất hơn 15 phút (và QueryDR không trả lời được) thì đơn bị đóng `PAYMENT_FAILED` trong khi tiền đã trừ. IPN thành công tới sau đi theo mục B: trả `02`, warning `PAYMENT_RECONCILIATION_REQUIRED`, nhân viên hoàn tiền tay. Warning `PAYMENT_EXPIRED_UNCONFIRMED` giúp nhân viên tra Merchant Admin sớm.
+  - **Phương án đã cân nhắc.** (1) Nhân viên đóng tay sau khi tra Merchant Admin: cần endpoint, giao diện và vai trò riêng, và không tự kết thúc nếu không có ai bấm, nên đơn vẫn có thể kẹt. (2) Giữ nguyên, chỉ chờ QueryDR: khi QueryDR không kết luận được, đơn kẹt `PENDING` và nguyên liệu bị giữ vô thời hạn, vì `sync`, hủy và thanh toán lại đều bị chặn.
 - Hủy đơn bị chặn bằng 409 `PAYMENT_IN_PROGRESS` khi có `Payment PENDING` còn hạn, để khách không vừa trả vừa hủy (A5). Khách quay lại checkout thì tiếp tục thanh toán bằng URL cũ (A6).
 
 ### F. Idempotency khi đơn đang chờ
@@ -82,9 +90,10 @@ Chi tiết ở [ADR-005 §A](005-idempotency-and-optimistic-lock.md). Tóm tắt
 - **Render ngủ (R-13):** IPN đầu có thể timeout. VNPay gọi lại tối đa 10 lần, cách 5 phút, và QueryDR qua trang return bù lại. Local không nhận IPN nên dựa vào QueryDR. Nếu API còn ngủ hoặc QueryDR lỗi, khách phải chờ và payment giữ `PENDING`.
 - **Không có cổng giả:** thiếu cấu hình hoặc sandbox bảo trì (R-14) thì không thanh toán được đơn mới; demo cần video quay trước. Cổng giả hoãn theo quyết định D4 của kế hoạch VNPay, không phải điều kiện nghiệm thu.
 - **Tiền về muộn cần đối soát tay:** không tự mở lại đơn, không tự hoàn tiền; ứng dụng không có API hoàn tiền. Nhân viên tra `vnp_TxnRef` từ warning `PAYMENT_RECONCILIATION_REQUIRED` trong Merchant Admin (xem [deployment.md](../../deployment.md)). Nếu `settle` báo `INVENTORY_INCONSISTENT` sau khi tiền đã thu thì IPN trả `99` để VNPay gọi lại và cần nhân viên xử lý; xác suất thấp vì nguyên liệu đã giữ từ lúc tạo đơn.
-- **Đơn bỏ dở vẫn giữ nguyên liệu (R-15):** chưa có job tự hủy đơn hay nhả kho. Hết 15 phút chỉ làm payment cần đối soát.
+- **Đơn bỏ dở vẫn giữ nguyên liệu (R-15):** chưa có job tự hủy đơn hay nhả kho. Hết 15 phút chỉ làm payment cần đối soát; qua thêm 15 phút khoảng chờ, payment bị đóng `FAILED` khi có lời gọi (D6, mục E) nhưng đơn vẫn giữ nguyên liệu cho tới khi khách hủy.
+- **Đóng payment quá hạn có ca biên (D6):** khách trả sát giờ mà IPN mất hơn 15 phút sau `expiresAt` thì đơn đã bị đóng khi tiền đã trừ. Có warning `PAYMENT_EXPIRED_UNCONFIRMED` và `PAYMENT_RECONCILIATION_REQUIRED`; nhân viên hoàn tiền tay, ứng dụng không tự mở lại đơn. Nhóm trạng thái nghi ngờ và `MISMATCH` không bao giờ tự đóng nên vẫn cần đối soát tay.
 - **Chỉ có unit test tối thiểu:** một file test cho hàm thuần của `vnpay.ts` (quyết định D3 của kế hoạch VNPay), chạy tay, ngoài CI. Nó không chứng minh VNPay chấp nhận chữ ký, không phủ DB hay race, và không thay E2E hay lấp NFR-12/NFR-17. Bù bằng spike, thao tác sandbox/local có lưu bằng chứng, smoke mở URL thanh toán sau mỗi lần deploy và kịch bản SIT của VNPay.
-- **Còn ba điểm chờ spike** (đã gắn nhãn ở mục B và E): kết quả QueryDR `00/01` sau hạn kèm lối thoát cho ca bỏ dở, QueryDR `91` sau hạn, và IPN coi là thất bại khi `vnp_TransactionStatus = 02`. ADR này giữ `Proposed` cho tới khi nhóm duyệt và các điểm đó được đo trên sandbox.
+- **Kết quả spike (2026-10-30, [chi tiết](../../payment-vnpay-spike.md)):** IPN coi là thất bại khi `vnp_TransactionStatus = 02` đã được xác nhận (hủy `24`/`02`, hết hạn ở bước OTP `15`/`02`). QueryDR sandbox trả `99` không chữ ký cho mọi request nên chưa quan sát được `91` và `00/01`; D6 (mục E) bảo đảm payment quá hạn vẫn có lối ra dù QueryDR không bao giờ trả `91`. ADR này giữ `Proposed` cho tới khi nhóm duyệt; các ca QueryDR vẫn phải kiểm khi sandbox hồi phục.
 
 ## Phương án đã loại
 

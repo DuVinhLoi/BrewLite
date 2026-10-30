@@ -114,25 +114,35 @@ if (Latest Payment PENDING and past expiresAt?) then (E11 expired)
     |Next.js UI|
     :Show receipt or current order status;
     stop
-  elseif (Not concluded: 00/01, or 91 before expiry?) then (stays PENDING)
+  elseif (Not concluded inside the grace: 00/01, or 91 before expiry?) then (stays PENDING)
     :409 PAYMENT_IN_PROGRESS; no new URL, no new Payment, no cancel;
     note right
-      QueryDR 00/01 after expiry and the exit route
-      for abandoned payments (auto FAILED after a measured
-      wait, or staff closes the payment) (chờ spike).
+      D6: QueryDR 00/01 keeps PENDING only until
+      expiresAt + 15 min (grace). After that the payment is
+      closed as FAILED "EXPIRED" (last branch below), so an
+      abandoned payment cannot block the order forever.
     end note
     |Next.js UI|
     :Show "checking payment" with Check again; never advise paying twice;
     stop
-  elseif (QueryDR failed or special status 04/05/06/07/09?) then (E13)
+  elseif (QueryDR failed inside the grace, or special status 04/05/06/07/09, or MISMATCH?) then (E13)
     :502 PAYMENT_PROVIDER_ERROR; DB unchanged;
+    note right
+      04/05/06/07/09 and MISMATCH never auto-close, even after
+      the grace; they stay PENDING for manual reconciliation.
+    end note
     |Next.js UI|
     :Show generic error; keep cart and order;
     stop
   else (FAILED, or FAILED + EXPIRED)
     note right
       QueryDR 91 after expiry, verified ->
-      FAILED with gatewayResponseCode "EXPIRED" (chờ spike).
+      FAILED with gatewayResponseCode "EXPIRED".
+      D6: also when now >= expiresAt + 15 min (isPastGrace) and
+      QueryDR gave 00/01, an unsupported status, another code
+      or no verified answer (UNSIGNED, timeout, network).
+      Warning PAYMENT_EXPIRED_UNCONFIRMED; closed only on a call
+      (POST /payments, cancel, sync), no background job.
       EXPIRED is not a PaymentStatus value.
     end note
     :Order PAYMENT_FAILED; reservation kept;\ncontinue as a new attempt (A3);
@@ -205,7 +215,7 @@ else (yes)
     elseif (vnp_TransactionStatus 02?) then (E3 failure)
       note right
         IPN counts as failed when vnp_TransactionStatus = 02,
-        including a customer Cancel (24) (chờ spike).
+        including a customer Cancel (24) and an OTP-step timeout (15).
       end note
       :Payment FAILED; Order PAYMENT_FAILED; COMMIT;\nonHand/reserved/snapshot unchanged;
       :RspCode 00;
@@ -225,7 +235,7 @@ if (Payment still PENDING after polling?) then (E10 lost or late IPN)
   |VNPay sandbox|
   :Return QueryDR result (signed);
   |NestJS API|
-  :Verify response; BEGIN; lock Order; re-read THAT Payment;\napply same function as IPN (00/00 SUCCESS, 00/02 FAILED);\n00/01 or 91 before expiry: 409 PAYMENT_IN_PROGRESS; errors: 502; COMMIT;
+  :Verify response; BEGIN; lock Order; re-read THAT Payment;\napply same function as IPN (00/00 SUCCESS, 00/02 FAILED);\n00/01 or 91 before expiry: 409 PAYMENT_IN_PROGRESS; errors: 502 (past expiresAt + 15 min: closed FAILED EXPIRED, E11); COMMIT;
   |Next.js UI|
 else (no)
 endif
