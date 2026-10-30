@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import type { PaymentMethod } from '@prisma/client';
-import { buildPaymentUrl, buildQueryDr, formatVnDate, parseVnDate, type QueryDrFailure, verifyQueryDrResponse } from './vnpay';
+import { buildPaymentUrl, buildQueryDr, formatVnDate, parseVnDate, type QueryFailureReason, verifyQueryDrResponse } from './vnpay';
 import { canCreateUrl, canVerify, readVnpayConfig } from './vnpay-config';
 
 const PAYMENT_TTL_MS = 15 * 60 * 1000;
@@ -19,7 +19,8 @@ export type CreateUrlResult =
 export type QueryInput = { paymentId: string; orderId: string; amount: number; gatewayCreateDate: string | null; now?: Date };
 export type QueryResult =
   | { ok: true; responseCode: string; transactionStatus: string; transactionNo: string | null; bankCode: string | null; payDate: Date | null }
-  | { ok: false; reason: 'NOT_CONFIGURED' | 'MISSING_CREATE_DATE' | 'TIMEOUT' | 'NETWORK' | QueryDrFailure };
+  // responseCode is set only for UNSIGNED, for the log (see verifyQueryDrResponse).
+  | { ok: false; reason: QueryFailureReason; responseCode?: string | null };
 
 // Talks to VNPay. The signing itself lives in vnpay.ts; this class adds the configuration and the HTTP call.
 @Injectable()
@@ -63,7 +64,7 @@ export class VnpayGateway {
       return { ok: false, reason: error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT' : 'NETWORK' };
     }
     const verified = verifyQueryDrResponse(body, { secret: config.hashSecret, tmnCode: config.tmnCode, txnRef: input.paymentId, amountVnd: input.amount });
-    if (!verified.ok) return { ok: false, reason: verified.reason };
+    if (!verified.ok) return verified;
     const { fields } = verified;
     return {
       ok: true, responseCode: fields.vnp_ResponseCode, transactionStatus: fields.vnp_TransactionStatus,

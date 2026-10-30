@@ -18,10 +18,13 @@ import {
 import {
   buildPaymentUrl,
   buildQueryDr,
+  EXPIRY_GRACE_MS,
   formatVnDate,
   ipnAction,
+  isPastGrace,
   parseVnDate,
   queryDrAction,
+  unansweredQueryAction,
   verifyQueryDrResponse,
   verifyReturn,
 } from '../src/payment/vnpay';
@@ -226,11 +229,27 @@ describe('verifyQueryDrResponse', () => {
     const body = { ...queryDrBody(RESP_SUCCESS, RESP_SUCCESS_HASH), vnp_TransactionStatus: '02' };
     assert.deepEqual(verifyQueryDrResponse(body, expectation), { ok: false, reason: 'BAD_SIGNATURE' });
   });
-  it('rejects a missing, short or non-hex signature without throwing', () => {
+  it('rejects a short, non-hex or non-string signature without throwing', () => {
     const body = queryDrBody(RESP_SUCCESS, RESP_SUCCESS_HASH);
-    assert.deepEqual(verifyQueryDrResponse({ ...body, vnp_SecureHash: undefined }, expectation), { ok: false, reason: 'BAD_SIGNATURE' });
     assert.deepEqual(verifyQueryDrResponse({ ...body, vnp_SecureHash: 'abc' }, expectation), { ok: false, reason: 'BAD_SIGNATURE' });
     assert.deepEqual(verifyQueryDrResponse({ ...body, vnp_SecureHash: 'z'.repeat(128) }, expectation), { ok: false, reason: 'BAD_SIGNATURE' });
+    assert.deepEqual(verifyQueryDrResponse({ ...body, vnp_SecureHash: 123 }, expectation), { ok: false, reason: 'BAD_SIGNATURE' });
+  });
+  // Spike 2026-10-30: the sandbox answers every QueryDR with 99 and no vnp_SecureHash.
+  it('reports UNSIGNED, with the 2-digit response code, for an object without vnp_SecureHash', () => {
+    const unsigned = { vnp_ResponseCode: '99', vnp_Message: 'Unexpected error' };
+    assert.deepEqual(verifyQueryDrResponse(unsigned, expectation), { ok: false, reason: 'UNSIGNED', responseCode: '99' });
+  });
+  it('never trusts an unsigned response, even one that claims 00/00', () => {
+    const { vnp_SecureHash, ...withoutHash } = queryDrBody(RESP_SUCCESS, RESP_SUCCESS_HASH);
+    assert.ok(vnp_SecureHash);
+    assert.deepEqual(verifyQueryDrResponse(withoutHash, expectation), { ok: false, reason: 'UNSIGNED', responseCode: '00' });
+  });
+  it('gives responseCode null for UNSIGNED when vnp_ResponseCode is not exactly 2 digits', () => {
+    for (const vnp_ResponseCode of ['9', '123', 'ab', '9 ', '99\nforged log line', '', undefined, null, 5]) {
+      assert.deepEqual(verifyQueryDrResponse({ vnp_ResponseCode }, expectation), { ok: false, reason: 'UNSIGNED', responseCode: null });
+    }
+    assert.deepEqual(verifyQueryDrResponse({}, expectation), { ok: false, reason: 'UNSIGNED', responseCode: null });
   });
   it('rejects a body that is not a JSON object', () => {
     for (const body of [null, undefined, 'text', 42, [], ['x']]) {
@@ -249,39 +268,87 @@ describe('verifyQueryDrResponse', () => {
   });
 });
 
-describe('queryDrAction (plan 1.6 table)', () => {
-  it('00/00 -> SUCCESS', () => {
-    assert.deepEqual(queryDrAction('00', '00', false), { kind: 'SUCCESS' });
-    assert.deepEqual(queryDrAction('00', '00', true), { kind: 'SUCCESS' });
+// Arguments are (responseCode, transactionStatus, expired, pastGrace). pastGrace implies expired in real use.
+describe('queryDrAction (plan 1.6 table, D6 grace)', () => {
+  it('00/00 -> SUCCESS, before and after the grace', () => {
+    assert.deepEqual(queryDrAction('00', '00', false, false), { kind: 'SUCCESS' });
+    assert.deepEqual(queryDrAction('00', '00', true, true), { kind: 'SUCCESS' });
   });
-  it('00/01 -> IN_PROGRESS, also after expiry', () => {
-    assert.deepEqual(queryDrAction('00', '01', false), { kind: 'IN_PROGRESS' });
-    assert.deepEqual(queryDrAction('00', '01', true), { kind: 'IN_PROGRESS' });
+  it('00/01 -> IN_PROGRESS while the grace has not ended, also after expiry', () => {
+    assert.deepEqual(queryDrAction('00', '01', false, false), { kind: 'IN_PROGRESS' });
+    assert.deepEqual(queryDrAction('00', '01', true, false), { kind: 'IN_PROGRESS' });
   });
-  it('00/02 -> FAILED (not EXPIRED), before and after expiry', () => {
-    assert.deepEqual(queryDrAction('00', '02', false), { kind: 'FAILED' });
-    assert.deepEqual(queryDrAction('00', '02', true), { kind: 'FAILED' });
+  it('00/01 -> EXPIRED once the grace has ended (D6)', () => {
+    assert.deepEqual(queryDrAction('00', '01', true, true), { kind: 'EXPIRED' });
+  });
+  it('00/02 -> FAILED (not EXPIRED), before and after the grace', () => {
+    assert.deepEqual(queryDrAction('00', '02', false, false), { kind: 'FAILED' });
+    assert.deepEqual(queryDrAction('00', '02', true, true), { kind: 'FAILED' });
   });
   it('91 -> EXPIRED only after expiry, IN_PROGRESS before', () => {
-    assert.deepEqual(queryDrAction('91', '', true), { kind: 'EXPIRED' });
-    assert.deepEqual(queryDrAction('91', '', false), { kind: 'IN_PROGRESS' });
+    assert.deepEqual(queryDrAction('91', '', true, false), { kind: 'EXPIRED' });
+    assert.deepEqual(queryDrAction('91', '', false, false), { kind: 'IN_PROGRESS' });
+    assert.deepEqual(queryDrAction('91', '', true, true), { kind: 'EXPIRED' });
   });
-  it('00 with reversal/refund/suspect statuses keeps PENDING and asks for reconciliation', () => {
+  it('00 with reversal/refund/suspect statuses keeps PENDING and asks for reconciliation, even after the grace', () => {
     for (const status of ['04', '05', '06', '07', '09']) {
-      assert.deepEqual(queryDrAction('00', status, true), { kind: 'PROVIDER_ERROR', reconcile: true });
-      assert.deepEqual(queryDrAction('00', status, false), { kind: 'PROVIDER_ERROR', reconcile: true });
+      assert.deepEqual(queryDrAction('00', status, true, true), { kind: 'PROVIDER_ERROR', reconcile: true });
+      assert.deepEqual(queryDrAction('00', status, true, false), { kind: 'PROVIDER_ERROR', reconcile: true });
+      assert.deepEqual(queryDrAction('00', status, false, false), { kind: 'PROVIDER_ERROR', reconcile: true });
     }
   });
-  it('00 with a missing or unsupported status is a provider error without reconciliation', () => {
-    assert.deepEqual(queryDrAction('00', '', false), { kind: 'PROVIDER_ERROR', reconcile: false });
-    assert.deepEqual(queryDrAction('00', '03', false), { kind: 'PROVIDER_ERROR', reconcile: false });
-    assert.deepEqual(queryDrAction('00', 'xx', true), { kind: 'PROVIDER_ERROR', reconcile: false });
+  it('00 with a missing or unsupported status is a provider error without reconciliation before the grace ends', () => {
+    assert.deepEqual(queryDrAction('00', '', false, false), { kind: 'PROVIDER_ERROR', reconcile: false });
+    assert.deepEqual(queryDrAction('00', '03', false, false), { kind: 'PROVIDER_ERROR', reconcile: false });
+    assert.deepEqual(queryDrAction('00', 'xx', true, false), { kind: 'PROVIDER_ERROR', reconcile: false });
   });
-  it('any other response code is a provider error, never a payment failure', () => {
+  it('00 with a missing or unsupported status -> EXPIRED once the grace has ended', () => {
+    for (const status of ['', '03', 'xx']) assert.deepEqual(queryDrAction('00', status, true, true), { kind: 'EXPIRED' });
+  });
+  it('any other response code is a provider error before the grace ends, never a payment failure', () => {
     for (const code of ['02', '03', '94', '97', '99', '', 'zz']) {
-      assert.deepEqual(queryDrAction(code, '', true), { kind: 'PROVIDER_ERROR', reconcile: false });
-      assert.deepEqual(queryDrAction(code, '02', true), { kind: 'PROVIDER_ERROR', reconcile: false });
+      assert.deepEqual(queryDrAction(code, '', true, false), { kind: 'PROVIDER_ERROR', reconcile: false });
+      assert.deepEqual(queryDrAction(code, '02', true, false), { kind: 'PROVIDER_ERROR', reconcile: false });
     }
+  });
+  it('a verified 99 -> EXPIRED once the grace has ended', () => {
+    assert.deepEqual(queryDrAction('99', '', true, true), { kind: 'EXPIRED' });
+    assert.deepEqual(queryDrAction('99', '02', true, true), { kind: 'EXPIRED' });
+  });
+});
+
+describe('unansweredQueryAction (D6)', () => {
+  // Every reason of a QueryDR call that returned no verified answer, except MISMATCH.
+  const unanswered = ['BAD_RESPONSE', 'BAD_SIGNATURE', 'UNSIGNED', 'TIMEOUT', 'NETWORK', 'NOT_CONFIGURED', 'MISSING_CREATE_DATE'] as const;
+  it('MISMATCH is a provider error with reconciliation, before and after the grace', () => {
+    assert.deepEqual(unansweredQueryAction('MISMATCH', false), { kind: 'PROVIDER_ERROR', reconcile: true });
+    assert.deepEqual(unansweredQueryAction('MISMATCH', true), { kind: 'PROVIDER_ERROR', reconcile: true });
+  });
+  it('any other reason is a provider error without reconciliation before the grace ends', () => {
+    for (const reason of unanswered) assert.deepEqual(unansweredQueryAction(reason, false), { kind: 'PROVIDER_ERROR', reconcile: false });
+  });
+  it('any other reason -> EXPIRED once the grace has ended', () => {
+    for (const reason of unanswered) assert.deepEqual(unansweredQueryAction(reason, true), { kind: 'EXPIRED' });
+  });
+});
+
+describe('isPastGrace (D6)', () => {
+  const expiresAt = new Date('2026-10-30T03:15:00.000Z');
+  it('has a grace of 15 minutes', () => {
+    assert.equal(EXPIRY_GRACE_MS, 15 * 60 * 1000);
+  });
+  it('is true exactly at expiresAt + 15 minutes', () => {
+    assert.equal(isPastGrace(expiresAt, new Date('2026-10-30T03:30:00.000Z')), true);
+  });
+  it('is false 1 ms before expiresAt + 15 minutes', () => {
+    assert.equal(isPastGrace(expiresAt, new Date('2026-10-30T03:29:59.999Z')), false);
+  });
+  it('is false at expiresAt itself and true long after the grace', () => {
+    assert.equal(isPastGrace(expiresAt, expiresAt), false);
+    assert.equal(isPastGrace(expiresAt, new Date('2026-11-30T00:00:00.000Z')), true);
+  });
+  it('is false when expiresAt is null, however late it is', () => {
+    assert.equal(isPastGrace(null, new Date('2099-01-01T00:00:00.000Z')), false);
   });
 });
 
@@ -465,6 +532,11 @@ describe('VnpayGateway', () => {
       useEnv(FULL_ENV);
       stubFetch(respond({ ...goodBody(), vnp_TransactionStatus: '02' }));
       assert.deepEqual(await new VnpayGateway().query(queryInput), { ok: false, reason: 'BAD_SIGNATURE' });
+    });
+    it('reports UNSIGNED with the response code when the sandbox answers 99 without a signature', async () => {
+      useEnv(FULL_ENV);
+      stubFetch(respond({ vnp_ResponseCode: '99', vnp_Message: 'Unexpected error' }));
+      assert.deepEqual(await new VnpayGateway().query(queryInput), { ok: false, reason: 'UNSIGNED', responseCode: '99' });
     });
     it('reports MISMATCH when the verified response is for a different amount', async () => {
       useEnv(FULL_ENV);
