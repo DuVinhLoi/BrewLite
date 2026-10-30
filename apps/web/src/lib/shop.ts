@@ -23,7 +23,8 @@ export function isExpired(payment: Payment, now: number) { return !payment.expir
 export function vnpayMessage(code: string): string {
   switch (code) {
     case '24': return 'Bạn đã hủy giao dịch';
-    case '11': return 'Đã hết thời gian thanh toán';
+    // 15 was seen in the 2026-10-30 spike (expiry at the OTP step); EXPIRED is our own gatewayResponseCode for a closed payment (D6).
+    case '11': case '15': case 'EXPIRED': return 'Đã hết thời gian thanh toán';
     case '51': return 'Tài khoản không đủ số dư';
     case '13': return 'Bạn nhập sai mã OTP';
     case '09': case '10': case '12': case '79': return 'Thẻ hoặc tài khoản có vấn đề, vui lòng kiểm tra lại';

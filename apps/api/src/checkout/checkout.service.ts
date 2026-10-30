@@ -6,8 +6,8 @@ import { Identity } from '../auth/auth.service';
 import { invalid, parseItems, record, unitPrice } from './pricing';
 import { canTransition } from './order-state';
 import { InventoryService } from '../inventory/inventory.service';
-import { VnpayGateway } from '../payment/payment-gateway';
-import { ipnAction, parseVnDate, queryDrAction, verifyReturn } from '../payment/vnpay';
+import { VnpayGateway, type QueryResult } from '../payment/payment-gateway';
+import { ipnAction, isPastGrace, parseVnDate, queryDrAction, unansweredQueryAction, verifyReturn } from '../payment/vnpay';
 import { canVerify, readVnpayConfig } from '../payment/vnpay-config';
 
 const transactionOptions = { maxWait: 20000, timeout: 20000 };
@@ -28,6 +28,8 @@ type GatewayResult = {
 };
 type PayInput = { orderId: string; paymentMethod: 'WALLET' | 'CARD'; key: string; fingerprint: string; ipAddr: string };
 type QueryVerdict = 'DONE' | 'IN_PROGRESS' | 'PROVIDER_ERROR';
+// What closing a payment after the grace (D6) writes; gatewayTransactionStatus stays null.
+const EXPIRED_RESULT: GatewayResult = { outcome: 'FAILED', responseCode: 'EXPIRED', transactionStatus: null, transactionNo: null, bankCode: null, paidAt: null };
 
 @Injectable()
 export class CheckoutService {
@@ -163,27 +165,41 @@ export class CheckoutService {
   }
   // Asks VNPay about one PENDING payment (HTTP, no transaction), then applies the answer under the order lock.
   // Returns once the payment is no longer PENDING; throws 409 while undecided and 502 when VNPay cannot be trusted.
+  // D6: 15 minutes after expiresAt a payment without a usable answer is closed as FAILED "EXPIRED" instead of staying PENDING.
   private async settleByQuery(paymentId: string) {
     const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
     if (!payment || payment.status !== 'PENDING') return;
     const queriedAt = new Date();
+    const pastGrace = isPastGrace(payment.expiresAt, queriedAt);
     const answer = await this.gateway.query({ paymentId, orderId: payment.orderId, amount: payment.amount, gatewayCreateDate: payment.gatewayCreateDate, now: queriedAt });
-    if (!answer.ok) this.logger.warn(`VNPAY_QUERYDR_FAILED vnp_TxnRef=${paymentId} reason=${answer.reason}`);
+    if (!answer.ok) {
+      // The response code of an UNSIGNED answer is unverified (exactly 2 digits): it is only logged, never used to decide.
+      const code = answer.reason === 'UNSIGNED' && answer.responseCode ? ` vnp_ResponseCode=${answer.responseCode}` : '';
+      this.logger.warn(`VNPAY_QUERYDR_FAILED vnp_TxnRef=${paymentId} reason=${answer.reason}${code}`);
+    }
+    const action = answer.ok ? queryDrAction(answer.responseCode, answer.transactionStatus, isExpired(payment, queriedAt), pastGrace) : unansweredQueryAction(answer.reason, pastGrace);
     const verdict = await this.prisma.$transaction(async (tx): Promise<QueryVerdict> => {
       await tx.$queryRaw`SELECT id FROM orders WHERE id = ${payment.orderId} FOR UPDATE`;
       // Read the payment again: an IPN may have settled it while we waited for VNPay.
       const stillPending = (await tx.payment.findUniqueOrThrow({ where: { id: paymentId }, select: { status: true } })).status === 'PENDING';
-      if (!answer.ok) return stillPending ? 'PROVIDER_ERROR' : 'DONE';
-      const action = queryDrAction(answer.responseCode, answer.transactionStatus, isExpired(payment, queriedAt));
       if (action.kind === 'PROVIDER_ERROR') {
-        if (action.reconcile) this.reconciliationRequired(paymentId, answer.responseCode, answer.transactionStatus);
+        if (action.reconcile) {
+          if (answer.ok) this.reconciliationRequired(paymentId, answer.responseCode, answer.transactionStatus);
+          else this.logger.warn(`PAYMENT_RECONCILIATION_REQUIRED vnp_TxnRef=${paymentId} reason=${answer.reason}`);
+        }
         return stillPending ? 'PROVIDER_ERROR' : 'DONE';
       }
       if (action.kind === 'IN_PROGRESS') return stillPending ? 'IN_PROGRESS' : 'DONE';
-      const result: GatewayResult = action.kind === 'EXPIRED'
-        ? { outcome: 'FAILED', responseCode: 'EXPIRED', transactionStatus: null, transactionNo: null, bankCode: null, paidAt: null }
-        : { outcome: action.kind, responseCode: answer.responseCode, transactionStatus: answer.transactionStatus, transactionNo: answer.transactionNo, bankCode: answer.bankCode, paidAt: answer.payDate };
-      await this.applyGatewayResult(tx, paymentId, result);
+      // Only a verified answer gives SUCCESS or FAILED, so an unanswered call that gets here is EXPIRED too.
+      if (action.kind === 'EXPIRED' || !answer.ok) {
+        const closed = await this.applyGatewayResult(tx, paymentId, EXPIRED_RESULT);
+        // A verified 91 is VNPay saying it never saw the payment, so it needs no warning. Every other close had no clear answer.
+        if (closed && !(answer.ok && answer.responseCode === '91')) this.expiredUnconfirmed(paymentId, answer);
+        return 'DONE';
+      }
+      await this.applyGatewayResult(tx, paymentId, {
+        outcome: action.kind, responseCode: answer.responseCode, transactionStatus: answer.transactionStatus, transactionNo: answer.transactionNo, bankCode: answer.bankCode, paidAt: answer.payDate,
+      });
       return 'DONE';
     }, transactionOptions);
     if (verdict === 'IN_PROGRESS') throw inProgress();
@@ -261,5 +277,10 @@ export class CheckoutService {
   // Staff look the payment up by vnp_TxnRef in the VNPay Merchant Admin and refund by hand.
   private reconciliationRequired(paymentId: string, responseCode: string, transactionStatus: string | null) {
     this.logger.warn(`PAYMENT_RECONCILIATION_REQUIRED vnp_TxnRef=${paymentId} vnp_ResponseCode=${responseCode} vnp_TransactionStatus=${transactionStatus ?? ''}`);
+  }
+  // D6: a payment closed with no clear answer from VNPay. The detail is the verified codes, or the reason code of the failed call.
+  private expiredUnconfirmed(paymentId: string, answer: QueryResult) {
+    const detail = answer.ok ? `vnp_ResponseCode=${answer.responseCode} vnp_TransactionStatus=${answer.transactionStatus}` : `reason=${answer.reason}`;
+    this.logger.warn(`PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=${paymentId} ${detail}`);
   }
 }

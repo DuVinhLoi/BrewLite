@@ -15,7 +15,9 @@ const QUERYDR_RESPONSE_FIELDS = [
 ] as const;
 
 export type QueryDrFields = Record<(typeof QUERYDR_RESPONSE_FIELDS)[number], string>;
-export type QueryDrFailure = 'BAD_RESPONSE' | 'BAD_SIGNATURE' | 'MISMATCH';
+export type QueryDrFailure = 'BAD_RESPONSE' | 'BAD_SIGNATURE' | 'MISMATCH' | 'UNSIGNED';
+// Every way a QueryDR call can end without a verified answer (used by the gateway result and unansweredQueryAction).
+export type QueryFailureReason = 'NOT_CONFIGURED' | 'MISSING_CREATE_DATE' | 'TIMEOUT' | 'NETWORK' | QueryDrFailure;
 
 const sign = (secret: string, data: string) => createHmac('sha512', secret).update(data, 'utf8').digest('hex');
 
@@ -86,8 +88,10 @@ export function buildQueryDr(input: {
 }
 
 // Checks signature, then merchant and reference of the request. A 00 response also needs the amount (Payment.amount * 100) and type 01.
+// UNSIGNED (spike 2026-10-30: the sandbox answers 99 with no vnp_SecureHash) carries the response code for the log only:
+// it is the code of an unverified body, so it is kept only when it is exactly 2 digits and is never used to decide anything.
 export function verifyQueryDrResponse(body: unknown, expected: { secret: string; tmnCode: string; txnRef: string; amountVnd: number }):
-  { ok: true; fields: QueryDrFields } | { ok: false; reason: QueryDrFailure } {
+  { ok: true; fields: QueryDrFields } | { ok: false; reason: QueryDrFailure; responseCode?: string | null } {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return { ok: false, reason: 'BAD_RESPONSE' };
   const raw = body as Record<string, unknown>;
   const fields = {} as QueryDrFields;
@@ -96,6 +100,7 @@ export function verifyQueryDrResponse(body: unknown, expected: { secret: string;
     fields[name] = typeof value === 'string' || typeof value === 'number' ? String(value) : '';
   }
   const received = raw.vnp_SecureHash;
+  if (received === undefined) return { ok: false, reason: 'UNSIGNED', responseCode: /^\d{2}$/.test(fields.vnp_ResponseCode) ? fields.vnp_ResponseCode : null };
   if (typeof received !== 'string' || !sameSignature(received, sign(expected.secret, joinFields(QUERYDR_RESPONSE_FIELDS, fields)))) {
     return { ok: false, reason: 'BAD_SIGNATURE' };
   }
@@ -116,19 +121,38 @@ export type QueryDrAction =
   | { kind: 'EXPIRED' }
   | { kind: 'PROVIDER_ERROR'; reconcile: boolean };
 
-// Plan table 1.6 for a verified QueryDR response. vnp_ResponseCode is the answer to the query,
-// vnp_TransactionStatus is the state of the payment itself.
-export function queryDrAction(responseCode: string, transactionStatus: string, expired: boolean): QueryDrAction {
+// D6: a PENDING payment is closed (FAILED, "EXPIRED") when VNPay gave no usable answer 15 minutes after expiresAt.
+export const EXPIRY_GRACE_MS = 15 * 60 * 1000;
+
+// now >= expiresAt + 15 minutes. A payment without expiresAt never leaves its grace.
+export function isPastGrace(expiresAt: Date | null, now: Date) {
+  return expiresAt !== null && now.getTime() >= expiresAt.getTime() + EXPIRY_GRACE_MS;
+}
+
+// Plan table 1.6 and D6 for a verified QueryDR response. vnp_ResponseCode is the answer to the query,
+// vnp_TransactionStatus is the state of the payment itself. "expired" is now >= expiresAt, "pastGrace" is isPastGrace.
+export function queryDrAction(responseCode: string, transactionStatus: string, expired: boolean, pastGrace: boolean): QueryDrAction {
   if (responseCode === '91') {
-    // pending spike: 91 after expiry -> FAILED with gatewayResponseCode "EXPIRED"; before expiry the payment stays PENDING.
+    // Spike 2026-10-30 never saw 91 (the sandbox QueryDR answers 99 unsigned); 91 after expiry still closes the payment, before it stays PENDING.
     return expired ? { kind: 'EXPIRED' } : { kind: 'IN_PROGRESS' };
   }
-  if (responseCode !== '00') return { kind: 'PROVIDER_ERROR', reconcile: false };
-  if (transactionStatus === '00') return { kind: 'SUCCESS' };
-  // pending spike: 00/01 after expiry stays IN_PROGRESS (the caller must still guarantee an exit for abandoned payments).
-  if (transactionStatus === '01') return { kind: 'IN_PROGRESS' };
-  if (transactionStatus === '02') return { kind: 'FAILED' };
-  return { kind: 'PROVIDER_ERROR', reconcile: SUSPECT_STATUSES.includes(transactionStatus) };
+  if (responseCode === '00') {
+    if (transactionStatus === '00') return { kind: 'SUCCESS' };
+    if (transactionStatus === '02') return { kind: 'FAILED' };
+    // Money may have moved: a human must look, so even the grace never closes these.
+    if (SUSPECT_STATUSES.includes(transactionStatus)) return { kind: 'PROVIDER_ERROR', reconcile: true };
+    // D6: 00/01 (the customer may still be paying) stays open until the grace ends.
+    if (transactionStatus === '01') return pastGrace ? { kind: 'EXPIRED' } : { kind: 'IN_PROGRESS' };
+  }
+  // A missing or unsupported status, or any other query code (02, 03, 94, 97, 99...): close after the grace (D6).
+  return pastGrace ? { kind: 'EXPIRED' } : { kind: 'PROVIDER_ERROR', reconcile: false };
+}
+
+// D6 for a QueryDR call with no verified answer. MISMATCH is a signed answer about another merchant, reference, amount or type:
+// a human must look, so it is never closed. Every other reason closes the payment once the grace has ended.
+export function unansweredQueryAction(reason: QueryFailureReason, pastGrace: boolean): QueryDrAction {
+  if (reason === 'MISMATCH') return { kind: 'PROVIDER_ERROR', reconcile: true };
+  return pastGrace ? { kind: 'EXPIRED' } : { kind: 'PROVIDER_ERROR', reconcile: false };
 }
 
 export type IpnAction = { kind: 'SUCCESS' } | { kind: 'FAILED' } | { kind: 'UNRESOLVED'; reconcile: boolean };
@@ -137,7 +161,7 @@ export type IpnAction = { kind: 'SUCCESS' } | { kind: 'FAILED' } | { kind: 'UNRE
 // reconcile = some code hints that money was taken, so log PAYMENT_RECONCILIATION_REQUIRED.
 export function ipnAction(responseCode: string, transactionStatus: string): IpnAction {
   if (responseCode === '00' && transactionStatus === '00') return { kind: 'SUCCESS' };
-  // pending spike: IPN failure rule - status 02 with a response code other than 00/07 (includes the customer cancelling, 24).
+  // Spike 2026-10-30: the customer cancelling (24/02) and expiry at the OTP step (15/02) both arrive as status 02 with a response code other than 00/07.
   if (transactionStatus === '02' && responseCode !== '00' && responseCode !== '07') return { kind: 'FAILED' };
   const hintsAtDebit = SUSPECT_STATUSES.includes(transactionStatus) || transactionStatus === '00' || responseCode === '00' || responseCode === '07';
   return { kind: 'UNRESOLVED', reconcile: hintsAtDebit };
