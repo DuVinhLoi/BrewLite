@@ -115,6 +115,11 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
   - QueryDR sandbox thử lại lúc 18:55: vẫn `99` không chữ ký, 7.3 còn mở;
   - 7.7g chưa chạy: build image không kéo được `node:24-bookworm-slim` (Docker Hub: `personal access token is expired`). Thử kéo ẩn danh bằng `DOCKER_CONFIG` tạm cũng bị daemon từ chối;
   - `git diff --check` sạch; file đổi so với `jumbo` nằm trong phạm vi plan. Đã dọn `apps/web/next-env.d.ts` và `apps/web/AGENTS.md` (do `next dev` sinh ra), cùng `.playwright-mcp/`.
+- 2026-10-30 19:30: người dùng đăng nhập lại Docker Hub; Integrator chạy 7.7g:
+  - project Compose riêng `brewlite-vnpay-sit`, cổng 4020/3020, build image mới. Không có biến VNPay: 9/9 kiểm đạt (lượt đầu 4/9, vì script gửi `quantity` dạng số trong khi API yêu cầu chuỗi);
+  - image production với `PAYMENT_PROVIDER=fake` dừng lúc khởi động;
+  - tạo lại riêng container `api` với `VNP_*` nạp từ `apps/api/.env` lúc chạy: sandbox nhận URL ký; hủy trên VNPay → return `24/02` hợp lệ; chuyển tiếp vào IPN → `00`, gửi lặp → `02`;
+  - đã `down -v` stack và volume test, xóa `.playwright-mcp/` (ảnh chụp trang có URL return đã ký). Worktree sạch.
 - Ruling 2026-10-30 18:50: kiểm 7.7d bằng QueryDR giả thay cho sandbox. Plan 7.7d vốn ghi "response QueryDR kiểm soát được trong scratchpad/local", nên đánh dấu 7.7d là đạt. 7.3 không đánh dấu, vì bước này cần sandbox xác nhận một giao dịch thật.
 - Nhận xét đợt D6: chạy song song tài liệu và code (2 + 2 card) đáng giá. Mỗi lượt xong trong 10–15 phút, không conflict, vì contract mục 8 chốt tên và bảng quyết định trước. Review Opus tìm được một lỗi thật mà test và kiểm local không phát hiện: phản hồi lỗi đã ký mà trường rỗng làm đơn kẹt. Lần sau giữ 2 worker và một lượt review trước khi chốt. Nên nối junction trước khi worker khởi động để khỏi mất một lượt `ask`.
 - Nhận xét đợt tài liệu: chạy song song đáng giá. Ba worker W1 xong trong 9–15 phút, không conflict, nhờ contract chốt mã trước và allowed paths không chồng nhau. Wave 2 một worker là đủ. Lần sau giữ số agent theo số nhóm file độc lập, không tăng thêm.
