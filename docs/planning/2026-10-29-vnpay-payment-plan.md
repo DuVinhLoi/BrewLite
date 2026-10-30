@@ -272,47 +272,47 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
 
 ### Bước 5 – Code API (chỉ khi người dùng yêu cầu)
 
-- [ ] 5.1 `apps/api/prisma/schema.prisma` và **hai** migration theo mục 1.4: enum và cột trước, partial index sau. Chạy `prisma migrate dev` trên DB local, `prisma validate`. Kiểm index bằng `\d payments` trong `psql`.
-- [ ] 5.2 `apps/api/src/payment/vnpay.ts`: chỉ chứa hàm thuần, không phụ thuộc Nest:
+- [ ] 5.1 `apps/api/prisma/schema.prisma` và **hai** migration theo mục 1.4: enum và cột trước, partial index sau. (Schema và hai migration đã viết; còn chạy trên DB local.) Chạy `prisma migrate dev` trên DB local, `prisma validate`. Kiểm index bằng `\d payments` trong `psql`.
+- [x] 5.2 `apps/api/src/payment/vnpay.ts`: chỉ chứa hàm thuần, không phụ thuộc Nest:
   - `buildPaymentUrl`, `verifyReturn`;
   - `buildQueryDr`, `verifyQueryDrResponse`;
   - `formatVnDate` và `parseVnDate` (GMT+7);
   - hàm ánh xạ `(vnp_ResponseCode, vnp_TransactionStatus, đã quá hạn)` ra hành động theo bảng mục 1.6;
   - test `apps/api/test/vnpay.test.ts` theo D3, viết và chạy đỏ trước khi viết hàm.
-- [ ] 5.3 `apps/api/src/payment/payment-gateway.ts`: triển khai `VnpayGateway` với `createUrl` và `query`, tách HTTP/cấu hình khỏi hàm ký thuần. `query` trả riêng response code, transaction status và metadata đã xác thực, không gộp thành boolean thành công/thất bại. Không làm `FakeGateway`/endpoint fake ở bản này (D4).
-- [ ] 5.4 `apps/api/src/checkout/checkout.service.ts`:
+- [x] 5.3 `apps/api/src/payment/payment-gateway.ts`: triển khai `VnpayGateway` với `createUrl` và `query`, tách HTTP/cấu hình khỏi hàm ký thuần. `query` trả riêng response code, transaction status và metadata đã xác thực, không gộp thành boolean thành công/thất bại. Không làm `FakeGateway`/endpoint fake ở bản này (D4).
+- [x] 5.4 `apps/api/src/checkout/checkout.service.ts`:
   - `pay()` bỏ `simulatePayment` và việc trừ kho đồng bộ; đi đúng thứ tự mục 1.5. Tạo `Payment PENDING` lưu `gatewayCreateDate`, `expiresAt`, `paymentUrl` cùng transaction đổi đơn `PAYMENT_FAILED` → `PENDING`; chỉ kiểm cấu hình ký khi tạo URL mới;
   - thêm `applyGatewayResult(tx, paymentId, result)` theo mục 1.3, chỉ `settle` khi `order.inventoryTracked`, ghi warning khi tiền tới sau trạng thái cuối. `pay()` có thể gián tiếp trừ kho nếu đối soát phát hiện payment cũ đã thành công;
   - thêm `resolveExpired(orderId)` theo mục 1.6. Sau kiểm quyền, `pay()`, nhánh **hủy** của `transition()` và `sync` dùng đối soát khi cần; HTTP luôn ngoài transaction giữ khóa. `sync` còn xử lý payment chưa hết hạn theo cùng bảng; không QueryDR trong các chuyển pha chế;
   - `transition()` khóa đơn và kiểm lại payment sau đối soát trước khi hủy/nhả kho; giữ nhánh đơn cũ `inventoryTracked=false`;
   - `detail()` trả thêm trường payment đã đặc tả ở mục 1.5; không sửa contract danh sách đơn.
-- [ ] 5.5 Tạo `apps/api/src/payment/vnpay.controller.ts` (không có guard) cho `ipn`, `return`; thêm `sync` vào `apps/api/src/checkout/checkout.controller.ts` có guard. Đăng ký controller mới và provider `VnpayGateway` trong `apps/api/src/checkout/checkout.module.ts`; giữ guard chỉ trên controller cần đăng nhập, không tạo thêm module riêng.
-- [ ] 5.6 Đọc cấu hình theo mục 1.8: thiếu biến thì API **vẫn khởi động** để Docker/local chạy chức năng khác mà không cần secret, ghi một dòng cảnh báo chỉ gồm tên biến thiếu. Kiểm cấu hình theo từng thao tác; không dùng `WEB_URL` để chặn IPN/QueryDR/return. Giá trị provider không hỗ trợ hoặc fake trong production thì dừng khởi động. Không sửa kiểm `JWT_SECRET` hoặc `HealthController`.
-- [ ] 5.7 Xóa `apps/api/src/checkout/payment.ts`. Cập nhật `.env.example` (Compose) và `apps/api/.env.example` (API local), credential để rỗng; cập nhật `docker-compose.yml`, `compose.demo.yml` để truyền biến VNPay tùy chọn vào runtime. Không bake secret vào image/build args và không bắt Compose có secret mới khởi động được. Sửa câu "bộ test đã xóa" ở `.github/workflows/README.md` và `docs/inventory-verification.md` thành: chỉ còn unit test VNPay tối thiểu theo D3. Cùng lúc với code, sửa các tài liệu vận hành đang mô tả simulator của code hiện hành (quét Wave 2 ngày 2026-10-29): `README.md` (bảng API `POST /payments` có `cardNumber?`, câu thẻ demo `4242…`/`4000…0002`; thêm đoạn ngắn: trả tiền cần `VNP_TMN_CODE`, `VNP_HASH_SECRET`, `WEB_URL` trong `apps/api/.env`, thiếu thì API vẫn chạy nhưng tạo URL thanh toán trả 502, dẫn tới `docs/deployment.md`; CR-1 của W2-TRACE, NFR-19), `apps/api/README.md` (câu simulator và 402 `PAYMENT_DECLINED`), `docs/inventory-runbook.md` (bước demo "CARD demo kết thúc 0002 trả 402"). Không sửa trước khi code đổi, vì các file này hướng dẫn chạy code hiện hành.
-- [ ] 5.8 Không log toàn bộ query IPN, payment URL hoặc payload QueryDR. Log vận hành chỉ gồm mã sự kiện, `vnp_TxnRef`, `vnp_ResponseCode`, `vnp_TransactionStatus`, `RspCode` nếu có; warning đối soát phải giữ `vnp_TxnRef` để nhân viên tra Merchant Admin. Không log secret/chữ ký/số thẻ.
+- [x] 5.5 Tạo `apps/api/src/payment/vnpay.controller.ts` (không có guard) cho `ipn`, `return`; thêm `sync` vào `apps/api/src/checkout/checkout.controller.ts` có guard. Đăng ký controller mới và provider `VnpayGateway` trong `apps/api/src/checkout/checkout.module.ts`; giữ guard chỉ trên controller cần đăng nhập, không tạo thêm module riêng.
+- [x] 5.6 Đọc cấu hình theo mục 1.8: thiếu biến thì API **vẫn khởi động** để Docker/local chạy chức năng khác mà không cần secret, ghi một dòng cảnh báo chỉ gồm tên biến thiếu. Kiểm cấu hình theo từng thao tác; không dùng `WEB_URL` để chặn IPN/QueryDR/return. Giá trị provider không hỗ trợ hoặc fake trong production thì dừng khởi động. Không sửa kiểm `JWT_SECRET` hoặc `HealthController`.
+- [x] 5.7 Xóa `apps/api/src/checkout/payment.ts`. Cập nhật `.env.example` (Compose) và `apps/api/.env.example` (API local), credential để rỗng; cập nhật `docker-compose.yml`, `compose.demo.yml` để truyền biến VNPay tùy chọn vào runtime. Không bake secret vào image/build args và không bắt Compose có secret mới khởi động được. Sửa câu "bộ test đã xóa" ở `.github/workflows/README.md` và `docs/inventory-verification.md` thành: chỉ còn unit test VNPay tối thiểu theo D3. Cùng lúc với code, sửa các tài liệu vận hành đang mô tả simulator của code hiện hành (quét Wave 2 ngày 2026-10-29): `README.md` (bảng API `POST /payments` có `cardNumber?`, câu thẻ demo `4242…`/`4000…0002`; thêm đoạn ngắn: trả tiền cần `VNP_TMN_CODE`, `VNP_HASH_SECRET`, `WEB_URL` trong `apps/api/.env`, thiếu thì API vẫn chạy nhưng tạo URL thanh toán trả 502, dẫn tới `docs/deployment.md`; CR-1 của W2-TRACE, NFR-19), `apps/api/README.md` (câu simulator và 402 `PAYMENT_DECLINED`), `docs/inventory-runbook.md` (bước demo "CARD demo kết thúc 0002 trả 402"). Không sửa trước khi code đổi, vì các file này hướng dẫn chạy code hiện hành.
+- [x] 5.8 Không log toàn bộ query IPN, payment URL hoặc payload QueryDR. Log vận hành chỉ gồm mã sự kiện, `vnp_TxnRef`, `vnp_ResponseCode`, `vnp_TransactionStatus`, `RspCode` nếu có; warning đối soát phải giữ `vnp_TxnRef` để nhân viên tra Merchant Admin. Không log secret/chữ ký/số thẻ.
 
 ### Bước 6 – Code web (chỉ khi người dùng yêu cầu)
 
-- [ ] 6.1 `apps/web/src/components/shop/CheckoutScreen.tsx`:
+- [x] 6.1 `apps/web/src/components/shop/CheckoutScreen.tsx`:
   - bỏ ô số thẻ;
   - nút "Thanh toán qua VNPay";
   - nhận `paymentUrl`, lưu `{ orderId, key, paymentId, paymentMethod }` trong `sessionStorage` của phiên checkout rồi `window.location.assign(paymentUrl)`;
   - giữ `Idempotency-Key` khi retry; không xóa giỏ hay phiên checkout ngay khi tạo/replay URL;
   - xử lý replay `SUCCESS` mà không redirect URL; chỉ khi DB xác nhận đơn đã trả (`PAID`/`PREPARING`/`READY`/`COMPLETED`) mới xóa checkout của đúng đơn và giỏ liên quan;
   - thay nhánh 402: gặp 409 thì đọc lại chi tiết đơn. Có payment `PENDING` còn hạn thì hiện "Tiếp tục thanh toán" bằng URL cũ; đã quá hạn/chưa kết luận thì hiện "Kiểm tra trạng thái", gọi `sync` khi khách yêu cầu, không redirect URL hết hạn. Đơn đã trả/hủy xử lý theo trạng thái DB, không coi mọi 409 đều là đang thanh toán.
-- [ ] 6.2 Trang mới `apps/web/src/app/payment/vnpay-return/page.tsx`:
+- [x] 6.2 Trang mới `apps/web/src/app/payment/vnpay-return/page.tsx`:
   - Client Component dùng `useSearchParams` phải nằm **bên trong `<Suspense>`**, đặt hook trong component con rồi bọc ở page; kiểm bằng production build Next 16. [Next.js](https://nextjs.org/docs/app/api-reference/functions/use-search-params#static-rendering)
   - gọi `GET /payments/vnpay/return`, hiển thị theo mục 1.7 và lấy trạng thái DB làm chuẩn; `valid: false` chỉ phục hồi từ `orderId`/`paymentId` lưu trong phiên, không tin ID từ query chưa kiểm. Chưa đăng nhập thì yêu cầu đăng nhập và giữ URL quay lại;
   - poll `GET /orders/:id` mỗi 2 giây, tối đa 30 giây;
   - vẫn có payment `PENDING` thì gọi `POST /payments/:id/sync` một lần; 409/502 hiện đang xác minh cùng nút kiểm tra lại, không tạo vòng lặp QueryDR. Dừng timer khi rời trang hoặc có trạng thái cuối;
   - đơn đã trả (`PAID`/`PREPARING`/`READY`/`COMPLETED`) thì dọn phiên đúng đơn như 6.1 và chuyển `/orders/:id`; `PAYMENT_FAILED` giữ giỏ để thử lại/hủy.
-- [ ] 6.3 `OrdersScreen.tsx`: nhãn "Đang chờ VNPay" cho `Payment PENDING`; chặn hủy khi payment còn hạn, cho nút đối soát khi quá hạn, chỉ cho hủy sau khi DB xác nhận không còn payment chưa kết luận. Cập nhật kiểu `Order.payments` và kiểu response thanh toán/sync trong `apps/web/src/lib/shop.ts` theo mục 1.5; không cần sửa `ShopProvider` hay `ApiError` dùng chung.
-- [ ] 6.4 Đổi tiêu đề "Thanh toán mô phỏng" thành "Thanh toán qua VNPay (sandbox)".
+- [x] 6.3 `OrdersScreen.tsx`: nhãn "Đang chờ VNPay" cho `Payment PENDING`; chặn hủy khi payment còn hạn, cho nút đối soát khi quá hạn, chỉ cho hủy sau khi DB xác nhận không còn payment chưa kết luận. Cập nhật kiểu `Order.payments` và kiểu response thanh toán/sync trong `apps/web/src/lib/shop.ts` theo mục 1.5; không cần sửa `ShopProvider` hay `ApiError` dùng chung.
+- [x] 6.4 Đổi tiêu đề "Thanh toán mô phỏng" thành "Thanh toán qua VNPay (sandbox)".
 
 ### Bước 7 – Kiểm chứng
 
-- [ ] 7.1 `npm --prefix apps/api run lint && npm --prefix apps/api run build`; `npm --prefix apps/web run lint && npm --prefix apps/web run typecheck && npm --prefix apps/web run build`.
-- [ ] 7.2 `node --import tsx --test test/vnpay.test.ts` từ `apps/api` (D3) đạt các ca: URL có khoảng trắng, signature thiếu/sai độ dài/không phải hex, chữ ký QueryDR có trường tùy chọn rỗng, định dạng/đọc ngày GMT+7 lúc 23:30 UTC, các dòng bảng mục 1.6. Không dùng secret thật trong fixture hay log. Chạy lại mỗi khi `vnpay.ts` đổi, kể cả sau review.
+- [x] 7.1 `npm --prefix apps/api run lint && npm --prefix apps/api run build`; `npm --prefix apps/web run lint && npm --prefix apps/web run typecheck && npm --prefix apps/web run build`.
+- [x] 7.2 `node --import tsx --test test/vnpay.test.ts` từ `apps/api` (D3) đạt các ca: URL có khoảng trắng, signature thiếu/sai độ dài/không phải hex, chữ ký QueryDR có trường tùy chọn rỗng, định dạng/đọc ngày GMT+7 lúc 23:30 UTC, các dòng bảng mục 1.6. Không dùng secret thật trong fixture hay log. Chạy lại mỗi khi `vnpay.ts` đổi, kể cả sau review.
 - [ ] 7.3 Local, không có IPN:
   - đặt 2 Cappuccino, trả bằng thẻ NCB;
   - trang return gọi `sync`, đơn thành `PAID`;

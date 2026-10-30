@@ -99,6 +99,9 @@ Nếu thay cổng web phải thay CORS_ORIGINS; API URL được nhúng khi web 
 | GET /orders/:id | Chủ đơn/BARISTA | Món, trạng thái và các lần thanh toán |
 | PATCH /orders/:id | Chủ đơn/BARISTA | `{status}`: khách hủy chưa trả; quầy PREPARING→READY→COMPLETED |
 | POST /payments | CUSTOMER chủ đơn | `{orderId,paymentMethod}`, bắt buộc `Idempotency-Key`; trả `paymentUrl` của VNPay, kết quả đến qua IPN hoặc `POST /payments/:id/sync` |
+| POST /payments/:id/sync | CUSTOMER chủ đơn | Hỏi VNPay (QueryDR) khi payment còn `PENDING`; trả `{paymentId,orderId,orderStatus,status}` |
+| GET /payments/vnpay/ipn | Public (VNPay gọi) | Kiểm chữ ký, áp kết quả; luôn HTTP 200 với `{RspCode,Message}` |
+| GET /payments/vnpay/return | Public | Kiểm chữ ký để trang return biết đơn nào; không ghi DB |
 | GET /health | Public | 200 DB up; 503 DB down |
 
 JWT_SECRET tối thiểu 32 ký tự; bcrypt cost 12. Unknown fields bị từ chối (kể cả giá/userId/role do client tự gửi).
@@ -114,7 +117,7 @@ Barista đăng nhập để vào `/inventory`; đơn hàng tiếp tục dùng GE
 
 ## Kiểm chứng và build
 
-Theo yêu cầu chủ dự án, toàn bộ test tự động, cấu hình, script và dependency phục vụ test đã được xóa sau khi chạy kiểm chứng. [Báo cáo kho](docs/inventory-verification.md) lưu kết quả unit/HTTP, PostgreSQL, trình duyệt, migration và seed trước khi xóa. Các hồ sơ CI/Sprint cũ là minh chứng lịch sử.
+Theo yêu cầu chủ dự án, toàn bộ test tự động, cấu hình, script và dependency phục vụ test đã được xóa sau khi chạy kiểm chứng. Từ 2026-10-29 chỉ còn unit test VNPay tối thiểu `apps/api/test/vnpay.test.ts`, chạy bằng `node --import tsx --test test/vnpay.test.ts` trong `apps/api`. [Báo cáo kho](docs/inventory-verification.md) lưu kết quả unit/HTTP, PostgreSQL, trình duyệt, migration và seed trước khi xóa. Các hồ sơ CI/Sprint cũ là minh chứng lịch sử.
 
 ```powershell
 npm.cmd --prefix apps/api run lint
