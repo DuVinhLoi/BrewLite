@@ -177,24 +177,31 @@ export class CheckoutService {
       const code = answer.reason === 'UNSIGNED' && answer.responseCode ? ` vnp_ResponseCode=${answer.responseCode}` : '';
       this.logger.warn(`VNPAY_QUERYDR_FAILED vnp_TxnRef=${paymentId} reason=${answer.reason}${code}`);
     }
-    const action = answer.ok ? queryDrAction(answer.responseCode, answer.transactionStatus, isExpired(payment, queriedAt), pastGrace) : unansweredQueryAction(answer.reason, pastGrace);
     const verdict = await this.prisma.$transaction(async (tx): Promise<QueryVerdict> => {
       await tx.$queryRaw`SELECT id FROM orders WHERE id = ${payment.orderId} FOR UPDATE`;
       // Read the payment again: an IPN may have settled it while we waited for VNPay.
       const stillPending = (await tx.payment.findUniqueOrThrow({ where: { id: paymentId }, select: { status: true } })).status === 'PENDING';
-      if (action.kind === 'PROVIDER_ERROR') {
-        if (action.reconcile) {
-          if (answer.ok) this.reconciliationRequired(paymentId, answer.responseCode, answer.transactionStatus);
-          else this.logger.warn(`PAYMENT_RECONCILIATION_REQUIRED vnp_TxnRef=${paymentId} reason=${answer.reason}`);
+      if (!answer.ok) {
+        // No verified answer: unansweredQueryAction gives only PROVIDER_ERROR or EXPIRED.
+        const unanswered = unansweredQueryAction(answer.reason, pastGrace);
+        if (unanswered.kind === 'PROVIDER_ERROR') {
+          if (unanswered.reconcile) this.logger.warn(`PAYMENT_RECONCILIATION_REQUIRED vnp_TxnRef=${paymentId} reason=${answer.reason}`);
+          return stillPending ? 'PROVIDER_ERROR' : 'DONE';
         }
+        const closed = await this.applyGatewayResult(tx, paymentId, EXPIRED_RESULT);
+        if (closed) this.expiredUnconfirmed(paymentId, answer);
+        return 'DONE';
+      }
+      const action = queryDrAction(answer.responseCode, answer.transactionStatus, isExpired(payment, queriedAt), pastGrace);
+      if (action.kind === 'PROVIDER_ERROR') {
+        if (action.reconcile) this.reconciliationRequired(paymentId, answer.responseCode, answer.transactionStatus);
         return stillPending ? 'PROVIDER_ERROR' : 'DONE';
       }
       if (action.kind === 'IN_PROGRESS') return stillPending ? 'IN_PROGRESS' : 'DONE';
-      // Only a verified answer gives SUCCESS or FAILED, so an unanswered call that gets here is EXPIRED too.
-      if (action.kind === 'EXPIRED' || !answer.ok) {
+      if (action.kind === 'EXPIRED') {
         const closed = await this.applyGatewayResult(tx, paymentId, EXPIRED_RESULT);
         // A verified 91 is VNPay saying it never saw the payment, so it needs no warning. Every other close had no clear answer.
-        if (closed && !(answer.ok && answer.responseCode === '91')) this.expiredUnconfirmed(paymentId, answer);
+        if (closed && answer.responseCode !== '91') this.expiredUnconfirmed(paymentId, answer);
         return 'DONE';
       }
       await this.applyGatewayResult(tx, paymentId, {

@@ -98,6 +98,15 @@ const RESP_WRONG_TYPE = // 00 but vnp_TransactionType = 02
   'RESP0003|querydr|00|QueryDR Success|FAKETMN1|PAYMENT1|1000000|NCB|20261029100500|14000001|02|00|Thanh toan don ORDER1||';
 const RESP_WRONG_TYPE_HASH =
   'ccaf1a89493240d8d1639ce64d13b30685f87b5308a8100634947305a4a5b77f29bbc9c487d68590fd07035ec11e42b757126f106453a1e30b5c56bb89b37aef';
+// Signed answers whose vnp_TmnCode and vnp_TxnRef are empty (review 2026-10-30: VNPay may sign an error answer like this).
+const RESP_ERROR_EMPTY_IDS = // 97, nothing but the code and message
+  'RESP0004|querydr|97|Invalid checksum|||||||||||';
+const RESP_ERROR_EMPTY_IDS_HASH =
+  '0fb0ac21e3270a49ddf35d199195063f6f157b8afad3ec9a977e633278f69c60c092764a81f37adf922cfe6cb0b325d8deab2e87229a125034e625e482e89f76';
+const RESP_SUCCESS_EMPTY_IDS = // 00 with the amount and type of RESP_SUCCESS, but no merchant or reference
+  'RESP0005|querydr|00|QueryDR Success|||1000000|NCB|20261029100500|14000001|01|00|Thanh toan don ORDER1||';
+const RESP_SUCCESS_EMPTY_IDS_HASH =
+  'e253ff7f68c67c84e90e706575b76120f616bd4ea53a02783cf7b094c80c7440bf8323a1174220896882d44edaf45b208b5a48a53c207b16461febc0fa1601ed';
 // The request formula applied to the response data (slots the response does not have stay empty) gives a
 // different signature, so the two formulas must not be mixed. String given to openssl:
 //   ||querydr|FAKETMN1|PAYMENT1||||Thanh toan don ORDER1
@@ -245,6 +254,12 @@ describe('verifyQueryDrResponse', () => {
     assert.ok(vnp_SecureHash);
     assert.deepEqual(verifyQueryDrResponse(withoutHash, expectation), { ok: false, reason: 'UNSIGNED', responseCode: '00' });
   });
+  // Review finding 9: only a missing vnp_SecureHash is UNSIGNED; an empty or null one is a signature that does not match.
+  it('reports BAD_SIGNATURE, not UNSIGNED, for an empty or null vnp_SecureHash', () => {
+    const body = queryDrBody(RESP_SUCCESS, RESP_SUCCESS_HASH);
+    assert.deepEqual(verifyQueryDrResponse({ ...body, vnp_SecureHash: '' }, expectation), { ok: false, reason: 'BAD_SIGNATURE' });
+    assert.deepEqual(verifyQueryDrResponse({ ...body, vnp_SecureHash: null }, expectation), { ok: false, reason: 'BAD_SIGNATURE' });
+  });
   it('gives responseCode null for UNSIGNED when vnp_ResponseCode is not exactly 2 digits', () => {
     for (const vnp_ResponseCode of ['9', '123', 'ab', '9 ', '99\nforged log line', '', undefined, null, 5]) {
       assert.deepEqual(verifyQueryDrResponse({ vnp_ResponseCode }, expectation), { ok: false, reason: 'UNSIGNED', responseCode: null });
@@ -259,6 +274,17 @@ describe('verifyQueryDrResponse', () => {
   it('rejects a response for another TxnRef or merchant even with a valid signature', () => {
     assert.deepEqual(ok(RESP_SUCCESS, RESP_SUCCESS_HASH, { ...expectation, txnRef: 'PAYMENT2' }), { ok: false, reason: 'MISMATCH' });
     assert.deepEqual(ok(RESP_SUCCESS, RESP_SUCCESS_HASH, { ...expectation, tmnCode: 'OTHERTMN' }), { ok: false, reason: 'MISMATCH' });
+  });
+  it('rejects a 00 response with an empty merchant or reference as MISMATCH', () => {
+    assert.deepEqual(ok(RESP_SUCCESS_EMPTY_IDS, RESP_SUCCESS_EMPTY_IDS_HASH), { ok: false, reason: 'MISMATCH' });
+  });
+  // Review finding 1: only 00 can lead to SUCCESS, so only 00 is a MISMATCH that is never closed.
+  it('reports BAD_RESPONSE for a signed error answer with an empty merchant and reference', () => {
+    assert.deepEqual(ok(RESP_ERROR_EMPTY_IDS, RESP_ERROR_EMPTY_IDS_HASH), { ok: false, reason: 'BAD_RESPONSE' });
+  });
+  it('reports BAD_RESPONSE for a signed 91 answer about another TxnRef or merchant', () => {
+    assert.deepEqual(ok(RESP_NOT_FOUND, RESP_NOT_FOUND_HASH, { ...expectation, txnRef: 'PAYMENT2' }), { ok: false, reason: 'BAD_RESPONSE' });
+    assert.deepEqual(ok(RESP_NOT_FOUND, RESP_NOT_FOUND_HASH, { ...expectation, tmnCode: 'OTHERTMN' }), { ok: false, reason: 'BAD_RESPONSE' });
   });
   it('rejects a 00 response whose amount differs from Payment.amount * 100', () => {
     assert.deepEqual(ok(RESP_SUCCESS, RESP_SUCCESS_HASH, { ...expectation, amountVnd: 20000 }), { ok: false, reason: 'MISMATCH' });
@@ -314,6 +340,11 @@ describe('queryDrAction (plan 1.6 table, D6 grace)', () => {
   it('a verified 99 -> EXPIRED once the grace has ended', () => {
     assert.deepEqual(queryDrAction('99', '', true, true), { kind: 'EXPIRED' });
     assert.deepEqual(queryDrAction('99', '02', true, true), { kind: 'EXPIRED' });
+  });
+  // Review finding 9: a suspect status only protects the payment together with response code 00.
+  it('a suspect status with a response code other than 00 -> EXPIRED once the grace has ended', () => {
+    assert.deepEqual(queryDrAction('99', '05', true, true), { kind: 'EXPIRED' });
+    assert.deepEqual(queryDrAction('99', '05', true, false), { kind: 'PROVIDER_ERROR', reconcile: false });
   });
 });
 
