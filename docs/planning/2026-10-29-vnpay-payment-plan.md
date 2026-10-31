@@ -211,8 +211,8 @@ Chỉ hiển thị thất bại và cho thử lại/hủy sau khi trạng thái 
   - không bắt buộc (đã có mặc định, mục 1.8): `VNP_URL`, `VNP_API_URL`, `PAYMENT_PROVIDER`.
 
   Kiểm bằng `git check-ignore -v apps/api/.env`.
-- [ ] 0.4 Thành viên giữ tài khoản Render thêm cùng các biến vào service `brewlite-a2-api`, với `WEB_URL=https://brewlite-a2-web.vercel.app`. Gửi secret cho người đó qua kênh riêng, không qua nhóm chat chung, issue hay PR. **Phải lưu biến trước lần deploy đầu tiên chứa code VNPay thay simulator**, không đợi tới bước 7.5. Người phụ trách deploy xác nhận điều kiện này trước khi phát hành.
-- [ ] 0.5 Gửi VNPay IPN URL: `https://brewlite-a2-api.onrender.com/payments/vnpay/ipn` (vào Merchant Admin, hoặc trả lời email kết nối).
+- [x] 0.4 Thành viên giữ tài khoản Render thêm cùng các biến vào service `brewlite-a2-api`, với `WEB_URL=https://brewlite-a2-web.vercel.app`. Gửi secret cho người đó qua kênh riêng, không qua nhóm chat chung, issue hay PR. **Phải lưu biến trước lần deploy đầu tiên chứa code VNPay thay simulator**, không đợi tới bước 7.5. Người phụ trách deploy xác nhận điều kiện này trước khi phát hành. Đã xong (2026-10-30): production tạo được URL thanh toán đã ký.
+- [x] 0.5 Gửi VNPay IPN URL: `https://brewlite-a2-api.onrender.com/payments/vnpay/ipn` (vào Merchant Admin, hoặc trả lời email kết nối). Đã xong (2026-10-30): VNPay tự gọi IPN tới production (xem 7.5).
 
 ### Bước 1 – Spike (script ngoài repo, trong scratchpad)
 
@@ -263,7 +263,7 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
   - **S6 stakeholder:** VNPay.
 - [x] 2.2 `docs/requirements/context-and-scope.md`: hệ thống ngoài VNPay; viết lại A-01; thêm rủi ro: Render ngủ làm IPN timeout (đã có QueryDR và VNPay gọi lại), sandbox VNPay bảo trì, hết hạn đơn.
 - [x] 2.3 `docs/requirements/uc-checkout.md` và `.puml`: viết lại các bước thanh toán (redirect → trả trên VNPay → IPN → return); thêm luồng E cho hủy trên VNPay, sai chữ ký, mất IPN.
-- [x] 2.4 `docs/requirements/use-case-overview.puml`: đổi tên actor. Nhóm cập nhật `.svg` bằng draw.io. Phần `.svg` còn chờ nhóm.
+- [x] 2.4 `docs/requirements/use-case-overview.puml`: đổi tên actor. Nhóm cập nhật `.svg` bằng draw.io. Phần `.svg`: 2026-10-30 người dùng yêu cầu đồng bộ, xuất lại bằng PlantUML 1.2026.8 từ `.puml` (không dùng draw.io); nhóm mở ảnh kiểm trước khi nộp.
 
 ### Bước 3 – Sơ đồ Task 2 (agent soạn nháp)
 
@@ -271,7 +271,7 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
 - [x] 3.2 `docs/diagrams/activity-checkout.puml`: thêm swimlane VNPay, nhánh hủy hoặc hết hạn.
 - [x] 3.3 `docs/diagrams/state-order.puml`: đơn vẫn `PENDING` trong lúc chờ VNPay; thử lại `PAYMENT_FAILED` → `PENDING`; ghi chú hủy bị chặn khi có payment còn hạn hoặc quá hạn nhưng chưa đối soát xong. Ghi vòng đời `Payment PENDING` → `SUCCESS`/`FAILED` trong cùng tài liệu, không thêm trạng thái `EXPIRED` vào enum.
 - [x] 3.4 `docs/diagrams/class-domain.puml`: thêm cột mới của `Payment` và `PaymentStatus.PENDING`.
-- [x] 3.5 Render PlantUML ra thư mục tạm, 0 lỗi "Syntax Error". Ảnh `.svg` trong repo do nhóm xuất. Phần `.svg` còn chờ nhóm.
+- [x] 3.5 Render PlantUML ra thư mục tạm, 0 lỗi "Syntax Error". Ảnh `.svg` trong repo do nhóm xuất. Phần `.svg`: cả 7 ảnh đã xuất lại ngày 2026-10-30 theo yêu cầu người dùng, 0 "Syntax Error".
 
 ### Bước 4 – Kiến trúc Task 3 (agent soạn nháp)
 
@@ -335,7 +335,7 @@ Không để đơn vừa không trả tiếp được vừa không hủy đượ
 
   Một phần (2026-10-30, Matcha thay Cappuccino): trả thẻ NCB từ app thật; `sync` trả 502 vì QueryDR sandbox lỗi, payment giữ `PENDING`. Gửi lại tham số return đã ký vào IPN thì đơn thành `PAID`, kho trừ đúng và `reserved` về 0. Còn chờ QueryDR để kiểm nhánh `sync`. Thử lại QueryDR sandbox lúc 18:55 cùng ngày: vẫn `99` không chữ ký. Nhánh `sync` → `PAID` đã chạy qua API và DB thật với QueryDR giả (7.7d, ca d1), nhưng chưa với sandbox.
 - [x] 7.4 Local: bấm Hủy trên VNPay → `PAYMENT_FAILED`, `reserved` vẫn giữ → thử lại thành công.
-- [ ] 7.5 Production (Render + Vercel): một giao dịch thành công qua IPN thật. Xem log Render có `RspCode=00`; Merchant Admin có giao dịch. Sau mỗi lần deploy, tạo một URL thanh toán và mở thử: trang VNPay phải hiện form nhập thẻ, không báo sai chữ ký. Smoke của CD chỉ gọi `/health`, không bắt được lỗi ký.
+- [x] 7.5 Production (Render + Vercel): một giao dịch thành công qua IPN thật. Xem log Render có `RspCode=00`; Merchant Admin có giao dịch. Sau mỗi lần deploy, tạo một URL thanh toán và mở thử: trang VNPay phải hiện form nhập thẻ, không báo sai chữ ký. Smoke của CD chỉ gọi `/health`, không bắt được lỗi ký. Đã đạt (2026-10-30): URL thanh toán mở được trang VNPay, không báo sai chữ ký; VNPay tự gọi IPN, giao dịch hủy lúc 22:27:57 đưa đơn sang `PAYMENT_FAILED` sau chưa tới 20 giây mà không gửi IPN tay; nhóm trả thành công bằng thẻ NCB trên production cùng tối; Merchant Admin ghi nhận giao dịch trong ngày 30/10 (khung 07:00 và 22:00, tổng 151.000 VND, gồm cả giao dịch chạy từ local). Ảnh Merchant Admin do nhóm giữ, không đưa vào repo; dòng log Render `RspCode=00` chưa trích vào tài liệu.
 - [ ] 7.6 Chạy kịch bản SIT trên cổng `vnpaygw-sit-testing` của VNPay: thành công, sai chữ ký (97), không có đơn (01), sai tiền (04), đã xác nhận (02). Chụp kết quả cho báo cáo.
 - [x] 7.7 Gọi lại IPN với cùng tham số → `02`, không trừ kho lần hai. Cho IPN và `sync` cùng xác nhận một payment → một `SUCCESS`, trừ kho một lần; hai yêu cầu tạo thanh toán đồng thời → tối đa một `PENDING`, cùng phương thức dùng chung URL. Đã đạt (2026-10-30): gọi lại IPN, tạo thanh toán đồng thời; ca IPN cùng `sync` chạy bằng QueryDR giả (xem 7.7d): IPN tới khi `sync` đang chờ QueryDR, và hai `sync` cùng một IPN gửi đồng thời → một `SUCCESS`, kho trừ đúng một lần, không có warning đối soát.
 - [x] 7.7a Chạy API local không có `VNP_HASH_SECRET`:

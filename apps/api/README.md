@@ -38,4 +38,3 @@ npm.cmd run build
 
 Theo yêu cầu chủ dự án, toàn bộ test đã được xóa sau khi chạy kiểm chứng; chỉ còn unit test VNPay tối thiểu `test/vnpay.test.ts` (chạy `node --import tsx --test test/vnpay.test.ts`); kết quả cũ ở [báo cáo kho](../../docs/inventory-verification.md). `prisma:migrate` dùng `prisma migrate deploy`; không reset DB hoặc sửa migration đã phát hành. [Runbook](../../docs/inventory-runbook.md) hướng dẫn kiểm kê và chuyển đổi.
 Kiến trúc và ADR (Task 3): [docs/architecture](../../docs/architecture/architecture.md).
-Nhóm phải hiểu và giải thích được code khi vấn đáp.

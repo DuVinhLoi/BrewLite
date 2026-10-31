@@ -1,6 +1,6 @@
 # Task 5 — Sprint 2, CI/CD và Delivery
 
-Task: 5.1–5.4. Owner: agent trong phiên này. Branch: feat/assignment2-task5-delivery.
+Task: 5.1–5.4. Owner: **[nhóm điền]**. Branch: feat/assignment2-task5-delivery.
 Worktree: C:/BrewLite-a2-Task5. Base: f1b856a.
 
 ## Audit Task 4
