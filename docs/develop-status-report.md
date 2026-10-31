@@ -1,4 +1,4 @@
-> **Tài liệu lịch sử.** Báo cáo này ghi hiện trạng nhánh `develop` ngày 2026-10-08/09. Trên nhánh `develop-agile`, các tài liệu UC / sequence và giao diện Barista/Admin (`/barista`, `/admin`) không còn; backlog hiện hành là `docs/product-backlog.md`.
+> **Tài liệu lịch sử.** Báo cáo này ghi hiện trạng nhánh `develop` ngày 2026-10-08/09. Trên nhánh `develop-agile`, các tài liệu UC / sequence và màn Kho `/admin` không còn; màn Quầy `/barista` đã được đưa lại (2026-10-31); backlog hiện hành là `docs/product-backlog.md`.
 
 # Báo cáo hiện trạng nhánh `develop` — đối chiếu 10 task (Mục 8) + API (12.1) + thực thể (12.2)
 

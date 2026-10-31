@@ -87,15 +87,27 @@ describe('safeNext (chống open redirect sau đăng nhập)', () => {
   });
 });
 
-// Trang /login chỉ gọi hàm này: ?next= hợp lệ thì về đó, không thì về trang chủ.
+// Trang /login chỉ gọi hàm này: ?next= hợp lệ thì về đó, không thì về trang theo role.
 describe('postLoginTarget (đích sau đăng nhập)', () => {
   test.each([
-    ['?next=%2Fcart', '/cart'],
-    ['?next=%2Fhistory%3Ftab%3D1', '/history?tab=1'],
-    ['?x=1&next=%2Fprofile', '/profile'],
-    ['?next=%2F', '/'],
-  ])('next hợp lệ: %s → %s', (search, expected) => {
-    expect(postLoginTarget(search)).toBe(expected);
+    ['?next=%2Fcart', 'CUSTOMER', '/cart'],
+    ['?next=%2Fhistory%3Ftab%3D1', 'CUSTOMER', '/history?tab=1'],
+    ['?x=1&next=%2Fbarista', 'CUSTOMER', '/barista'],
+    ['?next=%2Fbarista', 'BARISTA', '/barista'],
+    ['?next=%2Fbarista', 'ADMIN', '/barista'],
+  ] as const)('next hợp lệ thắng role: %s (%s) → %s', (search, role, expected) => {
+    expect(postLoginTarget(search, role)).toBe(expected);
+  });
+
+  test.each([
+    ['?next=%2Fhistory', 'BARISTA', '/barista'],
+    ['?next=%2Fhistory%3Ftab%3D1', 'BARISTA', '/barista'],
+    ['?next=%2Fcart', 'ADMIN', '/barista'],
+    ['?next=%2Fprofile', 'ADMIN', '/barista'],
+    ['?next=%2F', 'BARISTA', '/barista'],
+    ['?next=%2Fhistory', 'CUSTOMER', '/history'],
+  ] as const)('nhân viên có next là trang khách: %s (%s) → %s', (search, role, expected) => {
+    expect(postLoginTarget(search, role)).toBe(expected);
   });
 
   test.each([
@@ -105,11 +117,17 @@ describe('postLoginTarget (đích sau đăng nhập)', () => {
     ['?next=%2F%5Cevil.com', 'gạch chéo rồi gạch ngược'],
     ['?next=cart', 'không bắt đầu bằng /'],
     ['?next=', 'rỗng'],
-  ])('next độc %s (%s) bị bỏ, về "/"', (search) => {
-    expect(postLoginTarget(search)).toBe('/');
+  ])('next độc %s (%s) bị bỏ, về trang theo role', (search) => {
+    expect(postLoginTarget(search, 'CUSTOMER')).toBe('/');
+    expect(postLoginTarget(search, 'BARISTA')).toBe('/barista');
   });
 
-  test.each(['', '?x=1'])('thiếu next: %j → "/"', (search) => {
-    expect(postLoginTarget(search)).toBe('/');
+  test.each([
+    ['', 'CUSTOMER', '/'],
+    ['?x=1', 'CUSTOMER', '/'],
+    ['', 'BARISTA', '/barista'],
+    ['', 'ADMIN', '/barista'],
+  ] as const)('thiếu next: %j (%s) → %s', (search, role, expected) => {
+    expect(postLoginTarget(search, role)).toBe(expected);
   });
 });

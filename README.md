@@ -53,14 +53,14 @@ Cả 10 task đã có trên nhánh này; mỗi task ứng 1 user story US-01…U
 
 ## API (7 endpoint tối thiểu + 6 mở rộng) và Entity (5)
 
-Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`. Các endpoint khách (`POST /orders`, `POST /payments`, `GET /orders/me`, cùng `GET /orders/:id` và `GET /users/me` bên dưới) chỉ dành cho CUSTOMER (`@Roles(CUSTOMER)`): token BARISTA/ADMIN nhận 403 `Insufficient role`. Web không có giao diện cho nhân viên: đăng nhập tài khoản nhân viên trên web chỉ hiện câu báo tài khoản nhân viên không dùng được giao diện web và không lưu phiên.
-Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn, chỉ CUSTOMER), `GET /users/me` (hồ sơ + tổng điểm tích lũy, trang `/profile`, chỉ CUSTOMER). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2, **chỉ gọi qua API, nhóm kiểm bằng Postman, không có màn hình**): `GET /orders?status=PAID,PREPARING,READY` (BARISTA/ADMIN), `GET /admin/products` và `PATCH /admin/products/:id/stock` (chỉ ADMIN). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
+Tối thiểu theo đề §12.1: `GET /products`, `GET /products/:id`, `POST /auth/register`, `POST /auth/login`, `POST /orders`, `POST /payments`, `GET /orders/me`. Các endpoint khách (`POST /orders`, `POST /payments`, `GET /orders/me`, cùng `GET /orders/:id` và `GET /users/me` bên dưới) chỉ dành cho CUSTOMER (`@Roles(CUSTOMER)`): token BARISTA/ADMIN nhận 403 `Insufficient role`. Trên web, tài khoản nhân viên (BARISTA hoặc ADMIN) đăng nhập xong vào thẳng màn Quầy `/barista`; mở trang khách thì bị chuyển về `/barista`.
+Mở rộng của nhóm: `PATCH /orders/:id` (Task 10; khách hủy đơn của mình, BARISTA/ADMIN tiến đơn + hủy đơn `PAID`), `GET /orders/:id` (chi tiết đơn, chỉ chủ đơn, chỉ CUSTOMER), `GET /users/me` (hồ sơ + tổng điểm tích lũy, trang `/profile`, chỉ CUSTOMER). Thêm 3 endpoint cho Barista/Admin (mở rộng ngoài MVP §3.2, nhóm kiểm bằng Postman): `GET /orders?status=PAID,PREPARING,READY` (BARISTA/ADMIN, có giao diện ở màn Quầy `/barista`), `GET /admin/products` và `PATCH /admin/products/:id/stock` (chỉ ADMIN, **chỉ gọi qua API, không có màn hình**). Xem mục 12 trong `docs/BrewLite-CongNghePhanMem-fixed.md`.
 `Product(stock,version)`, `User(loyaltyPoints, role)`, `Order(idempotencyKey unique)`, `OrderItem(size,toppings)`, `Payment(idempotencyKey unique, discount, loyaltyPointsEarned)`.
 Voucher `BREWLITE10` −10% validate nội bộ trong `PaymentService`, không bảng riêng.
 
 ## Giao diện
 
-Giao diện theo phong cách "nét mực" (font Fraunces + Be Vietnam Pro, bộ hình minh họa SVG ở `frontend/public/doodles` và `frontend/public/images`). 9 màn: Header, Menu, Chi tiết món, Giỏ hàng (`/cart`), Thanh toán, Đặt hàng thành công (biên lai), Đăng nhập / Đăng ký (`/login`), Hồ sơ (`/profile`) và Lịch sử (`/history`). Thanh toán và biên lai nằm trong `/cart`. Barista và Admin không có màn hình trên web, họ gọi API (nhóm dùng Postman).
+Giao diện theo phong cách "nét mực" (font Fraunces + Be Vietnam Pro, bộ hình minh họa SVG ở `frontend/public/doodles` và `frontend/public/images`). 10 màn: Header, Menu, Chi tiết món, Giỏ hàng (`/cart`), Thanh toán, Đặt hàng thành công (biên lai), Đăng nhập / Đăng ký (`/login`), Hồ sơ (`/profile`), Lịch sử (`/history`) và Quầy (`/barista`, cho BARISTA và ADMIN). Thanh toán và biên lai nằm trong `/cart`. Màn Quầy có 3 cột Chờ pha / Đang pha / Sẵn sàng, tự tải lại mỗi 5 giây; nút "Nhận pha", "Pha xong", "Đã giao" tiến đơn, "Hủy (hết nguyên liệu)" chỉ có ở cột Chờ pha. Chưa có màn quản trị kho: Admin chỉnh kho qua API (nhóm dùng Postman).
 
 **Chưa có ảnh chụp màn hình.** Đợt làm giao diện chạy trong môi trường không có trình duyệt nên chưa ai nhìn các màn bằng mắt và chưa chụp ảnh. Việc kiểm hình ảnh còn lại (1280, 1024, 760 và 360px) và kết quả kiểm thử cuối: `docs/develop-status-report.md` mục 8.
 
@@ -77,8 +77,8 @@ Tài khoản demo (seed sẵn trong `backend/prisma/seed.ts`):
 | Vai trò | Email | Mật khẩu | Dùng ở đâu |
 |---|---|---|---|
 | Khách | `demo@brewlite.vn` | `demo1234` | web `:3001` (và Postman) |
-| Quầy (Barista) | `barista@brewlite.vn` | `barista1234` | chỉ API qua Postman (web từ chối) |
-| Quản trị (Admin) | `admin@brewlite.vn` | `admin1234` | chỉ API qua Postman (web từ chối) |
+| Quầy (Barista) | `barista@brewlite.vn` | `barista1234` | web `:3001/barista` (và Postman) |
+| Quản trị (Admin) | `admin@brewlite.vn` | `admin1234` | web `:3001/barista`; chỉnh kho chỉ qua Postman |
 
 1. Mở `:3001`, đăng nhập tài khoản khách (bảng trên).
 2. Menu → bấm món mở modal chọn size/topping → thêm vào giỏ.
@@ -97,7 +97,7 @@ Cổng thanh toán là bản giả nên mặc định luôn thành công. Muốn
 
 ### Dữ liệu demo
 
-- Đơn, biên lai, điểm thưởng và tồn kho nằm trong volume `brewlite_pgdata`, giữ nguyên qua `docker compose restart`, `down` rồi `up` (không có `-v`). Đăng nhập lại tài khoản demo vẫn thấy lịch sử các buổi trước; `GET /orders?status=` (Postman, tài khoản barista) vẫn liệt kê đơn khách đã trả mà chưa giao.
+- Đơn, biên lai, điểm thưởng và tồn kho nằm trong volume `brewlite_pgdata`, giữ nguyên qua `docker compose restart`, `down` rồi `up` (không có `-v`). Đăng nhập lại tài khoản demo vẫn thấy lịch sử các buổi trước; màn Quầy `/barista` (hoặc `GET /orders?status=` bằng Postman, tài khoản barista) vẫn liệt kê đơn khách đã trả mà chưa giao.
 - Smoke test hoặc thử API bằng curl trên stack này: đăng ký tài khoản email đuôi `@smoke.test`, không dùng tài khoản demo. Xong thì dọn: `docker compose exec backend npm run smoke:clean` (xóa các tài khoản `@smoke.test` cùng đơn, biên lai của họ, hoàn kho các đơn đã trừ kho).
 - Làm lại từ đầu (DB trống, chỉ có 3 tài khoản demo và 4 món): `docker compose down -v` rồi `docker compose up -d --build`. Lệnh này xóa mọi đơn và lịch sử.
 
@@ -109,13 +109,14 @@ Cổng thanh toán là bản giả nên mặc định luôn thành công. Muốn
 
 ## Demo State Machine (đề §9 + §9.1, tiêu chí a)
 
-Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện khách: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua chấm mực kèm dấu ✓, bước hiện tại chấm cam và chữ đậm, bước sau chấm trắng; `Thanh toán lỗi` đỏ, `Đã hủy` xám) và **tự cập nhật mỗi 3 giây** (biên lai gọi `GET /orders/:id` đến khi đơn `COMPLETED` / `CANCELLED`; `/history` gọi `GET /orders/me` đến khi không còn đơn `PAID` / `PREPARING` / `READY`). Khách chỉ xem và hủy đơn của mình (nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy, `PREPARING` trở đi backend chặn 400); khách không tự tiến đơn (403). Tiến đơn là việc của nhân viên quầy (ngoài MVP theo đề §3.2) và **thao tác qua Postman**, vì web không có màn quầy:
+Luồng `PENDING → PAID → PREPARING → READY → COMPLETED` (cùng nhánh `PAYMENT_FAILED`, `CANCELLED`) xem được trên giao diện khách: `/history` và màn biên lai hiện **thanh 5 bước** (bước đã qua chấm mực kèm dấu ✓, bước hiện tại chấm cam và chữ đậm, bước sau chấm trắng; `Thanh toán lỗi` đỏ, `Đã hủy` xám) và **tự cập nhật mỗi 3 giây** (biên lai gọi `GET /orders/:id` đến khi đơn `COMPLETED` / `CANCELLED`; `/history` gọi `GET /orders/me` đến khi không còn đơn `PAID` / `PREPARING` / `READY`). Khách chỉ xem và hủy đơn của mình (nút "Hủy đơn" chỉ còn khi đơn chưa vào quầy, `PREPARING` trở đi backend chặn 400); khách không tự tiến đơn (403). Tiến đơn là việc của nhân viên quầy (ngoài MVP theo đề §3.2), làm trên **màn Quầy** `/barista`. Mỗi tab trình duyệt giữ một phiên đăng nhập riêng, nên khách và quầy mở hai tab cạnh nhau được:
 
-1. Khách `demo@brewlite.vn` (demo) đặt và trả một đơn trên web (đơn sang `PAID`), lấy mã đơn từ biên lai; mở `/history` xem thanh tiến trình.
-2. Trong Postman, import `docs/postman/BrewLite.postman_collection.json`. `POST /auth/login` bằng `barista@brewlite.vn` (mật khẩu demo ở bảng trên), sao chép `accessToken`, ở tab **Authorization** chọn **Bearer Token** và dán token. (Chạy cả thư mục `Task 10 / (a)` thì collection tự làm các bước này trên đơn của khách `@smoke.test`.)
-3. `PATCH /orders/{id}` với body `{ "status": "PREPARING" }`, rồi `READY`, rồi `COMPLETED`: cả ba trả 200.
-4. Thử `PATCH` sang `CANCELLED` trên đơn đã `COMPLETED`: phải trả 400 `Invalid transition COMPLETED -> CANCELLED`.
-5. Quay lại `/history` của khách (mở sẵn từ trước cũng được): trong khoảng 3 giây thanh tiến trình tự chuyển, không cần tải lại trang.
+1. Tab 1: khách `demo@brewlite.vn` (demo) đặt và trả một đơn trên web (đơn sang `PAID`), giữ nguyên biên lai; mở thêm `/history` nếu muốn xem cả lịch sử.
+2. Tab 2: đăng nhập `barista@brewlite.vn` (mật khẩu demo ở bảng trên), web vào thẳng `/barista`; đơn vừa trả nằm cuối cột Chờ pha (đơn cũ nhất trước).
+3. Bấm "Nhận pha", rồi "Pha xong", rồi "Đã giao": thẻ đơn chuyển sang cột Đang pha, Sẵn sàng, rồi rời quầy.
+4. Sau mỗi lần bấm, biên lai và `/history` của khách tự chuyển bước trong khoảng 3 giây, không cần tải lại trang.
+
+Kiểm cùng luồng qua API (Postman): import `docs/postman/BrewLite.postman_collection.json`, `POST /auth/login` bằng tài khoản barista, dán `accessToken` vào **Authorization → Bearer Token**, rồi `PATCH /orders/{id}` với `{ "status": "PREPARING" }`, `READY`, `COMPLETED` (cả ba 200); `PATCH` sang `CANCELLED` trên đơn đã `COMPLETED` phải trả 400 `Invalid transition COMPLETED -> CANCELLED`. Chạy cả thư mục `Task 10 / (a)` thì collection tự làm các bước này trên đơn của khách `@smoke.test`.
 
 Dự phòng nếu giao diện trục trặc (cần compose đang chạy, đã seed tài khoản khách và quầy):
 
@@ -127,7 +128,8 @@ Test chứng minh chặn chuyển trạng thái sai (tiêu chí a của đề):
 
 ```bash
 cd backend && npx jest order-state order-advance              # State Machine + tiến đơn theo vai trò + chặn người lạ
-cd backend && npx jest roles barista-queue admin-inventory    # RolesGuard, hàng đợi quầy, tồn kho Admin (API, không có giao diện)
+cd backend && npx jest roles barista-queue admin-inventory    # RolesGuard, hàng đợi quầy, tồn kho Admin (kho không có giao diện)
 cd backend && npx jest swagger                                 # tài liệu Swagger có PATCH /orders/{id} với enum OrderStatus
 cd frontend && npx vitest run src/lib/order-status.test.ts    # bảng chuyển trạng thái FE = 9 mũi tên §9.1 = ALLOWED của backend
+cd frontend && npx vitest run src/lib/barista.test.ts src/components/BaristaView.test.ts   # màn Quầy: cột, nút theo cột, poll 5 giây
 ```
