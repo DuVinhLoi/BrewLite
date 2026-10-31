@@ -73,7 +73,7 @@ gh variable list --repo DuVinhLoi/BrewLite --env production
 - [ ] Docker Command override trống để image CMD chạy `npx prisma migrate deploy && node dist/main.js`. Không bật lại override migrate/seed của Pha A. Không chạy seed tự động mỗi deploy.
 - [ ] Vercel Root Directory `apps/web`, framework Next.js, Node 24.x; Production `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`; Git auto-deploy vẫn tắt. Workflow hiện chạy CLI từ repository root theo cấu hình project; không tự thêm `cd apps/web` vì có thể làm lệch cách resolve Root Directory.
 - [ ] Ghi lại full image SHA/digest và Render deployment đang live, Vercel production deployment ID **ngay trước lần chạy mới**. Không mặc định các ID lịch sử vẫn đang live.
-- [ ] Xác nhận ngày hết hạn DB thực tế. Metadata cũ ghi tạo 23/10, hết hạn **22/11/2026**; nếu ngày chấm muộn hơn, nhóm phải chọn và duyệt phương án duy trì dữ liệu trước hạn. Render xác nhận Free Postgres hết hạn sau 30 ngày. [Render Free](https://render.com/docs/free).
+- [ ] Xác nhận ngày hết hạn DB thực tế. Metadata cũ ghi tạo 23/10, hết hạn **22/11/2026**; nếu ngày nghiệm thu muộn hơn, nhóm phải chọn và duyệt phương án duy trì dữ liệu trước hạn. Render xác nhận Free Postgres hết hạn sau 30 ngày. [Render Free](https://render.com/docs/free).
 
 **Gate:** Đúng project/service/DB, runtime env, đường migration và rollback target. Chưa dùng smoke HTTP làm bằng chứng đúng revision.
 

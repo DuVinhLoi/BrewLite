@@ -29,7 +29,7 @@ Nhóm cần phục vụ Next.js/PWA, chạy container NestJS với PostgreSQL v�
 
 ### Hạn chế
 
-- [Render free](https://render.com/docs/free) hiện cho Postgres dùng 30 ngày từ khi tạo; sau hạn DB không truy cập được. Task 5 phải ghi ngày tạo/hết hạn và chuẩn bị nâng gói hoặc tái tạo dữ liệu demo trước ngày chấm.
+- [Render free](https://render.com/docs/free) hiện cho Postgres dùng 30 ngày từ khi tạo; sau hạn DB không truy cập được. Task 5 phải ghi ngày tạo/hết hạn và chuẩn bị nâng gói hoặc tái tạo dữ liệu demo trước ngày nghiệm thu.
 - Web service free ngủ sau 15 phút không có traffic. Smoke retry tới 10 phút xử lý cold start; không dùng kết quả production cold start để đánh giá hiệu năng local của NFR-01/NFR-03.
 - Hai origin Vercel/Render cần cấu hình CORS; biến public của Next.js phải đúng khi build web.
 - Cần quản lý hai deployment, credential GHCR nếu package private và các secret CI/platform. Việc deploy/rollback thật và minh chứng vận hành thuộc Task 5.

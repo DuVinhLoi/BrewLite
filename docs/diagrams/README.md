@@ -17,8 +17,6 @@ Thư mục chứa nguồn PlantUML và SVG xuất bằng PlantUML. BREW-INVENTOR
 
 Ba loại sơ đồ không mâu thuẫn với SRS, use-case hoặc mô hình dữ liệu. Tên lớp, thuộc tính và trạng thái phải khớp `docs/requirements/srs.md`.
 
-Không render ảnh bằng công cụ sinh sơ đồ rồi nộp mà không hiểu: nhóm phải giải thích được từng sơ đồ khi vấn đáp.
-
 Hướng dẫn từng bước: `docs/planning/2026-10-15-assignment2-plan.md`, Task 2. Tham khảo (không chép): `docs/reference/a1/user-sequence-specifications.md` §2.4, §2.5.
 
 ## Render và kiểm tra BREW-INVENTORY-01
