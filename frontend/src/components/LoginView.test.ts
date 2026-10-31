@@ -167,19 +167,12 @@ describe('LoginView: form', () => {
 describe('app/login/page.tsx giữ nguyên logic sau đăng nhập (R25)', () => {
   const page = readFileSync(path.resolve(__dirname, '../app/login/page.tsx'), 'utf8');
 
-  test('route, body, lưu token, giữ/bỏ đơn đang trả dở, điều hướng ?next=', () => {
+  test('route, body, lưu token, giữ/bỏ đơn đang trả dở, điều hướng ?next= theo role', () => {
     expect(page).toContain('fetch(`${API}/auth/${mode}`');
     expect(page).toContain('body: JSON.stringify({ email, password })');
     expect(page).toContain('saveToken(data.accessToken);');
     expect(page).toContain('clearCheckoutIfOtherUser(userIdFromToken(data.accessToken));');
-    expect(page).toContain('router.push(postLoginTarget(window.location.search));');
-  });
-
-  test('nhân viên (BARISTA/ADMIN): báo không dùng được web và return trước saveToken, không lưu phiên', () => {
-    const guard = 'if (staffMessage) return showError(staffMessage);';
-    expect(page).toContain('staffLoginMessage(roleFromToken(data.accessToken))');
-    expect(page.indexOf(guard)).toBeGreaterThan(0);
-    expect(page.indexOf(guard)).toBeLessThan(page.indexOf('saveToken(data.accessToken);'));
+    expect(page).toContain("router.push(postLoginTarget(window.location.search, roleFromToken(data.accessToken) ?? 'CUSTOMER'));");
   });
 
   test('lỗi đi qua authErrorMessage, đăng ký xong dùng afterRegister; vẽ bằng LoginView', () => {

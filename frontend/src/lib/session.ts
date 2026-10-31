@@ -4,7 +4,8 @@
 // (trang /login chỉ bỏ phiên thanh toán khi đăng nhập tài khoản khác: clearCheckoutIfOtherUser).
 // ============================================================
 
-import { clearToken } from './auth';
+import { clearToken, homeFor, type Role } from './auth';
+import { staffRedirect } from './nav';
 
 type Redirect = (to: string) => void;
 
@@ -39,7 +40,12 @@ export function safeNext(raw: string | null | undefined): string | null {
   return raw;
 }
 
-/** Đích sau đăng nhập: ?next= trong chuỗi query (window.location.search) nếu qua safeNext, không thì trang chủ. */
-export function postLoginTarget(search: string): string {
-  return safeNext(new URLSearchParams(search).get('next')) ?? '/';
+/**
+ * Đích sau đăng nhập: ?next= trong chuỗi query (window.location.search) nếu qua safeNext, không thì trang theo role.
+ * Nhân viên có next là trang khách thì về trang nhà (không nháy qua trang khách); next ngoài trang khách (như /barista) giữ nguyên, trang đó tự kiểm quyền.
+ */
+export function postLoginTarget(search: string, role: Role): string {
+  const next = safeNext(new URLSearchParams(search).get('next'));
+  if (next === null || staffRedirect(next.split(/[?#]/)[0], role) !== null) return homeFor(role);
+  return next;
 }
