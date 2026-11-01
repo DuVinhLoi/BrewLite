@@ -150,7 +150,7 @@ Mức độ: C = cao, TB = trung bình, T = thấp. Đây là đánh giá sơ b�
 |---|---|---|---|---|
 | R-02 | Thiếu tài liệu của task trước nên chuỗi truy vết bị đứt | C | Task sau không được nghiệm thu phần truy vết (đề A2 §8.1) | Có bước nghiệm thu giữa các task; cập nhật ma trận truy vết trong mọi PR |
 | R-03 | Link production không chạy lúc nghiệm thu (cơ sở dữ liệu miễn phí hết hạn, dịch vụ đang ngủ) | C | Phần triển khai Task 5 không được tính (đề A2 §8.1) | Kiểm tra mỗi ngày trong tuần nghiệm thu; có seed để dựng lại cơ sở dữ liệu; "đánh thức" dịch vụ trước buổi nghiệm thu |
-| R-04 | Smoke test báo lỗi giả vì dịch vụ miễn phí đang ngủ | TB | Pipeline CD báo đỏ dù code không lỗi | Smoke test thử lại trong khoảng 2 phút |
+| R-04 | Smoke test báo lỗi giả vì dịch vụ miễn phí đang ngủ | TB | Pipeline CD báo đỏ dù code không lỗi | Smoke test thử lại tối đa 10 phút cho mỗi bước (AC-N18.2) |
 | R-05 | Yêu cầu mơ hồ, tiêu chí không đo được nên khó viết test | TB | Test không bám yêu cầu, truy vết bị đứt | Mỗi yêu cầu có tiêu chí đo được (mã HTTP, trạng thái, thời gian); nhóm soát lại ở PR Task 1 |
 | R-06 | Sơ đồ Task 2 nói khác SRS (tên lớp, trạng thái, mã lỗi) | TB | Task 2 không đạt tiêu chí nghiệm thu (đề A2 §4.3) | Dùng đúng tên trong SRS mục 3; có bảng đối chiếu chéo ở PR Task 2 |
 | R-07 | Không đủ thời gian cho Sprint 2 (nhiều việc nhất) | C | Không xong luồng từ đầu tới cuối | Giữ đúng phạm vi tối thiểu đã chốt, không đưa FR-17/18/19/26/27 vào bản nộp, FR-25/29 là Must của đợt kho; làm hạ tầng sớm |
