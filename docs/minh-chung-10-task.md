@@ -155,6 +155,7 @@ Tiêu chí chấm của đề: test chứng minh (a) chặn chuyển trạng th�
 - `T10a.9` hàng đợi quầy `GET /orders?status=PAID` có đơn đã trả; `T10a.10` quầy hủy đơn `PAID` trả 200 `CANCELLED`.
 - Code: `backend/src/state-machine/order-state.machine.ts` (`assertTransition`), `backend/src/payment/payment.service.ts` (`advanceOrder`, `cancelOrderAs`).
 - Test: `backend/src/state-machine/order-state.machine.spec.ts`, `backend/test/order-advance.spec.ts`, `backend/test/barista-queue.spec.ts`, `frontend/src/lib/order-status.test.ts`.
+- Trên web (mở rộng đề §3.2): màn Quầy `/barista` làm cùng các bước bằng nút "Nhận pha", "Pha xong", "Đã giao" và "Hủy (hết nguyên liệu)" (chỉ ở cột Chờ pha). Code `frontend/src/app/barista/page.tsx`, `frontend/src/components/BaristaView.tsx`, `frontend/src/lib/barista.ts`; test `frontend/src/lib/barista.test.ts`, `frontend/src/components/BaristaView.test.ts`. Kiểm tay: tab khách giữ biên lai, tab quầy bấm từng nút, biên lai và `/history` đổi bước trong khoảng 3 giây.
 
 **(b) Thanh toán idempotent.** Postman `Task 10 / (b)`:
 

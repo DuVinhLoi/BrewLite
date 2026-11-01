@@ -4,7 +4,6 @@
 // Backend giữ câu tiếng Anh ("Email already registered", "Invalid credentials"); giao diện không hiện chúng.
 // ============================================================
 
-import type { Role } from './auth';
 import { formatVND } from './pricing';
 import { VND_FOR_ONE_POINT } from './promo';
 
@@ -14,12 +13,6 @@ export const EMAIL_TAKEN = 'Email đã được đăng ký.';
 export const BAD_CREDENTIALS = 'Sai email hoặc mật khẩu.';
 export const NETWORK_ERROR = 'Không kết nối được máy chủ.';
 export const REGISTER_OK_NOTICE = 'Đăng ký thành công. Đăng nhập bằng email vừa tạo.';
-export const STAFF_LOGIN_MESSAGE = 'Tài khoản nhân viên không dùng được giao diện web. Hãy đăng nhập bằng tài khoản khách hàng.';
-
-/** Web chỉ phục vụ khách: BARISTA / ADMIN không được lưu phiên, trả câu báo tài khoản nhân viên không dùng được web; CUSTOMER (hoặc không rõ) → null. */
-export function staffLoginMessage(role: Role | null): string | null {
-  return role === 'BARISTA' || role === 'ADMIN' ? STAFF_LOGIN_MESSAGE : null;
-}
 
 /** Câu về điểm ở panel trái, tính từ hằng số tích điểm (1 điểm cho mỗi VND_FOR_ONE_POINT). */
 export const POINTS_SENTENCE = `Mỗi ${formatVND(VND_FOR_ONE_POINT)} thanh toán được cộng 1 điểm tích lũy vào hồ sơ của bạn.`;

@@ -8,6 +8,7 @@ import {
   TRANSITIONS,
   canCancel,
   isTerminal,
+  nextStatus,
   statusTrack,
 } from './order-status';
 
@@ -98,6 +99,23 @@ describe('isTerminal', () => {
   });
   test('khớp bảng TRANSITIONS: cuối khi không còn mũi tên đi ra', () => {
     for (const s of ORDER_STATUSES) expect(isTerminal(s)).toBe(TRANSITIONS[s].length === 0);
+  });
+});
+
+describe('nextStatus (bước "quầy": PAID → PREPARING → READY → COMPLETED)', () => {
+  test('3 bước của quầy', () => {
+    expect(nextStatus('PAID')).toBe('PREPARING');
+    expect(nextStatus('PREPARING')).toBe('READY');
+    expect(nextStatus('READY')).toBe('COMPLETED');
+  });
+  test('không có bước kế: PENDING/PAYMENT_FAILED (bước kế là thanh toán), trạng thái cuối, trạng thái lạ', () => {
+    for (const s of ['PENDING', 'PAYMENT_FAILED', 'COMPLETED', 'CANCELLED', 'XYZ']) expect(nextStatus(s)).toBeNull();
+  });
+  test('mọi bước kế đều là mũi tên hợp lệ trong TRANSITIONS', () => {
+    for (const s of ORDER_STATUSES) {
+      const next = nextStatus(s);
+      if (next) expect(TRANSITIONS[s]).toContain(next);
+    }
   });
 });
 

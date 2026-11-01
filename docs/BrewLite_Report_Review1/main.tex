@@ -90,12 +90,12 @@ BrewLite cho khách chọn đồ uống, chọn size và topping, quản lý gi�
 \toprule Bên liên quan & Việc làm được trên BrewLite & Kênh\\\midrule\endhead
 \bottomrule\endfoot
 Khách hàng & Xem menu, chọn size và topping, đặt đơn, thanh toán, hủy đơn của mình, xem lịch sử và điểm thưởng & Web\\
-Nhân viên quầy (Barista) & Xem hàng đợi đơn đã thanh toán, chuyển đơn sang các bước pha chế, hủy đơn đã thanh toán khi hết nguyên liệu & REST API, kiểm bằng Postman\\
-Quản lý (Admin) & Mọi việc của Barista, xem kho kể cả món hết hàng, chỉnh tồn kho & REST API, kiểm bằng Postman\\
+Nhân viên quầy (Barista) & Xem hàng đợi đơn đã thanh toán, chuyển đơn sang các bước pha chế, hủy đơn đã thanh toán khi hết nguyên liệu & Web (màn Quầy), REST API kiểm bằng Postman\\
+Quản lý (Admin) & Mọi việc của Barista, xem kho kể cả món hết hàng, chỉnh tồn kho & Web (màn Quầy); kho qua REST API, kiểm bằng Postman\\
 Cổng thanh toán giả lập & Chấp nhận hoặc từ chối giao dịch Ví/Thẻ & Backend gọi trực tiếp\\
 \end{longtable}
 \endgroup
-Web không có màn hình cho Barista và Admin. Mục 3.2 của đề xếp chức năng quầy ngoài MVP, nên nhóm chỉ làm phần API phục vụ máy trạng thái đơn hàng của Task 10.
+Mục 3.2 của đề xếp chức năng quầy ngoài MVP. Nhóm làm phần API phục vụ máy trạng thái đơn hàng của Task 10 và thêm màn Quầy \path|/barista| để nhân viên tiến đơn trên web; Barista và Admin dùng chung màn này. Web chưa có màn quản lý kho, Admin chỉnh kho qua API.
 
 \subsection{Yêu cầu chức năng và phi chức năng}
 \begingroup\small
@@ -117,7 +117,7 @@ Web không có màn hình cho Barista và Admin. Mục 3.2 của đề xếp ch�
 \bottomrule\endfoot
 API phản hồi dưới 500 ms với dữ liệu mẫu & Lần chạy Postman ngày 21/10/2026: trung bình 14 ms, lớn nhất 108 ms\\
 Băm mật khẩu, JWT, validate đầu vào & bcrypt trong \path|backend/src/auth/auth.service.ts|; \path|jwt-auth.guard.ts| chặn request thiếu token với mã 401; DTO dùng class-validator trả 400\\
-Dùng được trên các trình duyệt web & \todo{trình duyệt và phiên bản đã thử}\\
+Dùng được trên các trình duyệt web & Google Chrome và Microsoft Edge\\
 \end{longtable}
 \endgroup
 
@@ -462,6 +462,8 @@ T10a.10 & Quầy hủy đơn \texttt{PAID} & 200, \texttt{CANCELLED}\\
 \textbf{Mã nguồn.} \path|backend/src/state-machine/order-state.machine.ts|; hàm \texttt{advanceOrder} và \texttt{cancelOrderAs} trong \path|backend/src/payment/payment.service.ts|.
 
 \textbf{Test.} \path|backend/src/state-machine/order-state.machine.spec.ts|, \path|backend/test/order-advance.spec.ts|, \path|backend/test/barista-queue.spec.ts|, \path|frontend/src/lib/order-status.test.ts|.
+
+\textbf{Màn Quầy.} Trang \path|/barista| chia hàng đợi thành 3 cột Chờ pha, Đang pha, Sẵn sàng và tự tải lại mỗi 5 giây. Nút Nhận pha, Pha xong, Đã giao gửi cùng request \texttt{PATCH} như các ca T10a.3, T10a.5, T10a.6; biên lai và trang Lịch sử của khách đổi bước theo trong khoảng 3 giây. Mã nguồn \path|frontend/src/components/BaristaView.tsx|, \path|frontend/src/lib/barista.ts|; test \path|frontend/src/lib/barista.test.ts|, \path|frontend/src/components/BaristaView.test.ts|.
 
 \textbf{(b) Thanh toán idempotent.} Backend lưu \texttt{Idempotency-Key} với ràng buộc duy nhất ở bảng Order và bảng Payment. Request lặp lại cùng khóa nhận lại kết quả cũ với mã 200, không tạo đơn mới, không trừ tiền, không trừ kho và không cộng điểm thêm lần nữa.
 

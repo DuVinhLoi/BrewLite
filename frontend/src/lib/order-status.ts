@@ -56,6 +56,16 @@ export const canCancel = (s: string): boolean => isOrderStatus(s) && TRANSITIONS
 // (lib/use-order-poll.ts). Trạng thái lạ → false: cứ hỏi tiếp thay vì tin là xong.
 export const isTerminal = (s: string): boolean => isOrderStatus(s) && TRANSITIONS[s].length === 0;
 
+// Bước tiếp theo ở quầy (US-10, màn /barista): PAID → PREPARING → READY → COMPLETED.
+// PENDING/PAYMENT_FAILED không có bước kế ở đây (bước kế của chúng là thanh toán / thử lại, không phải quầy).
+const COUNTER_NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
+  PAID: 'PREPARING',
+  PREPARING: 'READY',
+  READY: 'COMPLETED',
+};
+
+export const nextStatus = (s: string): OrderStatus | null => (isOrderStatus(s) ? COUNTER_NEXT[s] ?? null : null);
+
 export interface TrackStep {
   status: OrderStatus;
   label: string;

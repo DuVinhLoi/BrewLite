@@ -202,11 +202,11 @@ stop
 
 ---
 
-## AD2. NHÂN VIÊN XỬ LÝ HÀNG ĐỢI QUA API (US-10)
+## AD2. NHÂN VIÊN XỬ LÝ HÀNG ĐỢI QUẦY (US-10)
 
 ### A. Bối cảnh
-Phân hệ quầy là **mở rộng ngoài đề §3.2**. Web **không có màn hình quầy hay quản trị**: nhân viên (BARISTA, hoặc ADMIN kế thừa quyền Barista) gọi API trực tiếp, nhóm kiểm bằng Postman (`docs/postman/`, thư mục Task 10). Nhân viên lấy token bằng `POST /auth/login`, xem hàng đợi `GET /orders?status=PAID,PREPARING,READY`, rồi lần lượt đẩy từng đơn theo Order State Machine đề §9.1: `PAID → PREPARING → READY → COMPLETED`, hoặc hủy đơn `PAID` vì hết nguyên liệu (hoàn tiền qua cổng rồi hoàn kho). Khách hàng gọi các API quầy bị 403.
-Vòng `repeat` là một phiên làm việc: sau mỗi thao tác nhân viên gọi lại `GET /orders?status=...` cho tới khi hết đơn. Tiêu chí chấp nhận: US-10 trong [product-backlog.md](product-backlog.md).
+Phân hệ quầy là **mở rộng ngoài đề §3.2**. Nhân viên (BARISTA, hoặc ADMIN kế thừa quyền Barista) làm trên **màn Quầy** `/barista` của web; cùng các API đó nhóm kiểm bằng Postman (`docs/postman/`, thư mục Task 10). Web chưa có màn quản trị kho. Nhân viên lấy token bằng `POST /auth/login`, xem hàng đợi `GET /orders?status=PAID,PREPARING,READY`, rồi lần lượt đẩy từng đơn theo Order State Machine đề §9.1: `PAID → PREPARING → READY → COMPLETED`, hoặc hủy đơn `PAID` vì hết nguyên liệu (hoàn tiền qua cổng rồi hoàn kho). Khách hàng gọi các API quầy bị 403.
+Vòng `repeat` là một phiên làm việc: sau mỗi thao tác hàng đợi được tải lại bằng `GET /orders?status=...` cho tới khi hết đơn (màn Quầy tải lại ngay sau mỗi nút bấm và tự tải lại mỗi 5 giây). Tiêu chí chấp nhận: US-10 trong [product-backlog.md](product-backlog.md).
 
 ### B. Sơ đồ (PlantUML)
 ```plantuml
@@ -225,17 +225,17 @@ skinparam NoteBorderColor #b8860b
 skinparam SwimlaneBorderColor #5b6b8c
 skinparam SwimlaneTitleFontColor #1f2937
 
-|Nhân viên (Postman)|
+|Nhân viên (màn Quầy hoặc Postman)|
 start
 :Đăng nhập tài khoản BARISTA hoặc ADMIN;
 |Hệ thống BrewLite|
 :Cấp token;
 note right
   POST /auth/login: 200, sai thông tin 401
-  Web từ chối tài khoản nhân viên: không lưu phiên
+  Web: vào thẳng màn Quầy /barista
 end note
 repeat
-  |Nhân viên (Postman)|
+  |Nhân viên (màn Quầy hoặc Postman)|
   :Tải hàng đợi: Chờ pha, Đang pha, Sẵn sàng;
   |Hệ thống BrewLite|
   if (Token là BARISTA hoặc ADMIN?) then (không phải)
@@ -243,6 +243,8 @@ repeat
     note right
       GET /orders bằng token khách: 403 Insufficient role
       Không token: 401
+      Web: khách mở /barista chỉ thấy câu báo;
+      gặp 401/403 màn Quầy ngừng tự tải lại
     end note
     stop
   else (đúng)
@@ -252,12 +254,13 @@ repeat
       Trạng thái lạ: 400
     end note
   endif
-  |Nhân viên (Postman)|
+  |Nhân viên (màn Quầy hoặc Postman)|
   :Chọn một đơn và gửi thao tác;
   note right
-    PAID: tiến PREPARING, hoặc hủy (hết nguyên liệu)
-    PREPARING: tiến READY
-    READY: tiến COMPLETED
+    Chờ pha (PAID): Nhận pha, hoặc Hủy (hết nguyên liệu)
+    Đang pha (PREPARING): Pha xong
+    Sẵn sàng (READY): Đã giao
+    Hủy hỏi xác nhận trước khi gửi
   end note
   |Hệ thống BrewLite|
   if (Thao tác?) then (Hủy hết nguyên liệu)
@@ -299,7 +302,7 @@ repeat
       end note
     endif
   endif
-  |Nhân viên (Postman)|
+  |Nhân viên (màn Quầy hoặc Postman)|
 repeat while (Còn đơn trong hàng đợi?) is (còn) not (hết)
 stop
 @enduml
@@ -309,13 +312,14 @@ stop
 
 | Nút / nhánh trên sơ đồ | Endpoint và mã HTTP | `file:hàm` trong code |
 | :--- | :--- | :--- |
-| Đăng nhập tài khoản nhân viên | `POST /auth/login` 200; sai thông tin 401 | `backend/src/auth/auth.controller.ts`; web từ chối nhân viên ở `frontend/src/lib/login.ts:staffLoginMessage`, `frontend/src/app/login/page.tsx` |
-| Token là BARISTA hoặc ADMIN? | `GET /orders` 403 `Insufficient role` nếu là khách; 401 nếu thiếu token | `backend/src/auth/roles.guard.ts` |
-| Tải hàng đợi | `GET /orders?status=PAID,PREPARING,READY` 200; trạng thái lạ 400 | `backend/src/order/order.controller.ts:queue` (`@Roles(Role.BARISTA, Role.ADMIN)`) → `OrderService.listQueue` → `findByStatuses` (`createdAt` tăng dần) |
-| Thao tác: Tiến đơn | `PATCH /orders/:id` `{ status: "PREPARING" \| "READY" \| "COMPLETED" }` 200; khách 403; không có đơn 404 | `backend/src/payment/payment.controller.ts:update` → `PaymentService.advanceOrder` (`isStaff`) |
+| Đăng nhập tài khoản nhân viên | `POST /auth/login` 200; sai thông tin 401 | `backend/src/auth/auth.controller.ts`; web: `frontend/src/app/login/page.tsx:submit` → `frontend/src/lib/session.ts:postLoginTarget` → `frontend/src/lib/auth.ts:homeFor` (BARISTA, ADMIN về `/barista`); `frontend/src/components/Header.tsx` dùng `frontend/src/lib/nav.ts:staffRedirect` chuyển nhân viên khỏi trang khách |
+| Token là BARISTA hoặc ADMIN? | `GET /orders` 403 `Insufficient role` nếu là khách; 401 nếu thiếu token | `backend/src/auth/roles.guard.ts`; web: `frontend/src/components/BaristaView.tsx` (khách thấy câu báo), `frontend/src/lib/barista.ts:fetchQueue` ném `QueueAuthError` khi 401/403, `frontend/src/app/barista/page.tsx` ngừng tự tải lại |
+| Tải hàng đợi | `GET /orders?status=PAID,PREPARING,READY` 200; trạng thái lạ 400 | `backend/src/order/order.controller.ts:queue` (`@Roles(Role.BARISTA, Role.ADMIN)`) → `OrderService.listQueue` → `findByStatuses` (`createdAt` tăng dần); web: `frontend/src/lib/barista.ts:fetchQueue`, `groupQueue` (3 cột), `POLL_MS` 5 giây ở `frontend/src/app/barista/page.tsx` |
+| Chọn một đơn và gửi thao tác | không gọi API | `frontend/src/lib/barista.ts:cardActions` (nhãn nút theo cột, Hủy chỉ ở cột Chờ pha), `frontend/src/app/barista/page.tsx` (`window.confirm` trước khi hủy) |
+| Thao tác: Tiến đơn | `PATCH /orders/:id` `{ status: "PREPARING" \| "READY" \| "COMPLETED" }` 200; khách 403; không có đơn 404 | `backend/src/payment/payment.controller.ts:update` → `PaymentService.advanceOrder` (`isStaff`); web: `frontend/src/lib/api.ts:advanceOrder` |
 | Đúng bước kế của máy trạng thái? | 400 `Invalid transition A -> B` | `backend/src/state-machine/order-state.machine.ts:assertTransition` (bảng `ALLOWED`) |
 | Đổi trạng thái đơn | `PATCH /orders/:id` 200 | `payment.service.ts:advanceOrder` (`orders.updateStatus` dưới khóa `order:<orderId>`) |
-| Thao tác: Hủy hết nguyên liệu | `PATCH /orders/:id` `{ status: "CANCELLED" }` | `payment.controller.ts:update` → `PaymentService.cancelOrderAs` → `cancelOrder` |
+| Thao tác: Hủy hết nguyên liệu | `PATCH /orders/:id` `{ status: "CANCELLED" }` | `payment.controller.ts:update` → `PaymentService.cancelOrderAs` → `cancelOrder`; web: `frontend/src/lib/api.ts:cancelOrder` |
 | Đơn đang PAID? (không) | 403 `Staff can only cancel paid orders` (PENDING, PAYMENT_FAILED); 400 `Invalid transition` (PREPARING trở đi) | `payment.service.ts:cancelOrderAs` (nhánh `isStaff`), `assertTransition` |
 | Cộng các biên lai SUCCESS của đơn | không có endpoint | `payment.service.ts:cancel` (`payments.findAllByOrderId`, lọc `status === 'SUCCESS'`) |
 | Hoàn đúng số tiền đã thu (ngoài transaction) | gọi nội bộ | `payment.service.ts:cancel` → `mock-payment-gateway.service.ts:refund` |

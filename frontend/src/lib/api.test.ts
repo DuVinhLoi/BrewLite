@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { ApiError, cancelOrder, getMyOrders, getOrder, getProducts, getProfile } from './api';
+import { ApiError, advanceOrder, cancelOrder, getMyOrders, getOrder, getProducts, getProfile } from './api';
 import { TOKEN_KEY, getToken, saveToken } from './auth';
 import { MOCK_PRODUCTS } from './mock-products';
 import { setRedirect } from './session';
@@ -103,6 +103,51 @@ describe('getProducts', () => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'http://api.test');
     vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('fetch failed')));
     await expect(getProducts()).rejects.toThrow(/kết nối/);
+  });
+});
+
+// Màn quầy (/barista): Barista/Admin tiến đơn bằng PATCH /orders/:id.
+describe('advanceOrder', () => {
+  test('gửi PATCH /orders/:id với body { status } và header Authorization', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(json(200, { id: 'o1', status: 'PREPARING' }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await advanceOrder('o1', 'PREPARING', 'tok-1');
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toMatch(/\/orders\/o1$/);
+    expect(init.method).toBe('PATCH');
+    expect(init.headers.Authorization).toBe('Bearer tok-1');
+    expect(init.headers['Content-Type']).toBe('application/json');
+    expect(JSON.parse(init.body)).toEqual({ status: 'PREPARING' });
+  });
+
+  test('400 nhảy cóc PAID -> READY → thông điệp tiếng Việt nêu 2 trạng thái, không lộ chữ tiếng Anh', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(400, { message: 'Invalid transition PAID -> READY' })));
+    const err = await advanceOrder('o1', 'READY', 't').catch((e) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err.message).toMatch(/Đã thanh toán/);
+    expect(err.message).toMatch(/Sẵn sàng/);
+    expect(err.message).not.toMatch(/Invalid transition/);
+  });
+
+  test('400 với thông điệp lạ → giữ thông điệp backend sau câu tiếng Việt', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(400, { message: 'Use cancel for CANCELLED' })));
+    await expect(advanceOrder('o1', 'CANCELLED', 't')).rejects.toThrow(/Không thể chuyển trạng thái đơn: Use cancel for CANCELLED/);
+  });
+
+  test('403 → không có quyền; 404 → không tìm thấy; 401 → đăng nhập', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(403, { message: 'Not your order' })));
+    await expect(advanceOrder('o1', 'PREPARING', 't')).rejects.toThrow(/không có quyền/);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(404, { message: 'Order not found' })));
+    await expect(advanceOrder('o1', 'PREPARING', 't')).rejects.toThrow(/không tìm thấy/i);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json(401, { message: 'Unauthorized' })));
+    await expect(advanceOrder('o1', 'PREPARING', 't')).rejects.toThrow(/đăng nhập/);
+  });
+
+  test('mất kết nối → ném lỗi tiếng Việt', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValueOnce(new TypeError('fetch failed')));
+    await expect(advanceOrder('o1', 'PREPARING', 't')).rejects.toThrow(/kết nối/);
   });
 });
 
@@ -273,9 +318,10 @@ describe("fetch GET có xác thực gửi cache: 'no-store'", () => {
 describe('thân lỗi lạ', () => {
   const nullBody = () => new Response('null', { status: 502, headers: { 'Content-Type': 'application/json' } });
 
-  test('thân JSON null + 502: cancelOrder, getMyOrders ném ApiError 502 với câu tiếng Việt như khi không có message', async () => {
+  test('thân JSON null + 502: cancelOrder, advanceOrder, getMyOrders ném ApiError 502 với câu tiếng Việt như khi không có message', async () => {
     const expected: [string, () => Promise<unknown>, string][] = [
       ['cancelOrder', () => cancelOrder('o1', 't'), 'Không thể hủy đơn (mã 502)'],
+      ['advanceOrder', () => advanceOrder('o1', 'PREPARING', 't'), 'Không thể chuyển trạng thái đơn (mã 502)'],
       ['getMyOrders', () => getMyOrders('t'), 'Máy chủ trả lỗi (mã 502).'],
     ];
     for (const [, call, message] of expected) {
@@ -327,10 +373,11 @@ describe('ApiError', () => {
     expect(err.message).toBe(message);
   });
 
-  test('mất kết nối → status 0 (cancelOrder, getProfile, getMyOrders, getOrder, getProducts)', async () => {
+  test('mất kết nối → status 0 (cancelOrder, advanceOrder, getProfile, getMyOrders, getOrder, getProducts)', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'http://api.test');
     const calls = [
       () => cancelOrder('o1', 't'),
+      () => advanceOrder('o1', 'PREPARING', 't'),
       () => getProfile('t'),
       () => getMyOrders('t'),
       () => getOrder('o1', 't'),
@@ -383,6 +430,7 @@ describe('401 ở hàm có xác thực', () => {
 
   test.each([
     ['cancelOrder', () => cancelOrder('o1', 't'), 'Bạn cần đăng nhập lại để hủy đơn.'],
+    ['advanceOrder', () => advanceOrder('o1', 'PREPARING', 't'), 'Bạn cần đăng nhập lại để chuyển trạng thái đơn.'],
     ['getProfile', () => getProfile('t'), 'Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại.'],
     ['getMyOrders', () => getMyOrders('t'), 'Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại.'],
     ['getOrder', () => getOrder('o1', 't'), 'Phiên đăng nhập không còn hiệu lực, hãy đăng nhập lại.'],
@@ -400,6 +448,7 @@ describe('401 ở hàm có xác thực', () => {
   // getProfile: 404 (tài khoản không còn) cũng là hết phiên, có test riêng bên dưới nên không nằm trong danh sách "giữ token"
   test.each([
     ['cancelOrder', () => cancelOrder('o1', 't'), [403, 404, 500]],
+    ['advanceOrder', () => advanceOrder('o1', 'PREPARING', 't'), [403, 404, 500]],
     ['getProfile', () => getProfile('t'), [403, 500]],
     ['getMyOrders', () => getMyOrders('t'), [403, 404, 500]],
     ['getOrder', () => getOrder('o1', 't'), [403, 404, 500]],

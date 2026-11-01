@@ -1,5 +1,7 @@
 # Plan: nhánh `develop-agile` (Agile Scrum bám đề A1)
 
+> **Cập nhật 2026-10-31.** Mục A2 đã được đảo một phần: màn Quầy `/barista` được đưa lại (BARISTA và ADMIN dùng chung, đăng nhập vào thẳng `/barista`), câu báo "tài khoản nhân viên thao tác qua Swagger" bỏ. Màn Kho `/admin` vẫn không có, tồn kho chỉ qua API (Postman).
+
 ## Context
 
 `develop` (HEAD `dff84c0`) đã xong 10 task của đề `docs/BrewLite-CongNghePhanMem-fixed.md` (gọi tắt **đề A1**), kèm phần mở rộng Barista/Admin (UC08–UC16) và 2 tài liệu UML (`use-case-specifications.md`, `user-sequence-specifications.md`). Người dùng cần hai hướng đi riêng:

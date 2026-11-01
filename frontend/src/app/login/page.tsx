@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LoginView from '@/components/LoginView';
 import { roleFromToken, saveToken, userIdFromToken } from '@/lib/auth';
-import { INITIAL_LOGIN_FORM, afterRegister, authErrorMessage, staffLoginMessage, switchMode, type LoginFormState } from '@/lib/login';
+import { INITIAL_LOGIN_FORM, afterRegister, authErrorMessage, switchMode, type LoginFormState } from '@/lib/login';
 import { clearCheckoutIfOtherUser } from '@/lib/payment/checkout-session';
 import { postLoginTarget } from '@/lib/session';
 
@@ -36,14 +36,11 @@ export default function LoginPage() {
         // 201 không cấp token: về tab Đăng nhập, giữ email, xóa mật khẩu, báo "Đăng ký thành công..."
         setForm(afterRegister);
       } else {
-        // nhân viên không có giao diện web: không lưu phiên, chỉ báo tài khoản nhân viên không dùng được web
-        const staffMessage = staffLoginMessage(roleFromToken(data.accessToken));
-        if (staffMessage) return showError(staffMessage);
         saveToken(data.accessToken);
         // đơn đang trả dở: giữ khi đăng nhập lại đúng tài khoản đã tạo nó (hết phiên giữa lúc trả tiền), bỏ khi là tài khoản khác
         clearCheckoutIfOtherUser(userIdFromToken(data.accessToken));
         // ?next= (từ handleUnauthorized) đưa về trang đang xem lúc hết phiên; chỉ nhận đường dẫn tương đối trong site
-        router.push(postLoginTarget(window.location.search));
+        router.push(postLoginTarget(window.location.search, roleFromToken(data.accessToken) ?? 'CUSTOMER'));
       }
     } catch {
       showError('Lỗi không xác định');

@@ -6,10 +6,8 @@ import {
   NETWORK_ERROR,
   POINTS_SENTENCE,
   REGISTER_OK_NOTICE,
-  STAFF_LOGIN_MESSAGE,
   afterRegister,
   authErrorMessage,
-  staffLoginMessage,
   switchMode,
   type LoginFormState,
 } from './login';
@@ -96,20 +94,5 @@ describe('POINTS_SENTENCE', () => {
   test('tính từ VND_FOR_ONE_POINT và formatVND, không viết cứng số tiền', () => {
     expect(POINTS_SENTENCE).toBe(`Mỗi ${formatVND(VND_FOR_ONE_POINT)} thanh toán được cộng 1 điểm tích lũy vào hồ sơ của bạn.`);
     expect(POINTS_SENTENCE).toContain('Mỗi 10.000đ thanh toán được cộng 1 điểm');
-  });
-});
-
-describe('staffLoginMessage (web chỉ phục vụ khách)', () => {
-  test('BARISTA và ADMIN: câu báo tài khoản nhân viên không dùng được web, không có tên công cụ hay URL', () => {
-    expect(STAFF_LOGIN_MESSAGE).toBe('Tài khoản nhân viên không dùng được giao diện web. Hãy đăng nhập bằng tài khoản khách hàng.');
-    expect(STAFF_LOGIN_MESSAGE).not.toContain('Swagger');
-    expect(STAFF_LOGIN_MESSAGE).not.toContain('http');
-    expect(staffLoginMessage('BARISTA')).toBe(STAFF_LOGIN_MESSAGE);
-    expect(staffLoginMessage('ADMIN')).toBe(STAFF_LOGIN_MESSAGE);
-  });
-
-  test('CUSTOMER và token không đọc được: null (đăng nhập bình thường)', () => {
-    expect(staffLoginMessage('CUSTOMER')).toBeNull();
-    expect(staffLoginMessage(null)).toBeNull();
   });
 });
