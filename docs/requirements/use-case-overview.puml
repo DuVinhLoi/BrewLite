@@ -59,16 +59,4 @@ UC03 .> UC04 : <<extend>>
 
 UC042 --- Pay
 
-note right of UC03
-  Extend UC-04 khi chưa đăng nhập
-  hoặc API trả 401 (FR-10).
-end note
-
-note right of UC07
-  Trạng thái đơn:
-  PENDING, PAID, PAYMENT_FAILED,
-  PREPARING, READY, COMPLETED,
-  CANCELLED. 8 chuyển hợp lệ.
-end note
-
 @enduml

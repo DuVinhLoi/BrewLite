@@ -66,4 +66,4 @@ Kết luận: VNPay từ chối thanh toán sau `vnp_ExpireDate` ở cả hai đ
 
 - Thử lại QueryDR lúc 18:55 ngày 2026-10-30 (giao dịch đã trả và giao dịch chưa mở): vẫn `99` không chữ ký. Cần hỏi hỗ trợ VNPay (`hotrovnpay@vnpay.vn`) kèm `vnp_TxnRef` và thời điểm.
 - Khi QueryDR chạy được: lặp lại các nhánh `91`, `00/01` và `sync` → `PAID` (bước 7.3) với phản hồi thật.
-- IPN thật chỉ quan sát được trên Render (bước 7.5, 7.6).
+- IPN thật trên Render: bước 7.5 đã đạt ngày 2026-10-30 (VNPay tự gọi IPN, xem plan bước 7.5); còn bước 7.6 (SIT).

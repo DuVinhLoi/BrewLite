@@ -120,6 +120,12 @@ Plan: [`2026-10-29-vnpay-payment-plan.md`](../../2026-10-29-vnpay-payment-plan.m
   - image production với `PAYMENT_PROVIDER=fake` dừng lúc khởi động;
   - tạo lại riêng container `api` với `VNP_*` nạp từ `apps/api/.env` lúc chạy: sandbox nhận URL ký; hủy trên VNPay → return `24/02` hợp lệ; chuyển tiếp vào IPN → `00`, gửi lặp → `02`;
   - đã `down -v` stack và volume test, xóa `.playwright-mcp/` (ảnh chụp trang có URL return đã ký). Worktree sạch.
+- 2026-10-30 22:40: người dùng báo thanh toán đã hoàn tất và yêu cầu rà, đồng bộ tài liệu và sơ đồ của đợt VNPay. Integrator sửa:
+  - `context-and-scope.md` R-13..R-15 theo D6 (đóng payment `FAILED` `EXPIRED` sau `expiresAt + 15 phút`, warning `PAYMENT_EXPIRED_UNCONFIRMED`) và kết quả spike (QueryDR sandbox trả `99`);
+  - `uc-checkout.puml` ghi chú UC-06 thêm khoảng chờ D6;
+  - xuất lại cả 7 `.svg` bằng PlantUML 1.2026.8, 0 "Syntax Error"; sửa ghi chú "chưa xuất lại" ở README sơ đồ, ma trận, plan 2.4/3.5;
+  - bảng phủ đề của plan A2: 7 ADR, dòng thanh toán ghi VNPay sandbox (ADR-007).
+- Ruling 2026-10-30 22:40: Integrator ghi `.svg` vào repo vì người dùng yêu cầu đồng bộ sơ đồ; quy tắc "ảnh do nhóm xuất" của plan 2.4/3.5 được thay bằng yêu cầu này. Nhóm vẫn mở ảnh kiểm trước khi nộp.
 - Ruling 2026-10-30 18:50: kiểm 7.7d bằng QueryDR giả thay cho sandbox. Plan 7.7d vốn ghi "response QueryDR kiểm soát được trong scratchpad/local", nên đánh dấu 7.7d là đạt. 7.3 không đánh dấu, vì bước này cần sandbox xác nhận một giao dịch thật.
 - Nhận xét đợt D6: chạy song song tài liệu và code (2 + 2 card) đáng giá. Mỗi lượt xong trong 10–15 phút, không conflict, vì contract mục 8 chốt tên và bảng quyết định trước. Review Opus tìm được một lỗi thật mà test và kiểm local không phát hiện: phản hồi lỗi đã ký mà trường rỗng làm đơn kẹt. Lần sau giữ 2 worker và một lượt review trước khi chốt. Nên nối junction trước khi worker khởi động để khỏi mất một lượt `ask`.
 - Nhận xét đợt tài liệu: chạy song song đáng giá. Ba worker W1 xong trong 9–15 phút, không conflict, nhờ contract chốt mã trước và allowed paths không chồng nhau. Wave 2 một worker là đủ. Lần sau giữ số agent theo số nhóm file độc lập, không tăng thêm.

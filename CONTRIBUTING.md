@@ -7,7 +7,6 @@
 - Mô tả PR nêu vấn đề, lý do thay đổi, hành vi sau thay đổi, mục đề A2 hoặc mã `FR-xx`/`NFR-xx`, lệnh kiểm và kết quả thực tế.
 - Task 4 được làm nháp khi Task 2–3 chưa xong, nhưng chỉ merge sau khi các tạo phẩm Task 1–3 được chốt qua PR (kế hoạch A2 mục B.4).
 - Khi đổi yêu cầu/hành vi, đồng bộ SRS → sơ đồ/ADR liên quan → ma trận truy vết → code/test trong cùng PR. Không đổi tài liệu A1 thành bằng chứng A2.
-- Theo [AGENTS.md](AGENTS.md), xác nhận ownership và allowed paths trước khi agent sửa; một writer cho mỗi file ở mỗi pha.
 
 ## Commit
 
@@ -49,4 +48,4 @@ Sau lần CI đầu tiên trên PR, quản trị viên cấu hình bảo vệ `d
 
 [Product Backlog](docs/sprint/backlog.md) theo dõi Sprint 1 và 2 trong repository; nhóm phân công người thực hiện và bổ sung board GitHub Projects khi có. Cập nhật trạng thái dựa trên bằng chứng, không đánh dấu hoàn thành chỉ vì đã có source.
 
-Bàn giao ghi task ID, branch/workspace, file đổi và lý do, lệnh kiểm/kết quả, commit SHA nếu có, giới hạn và blocker. Nhóm phải tự hiểu và giải thích được phần code được agent hỗ trợ theo quy tắc của môn học.
+Bàn giao ghi task ID, branch/workspace, file đổi và lý do, lệnh kiểm/kết quả, commit SHA nếu có, giới hạn và blocker.

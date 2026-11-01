@@ -33,4 +33,3 @@ npm.cmd run build
 
 Toàn bộ bộ test, cấu hình và dependency test được xóa theo yêu cầu chủ dự án sau khi kiểm chứng; [báo cáo kho](../../docs/inventory-verification.md) ghi kết quả trước khi xóa. [Ma trận](../../docs/traceability-matrix.md) giữ các mã kiểm chứng lịch sử.
 PWA chỉ cần web app manifest theo AC-N10.1; service worker không thuộc yêu cầu minimum.
-Nhóm phải hiểu và giải thích được code khi vấn đáp.

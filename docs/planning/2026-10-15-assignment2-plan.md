@@ -711,9 +711,9 @@ Mọi tạo phẩm bắt buộc của đề A2 §1-§9 và checklist §9.1 đề
 
 | Yêu cầu đề A2 | § | Mục kế hoạch | Tạo phẩm |
 |---|---|---|---|
-| Kiến trúc C4 hoặc phân lớp: frontend, backend module, PostgreSQL + migration, thanh toán mô phỏng, logging/health/config | 5.1 | Task 3.1 | `docs/architecture/architecture.md` |
+| Kiến trúc C4 hoặc phân lớp: frontend, backend module, PostgreSQL + migration, thanh toán mô phỏng, logging/health/config | 5.1 | Task 3.1 | `docs/architecture/architecture.md` (thanh toán qua VNPay sandbox từ 2026-10-29, ADR-007) |
 | Lý do chọn, ưu điểm, hạn chế, trade-off | 5.1 | Task 3.1 | `architecture.md` |
-| ADR ngắn trong `docs/architecture/adr` (ví dụ `001-monorepo.md`) | 5.1 | Task 3.1 (5 ADR) | `docs/architecture/adr/001..005-*.md` |
+| ADR ngắn trong `docs/architecture/adr` (ví dụ `001-monorepo.md`) | 5.1 | Task 3.1 (7 ADR) | `docs/architecture/adr/001..007-*.md` |
 | UML deployment diagram production | 5.2 | Task 3.2 | `docs/architecture/deployment.puml/.svg` |
 | Deployment: thiết bị người dùng, CDN Next.js, container API, PostgreSQL persistent, registry + nền tảng, HTTPS/nội bộ/cổng, secret/health/log, ranh giới local/CI/production | 5.2 | Task 3.2 (bảng 8 mục), E | `deployment.puml/.svg` |
 | Sơ đồ phản ánh đúng nền tảng thực tế | 5.2 | Task 3.2, E.4 | `deployment.svg`, ADR 004 |
@@ -746,7 +746,7 @@ Mọi tạo phẩm bắt buộc của đề A2 §1-§9 và checklist §9.1 đề
 | Giỏ hàng và tổng tiền | 7.1 | Task 5.1 | `apps/web` |
 | Đăng ký, đăng nhập, JWT | 7.1 | Task 5.1 | `apps/web`, `apps/api` |
 | Tạo đơn hàng | 7.1 | Task 5.1 | `apps/api` |
-| Thanh toán Ví/Thẻ mô phỏng | 7.1 | Task 5.1 | `apps/api` |
+| Thanh toán Ví/Thẻ mô phỏng | 7.1 | Task 5.1 | `apps/api` (`src/payment/`, VNPay sandbox không thu tiền thật, ADR-007) |
 | Xác nhận, trạng thái, lịch sử đơn | 7.1 | Task 5.1 | `apps/web`, `apps/api` |
 | Xử lý lỗi và validate frontend/backend | 7.1 | Task 5.1 | `apps/` |
 | Unit test cho nghiệp vụ quan trọng | 7.2 | Task 5.2 | test trong `apps/api` |

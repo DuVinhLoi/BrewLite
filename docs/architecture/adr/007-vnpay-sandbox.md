@@ -6,7 +6,7 @@
 
 ## Bối cảnh
 
-Giảng viên đòi thanh toán qua cổng của bên thứ ba thay cho `simulatePayment()`. Nhóm đã đăng ký VNPay sandbox; sandbox không thu tiền thật, còn cổng production thật vẫn ngoài phạm vi (FR-31, Won't).
+Bên nghiệm thu (stakeholder S4) yêu cầu thanh toán qua cổng của bên thứ ba thay cho `simulatePayment()`. Nhóm đã đăng ký VNPay sandbox; sandbox không thu tiền thật, còn cổng production thật vẫn ngoài phạm vi (FR-31, Won't).
 
 Simulator chạy đồng bộ trong tiến trình API: `POST /payments` nhận số thẻ rồi trả ngay 201 hoặc 402 (ADR-005 §B). VNPay thì bất đồng bộ: khách rời BrewLite sang trang VNPay để nhập thẻ, còn kết quả về qua kênh khác, có thể chậm hoặc không tới. Vì vậy phải quyết định ai được phép kết luận "đã trả", xử lý ra sao khi kết quả không tới, và giữ idempotency của ADR-005 thế nào khi một đơn có thể đang chờ.
 
@@ -78,7 +78,7 @@ Chi tiết ở [ADR-005 §A](005-idempotency-and-optimistic-lock.md). Tóm tắt
 
 ### Ưu điểm
 
-- Đáp ứng yêu cầu giảng viên: cổng bên thứ ba thật, kết quả có chữ ký HMAC-SHA512 và kiểm chứng được. Hệ thống không nhận, không lưu số thẻ.
+- Đáp ứng yêu cầu nghiệm thu: cổng bên thứ ba thật, kết quả có chữ ký HMAC-SHA512 và kiểm chứng được. Hệ thống không nhận, không lưu số thẻ.
 - Hai đường nhận kết quả đi qua cùng một hàm, nên IPN lặp hay IPN chồng `sync` vẫn chỉ cho một `SUCCESS` và trừ kho một lần.
 - `POST /payments` ngắn (không chờ VNPay); không giữ khóa đơn trong lúc chờ mạng.
 - API khởi động được khi thiếu cấu hình, nên Docker/local chạy các chức năng khác mà không cần phát secret cho mọi thành viên.
@@ -97,7 +97,7 @@ Chi tiết ở [ADR-005 §A](005-idempotency-and-optimistic-lock.md). Tóm tắt
 
 ## Phương án đã loại
 
-- **Giữ simulator:** không đáp ứng yêu cầu của giảng viên về cổng bên thứ ba, và không kiểm chứng được những điều khó nhất của thanh toán thật (chữ ký, kết quả đến bất đồng bộ, đến muộn hoặc không đến).
+- **Giữ simulator:** không đáp ứng yêu cầu nghiệm thu về cổng bên thứ ba, và không kiểm chứng được những điều khó nhất của thanh toán thật (chữ ký, kết quả đến bất đồng bộ, đến muộn hoặc không đến).
 - **Stripe test mode:** cũng là cổng bên thứ ba, nhưng nhóm đã đăng ký VNPay sandbox, còn Stripe cần tài khoản và SDK mới. Stripe cũng trả kết quả bất đồng bộ qua webhook, nên không bớt được độ phức tạp của ADR này; chỉ đổi nhà cung cấp. Thanh toán nội địa bằng VND phù hợp bối cảnh BrewLite hơn.
 - **Chỉ IPN, không QueryDR:** Render ngủ và local không nhận IPN thì đơn kẹt `PENDING` mà không có đường phục hồi.
 - **Cho return URL quyết định kết quả:** URL do trình duyệt mang về, khách bỏ qua hoặc giả được; trái BR-11.
