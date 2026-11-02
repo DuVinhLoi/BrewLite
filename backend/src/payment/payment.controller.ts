@@ -19,7 +19,7 @@ export class PaymentController {
   @ApiHeader({ name: 'Idempotency-Key', required: true, description: 'Bắt buộc; gửi lại cùng key thì trả kết quả cũ (200)' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CUSTOMER)
-  async pay(@Body() dto: CreatePaymentDto, @Headers('idempotency-key') key: string, @Req() req: any, @Res({ passthrough: true }) res: any) {
+  async pay(@Body() dto: CreatePaymentDto, @Headers('Idempotency-Key') key: string, @Req() req: any, @Res({ passthrough: true }) res: any) {
     const r = await this.payments.processPayment(req.user.id, dto, key);
     res.status(r.isCached ? 200 : 201);
     return r;
