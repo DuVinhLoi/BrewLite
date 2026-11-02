@@ -86,7 +86,7 @@ export class PrismaOrderRepo implements IOrderRepository {
   }
 }
 
-// UC02: toppings lưu chuỗi JSON, đọc lỗi thì coi như rỗng thay vì nổ
+// toppings lưu chuỗi JSON; parse lỗi thì coi như rỗng.
 function parseToppings(raw: string): string[] {
   try {
     const v: unknown = JSON.parse(raw);

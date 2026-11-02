@@ -16,7 +16,7 @@ import { PrismaProductRepo } from '../prisma/prisma-product.repo';
 import { PrismaPaymentRepo } from '../prisma/prisma-payment.repo';
 import { PrismaUserRepo } from '../prisma/prisma-user.repo';
 
-// Có DATABASE_URL thì cắm Prisma (Postgres thật); không có thì InMemory, chỉ để jest (main.ts bắt buộc DATABASE_URL khi chạy)
+// Có DATABASE_URL thì dùng Prisma, không có thì InMemory (chỉ cho jest).
 const useDb = !!process.env.DATABASE_URL;
 const OrderRepo = useDb ? PrismaOrderRepo : InMemoryOrderRepo;
 const ProductRepo = useDb ? PrismaProductRepo : InMemoryProductRepo;

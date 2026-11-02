@@ -45,7 +45,7 @@ export class PrismaProductRepo implements IProductRepository {
   }
 
   async restoreStock(id: string, quantity: number, tx?: TxContext): Promise<void> {
-    // Hoàn kho cũng tăng version: mọi đột biến stock đều đổi phiên bản, khóa cũ đang giữ sẽ rớt (UC 2.4)
+    // Hoàn kho cũng tăng version để optimistic lock đang giữ bản cũ bị từ chối.
     await this.cx(tx).product.update({ where: { id }, data: { stock: { increment: quantity }, version: { increment: 1 } } });
   }
 

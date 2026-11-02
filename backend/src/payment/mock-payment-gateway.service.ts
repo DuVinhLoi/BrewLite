@@ -17,7 +17,7 @@ export class MockPaymentGatewayService {
       this.failNext = false;
       throw new Error('Mock charge failed');
     }
-    // Demo UC06 KB1 không cần sửa code: đặt MOCK_GATEWAY_DECLINE_METHOD=CARD (hoặc WALLET) thì phương thức đó luôn bị từ chối
+    // Demo thanh toán lỗi: MOCK_GATEWAY_DECLINE_METHOD=CARD|WALLET để luôn từ chối phương thức đó.
     if (process.env.MOCK_GATEWAY_DECLINE_METHOD === opts.method) throw new Error('Mock charge declined');
   }
 
@@ -26,7 +26,7 @@ export class MockPaymentGatewayService {
     this.refunds.push({ orderId, amount });
   }
 
-  /** Sổ hoàn tiền để test UC06 KB3 pin đúng số thực thu. */
+  /** Sổ hoàn tiền để test kiểm số hoàn đúng số thực thu. */
   readonly refunds: Array<{ orderId: string; amount: number }> = [];
 
   getCallCount(): number {

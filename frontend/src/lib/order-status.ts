@@ -1,8 +1,5 @@
-// ============================================================
-// FEATURE: Order State Machine phía FE (đề §9 + sơ đồ §9.1) — nhãn, bảng chuyển trạng thái, thanh tiến trình.
-// Bảng TRANSITIONS là bản sao của ALLOWED ở backend/src/state-machine/order-state.machine.ts;
-// order-status.test.ts pin nó với 9 mũi tên của sơ đồ và đọc thẳng file backend để 2 bên không lệch.
-// ============================================================
+// State machine phía FE (đề §9.1). TRANSITIONS sao từ ALLOWED ở backend/src/state-machine/order-state.machine.ts;
+// order-status.test.ts so hai bảng để không lệch.
 
 export type OrderStatus =
   | 'PENDING'
@@ -52,12 +49,10 @@ export const isOrderStatus = (s: string): s is OrderStatus => (ORDER_STATUSES as
 // US-10: khách hủy được khi chưa vào quầy (PENDING, PAYMENT_FAILED, PAID); PREPARING trở đi backend trả 400.
 export const canCancel = (s: string): boolean => isOrderStatus(s) && TRANSITIONS[s].includes('CANCELLED');
 
-// Trạng thái cuối: không còn mũi tên đi ra (COMPLETED, CANCELLED). Biên lai và lịch sử tự cập nhật đến khi đơn tới đây
-// (lib/use-order-poll.ts). Trạng thái lạ → false: cứ hỏi tiếp thay vì tin là xong.
+// Trạng thái cuối: COMPLETED, CANCELLED. Trạng thái lạ trả false để poll tiếp.
 export const isTerminal = (s: string): boolean => isOrderStatus(s) && TRANSITIONS[s].length === 0;
 
-// Bước tiếp theo ở quầy (US-10, màn /barista): PAID → PREPARING → READY → COMPLETED.
-// PENDING/PAYMENT_FAILED không có bước kế ở đây (bước kế của chúng là thanh toán / thử lại, không phải quầy).
+// Bước kế ở quầy (US-10): PAID → PREPARING → READY → COMPLETED. PENDING/PAYMENT_FAILED không có.
 const COUNTER_NEXT: Partial<Record<OrderStatus, OrderStatus>> = {
   PAID: 'PREPARING',
   PREPARING: 'READY',

@@ -5,7 +5,7 @@ import type { CartLine, PaymentRequest, PaymentResult } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-// Body lỗi của NestJS: { statusCode, message: string | string[], error }; body không phải JSON (proxy trả HTML…) thì bỏ qua.
+// Lấy message từ body lỗi NestJS; body không phải JSON thì bỏ qua.
 async function readMessage(res: Response): Promise<string> {
   const message = (await res.json().catch(() => null))?.message;
   return Array.isArray(message) ? message.join(', ') : typeof message === 'string' ? message : '';
@@ -22,8 +22,7 @@ function paymentErrorMessage(status: number, detail: string): string {
   return `Thanh toán thất bại (mã ${status}${detail ? `: ${detail}` : ''}). ${kept}`;
 }
 
-// FEATURE: Real payment gateway (Task 8) — POST /orders (Task 6) rồi POST /payments,
-// kết quả chuẩn hóa về PaymentResult nên UI giữ nguyên. Bật bằng NEXT_PUBLIC_PAYMENT_MODE=api.
+// Task 8: POST /orders rồi POST /payments, trả về PaymentResult. Bật bằng NEXT_PUBLIC_PAYMENT_MODE=api.
 export class ApiPaymentGateway implements PaymentGateway {
   readonly name = 'api';
 
@@ -38,7 +37,7 @@ export class ApiPaymentGateway implements PaymentGateway {
           ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        // Chỉ gửi các trường DTO nhận; giá do server tính (giỏ có thêm key/name/unitPrice/lineTotal thì bỏ)
+        // Chỉ gửi trường DTO nhận; giá do server tính.
         body: JSON.stringify({
           items: items.map(({ productId, quantity, size, toppings }) => ({ productId, quantity, size, toppings })),
         }),
@@ -58,7 +57,7 @@ export class ApiPaymentGateway implements PaymentGateway {
     if (!orderId) {
       throw new Error('Chưa có đơn để thanh toán. Giỏ hàng được giữ nguyên.');
     }
-    // Từ đây đơn đã tồn tại: mọi lỗi mang orderId để UI thử lại đúng đơn này (US-08)
+    // Đơn đã tạo: lỗi kèm orderId để UI thử lại đúng đơn (US-08).
     const token = getToken();
     let res: Response;
     try {
@@ -77,7 +76,7 @@ export class ApiPaymentGateway implements PaymentGateway {
     if (res.status === 401) throw new PaymentError('Bạn cần đăng nhập (hoặc đăng nhập lại) trước khi thanh toán. Giỏ hàng được giữ nguyên.', orderId, 401);
     if (res.status === 403) throw new PaymentError('Bạn không có quyền thanh toán đơn này (đơn thuộc tài khoản khác). Giỏ hàng được giữ nguyên.', orderId, 403);
     if (!res.ok) {
-      // Lỗi -> UI giữ giỏ (US-05). Backend trả JSON { message, ... }: chỉ lấy message, không đẩy JSON thô lên UI.
+      // Lỗi thì UI giữ giỏ (US-05); chỉ hiện message, không hiện JSON thô.
       const detail = await readMessage(res);
       throw new PaymentError(paymentErrorMessage(res.status, detail), orderId, res.status, detail);
     }

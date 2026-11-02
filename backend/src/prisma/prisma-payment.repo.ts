@@ -17,7 +17,7 @@ export class PrismaPaymentRepo implements IPaymentRepository {
     return p && this.toDto(p);
   }
 
-  // UC06 KB3: hoàn đúng số tiền thực thu = cộng mọi biên lai SUCCESS của đơn
+  // Số hoàn = tổng biên lai SUCCESS của đơn.
   async findAllByOrderId(orderId: string, tx?: TxContext): Promise<PaymentDto[]> {
     const rows = await this.cx(tx).payment.findMany({ where: { orderId }, orderBy: { createdAt: 'asc' } });
     return rows.map((p) => this.toDto(p));

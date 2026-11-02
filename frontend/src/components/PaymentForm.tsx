@@ -11,11 +11,7 @@ import type { CartItem } from '@/lib/types';
 import Button from './ui/Button';
 import styles from './PaymentForm.module.css';
 
-// ============================================================
-// FEATURE: Payment form (wireframe màn 4) — chỉ gọi PaymentGateway,
-// đổi mock <-> backend thật không sửa file này. Lỗi -> ở lại màn này, giữ giỏ (US-05).
-// Giao diện nét mực: ui-visual-plan.md §6 mục 6, artboard PayDoodle (phần vẽ ở PaymentFormView).
-// ============================================================
+// Form thanh toán: chỉ gọi PaymentGateway nên đổi mock/backend không sửa file này. Lỗi thì giữ giỏ (US-05).
 export default function PaymentForm({
   total,
   items,
@@ -33,8 +29,7 @@ export default function PaymentForm({
   const [error, setError] = useState<string | null>(null);
   const [voucher, setVoucher] = useState('');
   const [applied, setApplied] = useState<string | null>(null);
-  // Phiên thanh toán của tab (lib/payment/checkout-session.ts): mã đơn + key tạo đơn + key trả tiền, gắn với nội dung giỏ.
-  // Reload, hoặc quay lại giỏ rồi vào lại mà giỏ không đổi, vẫn trả tiếp đúng đơn đó với cùng key (US-08, phương án A).
+  // Phiên thanh toán gắn với nội dung giỏ: giỏ không đổi thì reload vẫn trả tiếp đúng đơn, cùng key (US-08).
   const [checkout, setCheckout] = useState(() => loadCheckout(items));
   const [orderId, setOrderId] = useState<string | undefined>(checkout.orderId);
 
@@ -57,7 +52,7 @@ export default function PaymentForm({
       onSuccess(result);
     } catch (e) {
       if (dropsCheckout(e)) {
-        // đơn đang giữ không trả tiếp được (đã hủy, đang pha, của tài khoản khác…): lần bấm sau tạo đơn mới
+        // Đơn đang giữ không trả tiếp được: lần bấm sau tạo đơn mới.
         clearCheckout();
         setCheckout(loadCheckout(items));
         setOrderId(undefined);
@@ -65,8 +60,7 @@ export default function PaymentForm({
         rememberOrder(e.orderId);
         setOrderId(e.orderId);
       }
-      // hết phiên (401): xóa token, về /login?next=…; handleUnauthorized không đụng tới giỏ và phiên thanh toán của tab,
-      // và đăng nhập lại cùng tài khoản cũng giữ phiên đó (login chỉ bỏ khi là tài khoản khác: clearCheckoutIfOtherUser)
+      // 401: về /login nhưng giữ giỏ và phiên thanh toán; chỉ bỏ phiên khi đăng nhập tài khoản khác.
       if (isUnauthorizedPayment(e)) handleUnauthorized();
       setError(e instanceof Error ? e.message : 'Thanh toán thất bại, vui lòng thử lại.');
     } finally {
