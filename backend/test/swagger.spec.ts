@@ -28,6 +28,17 @@ describe('Swagger /docs', () => {
     expect(op.security).toEqual([{ bearer: [] }]);
   });
 
+  // Thiếu @ApiBearerAuth thì Swagger UI không gửi header Authorization dù đã bấm Authorize → 401
+  test.each([
+    ['/users/me', 'get'],
+    ['/admin/products', 'get'],
+    ['/admin/products/{id}/stock', 'patch'],
+  ])('%s (%s) kèm bearer auth', (path, method) => {
+    const op = doc.paths[path]?.[method];
+    expect(op).toBeDefined();
+    expect(op.security).toEqual([{ bearer: [] }]);
+  });
+
   test('body của PATCH tham chiếu schema có enum OrderStatus', () => {
     const op = doc.paths['/orders/{id}'].patch;
     const ref: string = op.requestBody.content['application/json'].schema.$ref;
@@ -42,6 +53,25 @@ describe('Swagger /docs', () => {
       const names = doc.paths[path].post.parameters.map((p: any) => p.name);
       expect(names).toContain('Idempotency-Key');
     }
+  });
+
+  // Swagger gộp @Headers() với @ApiHeader theo tên phân biệt hoa thường; lệch tên thì UI hiện 2 ô bắt buộc và chặn Execute
+  test('mỗi POST chỉ có một header idempotency (không phân biệt hoa thường)', () => {
+    for (const path of ['/payments', '/orders']) {
+      const idem = doc.paths[path].post.parameters.filter(
+        (p: any) => p.in === 'header' && p.name.toLowerCase() === 'idempotency-key',
+      );
+      expect(idem).toHaveLength(1);
+    }
+  });
+
+  test('body của PATCH /admin/products/{id}/stock có schema mode / value / version', () => {
+    const ref: string = doc.paths['/admin/products/{id}/stock'].patch.requestBody.content['application/json'].schema.$ref;
+    const schema = doc.components.schemas[ref.split('/').pop()!];
+    expect(schema.properties.mode.enum).toEqual(['set', 'delta']);
+    expect(schema.properties.value.type).toBe('integer');
+    expect(schema.properties.version.type).toBe('integer');
+    expect(schema.required).toEqual(expect.arrayContaining(['mode', 'value', 'version']));
   });
 
   test('/docs-json phục vụ cùng tài liệu', async () => {

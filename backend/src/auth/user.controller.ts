@@ -1,4 +1,5 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
@@ -6,6 +7,7 @@ import { Roles } from './roles.decorator';
 import { Role } from '../contracts/user.contract';
 
 // Mở rộng ngoài đề §12.1: hồ sơ tối thiểu của người đang đăng nhập (tổng điểm tích lũy)
+@ApiBearerAuth()
 @Controller('users')
 export class UserController {
   constructor(private auth: AuthService) {}
