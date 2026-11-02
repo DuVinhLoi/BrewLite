@@ -28,6 +28,17 @@ describe('Swagger /docs', () => {
     expect(op.security).toEqual([{ bearer: [] }]);
   });
 
+  // Thiếu @ApiBearerAuth thì Swagger UI không gửi header Authorization dù đã bấm Authorize → 401
+  test.each([
+    ['/users/me', 'get'],
+    ['/admin/products', 'get'],
+    ['/admin/products/{id}/stock', 'patch'],
+  ])('%s (%s) kèm bearer auth', (path, method) => {
+    const op = doc.paths[path]?.[method];
+    expect(op).toBeDefined();
+    expect(op.security).toEqual([{ bearer: [] }]);
+  });
+
   test('body của PATCH tham chiếu schema có enum OrderStatus', () => {
     const op = doc.paths['/orders/{id}'].patch;
     const ref: string = op.requestBody.content['application/json'].schema.$ref;
