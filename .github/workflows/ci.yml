@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - develop-Assignment2
-      - main
       - 'feat/assignment2-task5-*'
       - '!feat/assignment2-task5-delivery'
   workflow_dispatch:
