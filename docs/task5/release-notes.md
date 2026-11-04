@@ -12,6 +12,12 @@ PR [#29](https://github.com/DuVinhLoi/BrewLite/pull/29) chuyển nguồn product
 - Kiểm trước push: `actionlint .github/workflows/ci.yml .github/workflows/cd.yml` và `git diff --check` đạt. Smoke hiện trạng đạt: health `{"status":"ok","database":"up"}`, products 8 món, web HTTP 200. Lần gọi PowerShell đầu timeout do chưa có phản hồi trong 45 giây; gọi lại bằng curl và PowerShell đều đạt, không deploy/restart để xử lý timeout.
 - Run URL/SHA cutover, deploy ID mới, smoke và kiểm VNPay/Barista sau deploy: chưa thực hiện. Không có migration hoặc thay đổi code app trong phần cutover này.
 
+### Cập nhật theo kế hoạch v1.2 — 04/11/2026
+
+[Báo cáo P1](../planning/handoff/2026-11-owner-p1-report.md) xác nhận **ĐÃ XONG CỔNG P1** (việc 1–7). Kết luận thiếu tài khoản giảng viên/DB chặn cổng ở bản ghi phía trên không còn áp dụng: repo public, DB có hạn riêng. Đã chọn khôi phục đủ bốn tầng test với phiên bản khóa tại `73a6ccb`; chưa triển khai test trong PR-1. Hướng DB hiện tại là chuẩn bị Free mới kèm dump/restore để giữ dữ liệu, dự kiến 17/11, cần duyệt thao tác xóa trước khi thực hiện; chưa phát sinh phí hoặc thay DB.
+
+CI tại `5ba2d55` đạt trong [run 41812742645](https://github.com/DuVinhLoi/BrewLite/actions/runs/41812742645). Commit thêm báo cáo cần CI mới; không dùng run cũ làm bằng chứng cho head mới. PR #29 vẫn chờ approval, chưa merge/deploy cutover. `GET /payments/vnpay/ipn` không có chữ ký trả `97`; không coi đó là bằng chứng giao dịch thành công.
+
 Ngày chuẩn bị: 27/10/2026, branch feat/assignment2-task5-delivery. Release candidate; không tự nhận CD thành công trước khi có run/deployment thật.
 
 ## Thay đổi
