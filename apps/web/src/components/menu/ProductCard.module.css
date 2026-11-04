@@ -1,0 +1,95 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.imageWrap {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--bg);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.soldOut .image {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+.name {
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.price {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.stock {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.ok {
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+
+.low {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.out {
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+}
+
+.addButton {
+  min-height: 44px;
+  margin-top: 2px;
+  padding: 11px 14px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.addButton:hover:not(:disabled) {
+  background: var(--accent-ink);
+}
+
+.addButton:disabled {
+  background: var(--border);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}

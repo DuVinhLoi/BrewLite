@@ -1,0 +1,49 @@
+# Draw.io temporary files
+~$*
+.$*
+*.bkp
+
+# Node & IDE
+node_modules/
+dist/
+dist-test/
+coverage/
+*.tsbuildinfo
+.next/
+out/
+.env
+.env.local
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+
+# Local smoke-test capture (generated HTML)
+apps/api/web-smoke.html
+
+# OpenCode local config (personal plugin setup)
+opencode.json
+.opencode/
+graphify-out/
+
+# Planning & agent artifacts in docs
+docs/superpowers/
+docs/**/plans/
+docs/plans/
+
+# Security, SSH & Private Keys (AWS EC2, SSL/TLS, Certificates)
+*.pem
+*.key
+*.pub
+*.cert
+*.crt
+*.pfx
+*.p12
+id_rsa*
+id_ed25519*
+.aws/
+aws-credentials*
+# Browser test output
+playwright-report/
+test-results/

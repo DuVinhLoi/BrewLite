@@ -1,46 +1,65 @@
+name: brewlite-task5
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
-      POSTGRES_USER: brewlite
-      POSTGRES_PASSWORD: brewlite
       POSTGRES_DB: brewlite
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: brewlite
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U brewlite -d brewlite"]
-      interval: 3s
+      test: [CMD-SHELL, "pg_isready -U brewlite -d brewlite"]
+      interval: 5s
       timeout: 3s
       retries: 20
-
-  backend:
-    build: ./backend
-    ports:
-      - "3000:3000"
+  migrate:
+    image: brewlite-api:local
+    build: ./apps/api
     environment:
-      # Luôn nối service `db` trong mạng compose. KHÔNG đọc DATABASE_URL từ .env: biến đó trong .env.example là
-      # localhost (cho chạy rời npm run start:dev), compose thay ${VAR} từ .env nên dùng nó ở đây thì backend không tới được DB.
-      DATABASE_URL: postgresql://brewlite:brewlite@db:5432/brewlite
-      JWT_SECRET: ${JWT_SECRET:-dev-secret}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
-      # Demo nhánh thanh toán lỗi: CARD hoặc WALLET thì phương thức đó luôn bị cổng giả từ chối; rỗng = tắt
-      MOCK_GATEWAY_DECLINE_METHOD: ${MOCK_GATEWAY_DECLINE_METHOD:-}
+      DATABASE_URL: postgresql://brewlite:${POSTGRES_PASSWORD}@db:5432/brewlite?schema=public
     depends_on:
       db:
         condition: service_healthy
-
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
-        NEXT_PUBLIC_PAYMENT_MODE: ${NEXT_PUBLIC_PAYMENT_MODE:-api}
-    ports:
-      - "3001:3001"
+    command: [npm, run, 'prisma:migrate']
+    restart: 'no'
+  api:
+    image: brewlite-api:local
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql://brewlite:${POSTGRES_PASSWORD}@db:5432/brewlite?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET with at least 32 characters}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      PORT: 4000
+      # VNPay sandbox, optional: the API starts without them but cannot create payment URLs. Runtime only, never build args.
+      VNP_TMN_CODE: ${VNP_TMN_CODE:-}
+      VNP_HASH_SECRET: ${VNP_HASH_SECRET:-}
+      WEB_URL: ${WEB_URL:-http://localhost:3000}
+      VNP_URL: ${VNP_URL:-}
+      VNP_API_URL: ${VNP_API_URL:-}
     depends_on:
-      - backend
-
+      migrate:
+        condition: service_completed_successfully
+    ports: ["127.0.0.1:${API_PORT:-4000}:4000"]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  web:
+    image: brewlite-web:local
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports: ["127.0.0.1:${WEB_PORT:-3000}:3000"]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 volumes:
   pgdata:

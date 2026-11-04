@@ -1,0 +1,410 @@
+2026-10-21T06:30:36.4894987Z Current runner version: '2.337.0'
+2026-10-21T06:30:36.4927183Z ##[group]Runner Image Provisioner
+2026-10-21T06:30:36.4928284Z Hosted Compute Agent
+2026-10-21T06:30:36.4929043Z Version: 20261015.610
+2026-10-21T06:30:36.4929810Z Commit: 267fdb4e8bbec4ab5ea31367f3a00d5c480c7656
+2026-10-21T06:30:36.4930838Z Build Date: 2026-10-14T17:06:54Z
+2026-10-21T06:30:36.4931759Z Worker ID: {73a03a94-065c-4cc7-95f2-a567821b8c46}
+2026-10-21T06:30:36.4932754Z Region: eastus
+2026-10-21T06:30:36.4933657Z Cloud: Azure
+2026-10-21T06:30:36.4934454Z ##[endgroup]
+2026-10-21T06:30:36.4936267Z ##[group]Operating System
+2026-10-21T06:30:36.4937117Z Ubuntu
+2026-10-21T06:30:36.4937852Z 24.04.5
+2026-10-21T06:30:36.4938507Z LTS
+2026-10-21T06:30:36.4939140Z ##[endgroup]
+2026-10-21T06:30:36.4939949Z ##[group]Runner Image
+2026-10-21T06:30:36.4940712Z Image: ubuntu-24.04
+2026-10-21T06:30:36.4941535Z Version: 20261018.339.1
+2026-10-21T06:30:36.4943430Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261018.339/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-21T06:30:36.4945624Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261018.339
+2026-10-21T06:30:36.4946869Z ##[endgroup]
+2026-10-21T06:30:36.4948442Z ##[group]GITHUB_TOKEN Permissions
+2026-10-21T06:30:36.4950865Z Contents: read
+2026-10-21T06:30:36.4951759Z Metadata: read
+2026-10-21T06:30:36.4952468Z ##[endgroup]
+2026-10-21T06:30:36.4955329Z Secret source: Actions
+2026-10-21T06:30:36.4956465Z Cache mode: write
+2026-10-21T06:30:36.4957459Z Prepare workflow directory
+2026-10-21T06:30:36.5419660Z Prepare all required actions
+2026-10-21T06:30:36.5477626Z Getting action download info
+2026-10-21T06:30:36.7086506Z Download action repository 'actions/checkout@v7' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-21T06:30:36.8161997Z Download action repository 'actions/setup-node@v7' (SHA:949feb2413d6458794dcd2491c4babbbce0c15c1)
+2026-10-21T06:30:37.6403907Z Complete job name: ci
+2026-10-21T06:30:37.7100409Z ##[group]Run actions/checkout@v7
+2026-10-21T06:30:37.7101790Z with:
+2026-10-21T06:30:37.7102379Z   persist-credentials: false
+2026-10-21T06:30:37.7103256Z   repository: DuVinhLoi/BrewLite
+2026-10-21T06:30:37.7106708Z   token: ***
+2026-10-21T06:30:37.7107291Z   ssh-strict: true
+2026-10-21T06:30:37.7107873Z   ssh-user: git
+2026-10-21T06:30:37.7108424Z   clean: true
+2026-10-21T06:30:37.7108998Z   sparse-checkout-cone-mode: true
+2026-10-21T06:30:37.7109644Z   fetch-depth: 1
+2026-10-21T06:30:37.7110209Z   fetch-tags: false
+2026-10-21T06:30:37.7110780Z   show-progress: true
+2026-10-21T06:30:37.7111351Z   lfs: false
+2026-10-21T06:30:37.7111900Z   submodules: false
+2026-10-21T06:30:37.7112477Z   set-safe-directory: true
+2026-10-21T06:30:37.7113196Z   allow-unsafe-pr-checkout: false
+2026-10-21T06:30:37.7114070Z env:
+2026-10-21T06:30:37.7114618Z   CI: true
+2026-10-21T06:30:37.7115171Z ##[endgroup]
+2026-10-21T06:30:37.8148636Z Syncing repository: DuVinhLoi/BrewLite
+2026-10-21T06:30:37.8152065Z ##[group]Getting Git version info
+2026-10-21T06:30:37.8153900Z Working directory is '/home/runner/work/BrewLite/BrewLite'
+2026-10-21T06:30:37.8207261Z [command]/usr/bin/git version
+2026-10-21T06:30:37.9081877Z git version 2.55.0
+2026-10-21T06:30:37.9101203Z ##[endgroup]
+2026-10-21T06:30:37.9115565Z Temporarily overriding HOME='/home/runner/work/_temp/d531bec1-6bf1-4939-a596-b3d1efa913d1' before making global git config changes
+2026-10-21T06:30:37.9117880Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-21T06:30:37.9124004Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/BrewLite/BrewLite
+2026-10-21T06:30:37.9620484Z Deleting the contents of '/home/runner/work/BrewLite/BrewLite'
+2026-10-21T06:30:37.9626082Z ##[group]Determining repository object format
+2026-10-21T06:30:37.9628334Z ##[endgroup]
+2026-10-21T06:30:37.9630276Z ##[group]Initializing the repository
+2026-10-21T06:30:37.9634529Z [command]/usr/bin/git init /home/runner/work/BrewLite/BrewLite
+2026-10-21T06:30:38.0214547Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-21T06:30:38.0216839Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-21T06:30:38.0218480Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-21T06:30:38.0219844Z hint: call:
+2026-10-21T06:30:38.0220800Z hint:
+2026-10-21T06:30:38.0222000Z hint: 	git config --global init.defaultBranch <name>
+2026-10-21T06:30:38.0223453Z hint:
+2026-10-21T06:30:38.0224637Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-21T06:30:38.0226189Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-21T06:30:38.0227500Z hint:
+2026-10-21T06:30:38.0228439Z hint: 	git branch -m <name>
+2026-10-21T06:30:38.0229473Z hint:
+2026-10-21T06:30:38.0231021Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-21T06:30:38.0233132Z Initialized empty Git repository in /home/runner/work/BrewLite/BrewLite/.git/
+2026-10-21T06:30:38.0236398Z [command]/usr/bin/git remote add origin https://github.com/DuVinhLoi/BrewLite
+2026-10-21T06:30:38.0548401Z ##[endgroup]
+2026-10-21T06:30:38.0549973Z ##[group]Disabling automatic garbage collection
+2026-10-21T06:30:38.0551524Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-21T06:30:38.0618153Z ##[endgroup]
+2026-10-21T06:30:38.0619802Z ##[group]Setting up auth
+2026-10-21T06:30:38.0620969Z Removing SSH command configuration
+2026-10-21T06:30:38.0624917Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-21T06:30:38.0667848Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-21T06:30:38.1066771Z Removing HTTP extra header
+2026-10-21T06:30:38.1068982Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-21T06:30:38.1108283Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-21T06:30:38.1365370Z Removing includeIf entries pointing to credentials config files
+2026-10-21T06:30:38.1367389Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-21T06:30:38.1416885Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-21T06:30:38.1637603Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-21T06:30:38.2084309Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/BrewLite/BrewLite/.git.path /home/runner/work/_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config
+2026-10-21T06:30:38.3733701Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/BrewLite/BrewLite/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config
+2026-10-21T06:30:38.4498212Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config
+2026-10-21T06:30:38.5715837Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config
+2026-10-21T06:30:38.8056146Z ##[endgroup]
+2026-10-21T06:30:38.8057435Z ##[group]Fetching the repository
+2026-10-21T06:30:38.8059391Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +b85e78ef6ca9b6a2812e5e982e2044c2b115378f:refs/remotes/pull/10/merge
+2026-10-21T06:30:39.8683216Z From https://github.com/DuVinhLoi/BrewLite
+2026-10-21T06:30:39.8692240Z  * [new ref]         b85e78ef6ca9b6a2812e5e982e2044c2b115378f -> pull/10/merge
+2026-10-21T06:30:39.8705382Z ##[endgroup]
+2026-10-21T06:30:39.8706476Z ##[group]Determining the checkout info
+2026-10-21T06:30:39.8707686Z ##[endgroup]
+2026-10-21T06:30:39.8708337Z [command]/usr/bin/git sparse-checkout disable
+2026-10-21T06:30:39.8935565Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-21T06:30:39.8981388Z ##[group]Checking out the ref
+2026-10-21T06:30:39.8985697Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/10/merge
+2026-10-21T06:30:39.9652745Z Note: switching to 'refs/remotes/pull/10/merge'.
+2026-10-21T06:30:39.9654068Z
+2026-10-21T06:30:39.9660888Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-21T06:30:39.9662579Z changes and commit them, and you can discard any commits you make in this
+2026-10-21T06:30:39.9663918Z state without impacting any branches by switching back to a branch.
+2026-10-21T06:30:39.9664672Z
+2026-10-21T06:30:39.9665121Z If you want to create a new branch to retain commits you create, you may
+2026-10-21T06:30:39.9666160Z do so (now or later) by using -c with the switch command. Example:
+2026-10-21T06:30:39.9666745Z
+2026-10-21T06:30:39.9667226Z   git switch -c <new-branch-name>
+2026-10-21T06:30:39.9667637Z
+2026-10-21T06:30:39.9668000Z Or undo this operation with:
+2026-10-21T06:30:39.9668551Z
+2026-10-21T06:30:39.9668990Z   git switch -
+2026-10-21T06:30:39.9673551Z
+2026-10-21T06:30:39.9674579Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-21T06:30:39.9675941Z
+2026-10-21T06:30:39.9677427Z HEAD is now at b85e78e Merge e67001dd13213b20e8a473b2855986b02162a245 into 8c0ded94c4c023e6820986e089616fa6f359845d
+2026-10-21T06:30:39.9681995Z ##[endgroup]
+2026-10-21T06:30:39.9729365Z [command]/usr/bin/git log -1 --format=%H
+2026-10-21T06:30:39.9766032Z b85e78ef6ca9b6a2812e5e982e2044c2b115378f
+2026-10-21T06:30:39.9776003Z ##[group]Removing auth
+2026-10-21T06:30:39.9777447Z Removing SSH command configuration
+2026-10-21T06:30:39.9780100Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-21T06:30:39.9822475Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-21T06:30:40.0049579Z Removing HTTP extra header
+2026-10-21T06:30:40.0053875Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-21T06:30:40.0105550Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-21T06:30:40.0332755Z Removing includeIf entries pointing to credentials config files
+2026-10-21T06:30:40.0335185Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-21T06:30:40.0424221Z includeif.gitdir:/home/runner/work/BrewLite/BrewLite/.git.path
+2026-10-21T06:30:40.0427011Z includeif.gitdir:/home/runner/work/BrewLite/BrewLite/.git/worktrees/*.path
+2026-10-21T06:30:40.0434252Z includeif.gitdir:/github/workspace/.git.path
+2026-10-21T06:30:40.0435789Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-21T06:30:40.0439823Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/BrewLite/BrewLite/.git.path
+2026-10-21T06:30:40.0465440Z /home/runner/work/_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config
+2026-10-21T06:30:40.0478624Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/BrewLite/BrewLite/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-d13fd99a\-e222\-4c87\-901e\-8605e781de28\.config
+2026-10-21T06:30:40.0555444Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/BrewLite/BrewLite/.git/worktrees/*.path
+2026-10-21T06:30:40.0594797Z /home/runner/work/_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config
+2026-10-21T06:30:40.0645776Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/BrewLite/BrewLite/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-d13fd99a\-e222\-4c87\-901e\-8605e781de28\.config
+2026-10-21T06:30:40.0683325Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-21T06:30:40.0713937Z /github/runner_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config
+2026-10-21T06:30:40.0737637Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-d13fd99a\-e222\-4c87\-901e\-8605e781de28\.config
+2026-10-21T06:30:40.0823982Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-21T06:30:40.0886756Z /github/runner_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config
+2026-10-21T06:30:40.0934299Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-d13fd99a\-e222\-4c87\-901e\-8605e781de28\.config
+2026-10-21T06:30:40.1003998Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-21T06:30:40.1344404Z Removing credentials config '/home/runner/work/_temp/git-credentials-d13fd99a-e222-4c87-901e-8605e781de28.config'
+2026-10-21T06:30:40.1358415Z ##[endgroup]
+2026-10-21T06:30:40.1669251Z ##[group]Run actions/setup-node@v7
+2026-10-21T06:30:40.1669513Z with:
+2026-10-21T06:30:40.1669701Z   node-version-file: .nvmrc
+2026-10-21T06:30:40.1669928Z   cache: npm
+2026-10-21T06:30:40.1670228Z   cache-dependency-path: apps/api/package-lock.json
+apps/web/package-lock.json
+
+2026-10-21T06:30:40.1670593Z   check-latest: false
+2026-10-21T06:30:40.1672589Z   token: ***
+2026-10-21T06:30:40.1673053Z   package-manager-cache: true
+2026-10-21T06:30:40.1673277Z env:
+2026-10-21T06:30:40.1673451Z   CI: true
+2026-10-21T06:30:40.1673635Z ##[endgroup]
+2026-10-21T06:30:40.2806394Z Node version file is not JSON file
+2026-10-21T06:30:40.2811644Z Node version file is not TOML file
+2026-10-21T06:30:40.2812257Z Resolved .nvmrc as 24.19.0
+2026-10-21T06:30:40.2824863Z Attempting to download 24.19.0...
+2026-10-21T06:30:40.8045664Z Acquiring 24.19.0 - x64 from https://github.com/actions/node-versions/releases/download/24.19.0-30872449280/node-24.19.0-linux-x64.tar.gz
+2026-10-21T06:30:41.3500665Z Extracting ...
+2026-10-21T06:30:41.3637550Z [command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/65c2d8d2-b8fb-4099-9fb6-3afb907aecbb -f /home/runner/work/_temp/246bb2d0-0287-4390-ab05-d1cb07b667fa
+2026-10-21T06:30:42.5020059Z Adding to the cache ...
+2026-10-21T06:30:47.8254691Z ##[group]Environment details
+2026-10-21T06:30:48.0705727Z node: v24.19.0
+2026-10-21T06:30:48.0706395Z npm: 11.17.0
+2026-10-21T06:30:48.0706826Z yarn: 1.22.22
+2026-10-21T06:30:48.0707565Z ##[endgroup]
+2026-10-21T06:30:48.0722459Z [command]/opt/hostedtoolcache/node/24.19.0/x64/bin/npm config get cache
+2026-10-21T06:30:48.1562156Z /home/runner/.npm
+2026-10-21T06:30:48.2182996Z npm cache is not found
+2026-10-21T06:30:48.2368527Z ##[group]Run npm --prefix apps/api ci
+2026-10-21T06:30:48.2368867Z npm --prefix apps/api ci
+2026-10-21T06:30:48.2369111Z npm --prefix apps/web ci
+2026-10-21T06:30:48.2369375Z npm --prefix apps/api run prisma:generate
+2026-10-21T06:30:48.2505512Z shell: /usr/bin/bash -e {0}
+2026-10-21T06:30:48.2505807Z env:
+2026-10-21T06:30:48.2505990Z   CI: true
+2026-10-21T06:30:48.2506167Z ##[endgroup]
+2026-10-21T06:30:52.8979819Z npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-10-21T06:31:04.2553600Z
+2026-10-21T06:31:04.2554927Z added 609 packages, and audited 610 packages in 16s
+2026-10-21T06:31:04.2556132Z
+2026-10-21T06:31:04.2560594Z 148 packages are looking for funding
+2026-10-21T06:31:04.2565088Z   run `npm fund` for details
+2026-10-21T06:31:04.3606151Z
+2026-10-21T06:31:04.3615853Z 23 vulnerabilities (20 moderate, 3 high)
+2026-10-21T06:31:04.3624285Z
+2026-10-21T06:31:04.3625022Z To address issues that do not require attention, run:
+2026-10-21T06:31:04.3639554Z   npm audit fix
+2026-10-21T06:31:04.3639928Z
+2026-10-21T06:31:04.3640392Z To address all issues (including breaking changes), run:
+2026-10-21T06:31:04.3642936Z   npm audit fix --force
+2026-10-21T06:31:04.3643335Z
+2026-10-21T06:31:04.3643657Z Run `npm audit` for details.
+2026-10-21T06:31:05.0113822Z npm warn ERESOLVE overriding peer dependency
+2026-10-21T06:31:05.0122073Z npm warn While resolving: eslint-plugin-import@2.32.0
+2026-10-21T06:31:05.0122737Z npm warn Found: eslint@10.13.0
+2026-10-21T06:31:05.0125677Z npm warn node_modules/eslint
+2026-10-21T06:31:05.0126277Z npm warn   dev eslint@"^10.13.0" from the root project
+2026-10-21T06:31:05.0126943Z npm warn   10 more (@eslint-community/eslint-utils, ...)
+2026-10-21T06:31:05.0127436Z npm warn
+2026-10-21T06:31:05.0127879Z npm warn Could not resolve dependency:
+2026-10-21T06:31:05.0128607Z npm warn peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-10-21T06:31:05.0129520Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-10-21T06:31:05.0130350Z npm warn   eslint-plugin-import@"^2.32.0" from eslint-config-next@16.4.2
+2026-10-21T06:31:05.0131052Z npm warn   node_modules/eslint-config-next
+2026-10-21T06:31:05.0131678Z npm warn   1 more (eslint-import-resolver-typescript)
+2026-10-21T06:31:05.0132206Z npm warn
+2026-10-21T06:31:05.0132730Z npm warn Conflicting peer dependency: eslint@9.39.5
+2026-10-21T06:31:05.0133462Z npm warn node_modules/eslint
+2026-10-21T06:31:05.0134456Z npm warn   peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-10-21T06:31:05.0135361Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-10-21T06:31:05.0136230Z npm warn     eslint-plugin-import@"^2.32.0" from eslint-config-next@16.4.2
+2026-10-21T06:31:05.0136943Z npm warn     node_modules/eslint-config-next
+2026-10-21T06:31:05.0139319Z npm warn     1 more (eslint-import-resolver-typescript)
+2026-10-21T06:31:05.0968574Z npm warn ERESOLVE overriding peer dependency
+2026-10-21T06:31:05.0969619Z npm warn While resolving: eslint-plugin-jsx-a11y@6.10.2
+2026-10-21T06:31:05.0975590Z npm warn Found: eslint@10.13.0
+2026-10-21T06:31:05.0976192Z npm warn node_modules/eslint
+2026-10-21T06:31:05.0976858Z npm warn   dev eslint@"^10.13.0" from the root project
+2026-10-21T06:31:05.0977607Z npm warn   10 more (@eslint-community/eslint-utils, ...)
+2026-10-21T06:31:05.0978221Z npm warn
+2026-10-21T06:31:05.0978758Z npm warn Could not resolve dependency:
+2026-10-21T06:31:05.0979621Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-10-21T06:31:05.0980591Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-10-21T06:31:05.0982007Z npm warn   eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.4.2
+2026-10-21T06:31:05.0983042Z npm warn   node_modules/eslint-config-next
+2026-10-21T06:31:05.0983619Z npm warn
+2026-10-21T06:31:05.0985963Z npm warn Conflicting peer dependency: eslint@9.39.5
+2026-10-21T06:31:05.0986633Z npm warn node_modules/eslint
+2026-10-21T06:31:05.0987399Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-10-21T06:31:05.0988328Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-10-21T06:31:05.0990640Z npm warn     eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.4.2
+2026-10-21T06:31:05.0991847Z npm warn     node_modules/eslint-config-next
+2026-10-21T06:31:05.2463835Z npm warn ERESOLVE overriding peer dependency
+2026-10-21T06:31:05.2474921Z npm warn While resolving: eslint-plugin-react@7.37.5
+2026-10-21T06:31:05.2490213Z npm warn Found: eslint@10.13.0
+2026-10-21T06:31:05.2490770Z npm warn node_modules/eslint
+2026-10-21T06:31:05.2491448Z npm warn   dev eslint@"^10.13.0" from the root project
+2026-10-21T06:31:05.2492305Z npm warn   10 more (@eslint-community/eslint-utils, ...)
+2026-10-21T06:31:05.2493097Z npm warn
+2026-10-21T06:31:05.2493634Z npm warn Could not resolve dependency:
+2026-10-21T06:31:05.2494479Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-10-21T06:31:05.2495426Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-react
+2026-10-21T06:31:05.2503851Z npm warn   eslint-plugin-react@"^7.37.0" from eslint-config-next@16.4.2
+2026-10-21T06:31:05.2504812Z npm warn   node_modules/eslint-config-next
+2026-10-21T06:31:05.2505375Z npm warn
+2026-10-21T06:31:05.2505950Z npm warn Conflicting peer dependency: eslint@9.39.5
+2026-10-21T06:31:05.2506564Z npm warn node_modules/eslint
+2026-10-21T06:31:05.2507360Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-10-21T06:31:05.2508302Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-react
+2026-10-21T06:31:05.2509211Z npm warn     eslint-plugin-react@"^7.37.0" from eslint-config-next@16.4.2
+2026-10-21T06:31:05.2509957Z npm warn     node_modules/eslint-config-next
+2026-10-21T06:31:17.7630875Z
+2026-10-21T06:31:17.7631960Z added 418 packages, and audited 419 packages in 13s
+2026-10-21T06:31:17.7632662Z
+2026-10-21T06:31:17.7633209Z 151 packages are looking for funding
+2026-10-21T06:31:17.7633761Z   run `npm fund` for details
+2026-10-21T06:31:17.7969901Z
+2026-10-21T06:31:17.7970848Z 5 high severity vulnerabilities
+2026-10-21T06:31:17.7971448Z
+2026-10-21T06:31:17.7971916Z To address all issues (including breaking changes), run:
+2026-10-21T06:31:17.7972572Z   npm audit fix --force
+2026-10-21T06:31:17.7973105Z
+2026-10-21T06:31:17.7973424Z Run `npm audit` for details.
+2026-10-21T06:31:17.9198174Z
+2026-10-21T06:31:17.9199161Z > @brewlite/api@0.1.0 prisma:generate
+2026-10-21T06:31:17.9199920Z > prisma generate
+2026-10-21T06:31:17.9200276Z
+2026-10-21T06:31:18.5466721Z warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+2026-10-21T06:31:18.5473772Z For more information, see: https://pris.ly/prisma-config
+2026-10-21T06:31:18.5474389Z
+2026-10-21T06:31:18.7314311Z Prisma schema loaded from prisma/schema.prisma
+2026-10-21T06:31:18.9485537Z
+2026-10-21T06:31:18.9504936Z ✔ Generated Prisma Client (v6.19.3) to ./node_modules/@prisma/client in 144ms
+2026-10-21T06:31:18.9505640Z
+2026-10-21T06:31:18.9506278Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-10-21T06:31:18.9506930Z
+2026-10-21T06:31:18.9507524Z Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+2026-10-21T06:31:18.9508068Z
+2026-10-21T06:31:18.9814914Z ##[group]Run npm --prefix apps/api run lint
+2026-10-21T06:31:18.9815268Z npm --prefix apps/api run lint
+2026-10-21T06:31:18.9815511Z npm --prefix apps/web run lint
+2026-10-21T06:31:18.9862994Z shell: /usr/bin/bash -e {0}
+2026-10-21T06:31:18.9863309Z env:
+2026-10-21T06:31:18.9863493Z   CI: true
+2026-10-21T06:31:18.9863657Z ##[endgroup]
+2026-10-21T06:31:19.0781628Z
+2026-10-21T06:31:19.0782591Z > @brewlite/api@0.1.0 lint
+2026-10-21T06:31:19.0783516Z > eslint "src/**/*.ts" "test/**/*.ts" "prisma/**/*.ts"
+2026-10-21T06:31:19.0784005Z
+2026-10-21T06:31:20.2693742Z
+2026-10-21T06:31:20.2694682Z > @brewlite/web@0.1.0 lint
+2026-10-21T06:31:20.2696420Z > eslint .
+2026-10-21T06:31:20.2696836Z
+2026-10-21T06:31:22.5298874Z ##[group]Run npm --prefix apps/api test -- --runInBand
+2026-10-21T06:31:22.5299415Z npm --prefix apps/api test -- --runInBand
+2026-10-21T06:31:22.5299841Z npm --prefix apps/web test
+2026-10-21T06:31:22.5364972Z shell: /usr/bin/bash -e {0}
+2026-10-21T06:31:22.5365521Z env:
+2026-10-21T06:31:22.5365765Z   CI: true
+2026-10-21T06:31:22.5366025Z ##[endgroup]
+2026-10-21T06:31:22.6284656Z
+2026-10-21T06:31:22.6285466Z > @brewlite/api@0.1.0 test
+2026-10-21T06:31:22.6286454Z > cross-env NODE_OPTIONS=--experimental-vm-modules jest --runInBand
+2026-10-21T06:31:22.6287163Z
+2026-10-21T06:31:25.2994696Z (node:2369) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+2026-10-21T06:31:25.2995510Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-21T06:31:25.3354490Z PASS test/products.e2e-spec.ts
+2026-10-21T06:31:25.3363838Z   Products API
+2026-10-21T06:31:25.3365387Z     ✓ API-T01: GET /products trả 200 kèm danh sách sản phẩm cho người chưa đăng nhập (26 ms)
+2026-10-21T06:31:25.3366644Z     ✓ API-T02: GET /products/:id trả 200 kèm chi tiết sản phẩm (5 ms)
+2026-10-21T06:31:25.3370871Z     ✓ API-T03: GET /products/:id với id không tồn tại trả 404 PRODUCT_NOT_FOUND (4 ms)
+2026-10-21T06:31:25.3372950Z     ✓ API-T04: GET /products trả 200 và mảng rỗng khi chưa có sản phẩm (2 ms)
+2026-10-21T06:31:25.3373930Z     ✓ API-T05: lỗi database trả 500 và không lộ thông tin nội bộ trong response (3 ms)
+2026-10-21T06:31:25.3374498Z
+2026-10-21T06:31:25.3374926Z Test Suites: 1 passed, 1 total
+2026-10-21T06:31:25.3375516Z Tests:       5 passed, 5 total
+2026-10-21T06:31:25.3376106Z Snapshots:   0 total
+2026-10-21T06:31:25.3376571Z Time:        2.52 s
+2026-10-21T06:31:25.3377032Z Ran all test suites.
+2026-10-21T06:31:25.5412450Z
+2026-10-21T06:31:25.5413356Z > @brewlite/web@0.1.0 test
+2026-10-21T06:31:25.5414040Z > vitest run
+2026-10-21T06:31:25.5414380Z
+2026-10-21T06:31:25.8385867Z
+2026-10-21T06:31:25.8398432Z  RUN  v5.0.5 /home/runner/work/BrewLite/BrewLite/apps/web
+2026-10-21T06:31:25.8399811Z
+2026-10-21T06:31:26.9064134Z  ✓ src/components/menu/MenuScreen.test.tsx (4 tests) 233ms
+2026-10-21T06:31:27.7654920Z  ✓ src/components/menu/ProductCard.test.tsx (3 tests) 134ms
+2026-10-21T06:31:28.4174769Z  ✓ src/lib/stock.test.ts (3 tests) 3ms
+2026-10-21T06:31:29.0887831Z  ❯ src/lib/format.test.ts (3 tests | 1 failed) 7ms
+2026-10-21T06:31:29.0894021Z    ❯ UNIT-T01: formatVnd (3)
+2026-10-21T06:31:29.0894970Z      × định dạng giá 45000 thành 45.000đ 5ms
+2026-10-21T06:31:29.0896206Z      ✓ định dạng số lớn có đầy đủ dấu phân cách 0ms
+2026-10-21T06:31:29.0913832Z      ✓ định dạng 0 thành 0đ 0ms
+2026-10-21T06:31:29.1023276Z
+2026-10-21T06:31:29.1051674Z ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+2026-10-21T06:31:29.1053308Z
+2026-10-21T06:31:29.1054168Z  FAIL  src/lib/format.test.ts > UNIT-T01: formatVnd > định dạng giá 45000 thành 45.000đ
+2026-10-21T06:31:29.1055319Z AssertionError: expected '45.000đ' to be '0đ' // Object.is equality
+2026-10-21T06:31:29.1055808Z
+2026-10-21T06:31:29.1063856Z Expected: "0đ"
+2026-10-21T06:31:29.1064454Z Received: "45.000đ"
+2026-10-21T06:31:29.1064897Z
+2026-10-21T06:31:29.1065480Z  ❯ src/lib/format.test.ts:6:30
+2026-10-21T06:31:29.1066754Z       4| describe('UNIT-T01: formatVnd', () => {
+2026-10-21T06:31:29.1067635Z       5|   it('định dạng giá 45000 thành 45.000đ', () => {
+2026-10-21T06:31:29.1068883Z       6|     expect(formatVnd(45000)).toBe('0đ');
+2026-10-21T06:31:29.1069690Z        |                              ^
+2026-10-21T06:31:29.1070268Z       7|   });
+2026-10-21T06:31:29.1070756Z       8|
+2026-10-21T06:31:29.1071115Z
+2026-10-21T06:31:29.1071655Z ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+2026-10-21T06:31:29.1072335Z
+2026-10-21T06:31:29.1075279Z
+2026-10-21T06:31:29.1077277Z  Test Files  1 failed | 3 passed (4)
+2026-10-21T06:31:29.1078573Z       Tests  1 failed | 12 passed (13)
+2026-10-21T06:31:29.1079298Z    Start at  06:31:25
+2026-10-21T06:31:29.1090567Z    Duration  3.25s (environment 68%, tests 13%, setup 8%, transform 6%, import 4%, worker 1%)
+2026-10-21T06:31:29.1094252Z
+2026-10-21T06:31:29.1095318Z     Isolate  4 workers spawned · ~573ms startup each (spawn + environment, per file)
+2026-10-21T06:31:29.1097081Z              at least ~1.72s faster with isolate: false — reuses workers across files instead of one per file
+2026-10-21T06:31:29.1097943Z
+2026-10-21T06:31:29.1107105Z
+2026-10-21T06:31:29.1132525Z ##[error]AssertionError: expected '45.000đ' to be '0đ' // Object.is equality
+
+Expected: "0đ"
+Received: "45.000đ"
+
+ ❯ src/lib/format.test.ts:6:30
+
+
+2026-10-21T06:31:29.1361085Z ##[error]Process completed with exit code 1.
+2026-10-21T06:31:29.1497603Z Post job cleanup.
+2026-10-21T06:31:29.2383539Z [command]/usr/bin/git version
+2026-10-21T06:31:29.2454007Z git version 2.55.0
+2026-10-21T06:31:29.2544476Z Temporarily overriding HOME='/home/runner/work/_temp/70f30b0e-9c9f-43bf-93b8-3da55ef60ef8' before making global git config changes
+2026-10-21T06:31:29.2563714Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-21T06:31:29.2583894Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/BrewLite/BrewLite
+2026-10-21T06:31:29.2633713Z Removing SSH command configuration
+2026-10-21T06:31:29.2653619Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-21T06:31:29.2685095Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-21T06:31:29.2904184Z Removing HTTP extra header
+2026-10-21T06:31:29.2905428Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-21T06:31:29.2976758Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-21T06:31:29.3482430Z Removing includeIf entries pointing to credentials config files
+2026-10-21T06:31:29.3483702Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-21T06:31:29.3588051Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-21T06:31:29.4145780Z Cleaning up orphan processes

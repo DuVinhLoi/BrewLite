@@ -1,5 +1,7 @@
 # Hồ sơ quy trình Agile Scrum — BrewLite (BẢN NHÁP)
 
+> **Ghi chú nhánh `develop-Assignment2`:** file này là số liệu của Assignment 1, giữ làm tư liệu. Các file nó nhắc tới như `docs/develop-status-report.md` chỉ còn ở nhánh `develop`. Quy trình Scrum của A2 xem `docs/planning/2026-10-15-assignment2-plan.md`.
+
 > **BẢN NHÁP do công cụ soạn từ lịch sử git, để nhóm sửa. Không phải ý kiến thật của thành viên.**
 > Mọi con số trong file này lấy từ `git log` của repo (HEAD `5ab0550`, 71 commit trên mọi nhánh, 2026-09-30 → 2026-10-08) hoặc từ bảng task trong đề (`docs/BrewLite-CongNghePhanMem-fixed.md` §2.3, §8). Chỗ git không có dữ liệu thì để **[nhóm điền]**, không ước lượng.
 > Phần Retrospective (mục 5) chỉ là khung kèm gợi ý rút từ sự kiện có thật trong repo; nhóm phải họp, sửa và chốt.

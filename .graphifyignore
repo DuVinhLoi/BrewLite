@@ -1,0 +1,5 @@
+# Agent skill vendor scripts (brainstorming servers, helpers, shell templates)
+# are tooling, not BrewLite product code. Keep the graph focused on
+# apps/ + docs/ (on develop-Assignment2; backend/ + frontend/ on develop).
+.agents/
+.claude/

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300" role="img" aria-label="Cà phê sữa">
+  <rect width="400" height="300" fill="#F7EFE5"/>
+  <ellipse cx="200" cy="242" rx="106" ry="14" fill="#EADCCB"/>
+  <path d="M282 150h10a36 36 0 0 1 0 72h-10" fill="none" stroke="#E8D8C6" stroke-width="16" stroke-linecap="round"/>
+  <path d="M170 104c-7-11 7-15 0-28" fill="none" stroke="#D9C4AC" stroke-width="7" stroke-linecap="round"/>
+  <path d="M200 100c-7-11 7-15 0-28" fill="none" stroke="#D9C4AC" stroke-width="7" stroke-linecap="round"/>
+  <path d="M230 104c-7-11 7-15 0-28" fill="none" stroke="#D9C4AC" stroke-width="7" stroke-linecap="round"/>
+  <path d="M116 130h168v58a48 48 0 0 1-48 48h-72a48 48 0 0 1-48-48z" fill="#FFFFFF" stroke="#E8D8C6" stroke-width="2"/>
+  <ellipse cx="200" cy="130" rx="84" ry="13" fill="#FFFFFF" stroke="#E8D8C6" stroke-width="2"/>
+  <ellipse cx="200" cy="130" rx="70" ry="9.5" fill="#A9744F"/>
+  <ellipse cx="200" cy="130" rx="52" ry="7" fill="#E9CBA6"/>
+</svg>

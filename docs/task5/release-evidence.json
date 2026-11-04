@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-27",
+  "timezone": "Asia/Saigon",
+  "sourceCommit": "d8dcb870142cfba5fbe75038d33d2f438e77d391",
+  "tag": "a2-v0.2.0-rc.1",
+  "pr": "https://github.com/DuVinhLoi/BrewLite/pull/25",
+  "ci": "https://github.com/DuVinhLoi/BrewLite/actions/runs/40474909189",
+  "ciResult": "success",
+  "image": "ghcr.io/duvinhloi/brewlite-api:d8dcb870142cfba5fbe75038d33d2f438e77d391",
+  "indexDigest": "sha256:91ba4c8f21e9451c6268572000202371472ecc1e103e9875e0e8b3dcc34b4acf",
+  "platformDigest": "sha256:046f2b360412e7ad525f35fff9b87230f1a39c7dffbd4221441b2d7bc3082eb1",
+  "web": "https://brewlite-a2-web.vercel.app",
+  "api": "https://brewlite-a2-api.onrender.com",
+  "stages": [
+    {
+      "name": "release",
+      "apiDeployment": "dep-dbg66gd9el5s73c1a1f0",
+      "apiLiveAtUTC": "2026-10-27T08:40:13Z",
+      "webDeployment": "dpl_4s3z2Diu5TYtzUd4pghwmXnqFShc",
+      "health": {
+        "status": "ok",
+        "database": "up"
+      },
+      "httpHealth": 200,
+      "httpProducts": 200,
+      "productCount": 8,
+      "browserMenuCards": 8,
+      "httpManifest": 200,
+      "quantityPicker": "present"
+    },
+    {
+      "name": "rollback",
+      "apiDeployment": "dep-dbg67dt9el5s73c1ccbg",
+      "apiLiveAtUTC": "2026-10-27T08:42:02Z",
+      "apiSourceCommit": "6041b5f8fa7bba9211d78554f80bb2b2e3a46175",
+      "webDeployment": "dpl_4P8q8ZvE4TSw12J3637oeEQ2iapW",
+      "method": "Render REST imageUrl and vercel rollback; no schema rollback",
+      "httpHealth": 200,
+      "httpProducts": 200,
+      "productCount": 8,
+      "browserMenuCards": 8
+    },
+    {
+      "name": "restored",
+      "apiDeployment": "dep-dbg682qfngtc738qn3fg",
+      "apiLiveAtUTC": "2026-10-27T08:43:35Z",
+      "apiSourceCommit": "d8dcb870142cfba5fbe75038d33d2f438e77d391",
+      "webDeployment": "dpl_4s3z2Diu5TYtzUd4pghwmXnqFShc",
+      "method": "Render REST imageUrl and vercel promote existing deployment",
+      "httpHealth": 200,
+      "httpProducts": 200,
+      "productCount": 8,
+      "browserMenuCards": 8,
+      "httpManifest": 200
+    }
+  ],
+  "automaticCD": {
+    "run": "https://github.com/DuVinhLoi/BrewLite/actions/runs/40475323601",
+    "result": "failure",
+    "quality": "success",
+    "publish": "failure: permission_denied: write_package",
+    "deployApi": "skipped",
+    "deployWeb": "skipped",
+    "smoke": "skipped",
+    "remainingSetup": [
+      "GHCR package Manage Actions access: add DuVinhLoi/BrewLite with write permission",
+      "production secret RENDER_DEPLOY_HOOK_URL",
+      "production secret VERCEL_TOKEN"
+    ]
+  }
+}

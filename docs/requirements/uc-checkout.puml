@@ -1,0 +1,44 @@
+@startuml uc-checkout
+' BrewLite A2 - Use-case diagram cho UC-04 "Dat va thanh toan don hang" (de A2 3.3). Dac ta: docs/requirements/uc-checkout.md
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam RectangleBackgroundColor #ffffff
+skinparam RectangleBorderColor #94a3b8
+skinparam ActorBackgroundColor #eef2fb
+skinparam ActorBorderColor #5b6b8c
+skinparam UsecaseBackgroundColor #eef2fb
+skinparam UsecaseBorderColor #5b6b8c
+skinparam Shadowing false
+
+left to right direction
+
+title UC-04 Đặt và thanh toán đơn hàng - phạm vi use-case
+
+actor "Khách vãng lai\n(Guest)" as Guest
+actor "Khách hàng\n(Customer)" as Customer
+actor "VNPay sandbox\n(hệ thống ngoài)" as Pay <<External>>
+
+Customer --|> Guest
+
+rectangle "Hệ thống BrewLite" {
+  usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-16" as UC04
+  usecase "UC-04.1 Tạo đơn hàng\nFR-11, FR-12, FR-13" as UC041
+  usecase "UC-04.2 Thanh toán đơn hàng\nFR-14, FR-15, FR-16" as UC042
+  usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
+  usecase "UC-06 Hủy đơn chưa trả\nFR-25 Must; giải phóng snapshot" as UC06
+  usecase "UC-03 Đăng nhập\nFR-09, FR-10" as UC03
+}
+
+Customer --- UC04
+Customer --- UC06
+Guest --- UC03
+
+UC04 .> UC041 : <<include>>
+UC04 .> UC042 : <<include>>
+UC045 .> UC042 : <<extend>>
+UC03 .> UC04 : <<extend>>
+
+UC042 --- Pay
+
+@enduml

@@ -1,0 +1,82 @@
+@startuml deployment
+title BrewLite – Deployment-01 (Vercel + Render + GHCR)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam NodeBackgroundColor #eef2fb
+skinparam NodeBorderColor #5b6b8c
+skinparam PackageBackgroundColor #f8fafc
+skinparam PackageBorderColor #94a3b8
+skinparam ComponentBackgroundColor #eef2fb
+skinparam ComponentBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fef3c7
+skinparam NoteBorderColor #d97706
+skinparam nodesep 45
+skinparam ranksep 65
+left to right direction
+
+node "Thiết bị người dùng" as USER <<device>> {
+  node "Trình duyệt / PWA" as BROWSER <<executionEnvironment>>
+}
+
+package "Production" {
+  node "Vercel" as VERCEL <<platform>> {
+    node "CDN / Edge" as CDN <<executionEnvironment>> {
+      artifact "Next.js web (apps/web)\nNEXT_PUBLIC_API_URL" as WEB
+    }
+  }
+  node "Render (cùng region với DB)" as RENDER <<platform>> {
+    node "Web Service – Docker container :4000" as RSVC <<executionEnvironment>> {
+      artifact "NestJS API (apps/api)\nGET /health: 200 DB up / 503 DB down\nHealth Check Path: /health\nJSON stdout → Render logs\nPlatform env: DATABASE_URL (internal),\nJWT_SECRET, CORS_ORIGINS, LOG_LEVEL,\nVNP_TMN_CODE, VNP_HASH_SECRET, WEB_URL\n(mặc định: VNP_URL, VNP_API_URL, PAYMENT_PROVIDER)" as API
+    }
+    node "Render Postgres – external access disabled" as RPG <<executionEnvironment>> {
+      database "PostgreSQL :5432" as DB
+      storage "Persistent storage\nDữ liệu ngoài filesystem API" as DISK
+    }
+    artifact "Render logs" as RLOG
+  }
+}
+
+node "VNPay sandbox – hệ thống ngoài" as VNPAY <<external system>> {
+  artifact "Trang thanh toán (VNP_URL)\nIPN · Return · QueryDR (VNP_API_URL)\nKhách nhập thẻ test tại đây,\nBrewLite không nhận số thẻ" as VNPAYAPP
+}
+
+node "GHCR – container registry" as REG <<registry>> {
+  artifact "ghcr.io/duvinhloi/\nbrewlite-api:<commit-sha>" as IMG
+}
+
+package "CI – GitHub Actions" {
+  node "Runner" as CI <<executionEnvironment>> {
+    artifact "ci.yml (PR)\ninstall → lint → build\nSuite removed after verification; evidence in docs" as CIYML
+    artifact "cd.yml (tag a2-v*)\nlint/build → build image → push → deploy\n→ smoke test (retry ≤ 10 phút / bước)\nSau cả hai deploy; quá hạn: đỏ và dừng\nRollback: compatible inventory image + vercel rollback\n→ smoke lại (AC-N18.2–3)" as CDYML
+    artifact "GitHub environment: production\nSecrets: RENDER_DEPLOY_HOOK_URL,\nRENDER_API_KEY, VERCEL_TOKEN,\nVERCEL_ORG_ID, VERCEL_PROJECT_ID\nVars: RENDER_SERVICE_ID,\nPRODUCTION_API_URL, PRODUCTION_WEB_URL" as SEC
+  }
+}
+
+package "Local" {
+  node "Máy phát triển – Docker Compose" as LOCAL <<device>> {
+    artifact "web :3000 · api :4000 · db :5432\nPostgres named volume\n.env từ .env.example (không commit secret)\nKhông có VNP_*: chạy chức năng khác,\nkhông demo trả tiền offline" as DC
+  }
+}
+
+BROWSER --> CDN : (1) HTTPS 443
+BROWSER --> RSVC : (2) HTTPS 443 → API :4000\nREST + JWT, CORS
+API --> DB : (3) internal URL · TCP 5432\nPrisma; startup migration (ADR-003)
+DB -- DISK
+API ..> RLOG : (4) stdout JSON, LOG_LEVEL\nKhông log secret / token / số thẻ
+BROWSER --> VNPAY : (10) redirect · HTTPS 443\npaymentUrl đã ký HMAC-SHA512
+VNPAY --> RSVC : (11) IPN · HTTPS 443\nGET /payments/vnpay/ipn (công khai)
+VNPAY ..> BROWSER : (12) redirect về web\n/payment/vnpay-return (chỉ hiển thị)
+API --> VNPAY : (13) QueryDR · HTTPS 443\nPOST tới VNP_API_URL, ngoài DB transaction
+SEC ..> CDYML
+CDYML --> IMG : (5) docker push · HTTPS 443
+RSVC ..> IMG : (6) pull theo SHA · HTTPS 443
+CDYML --> RSVC : (7) deploy hook · HTTPS 443\nimgURL = image SHA
+CDYML --> VERCEL : (8) vercel deploy ~--prebuilt ~--prod\nHTTPS 443
+CDYML ..> RSVC : (9) smoke /health, /products · HTTPS 443
+CDYML ..> CDN : (9) smoke trang web · HTTPS 443
+
+LOCAL -[hidden]- CI
+@enduml

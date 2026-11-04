@@ -1,0 +1,37 @@
+PASS activity-checkout: source .puml + image .svg
+PASS activity-checkout: PlantUML boundary markers
+PASS activity-checkout: SVG valid XML
+PASS sequence-checkout: source .puml + image .svg
+PASS sequence-checkout: PlantUML boundary markers
+PASS sequence-checkout: SVG valid XML
+PASS state-order: source .puml + image .svg
+PASS state-order: PlantUML boundary markers
+PASS state-order: SVG valid XML
+PASS class-domain: source .puml + image .svg
+PASS class-domain: PlantUML boundary markers
+PASS class-domain: SVG valid XML
+PASS User: minimum properties
+PASS Product: minimum properties
+PASS Order: minimum properties
+PASS OrderItem: minimum properties
+PASS Payment: minimum properties
+PASS Promotion: minimum properties
+PASS LoyaltyTransaction: minimum properties
+PASS Role: exact values
+PASS OrderStatus: exact values
+PASS PaymentMethod: exact values
+PASS PaymentStatus: exact values
+PASS LoyaltyType: exact values
+PASS class diagram: 7 associations & multiplicities
+PASS state machine: exactly eight business transitions
+PASS state machine: PAID -> CANCELLED is forbidden
+PASS activity: all four swimlanes
+PASS activity: start and explicit terminal nodes for failures
+PASS activity: E1/E2/E3 explicit
+PASS activity: balanced if/endif, note blocks
+PASS sequence: all five required lifelines
+PASS sequence: calls, JWT, idempotency header
+PASS sequence: T1/T2, replay & durable recovery
+PASS sequence: balanced alt/opt/group/end fragments
+
+All static checks PASSED. Run PlantUML -checkonly before PR merge.
