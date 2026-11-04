@@ -1,17 +1,13 @@
 name: Delivery (Render and Vercel)
 on:
   push:
-    branches: ['feat/assignment2-task5-delivery', main]
-    tags: ['a2-v*']
-  # PR vào main chỉ chạy quality và preflight; publish và deploy bị bỏ qua (xem job publish).
-  pull_request:
     branches: [main]
+    tags: ['a2-v*']
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  # Run PR không xếp hàng sau deploy production.
-  group: ${{ github.event_name == 'pull_request' && format('delivery-pr-{0}', github.ref) || 'production-delivery' }}
+  group: production-delivery
   cancel-in-progress: false
 jobs:
   quality:
@@ -42,7 +38,6 @@ jobs:
           [[ "$PRODUCTION_API_URL" == https://* && "$PRODUCTION_WEB_URL" == https://* ]] || { echo '::error::Production URLs must use HTTPS'; exit 1; }
   publish:
     needs: [quality, preflight]
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: release

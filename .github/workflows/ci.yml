@@ -6,7 +6,6 @@ on:
     branches:
       - develop-Assignment2
       - 'feat/assignment2-task5-*'
-      - '!feat/assignment2-task5-delivery'
   workflow_dispatch:
   workflow_call:
 permissions:
