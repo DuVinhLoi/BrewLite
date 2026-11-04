@@ -61,6 +61,10 @@ export function ProductDetail({ id }: { id: string }) {
     <fieldset disabled={busy}><legend>Size</legend>{Object.entries(options.sizes).map(([name, extra]) => <label key={name}><input type="radio" name="size" value={name} checked={size === name} onChange={() => { setSize(name); changed(); }} />{name} (+{formatVnd(extra)})</label>)}</fieldset>
     <fieldset disabled={busy}><legend>Topping</legend>{Object.entries(options.toppings).map(([name, extra]) => <label key={name}><input type="checkbox" checked={toppings.includes(name)} onChange={(event) => { setToppings(event.target.checked ? [...toppings, name] : toppings.filter((item) => item !== name)); changed(); }} />{name} (+{formatVnd(extra)})</label>)}</fieldset>
     <p className="shop-total">{formatVnd(price)}</p>
+    {choice && (choice.sellable ? <>
+      <p>Còn {choice.cups} ly cho lựa chọn này.</p>
+      {choice.limitingIngredients.length > 0 && <p>Nguyên liệu giới hạn: {choice.limitingIngredients.map((ingredient) => ingredient.name).join(', ')}</p>}
+    </> : <p role="alert">{choice.reason ?? 'Lựa chọn này không khả dụng'}</p>)}
     <label htmlFor="product-quantity">Số lượng</label><input id="product-quantity" type="number" min={1} max={remaining} step={1} value={quantityInput} disabled={!shop.ready || busy || capacity.loading || remaining === 0} aria-invalid={Boolean(quantityError)} aria-describedby={quantityError ? 'product-quantity-error' : undefined} onChange={(event) => { const value = event.target.value; setQuantityInput(Number(value) > remaining ? String(remaining) : value); setNotice(''); setAddError(''); }} />
     {quantityError && <p id="product-quantity-error">{quantityError}</p>}
     {availability.error && <p role="alert">{availability.error}</p>}
