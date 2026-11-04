@@ -44,7 +44,7 @@ Không có `DROP`/`DELETE`. Giá trị enum `PENDING` khó gỡ lại, nhưng gi
   npx prisma generate
   ```
 
-- **Không push lên `feat/assignment2-task5-delivery` và không re-run workflow `cd.yml`** cho tới khi xong mục "Kiểm tra". Branch delivery đã ở `adf26bb`; mọi push hoặc re-run sẽ deploy ngay.
+- **Không push/merge vào `main`, push tag `a2-v*` hoặc re-run workflow `cd.yml`** cho tới khi xong mục "Kiểm tra". Sau cutover, các sự kiện này sẽ deploy production. Ở thời điểm runbook được lập (30/10/2026), nguồn deploy là nhánh delivery tại `adf26bb`; đây là mốc lịch sử, không phải nguồn production sau cutover.
 
 ## Các bước
 

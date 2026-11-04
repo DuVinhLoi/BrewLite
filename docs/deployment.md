@@ -11,7 +11,7 @@ Deploy tay ngày 23/10/2026 đã PASS health, products và menu tám món. Run/t
 - Render Postgres `brewlite-a2-db`, PostgreSQL 16, Free/Singapore: tạo 23/10/2026, **hết hạn 22/11/2026**. IP allowlist chỉ 127.0.0.1/32 chặn client công khai. API chỉ nhận **Internal Database URL**; không ghi URL/password vào Git hoặc log.
 - Render API `brewlite-a2-api` chạy public image `ghcr.io/duvinhloi/brewlite-api:<FULL_SHA>`, Free/Singapore; Health Check Path `/health`; auto-deploy off. Env: `DATABASE_URL`, JWT ngẫu nhiên ít nhất 32 ký tự trong `JWT_SECRET`, `CORS_ORIGINS=https://brewlite-a2-web.vercel.app`, `PORT=4000`; biến thanh toán VNPay ở mục "Thanh toán VNPay sandbox" bên dưới.
 - GHCR package brewlite-api public để Render pull anonymous; trong Package settings → Manage Actions access, cấp repository DuVinhLoi/BrewLite quyền Write để GITHUB_TOKEN publish. Public không đồng nghĩa workflow có quyền ghi. Run CD40475323601 đã chứng minh lỗi write_package khi quyền này chưa có.
-- Vercel project `brewlite-a2-web`: Root Directory `apps/web`, Next.js, Node 24.x; Production `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`. Project có liên kết repository; `gitProviderOptions.createDeployments=disabled` tắt native Git deployment để GitHub Actions kiểm soát phát hành. Đã kiểm và đặt lại cấu hình này ngày 28/10/2026.
+- Vercel project `brewlite-a2-web`: Root Directory `apps/web`, Next.js, Node 24.x; Production `NEXT_PUBLIC_API_URL=https://brewlite-a2-api.onrender.com`. Đã đọc lại API project ngày 04/11/2026: `gitProviderOptions.createDeployments=disabled`, `disableRepositoryDispatchEvents=true`, production branch `main`. Giữ liên kết repository và chỉ phát hành bằng job `deploy-web`. PR #29 có preview cũ nên phải kiểm push kế tiếp không tạo deployment Git mới; preview cũ không chứng minh có production trùng. Sau cutover phải kiểm chỉ một deployment Production mới do CLI tạo.
 - Docker CMD của API chạy migration trước server. Khi chuyển từ image Pha A, bỏ Docker Command override cũ trên Render để dùng CMD image mới. Migration trước đây bỏ index key xuyên đơn và giữ index mỗi đơn một lần thành công; BREW-INVENTORY-01 thêm bảng kho/marker/check theo runbook, không sửa lịch sử migration.
 - Seed chỉ chạy có chủ đích, không ghi đè sản phẩm/tồn kho đã tồn tại. `SEED_DEMO_USERS=true` chỉ dành cho demo được nhóm cho phép; tài khoản demo không dành cho dữ liệu thật. Thanh toán qua VNPay sandbox không thu tiền thật; hệ thống không nhận, không lưu và không log số thẻ.
 
@@ -42,7 +42,7 @@ Khi thiếu biến:
 
 1. Thành viên giữ tài khoản Render lưu `VNP_TMN_CODE`, `VNP_HASH_SECRET`, `WEB_URL` vào service `brewlite-a2-api` **trước** lần deploy đầu tiên chứa code thay simulator bằng VNPay. Gửi secret qua kênh riêng, không qua nhóm chat chung, issue hay PR.
 2. Người phụ trách deploy xác nhận điều kiện này trước khi phát hành. API vẫn khởi động được khi thiếu biến, nhưng điều đó không thay thế bước 1.
-3. Workflow `cd.yml` chạy khi push nhánh delivery, tag `a2-v*` hoặc chạy tay (mục "GitHub CD" bên dưới); không suy luận push nhánh payment sẽ tự deploy.
+3. Workflow `cd.yml` chạy khi merge/push vào `main`, tag `a2-v*` hoặc chạy tay (mục "GitHub CD" bên dưới); không suy luận push nhánh payment sẽ tự deploy.
 4. Sau mỗi lần deploy, tạo một URL thanh toán và mở thử: trang VNPay phải hiện form nhập thẻ, không báo sai chữ ký. Smoke của CD chỉ gọi `/health`, `/products` và trang web nên không bắt được lỗi ký.
 
 ### Đăng ký IPN URL
@@ -82,7 +82,7 @@ Docker không có biến VNPay (không có `VNP_HASH_SECRET`, `VNP_TMN_CODE`): A
 
 DB ở network nội bộ và named volume bền vững; không dùng `down -v`, migration reset hoặc xóa volume. Migration chạy idempotent trước API. Đổi cổng web phải đổi CORS; đổi API URL phải build lại web. Demo opt-in: customer.demo@brewlite.local / barista.demo@brewlite.local, mật khẩu Demo@12345.
 
-## GitHub CD theo push delivery và tag
+## GitHub CD theo push `main` và tag
 
 Environment `production` cần secrets (chỉ tên, không ghi giá trị):
 
@@ -94,9 +94,11 @@ Environment `production` cần secrets (chỉ tên, không ghi giá trị):
 | `VERCEL_ORG_ID` | Team ID của project |
 | `VERCEL_PROJECT_ID` | Project ID web |
 
-Variables `PRODUCTION_API_URL` và `PRODUCTION_WEB_URL` dùng URL HTTPS trên, không có dấu `/` cuối; `RENDER_SERVICE_ID=srv-dbdms83ncjis73aodm1g`; đặt ở environment `production`. Render API key cần đọc deploy của service; dùng scope hẹp nếu tài khoản có hỗ trợ. Job publish dùng `GITHUB_TOKEN` với `packages:write`, không dùng PAT quyền rộng. Nhóm cấu hình reviewer/tag/branch policy ở GitHub nếu gói tài khoản hỗ trợ; phải cho phép delivery và tag release. Workflow không tự tạo lớp bảo vệ này.
+Variables `PRODUCTION_API_URL` và `PRODUCTION_WEB_URL` dùng URL HTTPS trên, không có dấu `/` cuối; `RENDER_SERVICE_ID=srv-dbdms83ncjis73aodm1g`; đặt ở environment `production`. Render API key cần đọc deploy của service; dùng scope hẹp nếu tài khoản có hỗ trợ. Job publish dùng `GITHUB_TOKEN` với `packages:write`, không dùng PAT quyền rộng. Cả environment `production` và `release` phải đặt Deployment branches and tags = Selected, chỉ cho nhánh `main` và tag `a2-v*`; nhờ đó chạy tay từ nhánh khác không được dùng environment để phát hành. Workflow không tự tạo lớp bảo vệ này. Trước merge phải kiểm cấu hình thực tế và ghi điểm rollback API/web.
 
-Push lên `feat/assignment2-task5-delivery` tự chạy Delivery và deploy sau quality thành công, kể cả push chỉ sửa tài liệu. CI reusable bản cuối giữ lint/build; unit/integration/E2E đã loại sau kiểm chứng theo yêu cầu, bằng chứng tại inventory-verification.md; không có thêm standalone CI cho cùng sự kiện push delivery/tag. PR vào `develop-Assignment2` và các nhánh được CI hỗ trợ chỉ chạy CI. Push vào `main` chạy Delivery như nhánh delivery (CI nằm trong job `quality`, không có CI độc lập cho sự kiện này), nên mỗi lần merge vào `main` deploy production. PR vào `main` chạy Delivery ở chế độ kiểm tra: chỉ `quality` và `preflight`, bỏ qua `publish`, deploy và smoke. Tag `a2-v*` và `workflow_dispatch` vẫn dùng được. Reviewer environment nếu được bật sẽ làm run chờ duyệt. Các deploy production dùng chung concurrency và không hủy run đang chạy.
+Đã cấu hình và đọc lại hai environment ngày 04/11/2026: mỗi environment có đúng policy nhánh `main` và tag `a2-v*`. Cũng đã bật bảo vệ `main`: required check `ci` (strict), một approval, dismiss stale review, áp dụng cả admin, không cho force push/xóa. Tên 5 secret và 3 variable production đều đủ; chỉ kiểm tên, không đọc giá trị. Việc gia hạn DB và quyền giảng viên chưa hoàn tất nên cổng P1 vẫn chưa đạt.
+
+`main` là nguồn production duy nhất. Merge/push vào `main` tự chạy Delivery sau quality thành công, kể cả push chỉ sửa tài liệu. CI reusable hiện giữ lint/build; unit/integration/E2E chưa được khôi phục trong phạm vi PR cutover này, bằng chứng lịch sử tại [inventory-verification.md](inventory-verification.md). Không có thêm standalone CI cho cùng sự kiện push `main`/tag. PR vào `main` và `develop-Assignment2` chỉ chạy `ci.yml`; `cd.yml` không nhận sự kiện PR nên PR không chạy `preflight` với environment production. Tag `a2-v*` và `workflow_dispatch` vẫn dùng được với environment policy nêu trên. Các deploy production dùng chung concurrency `production-delivery` và không hủy run đang chạy.
 
 Release một commit đã kiểm chứng bằng tag mới `a2-v*`, không di chuyển hoặc ghi đè tag đã phát hành:
 
