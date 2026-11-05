@@ -10,7 +10,7 @@ Nhân viên ghi lại lượng nguyên liệu thực nhận hoặc số đếm k
 
 ## Luồng chính
 
-1. Barista mở `/inventory`, xem từng nguyên liệu: tồn thực tế (onHand), phần đang giữ cho đơn (reserved), phần còn dùng được (available) và đơn vị.
+1. Barista mở `/inventory`, xem từng nguyên liệu: tồn thực tế (onHand), phần đang giữ cho đơn (reserved), phần còn dùng được (available; nguyên liệu không tracked hiện "Không giới hạn") và đơn vị.
 2. Barista chọn RECEIVE (nhập kho), nhập lượng dương, đơn vị phù hợp và lý do. API tự đổi kg sang g, l sang ml, rồi ghi số dư mới và một dòng nhật ký kho (StockMovement) trong cùng một transaction.
 3. Barista thấy số dư mới và nhật ký: ai thực hiện, nguyên liệu nào, thay đổi bao nhiêu (delta), onHand sau thay đổi, lý do và thời điểm.
 4. Qua API `PUT /inventory/recipes` (trang `/inventory` không có màn hình sửa công thức), Barista chọn một món kèm size, hoặc một topping, rồi thay cả công thức (1–50 nguyên liệu, không trùng nhau). API kiểm món/topping được chọn, lượng phải dương và đơn vị phải hợp lệ, rồi lưu trọn một lần (không lưu dở).
