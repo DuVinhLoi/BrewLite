@@ -1,7 +1,7 @@
 # BrewLite — Assignment 2
 
 Next.js + NestJS + PostgreSQL/Prisma. Bổ sung kho nguyên liệu `BREW-INVENTORY-01` trên luồng đặt hàng Assignment 2.
-Luồng: nhập nguyên liệu → xem số ly theo size/topping → đặt đơn giữ nguyên liệu → thanh toán trừ nguyên liệu hoặc hủy giải phóng lượng giữ.
+Luồng: nhập nguyên liệu → xem còn hàng/hết hàng → đặt đơn giữ nguyên liệu → thanh toán trừ nguyên liệu hoặc hủy giải phóng lượng giữ.
 Production demo: [web](https://brewlite-a2-web.vercel.app), [API health](https://brewlite-a2-api.onrender.com/health). Triển khai tay và menu tám món đã kiểm chứng ngày 23/10/2026; kết quả release hiện tại ở [báo cáo Task 5](docs/planning/handoff/2026-10-21-req-sync/report-task5.md).
 
 - [Đề A2](docs/Assignment2-BrewLite.md), [SRS](docs/requirements/srs.md), [Use-case](docs/requirements/uc-checkout.md).
@@ -127,7 +127,7 @@ npm.cmd --prefix apps/api run build
 npm.cmd --prefix apps/web run build
 ```
 
-Demo thủ công: đăng nhập BARISTA → vào /inventory → nhập Matcha 20 g, sữa không đường 2000 ml, siro đường 200 ml với lý do → đăng nhập CUSTOMER → chọn Matcha size S ở chi tiết món để đặt/thanh toán hoặc hủy. Trang kho chỉ có số dư, nhập kho/kiểm đếm và lịch sử; công thức cố định được dùng trong hệ thống. Hướng dẫn request và chuyển đổi dữ liệu cũ ở [runbook](docs/inventory-runbook.md).
+Demo thủ công: đăng nhập BARISTA → vào /inventory → nhập Matcha 20 g, sữa không đường 2000 ml, siro đường 200 ml với lý do → đăng nhập CUSTOMER → chọn Matcha size S ở chi tiết món để đặt/thanh toán hoặc hủy. Trang kho chỉ có số dư, nhập kho/kiểm đếm và lịch sử; công thức dùng trong hệ thống và sửa qua `PUT /inventory/recipes`. Hướng dẫn request và chuyển đổi dữ liệu cũ ở [runbook](docs/inventory-runbook.md).
 
 Production local: build với API URL phù hợp, rồi `npm.cmd --prefix apps/api run start:prod` và `npm.cmd --prefix apps/web start`.
 

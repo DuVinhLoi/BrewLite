@@ -2,7 +2,7 @@
 
 Sprint 1 có menu gọi Product API thật, ảnh/giá/tồn kho, skeleton/empty/error/retry.
 Sprint 2 có trang chi tiết, size/topping, giỏ lưu browser, đăng nhập/đăng ký, tạo đơn/thanh toán demo, xác nhận và lịch sử/theo dõi đơn.
-Màn nhân viên `/inventory` gồm số dư nguyên liệu, nhập kho/kiểm đếm và lịch sử biến động. Công thức cố định được dùng trong hệ thống; trang kho không có bảng sửa công thức hoặc bảng số ly có thể bán. Chi tiết kiểm tra biến thể được chọn; giỏ kiểm tra tổng nhu cầu nguyên liệu dùng chung.
+Màn nhân viên `/inventory` gồm số dư nguyên liệu, nhập kho/kiểm đếm và lịch sử biến động. Công thức dùng trong hệ thống và sửa qua `PUT /inventory/recipes`; trang kho không có bảng sửa công thức hoặc bảng số ly có thể bán. Chi tiết kiểm tra biến thể được chọn; giỏ kiểm tra tổng nhu cầu nguyên liệu dùng chung.
 Routes nằm trong `src/app`, màn hình và Context trong `src/components/shop`.
 
 ```powershell

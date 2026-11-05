@@ -52,6 +52,8 @@ BrewLite là ứng dụng đặt đồ uống không dùng tiền mặt: giao di
 
 - **Khôi phục test (2026-11).** Đề A2 §6.4, §7.2, §7.3 và checklist §9.1 yêu cầu test và bước test trong pipeline. Theo Q1 của chủ repo trong [báo cáo P1 ngày 04/11/2026](../planning/handoff/2026-11-owner-p1-report.md), PR-2 phải khôi phục unit API, unit/component web, API/integration qua HTTP và E2E Chromium trong CI. Q2 duyệt dependency web; API dùng `node:test` và `tsx` sẵn có. Đây là thay đổi tiêu chí trước khi viết test, không xác nhận suite đã hiện thực hoặc chạy đạt. Mã mới định nghĩa ở [ma trận, Phần B](../traceability-matrix.md#phan-b); mã trước cleanup chỉ là lịch sử.
 
+- **Hiển thị tồn kho (2026-11-05).** Theo yêu cầu điều chỉnh giao diện, khách chỉ thấy nhãn "Còn hàng" hoặc "Hết hàng", không có nhãn số ly còn lại; bản giao diện đang chạy đã làm như vậy nên AC-F01.3 và AC-F04.4 được sửa cho khớp. Số lượng đặt vẫn bị giới hạn theo nguyên liệu và tối đa 99 ly mỗi dòng: nhập lớn hơn N thì ô số lượng tự hạ về N; để trống, nhập 0, số âm hoặc số thập phân không vượt N thì báo "từ 1 đến N". Giới hạn đã biết: lựa chọn không bán được chỉ khóa nút "Thêm vào giỏ", chưa hiện lý do; muốn bổ sung thì làm ở PR riêng vì phải sửa giao diện. AC-F13.4 tách rõ hai trường hợp đúng như giao diện: kiểm availability thì báo nguyên liệu thiếu và lượng cần/còn; đặt đơn trả 409 thì báo nguyên liệu đã thay đổi và mời sửa giỏ. AC-F29.1 bỏ yêu cầu hiện `tracked` thành trường riêng, vì `/inventory` chỉ dùng cờ này để chọn hiện lượng khả dụng hoặc "Không giới hạn". Không đổi API, cách tính số ly nội bộ và giữ chỗ nguyên liệu. Đề A2 §4.1 chỉ yêu cầu có nhánh hết hàng, không yêu cầu hiển thị số lượng.
+
 ### 1.5 Cách đọc một yêu cầu
 
 Mỗi yêu cầu gồm: **mô tả**, dòng **Ưu tiên / Use-case / Stakeholder**, và danh sách **tiêu chí chấp nhận** đánh mã `AC-Fxx.n` (cho `FR-xx`) hoặc `AC-Nxx.n` (cho `NFR-xx`). Mỗi tiêu chí viết theo dạng *khi… thì…* để chuyển thẳng thành một test (mã test `UNIT-Txx`, `API-Txx`, `INT-Txx`, `E2E-Txx` ghi trong ma trận truy vết).
@@ -66,7 +68,7 @@ Mỗi yêu cầu gồm: **mô tả**, dòng **Ưu tiên / Use-case / Stakeholder
 |---|---|---|
 | Khách vãng lai (**Guest**) | Chính | Chưa đăng nhập: xem menu, xem chi tiết món, bỏ món vào giỏ, đăng ký, đăng nhập |
 | Khách hàng (**Customer**) | Chính | Đã đăng nhập (JWT hợp lệ, `role = CUSTOMER`); làm được mọi việc của Guest (`Customer --\|> Guest`), cộng thêm: đặt đơn, thanh toán, xem lịch sử và theo dõi đơn, hủy đơn chưa trả (FR-25, Must) |
-| Nhân viên quầy (**Barista**) | Chính (minimum) | Đã đăng nhập, `role = BARISTA`; đổi trạng thái đơn đã thanh toán qua API (Postman); nhập/kiểm kê nguyên liệu và sửa công thức trên màn `/inventory` (FR-29, UC-10); không đặt đơn, không thanh toán |
+| Nhân viên quầy (**Barista**) | Chính (minimum) | Đã đăng nhập, `role = BARISTA`; đổi trạng thái đơn đã thanh toán qua API (Postman); nhập/kiểm kê nguyên liệu trên màn `/inventory`, sửa công thức qua API `PUT /inventory/recipes` (FR-29, UC-10); không đặt đơn, không thanh toán |
 | Cổng thanh toán (**VNPay sandbox**) | Phụ (hệ thống ngoài) | Cổng thanh toán bên thứ ba, chạy ở môi trường thử nên không thu tiền thật. Khách trả tiền trên trang VNPay; VNPay báo kết quả cho API qua IPN và trả lời khi API hỏi lại bằng QueryDR |
 
 ### 2.2 Use-case diagram tổng quát
@@ -191,7 +193,7 @@ Mã BR giữ nguyên số hiệu; các mã bị bỏ (cùng FR-17/18 ngoài bả
 
 - **Tồn thực tế (On hand, `onHand`)** là lượng đang có trong kho; **phần giữ chỗ (reserved, `reserved`)** là lượng đã giữ cho các đơn chưa trả; **còn dùng được (available)** = `onHand - reserved`.
 - Công thức gốc gắn với một món + size S/M/L; công thức topping cộng thêm nguyên liệu (kể cả trân châu vốn đã có trong món). Món có công thức trống hoặc thiếu, hoặc công thức gốc không có nguyên liệu nào được theo dõi (tracked), thì không bán được. Nước và đá coi như không giới hạn, không dùng để tính giới hạn số ly.
-- Số ly của một lựa chọn = `min(floor(available / requiredPerCup))` trên các nguyên liệu được theo dõi. `stock` trên menu chỉ là ước tính cho size S không topping, không dùng làm mức trần cho size hay topping khác. Số ly của các món trên menu dùng chung nguyên liệu, nên không thể cộng lại thành cam kết cho cả giỏ.
+- Số ly của một lựa chọn = `min(floor(available / requiredPerCup))` trên các nguyên liệu được theo dõi. `stock` trên menu chỉ là ước tính cho size S không topping, không dùng làm mức trần cho size hay topping khác. Số ly của các món trên menu dùng chung nguyên liệu, nên không thể cộng lại thành cam kết cho cả giỏ. Số ly chỉ dùng để kiểm và giới hạn số lượng đặt, không hiển thị thành nhãn cho khách; khách chỉ thấy giới hạn này qua ô số lượng (mục 1.4).
 - Trước khi đặt đơn phải cộng nhu cầu của cùng một nguyên liệu trên mọi dòng và mọi biến thể. Ví dụ: mỗi lựa chọn riêng lẻ còn 6 ly không có nghĩa là hai dòng cùng dùng matcha mua được 6 ly mỗi dòng.
 - Đơn vị chuẩn là `g`, `ml`, `piece`; lượng ghi dạng chuỗi số thập phân (decimal string), tối đa 3 chữ số sau dấu phẩy, lưu trong DB kiểu numeric(18,3). `kg` nhân 1000 thành `g`, `l` nhân 1000 thành `ml`; không đổi g sang ml. `piece` phải là số nguyên. Trường và lỗi chính xác xem ở [HTTP/schema contract](../inventory-contract.md).
 
@@ -266,7 +268,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 - **Tiêu chí chấp nhận:**
   - AC-F01.1: Khi gọi `GET /products` với dữ liệu mẫu (mục 3.3) thì trả 200 và mảng đúng 8 sản phẩm, mỗi phần tử có `id`, `name`, `price` (số nguyên), `imageUrl`, `stock`; không cần token.
   - AC-F01.2: Khi mở trang menu thì lưới hiển thị đủ 8 thẻ, mỗi thẻ có hình, tên và giá dạng `45.000đ`.
-  - AC-F01.3: Menu hiển thị `stock` tính từ nguyên liệu cho S không topping: 0 là "Hết hàng", 1–5 là "Sắp hết, còn N". Khi thiếu công thức thì bằng 0. Trang chi tiết kiểm lựa chọn thực tế bằng availability, không lấy số S làm trần cho M/L/topping.
+  - AC-F01.3: Menu hiển thị nhãn theo `stock` tính từ nguyên liệu cho S không topping: 0 là "Hết hàng", lớn hơn 0 là "Còn hàng"; không hiển thị số ly. Khi thiếu công thức thì `stock` bằng 0. Trang chi tiết kiểm lựa chọn thực tế bằng availability, không lấy số S làm trần cho M/L/topping.
 
 #### FR-02 — Trạng thái tải menu (loading, empty, error)
 - **Mô tả:** Trang menu xử lý ba trạng thái: đang tải, danh sách rỗng, lỗi tải.
@@ -292,7 +294,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 - **Tiêu chí chấp nhận:**
   - AC-F04.1: Khi mở trang chi tiết thì size mặc định được chọn là `M`; chỉ một size được chọn tại một thời điểm.
   - AC-F04.2: Khi chọn Cappuccino (45.000đ) size `L` thì giá hiển thị là `55.000đ`; thêm topping "Trân châu" thì giá hiển thị là `62.000đ`; bỏ topping thì về `55.000đ` ngay, không tải lại trang.
-  - AC-F04.4: Khi đổi size/topping, giao diện gọi `POST /inventory/availability`, hiển thị số ly và nguyên liệu giới hạn của lựa chọn mới; phản hồi cũ không ghi đè lựa chọn mới. Thiếu công thức thì chặn thêm và báo không khả dụng.
+  - AC-F04.4: Khi đổi size/topping, giao diện gọi `POST /inventory/availability` để kiểm lựa chọn mới; phản hồi cũ không ghi đè lựa chọn mới. Lựa chọn không đủ nguyên liệu hoặc thiếu công thức thì khóa nút "Thêm vào giỏ". Khi nút đang mở mà lần kiểm lúc bấm thêm cho thấy giỏ dự kiến thiếu nguyên liệu thì báo nguyên liệu thiếu và lượng cần/còn, giỏ giữ nguyên.
   - AC-F04.3: Khi chọn đồng thời "Trân châu" và "Kem phô mai" thì phụ thu cộng dồn (`+17.000đ`).
 
 ### 5.3 Giỏ hàng
@@ -374,13 +376,13 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
   - AC-F12.4: Khi giỏ trên giao diện rỗng thì nút "Thanh toán" bị vô hiệu và không gọi API.
 
 #### FR-13 — Xử lý hết hàng khi đặt đơn
-- **Mô tả:** Khi khách đặt nhiều hơn số còn bán được, hệ thống từ chối tạo đơn để không bán quá số lượng còn, và báo rõ món nào đang thiếu.
+- **Mô tả:** Khi khách đặt nhiều hơn số còn bán được, hệ thống từ chối tạo đơn để không bán quá số lượng còn, và báo để khách sửa giỏ (nội dung thông báo theo AC-F13.4).
 - **Ưu tiên:** Must · **Use-case:** UC-04.1 · **Stakeholder:** S1, S3
 - **Tiêu chí chấp nhận:**
   - AC-F13.1: Với 20g matcha, 2000ml sữa không đường, 200ml syrup và không có reserved, Matcha S (3g/150ml/20ml) được 6 ly, matcha giới hạn. Đặt 7 ly trả 409 `OUT_OF_STOCK`, details chứa ingredientId/name/unit và requested/available dạng chuỗi (matcha 21/20); không có đơn mới và mọi số dư không đổi.
   - AC-F13.2: Nguyên liệu tracked available=0 làm số ly bằng 0. Thiếu/trống công thức hoặc công thức gốc không có nguyên liệu tracked: availability trả sellable=false/cups=0; tạo đơn trả 409 `RECIPE_UNAVAILABLE`.
   - AC-F13.3: Có đúng 150ml espresso, Americano S cần 30ml; 10 yêu cầu đồng thời mỗi yêu cầu 1 ly phải chỉ có 5 đơn thành công, 5 lỗi 409, onHand=150ml/reserved=150ml/available=0, không âm. Toàn giỏ cộng nhu cầu trước kiểm, gồm nhiều size và topping dùng chung nguyên liệu.
-  - AC-F13.4: Khi availability báo shortage hoặc đặt đơn trả 409, giao diện hiển thị nguyên liệu thiếu và lượng cần/còn, liên kết về giỏ và giữ nguyên giỏ; sửa giỏ rồi kiểm lại được. Không tạo đơn từ số ly ước tính đã cũ.
+  - AC-F13.4: Khi availability báo shortage, giao diện hiển thị nguyên liệu thiếu và lượng cần/còn; ở giỏ hàng, lựa chọn thiếu công thức thì báo lý do không bán được thay cho lượng cần/còn. Khi đặt đơn trả 409, giao diện báo nguyên liệu đã thay đổi, có liên kết "Sửa giỏ hàng" và giữ nguyên giỏ; sửa giỏ rồi kiểm lại được. Không tạo đơn từ số ly ước tính đã cũ.
   - AC-F13.5: Đơn bị từ chối vì hết hàng không xuất hiện trong lịch sử đơn của khách.
 
 ### 5.6 Thanh toán
@@ -509,7 +511,7 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng được đặc tả đầy đủ trong
 ### 5.10 FR-29 — Quản lý nguyên liệu, công thức và khả năng bán
 
 - **Ưu tiên:** Must · **Use-case:** UC-10, UC-01, UC-02, UC-04 · **Stakeholder:** S1, S2, S3
-- AC-F29.1: Barista xem onHand/reserved/available, đơn vị và tracked tại `/inventory`; Guest nhận 401, Customer nhận 403 với endpoint quản trị.
+- AC-F29.1: Barista xem onHand, reserved và đơn vị tại `/inventory`; nguyên liệu tracked hiện available, không tracked hiện "Không giới hạn"; Guest nhận 401, Customer nhận 403 với endpoint quản trị.
 - AC-F29.2: RECEIVE lượng dương và ADJUST số kiểm kê cuối cùng không âm bắt buộc lý do 1–500 ký tự; ghi StockMovement cùng transaction với số dư, gồm actor, delta có dấu, số dư sau và thời điểm. ADJUST dưới reserved trả 409 BELOW_RESERVED, không đổi DB. Hiển thị 100 movement mới nhất.
 - AC-F29.3: Nhận 0.020kg matcha thành 20g, 2l sữa thành 2000ml; số âm/sai đơn vị/quá 3 chữ số thập phân/piece lẻ bị 400. Không cho đổi khối lượng sang thể tích.
 - AC-F29.4: Barista thay trọn công thức theo product+size hoặc topping, 1–50 nguyên liệu duy nhất, lượng dương hợp đơn vị; chọn cả hai/không chọn selector bị 400. Sửa công thức nguyên tử và không sửa snapshot đơn đã giữ.
