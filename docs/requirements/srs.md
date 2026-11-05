@@ -191,7 +191,7 @@ Mã BR giữ nguyên số hiệu; các mã bị bỏ (cùng FR-17/18 ngoài bả
 
 - **Tồn thực tế (On hand, `onHand`)** là lượng đang có trong kho; **phần giữ chỗ (reserved, `reserved`)** là lượng đã giữ cho các đơn chưa trả; **còn dùng được (available)** = `onHand - reserved`.
 - Công thức gốc gắn với một món + size S/M/L; công thức topping cộng thêm nguyên liệu (kể cả trân châu vốn đã có trong món). Món có công thức trống hoặc thiếu, hoặc công thức gốc không có nguyên liệu nào được theo dõi (tracked), thì không bán được. Nước và đá coi như không giới hạn, không dùng để tính giới hạn số ly.
-- Số ly của một lựa chọn = `min(floor(available / requiredPerCup))` trên các nguyên liệu được theo dõi. `stock` trên menu chỉ là ước tính cho size S không topping, không dùng làm mức trần cho size hay topping khác. Số ly của các món trên menu dùng chung nguyên liệu, nên không thể cộng lại thành cam kết cho cả giỏ. Số ly chỉ dùng để kiểm và giới hạn số lượng đặt, không hiển thị thành nhãn cho khách; khách chỉ thấy giới hạn này khi nhập vượt ở ô số lượng (AC-F04.4).
+- Số ly của một lựa chọn = `min(floor(available / requiredPerCup))` trên các nguyên liệu được theo dõi. `stock` trên menu chỉ là ước tính cho size S không topping, không dùng làm mức trần cho size hay topping khác. Số ly của các món trên menu dùng chung nguyên liệu, nên không thể cộng lại thành cam kết cho cả giỏ. Số ly chỉ dùng để kiểm và giới hạn số lượng đặt, không hiển thị thành nhãn cho khách; khách chỉ thấy giới hạn này khi nhập vượt ở ô số lượng (mục 1.4).
 - Trước khi đặt đơn phải cộng nhu cầu của cùng một nguyên liệu trên mọi dòng và mọi biến thể. Ví dụ: mỗi lựa chọn riêng lẻ còn 6 ly không có nghĩa là hai dòng cùng dùng matcha mua được 6 ly mỗi dòng.
 - Đơn vị chuẩn là `g`, `ml`, `piece`; lượng ghi dạng chuỗi số thập phân (decimal string), tối đa 3 chữ số sau dấu phẩy, lưu trong DB kiểu numeric(18,3). `kg` nhân 1000 thành `g`, `l` nhân 1000 thành `ml`; không đổi g sang ml. `piece` phải là số nguyên. Trường và lỗi chính xác xem ở [HTTP/schema contract](../inventory-contract.md).
 
@@ -292,7 +292,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 - **Tiêu chí chấp nhận:**
   - AC-F04.1: Khi mở trang chi tiết thì size mặc định được chọn là `M`; chỉ một size được chọn tại một thời điểm.
   - AC-F04.2: Khi chọn Cappuccino (45.000đ) size `L` thì giá hiển thị là `55.000đ`; thêm topping "Trân châu" thì giá hiển thị là `62.000đ`; bỏ topping thì về `55.000đ` ngay, không tải lại trang.
-  - AC-F04.4: Khi đổi size/topping, giao diện gọi `POST /inventory/availability` để kiểm lựa chọn mới; phản hồi cũ không ghi đè lựa chọn mới. Kết quả dùng để giới hạn ô số lượng và khóa nút "Thêm vào giỏ" khi lựa chọn không bán được (thiếu nguyên liệu hoặc công thức); không hiển thị nhãn số ly còn lại. Khi nhập vượt giới hạn, ô số lượng báo "Số lượng phải là số nguyên từ 1 đến N". Lựa chọn không bán được chỉ khóa nút, chưa hiện lý do (giới hạn đã biết, xem mục 1.4). Khi thêm món mà giỏ dự kiến thiếu nguyên liệu thì báo nguyên liệu thiếu và lượng cần/còn.
+  - AC-F04.4: Khi đổi size/topping, giao diện gọi `POST /inventory/availability` để kiểm lựa chọn mới; phản hồi cũ không ghi đè lựa chọn mới. Lựa chọn không đủ nguyên liệu hoặc thiếu công thức thì khóa nút "Thêm vào giỏ". Khi nút đang mở mà lần kiểm lúc bấm thêm cho thấy giỏ dự kiến thiếu nguyên liệu thì báo nguyên liệu thiếu và lượng cần/còn, giỏ giữ nguyên.
   - AC-F04.3: Khi chọn đồng thời "Trân châu" và "Kem phô mai" thì phụ thu cộng dồn (`+17.000đ`).
 
 ### 5.3 Giỏ hàng
