@@ -196,7 +196,7 @@ Ba nhánh lỗi bắt buộc theo đề A2 §4.1 là **E1, E2, E3**; E4 là yêu
 - **Phản ứng:**
   1. API hoàn tác (rollback): không có Order/OrderItem/OrderIngredient mới và không đổi bất kỳ onHand/reserved nào.
   2. API trả 409 OUT_OF_STOCK kèm details từng nguyên liệu `{ingredientId,name,unit,requested,available}` (lượng ở dạng string), hoặc RECIPE_UNAVAILABLE nếu thiếu công thức.
-  3. UI báo "{Tên món} chỉ còn N ly" hoặc "{Tên món} đã hết hàng", đưa khách về giỏ và đánh dấu dòng liên quan (AC-F13.4).
+  3. UI báo nguyên liệu thiếu và lượng cần/còn, ví dụ "Matcha: cần 21 g, còn 20 g", đưa khách về giỏ và đánh dấu dòng liên quan (AC-F13.4).
   4. Customer sửa số lượng hoặc xóa món rồi bắt đầu lại từ bước 1.
 - **Kết quả:** không có đơn mới trong lịch sử (AC-F13.5); không bao giờ bán quá tồn kho, kể cả khi nhiều người đặt cùng lúc (AC-F13.3).
 - **Yêu cầu:** FR-13, NFR-13.
