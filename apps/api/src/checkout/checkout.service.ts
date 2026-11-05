@@ -78,6 +78,7 @@ export class CheckoutService {
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM orders WHERE id = ${id} FOR UPDATE`;
       const order = await this.owned(tx, id, user);
+      if (user.role === 'BARISTA' && status === 'CANCELLED' && ['PENDING', 'PAYMENT_FAILED'].includes(order.status)) throw new ForbiddenException();
       const cancel = user.role === 'CUSTOMER' && status === 'CANCELLED' && ['PENDING', 'PAYMENT_FAILED'].includes(order.status);
       if (user.role === 'CUSTOMER' && order.status === 'PAID') throw new ForbiddenException();
       if (!cancel && !(user.role === 'BARISTA' && status !== 'CANCELLED' && canTransition(order.status, status as OrderStatus))) throw new ConflictException({ code: 'INVALID_ORDER_TRANSITION', message: 'Không thể chuyển trạng thái đơn' });
