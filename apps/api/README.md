@@ -33,8 +33,9 @@ Render chạy image API gắn full commit SHA, dùng Render Postgres **Internal 
 
 ```powershell
 npm.cmd run lint
+npm.cmd test
 npm.cmd run build
 ```
 
-Theo yêu cầu chủ dự án, toàn bộ test đã được xóa sau khi chạy kiểm chứng; chỉ còn unit test VNPay tối thiểu `test/vnpay.test.ts` (chạy `node --import tsx --test test/vnpay.test.ts`); kết quả cũ ở [báo cáo kho](../../docs/inventory-verification.md). `prisma:migrate` dùng `prisma migrate deploy`; không reset DB hoặc sửa migration đã phát hành. [Runbook](../../docs/inventory-runbook.md) hướng dẫn kiểm kê và chuyển đổi.
+`npm test` chạy unit bằng `node:test` + `tsx`, không cần DB/mạng; gồm VNPay, cấu hình, giá, trạng thái đơn, kho và auth. HTTP integration chạy API đã build với PostgreSQL test riêng, theo [hướng dẫn](../../tests/README.md). Kết quả local/skip PR-2 ở [verification](../../docs/task5/verification.md#khôi-phục-test-pr-2--06112026); [báo cáo kho tháng 10](../../docs/inventory-verification.md) là lịch sử. `prisma:migrate` dùng `prisma migrate deploy`; không reset DB hoặc sửa migration đã phát hành. [Runbook](../../docs/inventory-runbook.md) hướng dẫn kiểm kê và chuyển đổi.
 Kiến trúc và ADR (Task 3): [docs/architecture](../../docs/architecture/architecture.md).

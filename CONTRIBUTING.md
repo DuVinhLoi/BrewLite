@@ -2,7 +2,7 @@
 
 ## Branch và pull request
 
-- Base tích hợp A2: `develop-Assignment2`. Làm trên nhánh `a2/task-<n>-<tên>`; nhánh tiếp tục Task 4 hiện tại là `a2/Task4`.
+- Base production: `main`; PR khôi phục test dùng `a2/restore-tests`. `develop-Assignment2` là base tích hợp A2 trước cutover. Mỗi task phải xác định branch, worktree và allowed paths trước khi sửa.
 - Không commit/push thẳng vào base; không force-push hoặc merge thay người khác. Mỗi PR cần ít nhất một reviewer khác tác giả.
 - Mô tả PR nêu vấn đề, lý do thay đổi, hành vi sau thay đổi, mục đề A2 hoặc mã `FR-xx`/`NFR-xx`, lệnh kiểm và kết quả thực tế.
 - Task 4 được làm nháp khi Task 2–3 chưa xong, nhưng chỉ merge sau khi các tạo phẩm Task 1–3 được chốt qua PR (kế hoạch A2 mục B.4).
@@ -23,22 +23,22 @@ Các type thường dùng: `feat`, `fix`, `test`, `docs`, `ci`, `chore`. Commit 
 
 ## Quality gate và review
 
-Dùng Node trong `.nvmrc`, cài bằng `npm ci` ở từng app và chạy các lệnh [README](README.md#kiểm-chứng-và-build). Theo yêu cầu chủ dự án ngày 29/10/2026, bộ test và công cụ test đã được xóa sau khi kiểm chứng tính năng kho; [báo cáo](docs/inventory-verification.md) giữ kết quả trước khi xóa. Workflow kiểm lint, migration/seed và typecheck/build cả hai app; không dùng `continue-on-error` để che lỗi.
+Dùng Node trong `.nvmrc`, cài bằng `npm ci` ở từng app và chạy các lệnh [README](README.md#kiểm-chứng-và-build). PR-2 khôi phục unit API/web, HTTP integration và Chromium E2E; thiết lập DB test/secret giả theo [tests/README.md](tests/README.md). Workflow chạy test cùng lint, migration/seed hai lần, typecheck/build và Compose validation; không dùng `continue-on-error` để che lỗi. Báo cáo cleanup tháng 10 là lịch sử.
 
-Sau lần CI đầu tiên trên PR, quản trị viên cấu hình bảo vệ `develop-Assignment2`:
+Bảo vệ `main` đã được cấu hình và đọc lại ngày 04/11/2026 theo [báo cáo P1](docs/planning/handoff/2026-11-owner-p1-report.md):
 
 1. Require a pull request before merging; ít nhất **1 approval** từ người khác tác giả.
 2. Require status checks to pass; chọn check **`ci`** từ GitHub Actions và require branch up to date.
 3. Không cho bypass các yêu cầu trên, force-push hoặc xóa nhánh bảo vệ.
 4. Kiểm PR cố ý đỏ thực sự không merge được; lưu ảnh/log theo [hồ sơ CI](docs/evidence/ci/README.md).
 
-Đây là yêu cầu cần thiết lập trên GitHub, không được bật chỉ bằng workflow. Ngày 2026-10-21 đã có CI thật xanh/đỏ nhưng API kiểm rules trả HTTP 403 yêu cầu nâng gói hoặc chuyển repo public; contributor có quyền push, không có admin. [Hồ sơ CI](docs/evidence/ci/github-runs.md) lưu phản hồi và log. Chủ repo phải chọn cấu hình hỗ trợ, bật required check và kiểm việc chặn merge; không coi review thủ công, CI đỏ hoặc PR draft là thay thế cho điều kiện của đề A2 §6.4.
+Đây là cấu hình GitHub, không được bật chỉ bằng workflow. Giới hạn HTTP 403/private ở [hồ sơ tháng 10](docs/evidence/ci/github-runs.md) là lịch sử; repo hiện public. PR-2 vẫn cần ba run xanh đủ tầng và một PR cố ý sai test chứng minh required `ci` chặn merge; không coi PR draft hoặc review thủ công là bằng chứng thay thế.
 
 ## Definition of Done
 
 - [ ] Đạt tiêu chí chấp nhận của task và các phụ thuộc đã được chốt.
 - [ ] Lint, typecheck/build liên quan chạy thật và pass; hành vi quan trọng được kiểm chứng và ghi kết quả; PR có CI xanh.
-- [ ] Có kiểm chứng cho hành vi thêm/sửa, gồm lỗi quan trọng; không chỉ kiểm happy path.
+- [ ] Unit, integration và E2E liên quan pass trong CI; hành vi thêm/sửa có test phù hợp, gồm lỗi quan trọng, và cập nhật mã test trong ma trận. Skip chỉ áp dụng cho bug có lý do và PR sửa riêng được liên kết, không được báo thành pass.
 - [ ] README, tài liệu và ma trận truy vết phản ánh đúng code và kết quả kiểm chứng hiện có.
 - [ ] `git diff --check` sạch; đã xem diff và danh sách file mới; không có secret hay thay đổi ngoài allowed paths.
 - [ ] Một reviewer khác tác giả đã approve; không còn blocker; required check `ci` đã đạt.

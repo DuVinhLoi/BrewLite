@@ -1,6 +1,6 @@
 # Product Backlog — Assignment 2
 
-Backlog lưu trong repository cho đề A2 §6.1. Ngày cập nhật: 2026-10-21. Trạng thái phản ánh checkout `a2/Task4`, không thay cho nghiệm thu Sprint hoặc lịch sử PR. Nhóm chưa cung cấp phân công cá nhân/ngày Sprint hoặc URL GitHub Projects; các item bên dưới chưa được gán cá nhân trong hồ sơ này.
+Backlog lưu trong repository cho đề A2 §6.1. Cập nhật khôi phục test ngày 2026-11-06 ở A2-5.5; các trạng thái Sprint 1 và A2-5.1–5.4 giữ snapshot lịch sử 2026-10-21 trên `a2/Task4`, không mô tả production hiện tại. Xem [release notes](../task5/release-notes.md) cho cutover/deploy đã thực hiện. Nhóm chưa cung cấp phân công cá nhân/ngày Sprint hoặc URL GitHub Projects; các item bên dưới chưa được gán cá nhân trong hồ sơ này.
 
 ## Sprint 1 — xem menu và nền tảng kỹ thuật
 
@@ -28,5 +28,6 @@ Backlog lưu trong repository cho đề A2 §6.1. Ngày cập nhật: 2026-10-21
 | A2-5.2 | Unit/integration/E2E, Docker Compose, health | Task 5.2, NFR-14–16 | Chưa làm; cần luồng đặt hàng |
 | A2-5.3 | CD, image, production, smoke, rollback | Task 5.3, NFR-08/18 | Chưa làm; cần quality gate và nền tảng đã chốt |
 | A2-5.4 | URL HTTPS, release/demo, tài liệu bàn giao, review/retro | Task 5.4, NFR-19 | Chưa làm; cần production chạy thật |
+| A2-5.5 | Khôi phục test theo đề A2 §7.2, §6.4/§7.3/§9.1 | NFR-12/17/18, Q1/Q2, PR32 | Đã có suite/CI: [run 42132213624 success](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624), 219 API unit, 74 web, integration 20 pass/1 skip PR31, 5 E2E. PR33 cố ý sai UNIT-T03 có run đỏ. Còn đủ ba run xanh và bằng chứng required ci chặn merge riêng khi các điều kiện khác đủ; [hồ sơ](../evidence/ci/README.md). |
 
-FR-17/18/19/26/27 và FR-28–32 ngoài phạm vi minimum theo SRS; không đưa tính năng mở rộng vào Sprint 2 khi chưa được nhóm chốt lại. Mỗi PR cập nhật item liên quan, lý do thay đổi, ma trận và bằng chứng kiểm.
+FR-17/18/19/26/27 và FR-28/30/31/32 ngoài phạm vi minimum theo SRS; FR-29 quản lý kho là Must của BREW-INVENTORY-01. Không đưa tính năng mở rộng vào Sprint 2 khi chưa được nhóm chốt lại. Mỗi PR cập nhật item liên quan, lý do thay đổi, ma trận và bằng chứng kiểm.

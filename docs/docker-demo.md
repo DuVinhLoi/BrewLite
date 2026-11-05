@@ -1,5 +1,7 @@
 # Demo web + API + PostgreSQL trong một container
 
+> PR-2 đã khôi phục unit API/web, HTTP integration và Chromium E2E trong tháng 11 theo Q1/Q2. Xem [hướng dẫn chạy hiện tại](../tests/README.md) và [kết quả local/CI mới](task5/verification.md#khôi-phục-test-pr-2--06112026). Các mục bên dưới giữ nguyên **hồ sơ lịch sử demo tháng 10**; nhận xét “không thêm lại test” hoặc “test đã xóa” chỉ mô tả phạm vi lần kiểm chứng đó.
+
 Task `BREW-DOCKER-DEMO-01`, branch `feat/ingredient-inventory`, worktree `C:\Users\baoth\orca\workspaces\BrewLite\jumbo`. Container này phục vụ demo local theo lựa chọn của người dùng.
 
 ## Chạy trên máy hiện tại
