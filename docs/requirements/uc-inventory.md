@@ -1,6 +1,6 @@
 # UC-10 — Quản lý nguyên liệu và công thức
 
-Thuộc đợt **BREW-INVENTORY-01**, yêu cầu FR-29 (Must), áp dụng cho Task 1–5 của Assignment 2. Người dùng chính là **Barista**; Customer và Guest chỉ thấy nhãn "Còn hàng" hoặc "Hết hàng" trên menu. Hợp đồng API chi tiết: [inventory-contract.md](../inventory-contract.md). Hướng dẫn vận hành: [inventory-runbook.md](../inventory-runbook.md).
+Thuộc đợt **BREW-INVENTORY-01**, yêu cầu FR-29 (Must), áp dụng cho Task 1–5 của Assignment 2. Người dùng chính là **Barista**; Customer và Guest không có nhãn số ly: menu chỉ hiện "Còn hàng" hoặc "Hết hàng", trang chi tiết giới hạn ô số lượng, giỏ hàng báo nguyên liệu thiếu và lượng cần/còn. Hợp đồng API chi tiết: [inventory-contract.md](../inventory-contract.md). Hướng dẫn vận hành: [inventory-runbook.md](../inventory-runbook.md).
 
 ## Mục tiêu và điều kiện
 
@@ -14,7 +14,7 @@ Nhân viên ghi lại lượng nguyên liệu thực nhận hoặc số đếm k
 2. Barista chọn RECEIVE (nhập kho), nhập lượng dương, đơn vị phù hợp và lý do. API tự đổi kg sang g, l sang ml, rồi ghi số dư mới và một dòng nhật ký kho (StockMovement) trong cùng một transaction.
 3. Barista thấy số dư mới và nhật ký: ai thực hiện, nguyên liệu nào, thay đổi bao nhiêu (delta), onHand sau thay đổi, lý do và thời điểm.
 4. Qua API `PUT /inventory/recipes` (trang `/inventory` không có màn hình sửa công thức), Barista chọn một món kèm size, hoặc một topping, rồi thay cả công thức (1–50 nguyên liệu, không trùng nhau). API kiểm món/topping được chọn, lượng phải dương và đơn vị phải hợp lệ, rồi lưu trọn một lần (không lưu dở).
-5. Guest hoặc Customer chọn size, topping. API tính số ly bằng giá trị nhỏ nhất của floor(available / định lượng) trên các nguyên liệu, và cho biết nguyên liệu nào đang giới hạn. Menu tính theo size S, không topping; giỏ hàng cộng nhu cầu của mọi dòng trước khi quyết định có đặt được không (canOrder). Số ly chỉ dùng để kiểm và giới hạn ô số lượng; khách chỉ thấy nhãn "Còn hàng" hoặc "Hết hàng" trên menu.
+5. Guest hoặc Customer chọn size, topping. API tính số ly bằng giá trị nhỏ nhất của floor(available / định lượng) trên các nguyên liệu, và cho biết nguyên liệu nào đang giới hạn. Menu tính theo size S, không topping; giỏ hàng cộng nhu cầu của mọi dòng trước khi quyết định có đặt được không (canOrder). Số ly chỉ dùng để kiểm và giới hạn ô số lượng; menu chỉ hiện nhãn "Còn hàng" hoặc "Hết hàng", không có nhãn số ly.
 6. Customer tạo đơn: UC-04 giữ chỗ nguyên liệu và lưu bản chụp (snapshot). Thanh toán thành công thì trừ theo snapshot; thất bại thì vẫn giữ chỗ; hủy khi chưa trả thì nhả đúng phần trong snapshot. Sửa công thức ở bước 4 không ảnh hưởng các đơn đã giữ chỗ.
 
 ## Thay thế và ngoại lệ
