@@ -1,0 +1,497 @@
+[
+  {
+    "run": 42132213624,
+    "attempt": 1,
+    "headSha": "4e711a8a845c36c11ec09b2ca6dc928a196c495c",
+    "url": "https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624/attempts/1",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "completedAt": "2026-11-05T23:52:01Z",
+        "conclusion": "success",
+        "databaseId": 127611362118,
+        "name": "ci",
+        "startedAt": "2026-11-05T23:48:46Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-11-05T23:48:49Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-11-05T23:48:47Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:49:06Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-11-05T23:48:49Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:49:07Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 3,
+            "startedAt": "2026-11-05T23:49:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:49:12Z",
+            "conclusion": "success",
+            "name": "Setup Node.js",
+            "number": 4,
+            "startedAt": "2026-11-05T23:49:07Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:50:10Z",
+            "conclusion": "success",
+            "name": "Install",
+            "number": 5,
+            "startedAt": "2026-11-05T23:49:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:50:14Z",
+            "conclusion": "success",
+            "name": "Lint",
+            "number": 6,
+            "startedAt": "2026-11-05T23:50:10Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:50:22Z",
+            "conclusion": "success",
+            "name": "Unit Test (API and web)",
+            "number": 7,
+            "startedAt": "2026-11-05T23:50:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:50:26Z",
+            "conclusion": "success",
+            "name": "Validate migrations and seed (independent database)",
+            "number": 8,
+            "startedAt": "2026-11-05T23:50:22Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:50:38Z",
+            "conclusion": "success",
+            "name": "Build",
+            "number": 9,
+            "startedAt": "2026-11-05T23:50:26Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:05Z",
+            "conclusion": "success",
+            "name": "Integration Test (isolated HTTP API)",
+            "number": 10,
+            "startedAt": "2026-11-05T23:50:38Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:25Z",
+            "conclusion": "success",
+            "name": "Install Chromium",
+            "number": 11,
+            "startedAt": "2026-11-05T23:51:05Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:53Z",
+            "conclusion": "success",
+            "name": "E2E (Chromium)",
+            "number": 12,
+            "startedAt": "2026-11-05T23:51:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:53Z",
+            "conclusion": "skipped",
+            "name": "Upload E2E failure artifacts",
+            "number": 13,
+            "startedAt": "2026-11-05T23:51:53Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:55Z",
+            "conclusion": "success",
+            "name": "Validate Compose",
+            "number": 14,
+            "startedAt": "2026-11-05T23:51:53Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:58Z",
+            "conclusion": "success",
+            "name": "Post Setup Node.js",
+            "number": 26,
+            "startedAt": "2026-11-05T23:51:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:58Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 27,
+            "startedAt": "2026-11-05T23:51:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:59Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 28,
+            "startedAt": "2026-11-05T23:51:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:51:59Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 29,
+            "startedAt": "2026-11-05T23:51:59Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624/job/127611362118"
+      }
+    ]
+  },
+  {
+    "run": 42132213624,
+    "attempt": 2,
+    "headSha": "4e711a8a845c36c11ec09b2ca6dc928a196c495c",
+    "url": "https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624/attempts/2",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "completedAt": "2026-11-05T23:54:51Z",
+        "conclusion": "success",
+        "databaseId": 127613094412,
+        "name": "ci",
+        "startedAt": "2026-11-05T23:52:57Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-11-05T23:52:58Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-11-05T23:52:57Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:53:11Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-11-05T23:52:58Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:53:12Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 3,
+            "startedAt": "2026-11-05T23:53:11Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:53:18Z",
+            "conclusion": "success",
+            "name": "Setup Node.js",
+            "number": 4,
+            "startedAt": "2026-11-05T23:53:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:53:30Z",
+            "conclusion": "success",
+            "name": "Install",
+            "number": 5,
+            "startedAt": "2026-11-05T23:53:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:53:34Z",
+            "conclusion": "success",
+            "name": "Lint",
+            "number": 6,
+            "startedAt": "2026-11-05T23:53:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:53:40Z",
+            "conclusion": "success",
+            "name": "Unit Test (API and web)",
+            "number": 7,
+            "startedAt": "2026-11-05T23:53:34Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:53:42Z",
+            "conclusion": "success",
+            "name": "Validate migrations and seed (independent database)",
+            "number": 8,
+            "startedAt": "2026-11-05T23:53:40Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:53:52Z",
+            "conclusion": "success",
+            "name": "Build",
+            "number": 9,
+            "startedAt": "2026-11-05T23:53:42Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:12Z",
+            "conclusion": "success",
+            "name": "Integration Test (isolated HTTP API)",
+            "number": 10,
+            "startedAt": "2026-11-05T23:53:52Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:25Z",
+            "conclusion": "success",
+            "name": "Install Chromium",
+            "number": 11,
+            "startedAt": "2026-11-05T23:54:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:45Z",
+            "conclusion": "success",
+            "name": "E2E (Chromium)",
+            "number": 12,
+            "startedAt": "2026-11-05T23:54:25Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:45Z",
+            "conclusion": "skipped",
+            "name": "Upload E2E failure artifacts",
+            "number": 13,
+            "startedAt": "2026-11-05T23:54:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:46Z",
+            "conclusion": "success",
+            "name": "Validate Compose",
+            "number": 14,
+            "startedAt": "2026-11-05T23:54:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:46Z",
+            "conclusion": "success",
+            "name": "Post Setup Node.js",
+            "number": 26,
+            "startedAt": "2026-11-05T23:54:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:46Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 27,
+            "startedAt": "2026-11-05T23:54:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:50Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 28,
+            "startedAt": "2026-11-05T23:54:46Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:54:50Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 29,
+            "startedAt": "2026-11-05T23:54:50Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624/job/127613094412"
+      }
+    ]
+  },
+  {
+    "run": 42132213624,
+    "attempt": 3,
+    "headSha": "4e711a8a845c36c11ec09b2ca6dc928a196c495c",
+    "url": "https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624/attempts/3",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "completedAt": "2026-11-05T23:57:20Z",
+        "conclusion": "success",
+        "databaseId": 127614004851,
+        "name": "ci",
+        "startedAt": "2026-11-05T23:55:17Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-11-05T23:55:18Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-11-05T23:55:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:55:30Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-11-05T23:55:18Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:55:31Z",
+            "conclusion": "success",
+            "name": "Checkout",
+            "number": 3,
+            "startedAt": "2026-11-05T23:55:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:55:37Z",
+            "conclusion": "success",
+            "name": "Setup Node.js",
+            "number": 4,
+            "startedAt": "2026-11-05T23:55:31Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:55:50Z",
+            "conclusion": "success",
+            "name": "Install",
+            "number": 5,
+            "startedAt": "2026-11-05T23:55:37Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:55:54Z",
+            "conclusion": "success",
+            "name": "Lint",
+            "number": 6,
+            "startedAt": "2026-11-05T23:55:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:56:00Z",
+            "conclusion": "success",
+            "name": "Unit Test (API and web)",
+            "number": 7,
+            "startedAt": "2026-11-05T23:55:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:56:03Z",
+            "conclusion": "success",
+            "name": "Validate migrations and seed (independent database)",
+            "number": 8,
+            "startedAt": "2026-11-05T23:56:00Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:56:13Z",
+            "conclusion": "success",
+            "name": "Build",
+            "number": 9,
+            "startedAt": "2026-11-05T23:56:03Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:56:34Z",
+            "conclusion": "success",
+            "name": "Integration Test (isolated HTTP API)",
+            "number": 10,
+            "startedAt": "2026-11-05T23:56:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:56:53Z",
+            "conclusion": "success",
+            "name": "Install Chromium",
+            "number": 11,
+            "startedAt": "2026-11-05T23:56:34Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:57:14Z",
+            "conclusion": "success",
+            "name": "E2E (Chromium)",
+            "number": 12,
+            "startedAt": "2026-11-05T23:56:53Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:57:14Z",
+            "conclusion": "skipped",
+            "name": "Upload E2E failure artifacts",
+            "number": 13,
+            "startedAt": "2026-11-05T23:57:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:57:14Z",
+            "conclusion": "success",
+            "name": "Validate Compose",
+            "number": 14,
+            "startedAt": "2026-11-05T23:57:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:57:14Z",
+            "conclusion": "success",
+            "name": "Post Setup Node.js",
+            "number": 26,
+            "startedAt": "2026-11-05T23:57:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:57:15Z",
+            "conclusion": "success",
+            "name": "Post Checkout",
+            "number": 27,
+            "startedAt": "2026-11-05T23:57:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:57:19Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 28,
+            "startedAt": "2026-11-05T23:57:15Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-11-05T23:57:19Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 29,
+            "startedAt": "2026-11-05T23:57:19Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624/job/127614004851"
+      }
+    ]
+  }
+]

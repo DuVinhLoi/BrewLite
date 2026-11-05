@@ -27,9 +27,10 @@ Production: Vercel Root Directory `apps/web`, `NEXT_PUBLIC_API_URL=https://brewl
 
 ```powershell
 npm.cmd run lint
+npm.cmd test
 npm.cmd run typecheck
 npm.cmd run build
 ```
 
-Toàn bộ bộ test, cấu hình và dependency test được xóa theo yêu cầu chủ dự án sau khi kiểm chứng; [báo cáo kho](../../docs/inventory-verification.md) ghi kết quả trước khi xóa. [Ma trận](../../docs/traceability-matrix.md) giữ các mã kiểm chứng lịch sử.
+PR-2 khôi phục Vitest + Testing Library/jsdom (`npm test`) và Playwright Chromium (`npm run test:e2e`). E2E cần DB test đã migrate/seed, URL loopback và secret giả; [hướng dẫn](../../tests/README.md) nêu lệnh và guard. UI menu dùng hai nhãn Còn hàng/Hết hàng; số ly và nguyên liệu giới hạn thuộc dữ liệu tính toán, không hiển thị trên menu/chi tiết. UNIT-T12 chỉ kiểm helper `stockBadge` cũ; UNIT-T14/T15 kiểm giao diện hiện tại. [Ma trận](../../docs/traceability-matrix.md#phan-b) phân biệt test hiện tại với [hồ sơ cleanup tháng 10](../../docs/inventory-verification.md).
 PWA chỉ cần web app manifest theo AC-N10.1; service worker không thuộc yêu cầu minimum.

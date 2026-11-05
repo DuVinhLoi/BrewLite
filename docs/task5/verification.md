@@ -1,7 +1,26 @@
 # Task 5 — Kiểm chứng và bàn giao
 
-Branch `feat/assignment2-task5-delivery`, worktree `C:/BrewLite-a2-Task5`. Bằng chứng run/commit hiện tại được ghi ở [report-task5](../planning/handoff/2026-10-21-req-sync/report-task5.md); release/tag/smoke/rollback ở [release notes](release-notes.md).
+Branch hiện tại `a2/restore-tests`, worktree `C:/BrewLite-a2-Task5`. Phần PR-2 dưới đây ghi kết quả khôi phục; các mục sau giữ hồ sơ lịch sử của `feat/assignment2-task5-delivery`. Bằng chứng Task 5 tháng 10 ở [report-task5](../planning/handoff/2026-10-21-req-sync/report-task5.md); release/tag/smoke/rollback ở [release notes](release-notes.md).
 PASS chỉ dùng cho lệnh đã chạy; kết quả contributor không thay thế kiểm tích hợp hiện tại.
+
+## Khôi phục test PR-2 — 06/11/2026
+
+Suite khôi phục trên nhánh `a2/restore-tests`, baseline kiểm local `4e711a8a845c36c11ec09b2ca6dc928a196c495c`, đã tích hợp SRS/main `5834af4`. Đây là kết quả local được ghi nhận trong các lượt task, **không phải run CI mới**. Lệnh/cấu hình DB riêng và fake secret: [tests/README.md](../../tests/README.md).
+
+| Tầng | Lệnh từ root | Kết quả local ghi nhận |
+|---|---|---|
+| Unit API | `npm.cmd --prefix apps/api test` | 219 pass, 0 fail, 0 skip |
+| Unit/component web | `npm.cmd --prefix apps/web test` | 74 pass, 0 fail, 0 skip |
+| HTTP integration | `node --test --test-concurrency=1 'tests/integration/*.test.mjs'` | 21 ca: 20 pass, 0 fail, 1 skip INT-T11b |
+| Chromium E2E | `npm.cmd --prefix apps/web run test:e2e` | 5 pass, 0 fail |
+
+INT-T11b giữ yêu cầu Barista hủy PENDING phải 403 nhưng baseline trả 409; skip có lý do và [PR31 sửa runtime riêng](https://github.com/DuVinhLoi/BrewLite/pull/31). INT-T11a kiểm PAID → PREPARING → READY → COMPLETED vẫn chạy. Không coi skip là pass; khi tích hợp PR31 phải bỏ skip và chạy lại. Web đã theo SRS của PR30 (hai nhãn Còn hàng/Hết hàng, capacity giới hạn input/giỏ); bốn skip giao diện trước đó không còn áp dụng. UNIT-T12 chỉ kiểm helper cũ, không chứng minh nhãn UI.
+
+Workflow đã khai báo Install/Lint/Unit/Migrate/seed ×2/Build/Integration/E2E/Compose trên PostgreSQL 16, fake secret và loopback; giữ trace khi E2E lỗi và upload thư mục kết quả khi có. [PR32/run 42132213624](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624) success trên đúng head `4e711a8`, cùng số pass/skip như bảng; job `2026-11-05T23:48:46Z` → `23:52:01Z`, 195 giây (3 phút 15). [PR33/run 42132338210](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132338210) cố ý sai UNIT-T03 (124001 thay 124000) đã failure, API unit 218 pass/1 fail. GitHub API ghi BLOCKED/REVIEW_REQUIRED; ảnh public chưa chứng minh riêng nút merge bị chặn do test. Đã đủ ba lượt CI xanh liên tiếp trên commit `4e711a8` (attempts 1–3). **Còn chờ:** CI trên head cuối và bằng chứng required `ci` chặn merge khi các điều kiện khác đủ. Chưa đo phần thời gian tăng so với CI cũ. Theo dõi tại [hồ sơ CI](../evidence/ci/README.md); không dùng Delivery đã xanh trước khôi phục làm minh chứng suite mới.
+
+Cutover PR29 và sandbox smoke đã thực hiện riêng: menu 8 món, demo login/`/inventory`, một đơn thanh toán thật qua VNPay sandbox được API xác nhận PAID, sau đó nhân viên chuyển PREPARING/READY/COMPLETED **qua API**. IDs và giới hạn tại [release notes](release-notes.md#cutover-và-production-đã-kiểm-chứng--tháng-112026). Không tuyên bố có màn hình nhân viên đổi trạng thái đơn.
+
+## Hồ sơ lịch sử tháng 10
 
 ## Bằng chứng đã thực hiện
 
