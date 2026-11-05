@@ -96,7 +96,7 @@ Quét file/script và scope của diff dùng helper tạm ngoài repo; CI đư�
 
 ## Demo và giới hạn
 
-Theo [runbook](inventory-runbook.md): cài dependency → generate → migrate → seed → đăng nhập BARISTA → `/inventory` → nhập Matcha 20g, sữa không đường 2000ml, siro 200ml kèm lý do → xem Matcha S còn 6 ly → CUSTOMER đặt và thanh toán hoặc hủy.
+Theo [runbook](inventory-runbook.md): cài dependency → generate → migrate → seed → đăng nhập BARISTA → `/inventory` → nhập Matcha 20g, sữa không đường 2000ml, siro 200ml kèm lý do → gọi `POST /inventory/availability` để thấy Matcha S có `cups=6` (trang `/inventory` không còn bảng số ly) → CUSTOMER đặt và thanh toán hoặc hủy.
 
 M=1.25×S, L=1.5×S, ceil nguyên liệu miếng và topping 20g là giả định demo. Không tự hết hạn đơn bỏ dở; không sản xuất theo mẻ; nước/đá không giới hạn. Số menu là ước tính độc lập. Production chưa triển khai, Docker/Compose chưa chạy trong môi trường local này; CI từ xa chưa chạy cho thay đổi chưa commit.
 
