@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { InventoryItem } from '@/lib/inventory';
-import { available, deferred, json, mockApi, options, product, renderShop } from '@/test/helpers';
+import { available, deferred, json, line, mockApi, options, product, renderShop } from '@/test/helpers';
 import { ProductDetail } from './ProductDetail';
 
 function catalog(path: string) {
@@ -40,14 +40,25 @@ describe('UNIT-T15 product choices (FR-03, FR-04)', () => {
     expect(screen.getByRole('button', { name: 'Thêm vào giỏ' })).toBeEnabled();
   });
   it('checks the whole proposed cart before adding and persists the selected line', async () => {
-    mockApi((path, init) => path === '/inventory/availability' ? json(available(JSON.parse(String(init.body)).items)) : catalog(path));
-    renderShop(<ProductDetail id="cappuccino" />);
+    const requests: InventoryItem[][] = [];
+    mockApi((path, init) => {
+      if (path !== '/inventory/availability') return catalog(path);
+      const { items } = JSON.parse(String(init.body)) as { items: InventoryItem[] };
+      requests.push(items);
+      return json(available(items));
+    });
+    renderShop(<ProductDetail id="cappuccino" />, [line]);
     const add = await screen.findByRole('button', { name: 'Thêm vào giỏ' });
     await waitFor(() => expect(add).toBeEnabled());
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Số lượng' }), { target: { value: '2' } });
+    requests.length = 0;
     fireEvent.click(add);
     expect(await screen.findByText('Đã thêm vào giỏ hàng')).toBeInTheDocument();
-    await waitFor(() => expect(JSON.parse(localStorage.getItem('brewlite-cart')!)).toEqual([{ key: '["cappuccino","M",[]]', productId: 'cappuccino', name: 'Cappuccino', size: 'M', toppings: [], quantity: 2, unitPrice: 50000 }]));
+    expect(requests).toContainEqual([
+      { productId: 'cappuccino', size: 'L', toppings: ['Trân châu'], quantity: 2 },
+      { productId: 'cappuccino', size: 'M', toppings: [], quantity: 2 },
+    ]);
+    await waitFor(() => expect(JSON.parse(localStorage.getItem('brewlite-cart')!)).toEqual([line, { key: '["cappuccino","M",[]]', productId: 'cappuccino', name: 'Cappuccino', size: 'M', toppings: [], quantity: 2, unitPrice: 50000 }]));
   });
   it('blocks adding when the recipe is unavailable', async () => {
     mockApi((path, init) => {

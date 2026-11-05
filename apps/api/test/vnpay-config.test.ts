@@ -39,6 +39,7 @@ describe('UNIT-T02 VNPay configuration', () => {
         const warning = mock.method(Logger.prototype, 'warn', () => {});
         assert.doesNotThrow(() => new CheckoutModule());
         assert.equal(warning.mock.callCount(), 1);
+        assert.equal(warning.mock.calls[0].arguments.length, 1, 'Warnings must not log secret values in extra arguments');
         const message = String(warning.mock.calls[0].arguments[0]);
         assert.match(message, new RegExp(missing));
         for (const configured of Object.values(fake)) assert.equal(message.includes(configured), false);
@@ -61,6 +62,7 @@ describe('UNIT-T02 VNPay configuration', () => {
     const warning = mock.method(Logger.prototype, 'warn', () => {});
     assert.doesNotThrow(() => new CheckoutModule());
     assert.equal(warning.mock.callCount(), 1);
+    assert.equal(warning.mock.calls[0].arguments.length, 1, 'Warnings must not log secret values in extra arguments');
     const message = String(warning.mock.calls[0].arguments[0]);
     for (const name of ['VNP_TMN_CODE', 'VNP_HASH_SECRET', 'WEB_URL']) assert.match(message, new RegExp(name));
     for (const configured of Object.values(fake)) assert.equal(message.includes(configured), false);
