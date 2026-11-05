@@ -1,0 +1,17 @@
+{
+  "isDraft": true,
+  "mergeStateStatus": "BLOCKED",
+  "reviewDecision": "REVIEW_REQUIRED",
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-11-05T23:51:22Z",
+      "conclusion": "FAILURE",
+      "detailsUrl": "https://github.com/DuVinhLoi/BrewLite/actions/runs/42132338210/job/127611782049",
+      "name": "ci",
+      "startedAt": "2026-11-05T23:49:46Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    }
+  ]
+}

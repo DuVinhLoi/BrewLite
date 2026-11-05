@@ -1,0 +1,12 @@
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3736786Z   ✖ prices the SRS two Cappuccino L + pearls example at 124000 VND (3.841007ms)
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3872124Z ℹ tests 219
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3872530Z ℹ pass 218
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3872727Z ℹ fail 1
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3873153Z ℹ skipped 0
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3874630Z test at test/pricing.test.ts:2:2126
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3875174Z ✖ prices the SRS two Cappuccino L + pearls example at 124000 VND (3.841007ms)
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3875738Z   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3876317Z   124000 !== 124001
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3880815Z     actual: 124000,
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3881026Z     expected: 124001,
+ci	Unit Test (API and web)	2026-11-05T23:51:20.3891892Z ##[error]Process completed with exit code 1.

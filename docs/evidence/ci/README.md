@@ -6,7 +6,7 @@ PR [#32](https://github.com/DuVinhLoi/BrewLite/pull/32), nhánh `a2/restore-test
 
 PR [#33](https://github.com/DuVinhLoi/BrewLite/pull/33) cố ý sai kỳ vọng UNIT-T03 (`124001` thay vì `124000`); [run 42132338210](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132338210) **failure**, unit API 218 pass/1 fail. API GitHub ghi `mergeStateStatus=BLOCKED`, `reviewDecision=REVIEW_REQUIRED`; trạng thái này gồm cả thiếu review, chưa chứng minh riêng nút merge bị chặn chỉ vì test. Ảnh public không có nút merge của người đăng nhập. Không merge PR lỗi.
 
-[Hồ sơ run/log/ảnh mới](2026-11-06-restored-tests.md) ghi metadata và giới hạn. **Còn chờ:** đủ ba run xanh liên tiếp cùng phạm vi, kiểm head cuối và bằng chứng tách rõ required `ci` chặn merge khi đủ các điều kiện khác. Đã đo thời gian tuyệt đối 195 giây; chưa đo phần tăng so với CI cũ. Skip không được tính pass, CI success không chứng minh PR31 đã sửa trên main.
+[Hồ sơ run/log/ảnh mới](2026-11-06-restored-tests.md) ghi metadata và giới hạn. Đã đủ ba lượt xanh liên tiếp trên cùng commit `4e711a8` (attempts 1–3). **Còn chờ:** kiểm head cuối và bằng chứng tách rõ required `ci` chặn merge khi đủ các điều kiện khác. Đã đo thời gian tuyệt đối 195 giây; chưa đo phần tăng so với CI cũ. Skip không được tính pass, CI success không chứng minh PR31 đã sửa trên main.
 
 ## Hồ sơ lịch sử — 21/10/2026
 
