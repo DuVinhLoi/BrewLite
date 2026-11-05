@@ -65,7 +65,7 @@ endif
 if (Missing recipe or aggregate shortage?) then (E2)
   :ROLLBACK; 409 RECIPE_UNAVAILABLE / OUT_OF_STOCK;
   |Next.js UI|
-  :Keep cart; show shortage; link to edit cart;
+  :Keep cart; report changed ingredients; link to edit cart;
   stop
 else (fits)
   |NestJS API|

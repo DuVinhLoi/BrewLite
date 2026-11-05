@@ -49,7 +49,7 @@ Nhánh `feat/ingredient-inventory`, baseline `73a6ccb`. Đây là hướng dẫn
 
 ## Nhập kho và demo Matcha
 
-Trang `/inventory` chỉ hiển thị số dư nguyên liệu, nhập kho/kiểm đếm và lịch sử biến động. Theo yêu cầu điều chỉnh giao diện, đã bỏ bảng sửa công thức và bảng số ly có thể bán; công thức cố định vẫn phục vụ tính nguyên liệu cho đơn hàng. Phép tính số ly bên dưới là ví dụ kiểm chứng API; khách xem khả dụng tại chi tiết món và giỏ hàng.
+Trang `/inventory` chỉ hiển thị số dư nguyên liệu, nhập kho/kiểm đếm và lịch sử biến động. Theo yêu cầu điều chỉnh giao diện, đã bỏ bảng sửa công thức và bảng số ly có thể bán; công thức vẫn phục vụ tính nguyên liệu cho đơn hàng và sửa được qua `PUT /inventory/recipes`. Phép tính số ly bên dưới là ví dụ kiểm chứng API; khách thấy kết quả kiểm khả dụng qua ô số lượng và nút "Thêm vào giỏ" ở chi tiết món, và qua thông báo thiếu nguyên liệu ở giỏ hàng.
 
 Trên **DB demo sạch** sau seed, đăng nhập Barista bằng `POST /auth/login`; dùng accessToken làm Bearer token, không ghi token vào repo/log. Nguyên liệu tồn tại có thể đọc từ `GET /inventory/ingredients`. Với từng request, API đòi JWT Barista; Customer bị 403, Guest 401.
 

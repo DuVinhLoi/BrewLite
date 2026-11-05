@@ -76,7 +76,7 @@ else DTO accepted
       DB --> API : Recipe unavailable or aggregate ingredient shortage
       API -> DB : ROLLBACK (no Order, OrderItem, snapshot or balance change)
       API --> UI : 409 RECIPE_UNAVAILABLE / OUT_OF_STOCK + ingredient details
-      UI --> Customer : Back to cart; highlight insufficient items
+      UI --> Customer : Keep cart; report changed ingredients; link to edit cart
     else All recipes valid and aggregate demand fits
       API -> DB : Increase Ingredient.reserved; INSERT Order(PENDING, inventoryTracked=true)\nINSERT OrderItems and immutable aggregate OrderIngredient snapshot
       DB --> API : COMMIT T1; orderId, total
