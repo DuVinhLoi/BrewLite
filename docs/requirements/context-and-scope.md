@@ -78,7 +78,7 @@ Quản lý trạng thái đơn (FR-23/24), chủ đơn hủy đơn chưa trả (
 
 Đi kèm là các yêu cầu phi chức năng (tốc độ, bảo mật, dễ dùng, triển khai): NFR-01 đến NFR-20.
 
-Tóm lại cho người ngoài nhóm, hệ thống **làm được** những việc sau: khách chưa có tài khoản xem menu và bỏ món vào giỏ; khách có tài khoản đặt đơn, trả tiền qua VNPay sandbox và xem lại đơn; nhân viên quầy đổi trạng thái đơn qua API và quản lý nguyên liệu, công thức trên màn `/inventory`. Tình trạng production và CI/CD thực tế xem ở báo cáo triển khai, đừng suy ra từ tài liệu đặc tả này.
+Tóm lại cho người ngoài nhóm, hệ thống **làm được** những việc sau: khách chưa có tài khoản xem menu và bỏ món vào giỏ; khách có tài khoản đặt đơn, trả tiền qua VNPay sandbox và xem lại đơn; nhân viên quầy đổi trạng thái đơn qua API và quản lý nguyên liệu trên màn `/inventory`, còn công thức sửa qua API. Tình trạng production và CI/CD thực tế xem ở báo cáo triển khai, đừng suy ra từ tài liệu đặc tả này.
 
 ### 3.2 Phạm vi mở rộng
 

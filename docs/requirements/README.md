@@ -18,7 +18,7 @@ Task 1 được nghiệm thu dựa trên tài liệu yêu cầu, hai use-case di
 | `srs.md` | SRS rút gọn: yêu cầu `FR-xx`, `NFR-xx`, mức ưu tiên MoSCoW, tiêu chí chấp nhận kiểm chứng được cho từng yêu cầu | §3.2 |
 | `use-case-overview.puml` và `.svg` | Use-case diagram tổng quát của toàn hệ thống (nhúng trong SRS) | §3.2 mục 5 |
 | `uc-checkout.md` | Đặc tả use-case trọng tâm "Đặt và thanh toán đơn hàng": actor, điều kiện kích hoạt, trước/sau, luồng chính, luồng thay thế, ngoại lệ, mã yêu cầu liên quan | §3.3 |
-| `uc-inventory.md` | UC-10: quản lý số dư nguyên liệu, nhập/kiểm kê, công thức và số ly còn bán được; FR-29 | BREW-INVENTORY-01 |
+| `uc-inventory.md` | UC-10: quản lý số dư nguyên liệu, nhập/kiểm kê, công thức và nhãn còn hàng/hết hàng; FR-29 | BREW-INVENTORY-01 |
 | `uc-checkout.puml` và `.svg` | Use-case diagram cho phạm vi use-case đã chọn | §3.3 |
 
 Các nhóm yêu cầu tối thiểu trong SRS: menu, chi tiết sản phẩm, giỏ hàng, xác thực, đặt đơn, thanh toán, lịch sử đơn, quản lý trạng thái đơn, hiệu năng, bảo mật, tính khả dụng, khả năng triển khai.

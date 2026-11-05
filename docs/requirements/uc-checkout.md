@@ -72,7 +72,7 @@ Barista không tham gia use-case này (xem UC-07 ở `srs.md` mục 2.3). Các t
 
 - Có đúng 1 `Order` của Customer ở trạng thái `PAID`, kèm các `OrderItem` khớp với giỏ; `Order.total` do máy chủ tính (BR-01).
 - Có đúng 1 `Payment` `SUCCESS` cho đơn, do IPN hoặc QueryDR đã xác thực quyết định (BR-11). Payment này lưu `Idempotency-Key`, mã giao dịch VNPay (`gatewayTxnNo`), `bankCode` và `paidAt`. Các `Payment` trước đó của đơn (nếu có) đều `FAILED`; một đơn không bao giờ có hai `Payment PENDING` (BR-10).
-- Đơn mới có bản chụp nguyên liệu OrderIngredient không đổi về sau. Khi trả thành công, onHand và reserved giảm đúng theo bản chụp, đúng một lần; menu tính lại số ly từ available. Đơn cũ (legacy, marker false) vẫn theo vòng đời Product.stock như trước.
+- Đơn mới có bản chụp nguyên liệu OrderIngredient không đổi về sau. Khi trả thành công, onHand và reserved giảm đúng theo bản chụp, đúng một lần; nhãn còn hàng/hết hàng trên menu tính lại từ available. Đơn cũ (legacy, marker false) vẫn theo vòng đời Product.stock như trước.
 - Giỏ hàng trên trình duyệt được xóa khi DB đã xác nhận đơn đã trả; Customer thấy màn xác nhận có mã đơn.
 
 **Hậu điều kiện khi thất bại** (chi tiết từng nhánh ở mục 7; bảng dưới chỉ tổng hợp):
@@ -196,7 +196,7 @@ Ba nhánh lỗi bắt buộc theo đề A2 §4.1 là **E1, E2, E3**; E4 là yêu
 - **Phản ứng:**
   1. API hoàn tác (rollback): không có Order/OrderItem/OrderIngredient mới và không đổi bất kỳ onHand/reserved nào.
   2. API trả 409 OUT_OF_STOCK kèm details từng nguyên liệu `{ingredientId,name,unit,requested,available}` (lượng ở dạng string), hoặc RECIPE_UNAVAILABLE nếu thiếu công thức.
-  3. UI báo nguyên liệu thiếu và lượng cần/còn, ví dụ "Matcha: cần 21 g, còn 20 g", đưa khách về giỏ và đánh dấu dòng liên quan (AC-F13.4).
+  3. UI báo nguyên liệu đã thay đổi, hiện liên kết "Sửa giỏ hàng" và giữ nguyên giỏ. Về giỏ, lần kiểm availability báo nguyên liệu thiếu và lượng cần/còn, ví dụ "Matcha: cần 21 g, còn 20 g" (AC-F13.4).
   4. Customer sửa số lượng hoặc xóa món rồi bắt đầu lại từ bước 1.
 - **Kết quả:** không có đơn mới trong lịch sử (AC-F13.5); không bao giờ bán quá tồn kho, kể cả khi nhiều người đặt cùng lúc (AC-F13.3).
 - **Yêu cầu:** FR-13, NFR-13.
