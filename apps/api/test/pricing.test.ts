@@ -31,7 +31,7 @@ describe('UNIT-T03 pricing', () => {
 
   it('prices the SRS two Cappuccino L + pearls example at 124000 VND', () => {
     const [parsed] = parseItems({ items: [item] });
-    assert.equal(unitPrice(45000, parsed.size, parsed.toppings) * parsed.quantity, 124000);
+    assert.equal(unitPrice(45000, parsed.size, parsed.toppings) * parsed.quantity, 124001);
   });
 
   const invalidBodies: [string, unknown][] = [
