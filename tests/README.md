@@ -95,10 +95,10 @@ including duplicate product/ingredient/recipe and recipe-line detection.
 The suite covers API-T01–API-T05 and INT-T01–INT-T15. INT-T01 sends the normal
 order DTO and checks server-computed prices. INT-T02 rejects client `total` and
 `unitPrice` fields per SRS AC-F12.3; these fields must not be silently accepted.
-INT-T11b currently retains its required403 assertion but is narrowly skipped
-pending [the dedicated Barista cancellation fix (PR31)](https://github.com/DuVinhLoi/BrewLite/pull/31):
-the baseline API returns409. INT-T11a paid progression remains enabled. Remove
-the skip when that runtime fix is integrated; other failures remain failures.
+INT-T11b retains its required403 assertion. The restoration-only branch temporarily
+skips it while the baseline API returns409; [the dedicated fix (PR31)](https://github.com/DuVinhLoi/BrewLite/pull/31)
+enables it again. On this fix branch all21 HTTP tests pass without skips, including
+INT-T11a paid progression and INT-T11b cancellation permissions. Other failures remain failures.
 
 When finished, stop the test database without removing its audit data:
 

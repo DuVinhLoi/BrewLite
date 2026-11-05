@@ -167,9 +167,7 @@ test('INT-T11a: Barista fulfills paid orders in sequence and rejects invalid tra
   }
 });
 
-test('INT-T11b: Barista cannot cancel an unpaid order', {
-  skip: 'Runtime returns 409 instead of required 403; dedicated fix: https://github.com/DuVinhLoi/BrewLite/pull/31',
-}, async (t) => {
+test('INT-T11b: Barista cannot cancel an unpaid order', async (t) => {
   const f = await scenario(t);
   const unpaid = await createOrder(f.customer);
   const before = await snapshot(f);
