@@ -16,9 +16,11 @@ describe('UNIT-T14 product card (FR-01)', () => {
     expect(screen.getByText('Hết hàng')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Thêm vào giỏ' })).toBeDisabled();
   });
-  // AC-F01.3: current card hides the computed low-stock label. Fix: https://github.com/DuVinhLoi/BrewLite/pull/30
-  it.skip.each([1, 5])('shows the low-stock warning at %i cups (AC-F01.3)', (stock) => {
+  // AC-F01.3 revised by merged PR30: customers see availability, not cup counts.
+  it.each([1, 5])('shows only in-stock availability for positive stock %i (AC-F01.3)', (stock) => {
     render(<ProductCard product={{ ...product, stock }} />);
-    expect(screen.getByText(`Sắp hết, còn ${stock}`)).toBeInTheDocument();
+    expect(screen.getByText('Còn hàng')).toBeInTheDocument();
+    expect(screen.queryByText(/Sắp hết|còn \d+/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thêm vào giỏ' })).toBeEnabled();
   });
 });

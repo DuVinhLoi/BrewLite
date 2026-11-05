@@ -105,7 +105,7 @@ Web/API production dùng HTTPS 443; IPN của VNPay bắt buộc gọi vào API 
 
 ### NFR-12: Trình duyệt và E2E
 
-Luồng menu → giỏ → đăng nhập → thanh toán → xác nhận và inventory được kiểm chứng trước bàn giao. Theo yêu cầu cuối, bộ test dự án được loại khỏi bản phân phối sau kiểm chứng; các lệnh/test ID và mục §7 dưới đây mô tả kế hoạch hoặc bằng chứng lịch sử, không cam kết suite còn được giao. Xem inventory-verification.md cho kết quả thực chạy.
+Luồng menu → giỏ → đăng nhập → thanh toán → xác nhận phải được kiểm bằng E2E-T01 trên Chromium theo AC-N12.1. Q1/Q2 duyệt khôi phục test trong PR-2; hiện đây là thiết kế chờ hiện thực, chưa có bằng chứng run mới. Việc gỡ test và kết quả trước cleanup tại inventory-verification.md là lịch sử.
 
 ### NFR-13: Transaction và tồn kho
 
@@ -117,17 +117,17 @@ Tạo đơn/OrderItem/OrderIngredient/tăng reserved là một transaction; khó
 
 ### NFR-16: Migration và seed
 
-Prisma migration được version trong repo và chỉ thêm bảng/cột khi phát hành, không xóa/đổi tên cột, để bảo toàn dữ liệu; với kho nguyên liệu, rollback còn phải dùng image hiểu inventoryTracked/snapshot theo ADR-006. Container API khởi động bằng `npx prisma migrate deploy && node dist/main.js`; migration lỗi thì API không bắt đầu phục vụ. Migration được kiểm trên DB cô lập trước cleanup; bản cuối không giao bộ test, không nối CI vào DB production để kiểm thử.
+Prisma migration được version trong repo và chỉ thêm bảng/cột khi phát hành, không xóa/đổi tên cột, để bảo toàn dữ liệu; với kho nguyên liệu, rollback còn phải dùng image hiểu inventoryTracked/snapshot theo ADR-006. Container API khởi động bằng `npx prisma migrate deploy && node dist/main.js`; migration lỗi thì API không bắt đầu phục vụ. Kiểm migration/seed trước cleanup là lịch sử. PR-2 dự kiến kiểm lại trên DB cô lập có tên khớp `^brewlite_(ci|test)(_[a-z0-9]+)?$`, seed hai lần và INT-T15; không nối CI vào DB production để kiểm thử.
 
 Seed tạo 8 sản phẩm, size/topping, nguyên liệu missing ở số dư 0 và công thức demo; demo users chỉ khi SEED_DEMO_USERS=true. Upsert update rỗng bảo toàn số dư và công thức đã sửa, chạy lại không tăng bản ghi. Nhập số đếm thật qua movement API, không dùng seed reset kho. Không seed khuyến mãi; không chạy seed mỗi restart. Preflight legacy và rollback tương thích theo [runbook](../inventory-runbook.md).
 
 ### NFR-17: CI
 
-Bản phân phối cuối chạy Install → Lint → Build cho API/web; các suite unit/integration/E2E đã được loại theo yêu cầu sau kiểm chứng. Check `ci` vẫn là gate chất lượng cấu hình trong workflow. Bằng chứng test trước cleanup được giữ tại inventory-verification.md và hồ sơ Task 4/5, không phải lệnh chạy từ bản cuối.
+Pipeline nghiệm thu dự kiến PR-2: Install → Lint → Unit Test (API, web) → Migration/seed ×2 trên DB test riêng → Build → Integration Test → E2E Chromium → Compose validation; bước lỗi chặn pipeline. Theo Q3 trong [báo cáo P1](../planning/handoff/2026-11-owner-p1-report.md), `main` yêu cầu check `ci` strict và một approval, kể cả admin. Các tầng test và minh chứng run xanh/đỏ mới còn chờ hiện thực; hồ sơ trước cleanup là lịch sử.
 
 ### NFR-18, NFR-19: CD, rollback và bàn giao
 
-Tag `a2-v*` chạy lint/build (test suite đã loại sau kiểm chứng) → build/push image SHA lên GHCR → deploy Render + Vercel. Migration chạy trong startup API. Sau cả hai deploy, smoke test `/health` (200 và `database = "up"`), `/products` và trang web; mỗi bước retry tối đa 10 phút, quá hạn pipeline đỏ và dừng.
+Push `main` hoặc tag `a2-v*` chạy lint + test qua quality gate gọi lại CI → build/push image SHA lên GHCR → deploy Render + Vercel (thiết kế PR-2; bước test còn chờ hiện thực). Migration chạy trong startup API. Sau cả hai deploy, smoke test `/health` (200 và `database = "up"`), `/products` và trang web; mỗi bước retry tối đa 10 phút, quá hạn pipeline đỏ và dừng.
 
 Rollback chỉ về API hiểu marker/snapshot (ADR-006); bằng deploy hook Render với `imgURL` là image SHA trước và `vercel rollback` về web trước, sau đó chạy lại smoke test (AC-N18.3). Task 5 ghi URL HTTPS, ngày hết hạn DB free và minh chứng diễn tập trong README/`docs/deployment.md`; NFR-19 yêu cầu người ngoài nhóm chạy được theo hướng dẫn.
 
@@ -165,14 +165,15 @@ Các biến `VNP_*`, `WEB_URL`, `PAYMENT_PROVIDER` đặt theo kế hoạch VNPa
 | [ADR-004](adr/004-vercel-render.md): Vercel + Render + GHCR | CDN cho web, container API quản lý sẵn, image SHA chọn lại được | Hai nền tảng/secret/CORS; Render free cold start và DB có hạn dùng |
 | [ADR-005](adr/005-idempotency-and-optimistic-lock.md): API replay `SUCCESS`/`PENDING`, một `Payment PENDING` mỗi đơn, transaction kho | Retry thành công không gọi VNPay lại, retry lúc đang chờ trả URL cũ; partial unique index chặn hai giao dịch chờ cho một đơn (BR-05, BR-10); tránh tồn âm | Cần khóa đơn và transaction ngắn, HTTP ra VNPay phải ngoài transaction; đơn bỏ dở giữ nguyên liệu vì chưa có job tự hủy |
 | [ADR-007](adr/007-vnpay-sandbox.md): tích hợp VNPay sandbox thay Payment simulator (ADR-005 §B) | Đáp ứng yêu cầu nghiệm thu về cổng bên thứ ba; kết quả có chữ ký, kiểm chứng được qua IPN/QueryDR; không lưu số thẻ | Bất đồng bộ (đơn chờ kết quả), thêm secret, phụ thuộc sandbox và Render ngủ; tiền về muộn phải đối soát tay |
+| [ADR-008](adr/008-test-strategy.md): khôi phục bốn tầng test trong CI | Theo đề A2, kiểm wiring HTTP và luồng VNPay bằng secret giả, DB test riêng | Thêm dependency web và Chromium; thời gian CI tăng chưa đo, test dự kiến chưa phải PASS |
 | Next.js/PWA, ba trạng thái (§3–4) | Mobile-first, manifest và thông báo rõ khi API đang ngủ | Không hỗ trợ offline; phải kiểm viewport, hiệu năng và trạng thái lỗi |
 | JSON stdout, env và health (§5, ADR-004) | Dễ thu log, phát hiện DB lỗi; cấu hình tách khỏi mã | Cần lọc dữ liệu nhạy cảm và cấu hình platform; health không thay thế smoke toàn luồng |
 
 ## 7. Kiểm chứng thiết kế và trách nhiệm hiện thực
 
-- Task 3: render PlantUML, kiểm SVG, link nội bộ, thuật ngữ cũ và allowed paths. Script smoke tự động cũ đã xóa cùng bộ test; kết quả lịch sử ở [báo cáo kho](../inventory-verification.md). Kiểm tài liệu/sơ đồ không chứng minh runtime đáp ứng NFR.
-- Trước cleanup Task 4/5: kiểm domain và PostgreSQL thật cho rollback, cạnh tranh tồn, replay và seed hai lần; kết quả actual ở inventory-verification.md. Bộ suite không còn trong bản cuối.
-- Bằng chứng E2E Chromium trước cleanup ghi ở verification; bản cuối kiểm thủ công luồng chính, retry, giỏ/đơn và inventory theo runbook, không có lệnh npm test/E2E để chạy lại.
+- Task 3: render PlantUML, kiểm SVG, link nội bộ, thuật ngữ và allowed paths. Kiểm tài liệu/sơ đồ không chứng minh runtime đáp ứng NFR.
+- **Chiến lược PR-2 đã được Q1/Q2 duyệt, chờ hiện thực:** unit API (`node:test` + `tsx`), unit/component web (Vitest + Testing Library + jsdom), API/integration black-box HTTP (`node:test` + `fetch`), E2E Playwright/Chromium. Xem [ADR-008](adr/008-test-strategy.md) và [danh mục mã test](../traceability-matrix.md#phan-b). Integration/E2E dùng PostgreSQL riêng, secret giả và tự ký IPN/return độc lập với code ký của ứng dụng.
+- Kết quả domain/PostgreSQL/Chromium trước cleanup tại [inventory-verification.md](../inventory-verification.md) là **lịch sử**, không chứng minh suite PR-2 đạt. PR-2 phải ghi số pass/skip theo tầng, run URL/SHA, trace khi E2E lỗi và thời gian CI thực đo; test lộ bug áp dụng L2 (skip có lý do, sửa ở PR riêng).
 - Task 5/chủ repo: cấu hình branch protection, HTTPS, DB external access disabled, secret/CORS và log; lưu minh chứng smoke, rollback và URL production theo NFR-18/NFR-19.
 
 ## 8. Ánh xạ NFR sang thiết kế (đầu vào B10)
@@ -196,7 +197,7 @@ Bảng gồm **19 NFR chờ Task 3** (NFR-01–20 trừ NFR-06) theo card B10; N
 | NFR-14 | architecture.md §3, §5; ADR-003; Deployment-01 local | Compose startup và volume qua restart |
 | NFR-15 | architecture.md §4 `health`, §5; ADR-004; deployment.puml (smoke /health) | Health 200/503 theo kết nối DB |
 | NFR-16 | architecture.md §5; ADR-003; Deployment-01 startup API | Migrate DB trống, seed hai lần, migration chỉ thêm |
-| NFR-17 | architecture.md §5, §7; ADR-001; Deployment-01 CI | Install/Lint/Build; test evidence trước cleanup; check ci |
+| NFR-17 | architecture.md §5, §7; ADR-001; Deployment-01 CI | Install/Lint/Unit/Migration-seed/Build/Integration/E2E/Compose (dự kiến PR-2); check `ci`; minh chứng run mới còn chờ |
 | NFR-18 | architecture.md §5; ADR-004; Deployment-01 CD | Tag a2-v*, image SHA, smoke và rollback |
 | NFR-19 | architecture.md §5, §7; ADR-004; Deployment-01 production | URL HTTPS trong README và bàn giao |
 | NFR-20 | architecture.md §5; ADR-004; Deployment-01 Render logs | Schema JSON, LOG_LEVEL, lọc dữ liệu nhạy cảm |

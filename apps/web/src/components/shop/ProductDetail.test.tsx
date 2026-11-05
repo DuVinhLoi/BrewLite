@@ -72,21 +72,29 @@ describe('UNIT-T15 product choices (FR-03, FR-04)', () => {
     expect(screen.getByRole('button', { name: 'Thêm vào giỏ' })).toBeDisabled();
     expect(localStorage.getItem('brewlite-cart')).toBe('[]');
   });
-  // AC-F04.4: current detail hides the recipe-unavailable reason. Fix: https://github.com/DuVinhLoi/BrewLite/pull/30
-  it.skip('explains that a missing recipe is unavailable (AC-F04.4)', async () => {
+  it('keeps the existing cart when a new choice has no recipe (AC-F04.4)', async () => {
     mockApi((path, init) => {
       if (path !== '/inventory/availability') return catalog(path);
       const result = available(JSON.parse(String(init.body)).items, 0);
       return json({ ...result, canOrder: false, lines: result.lines.map((item) => ({ ...item, sellable: false, reason: 'Chưa có công thức hợp lệ cho lựa chọn này' })) });
     });
-    renderShop(<ProductDetail id="cappuccino" />);
-    expect(await screen.findByText('Chưa có công thức hợp lệ cho lựa chọn này')).toBeInTheDocument();
+    renderShop(<ProductDetail id="cappuccino" />, [line]);
+    await waitFor(() => expect(screen.getByRole('spinbutton', { name: 'Số lượng' })).toHaveAttribute('max', '0'));
+    expect(screen.getByRole('button', { name: 'Thêm vào giỏ' })).toBeDisabled();
+    expect(JSON.parse(localStorage.getItem('brewlite-cart')!)).toEqual([line]);
   });
-  // AC-F04.4: current detail hides cups and limiting ingredients. Fix: https://github.com/DuVinhLoi/BrewLite/pull/30
-  it.skip('shows available cups and the limiting ingredient (AC-F04.4)', async () => {
+  it('uses capacity to clamp excess quantity and rejects a fractional quantity within the limit (AC-F04.4)', async () => {
     mockApi((path, init) => path === '/inventory/availability' ? json(available(JSON.parse(String(init.body)).items, 3)) : catalog(path));
     renderShop(<ProductDetail id="cappuccino" />);
-    expect(await screen.findByText(/còn 3 ly/i)).toBeInTheDocument();
-    expect(screen.getByText(/Sữa/)).toBeInTheDocument();
+    const add = await screen.findByRole('button', { name: 'Thêm vào giỏ' });
+    await waitFor(() => expect(add).toBeEnabled());
+    const quantity = screen.getByRole('spinbutton', { name: 'Số lượng' });
+    expect(quantity).toHaveAttribute('max', '3');
+    fireEvent.change(quantity, { target: { value: '2.5' } });
+    expect(screen.getByText('Số lượng phải là số nguyên từ 1 đến 3')).toBeInTheDocument();
+    expect(add).toBeDisabled();
+    fireEvent.change(quantity, { target: { value: '4.5' } });
+    expect(quantity).toHaveValue(3);
+    expect(add).toBeEnabled();
   });
 });
