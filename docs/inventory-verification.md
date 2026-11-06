@@ -1,5 +1,7 @@
 # BREW-INVENTORY-01 — kết quả kiểm chứng và bàn giao
 
+> **Cập nhật 06/11/2026:** PR-2 đã khôi phục unit API/web, HTTP integration và Chromium E2E theo Q1/Q2 (Phần B kế hoạch cutover). Lệnh hiện tại ở [tests/README.md](../tests/README.md), mã test ở [ma trận Phần B](traceability-matrix.md#phan-b), kết quả local/skip và minh chứng CI ở [verification](task5/verification.md#khôi-phục-test-pr-2--06112026). Toàn bộ nội dung phía dưới là **hồ sơ lịch sử tháng 10**, gồm trạng thái trước cleanup và lần bàn giao sau cleanup; các câu “đã xóa test”, “chưa production” và đường dẫn bị xóa chỉ áp dụng thời điểm đó.
+
 Task: `BREW-INVENTORY-01`. Branch: `feat/ingredient-inventory`. Worktree: `C:\Users\baoth\orca\workspaces\BrewLite\jumbo`. Baseline/HEAD: `73a6ccb53691d5a6304d631761f1b7446a25701a`. Ngày kiểm chứng: 29/10/2026. Không commit, push hoặc triển khai production.
 
 Yêu cầu: [contract](inventory-contract.md), [kế hoạch](planning/2026-10-29-ingredient-inventory.md), [runbook](inventory-runbook.md), [checkpoint trước khi tiếp tục](checkpoints/2026-10-29-ingredient-inventory.md).

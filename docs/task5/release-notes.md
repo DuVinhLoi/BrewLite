@@ -1,5 +1,15 @@
 # BrewLite Assignment 2 — a2-v0.2.0-rc.1
 
+## Cutover và production đã kiểm chứng — tháng 11/2026
+
+- PR [#29](https://github.com/DuVinhLoi/BrewLite/pull/29) đã merge, SHA `5f092643301e816bd708ef5ee735dc57ec206c29`; [Delivery 41829844261](https://github.com/DuVinhLoi/BrewLite/actions/runs/41829844261) success. API Render `dep-dblickt9el5s73d4m2vg` live với image `5f09264`; web `dpl_9oLQoX8vHGDU8168xeKd7MJEWtPt` Ready/production, deploy qua CLI. Health ok/database up, products 8 món, smoke HTTPS đạt.
+- Ngày 04/11 đã hoàn tất một giao dịch **VNPay sandbox thật**, đơn demo `cmw240om40001fy21c1wuib91`, tổng 50.000 VND: menu → chi tiết L → giỏ → login → checkout CARD → sandbox → return → API xác nhận PAID; màn xác nhận khách hiển thị đã thanh toán. Sau demo login/kiểm màn `/inventory`, Barista gọi PATCH API lần lượt PREPARING → READY → COMPLETED trên đúng đơn đó. Không kiểm bằng màn hình đổi trạng thái nhân viên; không có top-up hay sửa công thức/DB, kho tiêu thụ một đồ uống demo. Lỗi listener trình duyệt ban đầu được phục hồi trên cùng đơn, không tạo đơn trùng; không lưu token, URL ký hoặc ảnh thẻ/OTP.
+- Production main gần nhất được xác minh: `5834af47a60a072694d42247279d342add8603c7` sau PR30; [Delivery 41984655740](https://github.com/DuVinhLoi/BrewLite/actions/runs/41984655740) success; Render `dep-dbm2mmjm8hqs73ei6odg` live, image `ghcr.io/duvinhloi/brewlite-api:5834af47a60a072694d42247279d342add8603c7`, digest `sha256:350a04260f508f0b29455c86fdbc7f97fc7dcca2e3150943f5a4e30f60428723`. Deployment ID web của lượt này chưa đối chiếu, không dùng ID PR29 làm ID mới.
+- PR30 giữ UI hai nhãn Còn hàng/Hết hàng; không có số ly/nguyên liệu giới hạn trên menu/chi tiết. PR-2 khôi phục test theo hợp đồng đó; [verification](verification.md#khôi-phục-test-pr-2--06112026) ghi local 219 API unit, 74 web, integration 20 pass/1 skip PR31, 5 E2E. [PR32/run 42132213624](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624) đã success với số pass/skip đó tại head `4e711a8`, 195 giây; PR33 cố ý sai UNIT-T03 đã đỏ. Chuỗi ba run xanh, CI head cuối và bằng chứng riêng required ci chặn merge còn chờ; [hồ sơ CI](../evidence/ci/README.md). Delivery phía trên chạy trước bộ test khôi phục.
+- DB Free vẫn hết hạn `2026-11-22T13:14:08.263534Z`. Hướng chuẩn bị dump/restore sang Free mới dự kiến 17/11; chưa thay DB, xóa dữ liệu hoặc phát sinh phí được phép. Cần chốt trước 15/11 và hoàn tất trước 18/11 theo kế hoạch; thao tác xóa hoặc tốn phí cần được chủ repo cho phép riêng.
+
+Các mục dưới đây là **hồ sơ lịch sử chuẩn bị cutover/tháng 10**; trạng thái “chưa merge”, “chưa có secret” hay “suite bị gỡ” chỉ áp dụng thời điểm ghi.
+
 ## Cutover sang main — chuẩn bị ngày 04/11/2026
 
 PR [#29](https://github.com/DuVinhLoi/BrewLite/pull/29) chuyển nguồn production sang `main`: Delivery chỉ nhận push `main`, tag `a2-v*` và chạy tay; PR vào `main` chỉ chạy CI. Đây là trạng thái chuẩn bị, chưa phải bằng chứng merge/deploy thành công. Các phần bên dưới giữ nguyên hồ sơ release tháng 10.

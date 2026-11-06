@@ -1,6 +1,6 @@
 # Đặc tả use-case trọng tâm: UC-04 Đặt và thanh toán đơn hàng (Task 1.3)
 
-> **BREW-INVENTORY-01:** đơn mới lưu bản chụp nguyên liệu (snapshot) lúc đặt; hủy đơn (cancellation) là Must. Bộ test tự động đã được gỡ sau khi kiểm chứng, theo yêu cầu bàn giao; các mã test và gợi ý kiểm dưới đây giữ lại để truy vết lịch sử, kết quả thực tế nằm ở [inventory-verification.md](../inventory-verification.md).
+> **BREW-INVENTORY-01:** đơn mới lưu bản chụp nguyên liệu (snapshot) lúc đặt; hủy đơn (cancellation) là Must. Việc gỡ bộ test sau kiểm chứng là lịch sử tại [inventory-verification.md](../inventory-verification.md). Q1/Q2 đã duyệt khôi phục test; mục 10 mô tả các mã dự kiến PR-2, chưa phải bằng chứng chạy.
 >
 > **Bản chốt Task 1**, theo phạm vi tối thiểu đã thống nhất ở PR #5 và đã rút gọn thêm (SRS mục 1.4).
 >
@@ -124,7 +124,7 @@ Barista không tham gia use-case này (xem UC-07 ở `srs.md` mục 2.3). Các t
 | 18 | NestJS API, Database | Trong một transaction giữ khóa đơn: đọc lại `Payment` và `Order`; nếu `vnp_ResponseCode = 00` và `vnp_TransactionStatus = 00` thì `Payment` → `SUCCESS` (lưu mã giao dịch, `bankCode`, `paidAt`), giảm onHand và reserved theo bản chụp, `Order` → `PAID`; commit; trả VNPay `RspCode = 00`. Nếu VNPay gửi lại IPN thì chỉ nhận `02`, kho không bị trừ lần hai |
 | 19 | VNPay sandbox, Browser | VNPay chuyển trình duyệt về trang `/payment/vnpay-return` của web. Trang này chỉ hiển thị, không quyết định kết quả (BR-11) |
 | 20 | Next.js UI, NestJS API | Gọi `GET /payments/vnpay/return` để kiểm chữ ký, rồi hỏi lại (poll) `GET /orders/:id` mỗi 2 giây, tối đa 30 giây. Nếu `Payment` vẫn `PENDING` (IPN chưa tới) thì gọi `POST /payments/:id/sync` một lần theo E10 |
-| 21 | Next.js UI | Khi DB xác nhận đơn `PAID`: hiện màn xác nhận (mã đơn, trạng thái "Đã thanh toán", món, tiền); xóa giỏ hàng; có nút "Theo dõi đơn". Use-case kết thúc thành công |
+| 21 | Next.js UI | Khi DB xác nhận đơn `PAID`: hiện màn xác nhận (mã đơn, trạng thái "Đã thanh toán", món, tiền); xóa giỏ hàng; màn này chính là trang chi tiết đơn để theo dõi tiếp. Use-case kết thúc thành công |
 
 ## 6. Luồng thay thế
 
@@ -373,17 +373,27 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để số hiệu các luồng kh�
 
 ## 10. Gợi ý test từ đặc tả
 
-A1 và E5 ngoài bản nộp nên không có test; A5 bắt buộc kiểm chứng trong BREW-INVENTORY-01 (FR-25 Must).
+Các mã dưới đây là **test dự kiến PR-2**, định nghĩa ở [ma trận, Phần B](../traceability-matrix.md#phan-b), không phải kết quả đã chạy. A1/E5 ngoài bản nộp; E8b đã bỏ. Bằng chứng trước cleanup tại [inventory-verification.md](../inventory-verification.md) giữ vai trò lịch sử.
 
-Mỗi luồng được chuyển thành test dựa trên chính tiêu chí chấp nhận trong `srs.md` (mã test cụ thể ghi ở ma trận truy vết khi Task 4–5 viết):
+| Luồng | Test dự kiến | Phạm vi và giới hạn cần kiểm |
+|---|---|---|
+| Chính, bước 1–21 | INT-T01, INT-T05, INT-T06, INT-T10, INT-T12; E2E-T01 | Giá server, reserve snapshot, URL ký, IPN thành công, return không ghi DB, xác nhận `PAID`, tổng tiền và lịch sử. E2E chặn redirect VNPay, tự ký IPN/return bằng secret giả |
+| A2 đổi phương thức | INT-T05; UNIT-T18 | URL theo phương thức; khi có payment chờ, khác phương thức phải bị chặn. Cần bổ sung nhánh đổi phương thức trước khi coi A2 được phủ đầy đủ |
+| A3 và E3 thất bại/thử lại | INT-T08; E2E-T03 | IPN thất bại có cặp `24/02`; giữ reserved, thử lại cùng orderId, thành công chỉ tiêu thụ một lần |
+| A4 rời màn thanh toán | UNIT-T11, UNIT-T16; E2E-T02 | Giữ giỏ; E2E-T02 chỉ kiểm giữ giỏ qua đăng nhập, chưa phủ riêng đóng/mở lại màn |
+| A5 hủy đơn chưa trả | INT-T09; UNIT-T20 | Nhả reserved đúng một lần, không đổi onHand; chặn hủy khi `Payment PENDING`; `PAID` bị từ chối. Kiểm thêm snapshot sau sửa công thức bằng INT-T14 |
+| A6 và E4 tiếp tục/replay | INT-T05, INT-T06; UNIT-T18 | Cùng key trả URL cũ; IPN lặp không trừ kho hai lần. Replay `SUCCESS`, key mới cùng phương thức và khác phương thức cần bổ sung ca riêng |
+| E1a chưa đăng nhập | API-T05; UNIT-T18; E2E-T02 | 401 không tạo đơn, chuyển `/login?next=/checkout`, quay về vẫn còn giỏ |
+| E1b hết token sau tạo đơn | UNIT-T18; INT-T01, INT-T05 | Cần thêm ca resume: đăng nhập lại đúng chủ đơn, giữ orderId/key, không thêm Order/reserve; kiểm đơn đã trả/đã hủy và tài khoản khác. E2E-T02 không thay thế E1b |
+| E2 thiếu nguyên liệu | INT-T03, INT-T04; E2E-T04 | 409 không đổi DB; tranh chấp lượng cuối không bán vượt tồn; sửa giỏ rồi đặt được |
+| E6 dữ liệu sai | INT-T02; UNIT-T03, UNIT-T17; INT-T05 | Trường lạ/giá client, size/số lượng sai, validate phía client; INT-T05 kiểm thiếu key; body thanh toán sai khác cần bổ sung |
+| E7 đơn không thể thanh toán | API-T05, INT-T12; INT-T05 | Role/quyền đọc là kiểm nền; cần thêm ca thanh toán đơn người khác, đơn lạ và trạng thái không cho thanh toán |
+| E8a mất phản hồi sau lưu | INT-T05, INT-T06 | Replay/idempotency; cần thêm ca ngắt phản hồi ở trình duyệt để chứng minh phục hồi UI |
+| E9 chữ ký/merchant/số tiền sai | UNIT-T01; INT-T07, INT-T10 | IPN sai chữ ký `97`, sai tiền `04`, tham chiếu lạ `01`; return sai `valid: false`, không đổi DB. Merchant sai cần ca riêng |
+| E10 IPN muộn/mất, QueryDR | UNIT-T01; kiểm tay theo [kế hoạch VNPay bước 7.7](../planning/2026-10-29-vnpay-payment-plan.md) | Unit chỉ phủ hàm thuần QueryDR; chưa có mã INT/E2E Phần B phủ `sync` và race IPN/QueryDR |
+| E11 payment hết hạn | UNIT-T01; INT-T09; kiểm tay theo [kế hoạch VNPay bước 7.7b](../planning/2026-10-29-vnpay-payment-plan.md) | Unit kiểm bảng quyết định/khoảng chờ; INT-T09 kiểm chặn hủy. Đóng `EXPIRED`, nhóm nghi ngờ/MISMATCH và lỗi provider cần kiểm DB riêng |
+| E12 tiền về sau trạng thái cuối | INT-T06; kiểm tay theo [kế hoạch VNPay bước 7.7f](../planning/2026-10-29-vnpay-payment-plan.md), [runbook đối soát](../deployment.md) | INT-T06 chỉ kiểm IPN lặp của payment thành công; chưa phủ riêng payment đã đóng/đơn hủy và warning đối soát |
+| E13 cấu hình/provider lỗi | UNIT-T02, UNIT-T18; kiểm tay theo [kế hoạch VNPay bước 7.7a](../planning/2026-10-29-vnpay-payment-plan.md) | Thiếu cấu hình, cảnh báo chỉ tên biến, UI 502; còn phải kiểm IPN `99`, return `valid: false`, DB không đổi và `/health` |
+| Máy trạng thái sau thanh toán | UNIT-T04; INT-T11 | 49 cặp: 8 hợp lệ, 41 bị từ chối; Barista `PAID → PREPARING → READY → COMPLETED` |
 
-- **Luồng chính:** một test E2E menu → giỏ → đăng nhập → thanh toán Ví → màn xác nhận (FR-14, FR-20); và một kiểm chứng integration chạy trước khi gỡ bộ test khỏi bản phân phối (kết quả ở inventory-verification.md): `POST /orders` rồi `POST /payments`, kiểm `PAID`, snapshot, onHand/reserved, `Payment`.
-- **E1a:** Guest bấm "Thanh toán" được chuyển tới trang đăng nhập, quay lại vẫn còn giỏ; 401 ở bước tạo đơn không tạo Order (AC-F10.1).
-- **E1b:** tạo đơn thành công rồi làm token hết hạn trước khi thanh toán; đăng nhập lại đúng tài khoản, thanh toán đúng orderId cũ, số Order và tồn kho không đổi thêm. Kiểm cả đơn đã trả, đã hủy và trường hợp đăng nhập nhầm tài khoản (AC-F10.4).
-- **E2:** integration test đặt quá tồn (AC-F13.1) và đặt đồng thời (AC-F13.3).
-- **E3 và A3:** thao tác trên sandbox: bấm "Hủy" trên trang VNPay (đơn thành `PAYMENT_FAILED`, `reserved` vẫn giữ), rồi thử lại thành công cùng `orderId` (AC-F15.1, AC-F15.5).
-- **E4 và A6:** gửi hai lần cùng key rồi đếm số `Payment`: sau `SUCCESS` còn đúng 1 bản ghi (AC-F16.1); khi còn `Payment PENDING` thì cùng phương thức nhận lại URL cũ, khác phương thức nhận 409 `PAYMENT_IN_PROGRESS`.
-- **E9, E12 và hàm thuần:** unit test tối thiểu cho chữ ký URL/return/IPN/QueryDR và bảng ánh xạ mã QueryDR; gọi lại IPN cùng tham số phải nhận `02`, không trừ kho lần hai.
-- **E10, E11, E13:** chạy local không có IPN, trang return gọi `sync` và đơn thành `PAID`; QueryDR do kịch bản kiểm soát trả `00/01`, `00/02`, `91`, `94`; chạy API không có `VNP_HASH_SECRET`. Ca "đã mở URL nhưng chưa trả" kiểm theo mã thực tế ghi ở spike, không mặc định là `91`.
-- **A5 (FR-25 Must):** API test hủy đơn `PENDING`/`PAYMENT_FAILED` và kiểm `reserved` được giải phóng, `onHand` không đổi (AC-F25.1).
-- **Máy trạng thái:** unit test 49 cặp: 8 hợp lệ, 41 bị từ chối, trong đó có từ chối PAID → CANCELLED (AC-F23.1).
+Các ô ghi “cần bổ sung” hoặc “kiểm tay” là khoảng trống minh chứng, không được suy thành PASS từ mã lân cận. Test lộ bug áp dụng L2: ghi `skip` kèm lý do và PR sửa riêng; không sửa ứng dụng trong PR khôi phục test.

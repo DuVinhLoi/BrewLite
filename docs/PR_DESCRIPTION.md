@@ -1,6 +1,6 @@
 # PR: Task 2 — Mô hình hóa hệ thống BrewLite A2 (UC-04 Checkout)
 
-> Hồ sơ PR lịch sử. Các lệnh/script test bên dưới mô tả lần kiểm chứng Task 2 trước đây; bộ test đã xóa theo yêu cầu chủ dự án trong BREW-INVENTORY-01. Xem [kết quả hiện tại](inventory-verification.md).
+> Hồ sơ PR lịch sử. Các lệnh/script test bên dưới mô tả lần kiểm chứng Task 2 trước đây; bộ test từng bị xóa trong BREW-INVENTORY-01. PR-2 đã khôi phục suite tháng 11; xem [lệnh hiện tại](../tests/README.md) và [kết quả local/CI mới](task5/verification.md#khôi-phục-test-pr-2--06112026). Nội dung dưới đây không phải báo cáo PR-2.
 
 **Nhánh đề nghị:** `a2/task-2-diagrams` → **nhánh đích:** `develop-Assignment2`.
 

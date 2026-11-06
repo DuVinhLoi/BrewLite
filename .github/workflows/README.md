@@ -1,6 +1,10 @@
 # CI/CD Assignment 2
 
-[`ci.yml`](ci.yml) chạy trên PR vào `develop-Assignment2` và `main`, các push được khai báo và workflow thủ công/tái sử dụng, với Node theo `.nvmrc`. Job **`ci`** chạy **Install → Lint → Migration/seed PostgreSQL riêng → Typecheck/Build → Compose validation** cho hai app; mỗi bước dừng khi lệnh lỗi. Prisma Client được generate sau install. Theo yêu cầu chủ dự án, bộ test và các bước Unit/Integration/E2E đã được xóa sau khi chạy kiểm chứng; chỉ còn unit test VNPay tối thiểu `apps/api/test/vnpay.test.ts` (D3), chạy tay bằng `node --import tsx --test test/vnpay.test.ts` và chưa nằm trong CI; [báo cáo](../../docs/inventory-verification.md) lưu kết quả trước khi xóa.
+[`ci.yml`](ci.yml) chạy trên PR vào `develop-Assignment2` và `main`, các push được khai báo và workflow thủ công/tái sử dụng, với Node theo `.nvmrc`. Job **`ci`** chạy **Install → Lint → Unit API/web → Migration/seed ×2 → Typecheck/Build → HTTP integration → Chromium E2E → Compose validation**; mỗi bước dừng khi lệnh lỗi. Prisma Client được generate sau install. Unit VNPay nằm trong `npm --prefix apps/api test` cùng các unit API khác.
+
+PostgreSQL 16 service dùng DB `brewlite_ci`, user `brewlite`, password `fake-ci-only-password`. API/web chỉ bind loopback tại 4105/3105; `JWT_SECRET=FAKE_JWT_SECRET_FOR_CI_ONLY_32_CHARS_MINIMUM`, `VNP_TMN_CODE=FAKETMN1`, `VNP_HASH_SECRET=FAKE_SECRET_FOR_CI_ONLY` đều **fake, CI only**. Không dùng GitHub environment/secret production. Integration chạy tuần tự; Playwright một worker tự quản API/web và ký IPN/return giả độc lập, không thanh toán qua sandbox. [Hướng dẫn local](../../tests/README.md).
+
+Playwright giữ trace khi lỗi. Bước `Upload E2E failure artifacts` chạy khi job lỗi và upload `apps/web/test-results/` nếu có, retention 7 ngày; tải artifact `playwright-failure-<run_attempt>` trên trang run. Danh mục test đã có trên nhánh khôi phục; run đầu success với 219 API unit, 74 web, integration 20 pass/1 skip PR31, 5 E2E trong 195 giây; chuỗi ba run xanh còn chờ tại [hồ sơ CI](../../docs/evidence/ci/README.md).
 
 Workflow chỉ có quyền `contents: read`; checkout không giữ credential. Cache dùng lockfile cả hai app. Không có path filter để PR tài liệu cũng nhận required check `ci`.
 

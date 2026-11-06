@@ -17,13 +17,13 @@ jobs:
   ci:
     name: ci
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine
         env:
           POSTGRES_USER: brewlite
-          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_PASSWORD: fake-ci-only-password
           POSTGRES_DB: brewlite_ci
         ports: ['5432:5432']
         options: >-
@@ -31,7 +31,18 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       CI: 'true'
-      DATABASE_URL: postgresql://brewlite:ci-only-password@localhost:5432/brewlite_ci?schema=public
+      # fake, CI only. Never use production environments or secrets for tests.
+      DATABASE_URL: postgresql://brewlite:fake-ci-only-password@127.0.0.1:5432/brewlite_ci?schema=public
+      API_URL: http://127.0.0.1:4105
+      WEB_URL: http://127.0.0.1:3105
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:4105
+      CORS_ORIGINS: http://127.0.0.1:3105
+      PORT: '4105'
+      JWT_SECRET: FAKE_JWT_SECRET_FOR_CI_ONLY_32_CHARS_MINIMUM
+      VNP_TMN_CODE: FAKETMN1
+      VNP_HASH_SECRET: FAKE_SECRET_FOR_CI_ONLY
+      VNP_URL: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+      VNP_API_URL: http://127.0.0.1:9/vnpay-query-disabled
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -54,16 +65,49 @@ jobs:
         run: |
           npm --prefix apps/api run lint
           npm --prefix apps/web run lint
+      - name: Unit Test (API and web)
+        run: |
+          npm --prefix apps/api test
+          npm --prefix apps/web test
       - name: Validate migrations and seed (independent database)
         run: |
           cd apps/api
           npm run prisma:migrate
+          SEED_DEMO_USERS=true npm run prisma:seed
           SEED_DEMO_USERS=true npm run prisma:seed
       - name: Build
         run: |
           npm --prefix apps/web run typecheck
           npm --prefix apps/api run build
           npm --prefix apps/web run build
+      - name: Integration Test (isolated HTTP API)
+        env:
+          NODE_ENV: test
+        run: |
+          node apps/api/dist/main.js > "$RUNNER_TEMP/integration-api.log" 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..60}; do
+            if curl --fail --silent --connect-timeout 1 --max-time 2 "$API_URL/health" >/dev/null; then
+              break
+            fi
+            kill -0 "$api_pid" 2>/dev/null || { cat "$RUNNER_TEMP/integration-api.log"; exit 1; }
+            sleep 1
+          done
+          curl --fail --silent --show-error --max-time 5 "$API_URL/health" | python3 -c 'import json,sys; assert json.load(sys.stdin)=={"status":"ok","database":"up"}'
+          node --test --test-concurrency=1 'tests/integration/*.test.mjs'
+      - name: Install Chromium
+        run: node apps/web/node_modules/playwright/cli.js install --with-deps chromium
+      - name: E2E (Chromium)
+        run: npm --prefix apps/web run test:e2e
+      - name: Upload E2E failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failure-${{ github.run_attempt }}
+          path: apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Validate Compose
         env:
           POSTGRES_PASSWORD: compose-validation-only

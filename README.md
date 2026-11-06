@@ -117,25 +117,29 @@ Barista đăng nhập để vào `/inventory`; đơn hàng tiếp tục dùng GE
 
 ## Kiểm chứng và build
 
-Theo yêu cầu chủ dự án, toàn bộ test tự động, cấu hình, script và dependency phục vụ test đã được xóa sau khi chạy kiểm chứng. Từ 2026-10-29 chỉ còn unit test VNPay tối thiểu `apps/api/test/vnpay.test.ts`, chạy bằng `node --import tsx --test test/vnpay.test.ts` trong `apps/api`. [Báo cáo kho](docs/inventory-verification.md) lưu kết quả unit/HTTP, PostgreSQL, trình duyệt, migration và seed trước khi xóa. Các hồ sơ CI/Sprint cũ là minh chứng lịch sử.
+PR-2 khôi phục unit API (`node:test`/`tsx`), unit/component web (Vitest), HTTP integration với PostgreSQL thật và E2E Chromium. [Hướng dẫn test](tests/README.md) có cấu hình DB local riêng, secret giả và lệnh từng tầng; [kết quả hiện tại](docs/task5/verification.md#khôi-phục-test-pr-2--06112026) phân biệt kết quả local với CI đã chạy. [Báo cáo kho tháng 10](docs/inventory-verification.md) giữ bằng chứng lịch sử trước cleanup.
 
 ```powershell
 npm.cmd --prefix apps/api run lint
 npm.cmd --prefix apps/web run lint
+npm.cmd --prefix apps/api test
+npm.cmd --prefix apps/web test
 npm.cmd --prefix apps/web run typecheck
 npm.cmd --prefix apps/api run build
 npm.cmd --prefix apps/web run build
 ```
 
+Integration cần API đã build đang chạy và DB test đã migrate/seed: `node --test --test-concurrency=1 'tests/integration/*.test.mjs'`. E2E: `npm.cmd --prefix apps/web run test:e2e`; Playwright quản lý API/web local. Cả hai bắt buộc `API_URL`, `WEB_URL`, `DATABASE_URL` loopback và credential giả theo [hướng dẫn](tests/README.md); không chạy trên database demo/production.
+
 Demo thủ công: đăng nhập BARISTA → vào /inventory → nhập Matcha 20 g, sữa không đường 2000 ml, siro đường 200 ml với lý do → đăng nhập CUSTOMER → chọn Matcha size S ở chi tiết món để đặt/thanh toán hoặc hủy. Trang kho chỉ có số dư, nhập kho/kiểm đếm và lịch sử; công thức dùng trong hệ thống và sửa qua `PUT /inventory/recipes`. Hướng dẫn request và chuyển đổi dữ liệu cũ ở [runbook](docs/inventory-runbook.md).
 
 Production local: build với API URL phù hợp, rồi `npm.cmd --prefix apps/api run start:prod` và `npm.cmd --prefix apps/web start`.
 
-Đã có [PR #9 CI xanh](https://github.com/DuVinhLoi/BrewLite/pull/9) và [PR #10 CI bắt lỗi test, đã đóng không merge](https://github.com/DuVinhLoi/BrewLite/pull/10); log ở [hồ sơ CI](docs/evidence/ci/README.md). Ngày 04/11/2026 đã bật và đọc lại branch protection cho `main`: bắt buộc PR với một approval, check `ci` xanh trên nhánh cập nhật với base, chặn force push/xóa và áp dụng cả admin. Repository hiện public; ghi chú private/thiếu quyền admin trước đây là lịch sử. Bộ test vẫn cần khôi phục theo kế hoạch riêng; cấu hình protection không thay thế minh chứng test đỏ chặn merge.
+Đã có [PR #9 CI xanh](https://github.com/DuVinhLoi/BrewLite/pull/9) và [PR #10 CI bắt lỗi test, đã đóng không merge](https://github.com/DuVinhLoi/BrewLite/pull/10); đây là lịch sử, log ở [hồ sơ CI](docs/evidence/ci/README.md). Ngày 04/11/2026 đã bật và đọc lại branch protection cho `main`: bắt buộc PR với một approval, check `ci` xanh trên nhánh cập nhật với base, chặn force push/xóa và áp dụng cả admin. Repository hiện public. Đã có một run xanh PR32 và PR33 cố ý sai test đỏ; đủ ba run xanh và minh chứng chặn merge riêng do required ci còn chờ; cấu hình protection không thay thế minh chứng đó.
 
 ## CI/CD và production
 
-CI giữ job `ci`: install → lint → migration/seed DB riêng → typecheck/build → Compose validation. Các bước test tự động đã được gỡ theo yêu cầu chủ dự án.
+CI giữ job `ci`: install → lint → unit API/web → migration/seed hai lần trên PostgreSQL 16 riêng → typecheck/build → HTTP integration → Chromium E2E → Compose validation. Chỉ dùng secret giả; khi lỗi, upload `apps/web/test-results/` nếu có, gồm trace Playwright. Delivery gọi cùng quality gate nên test lỗi chặn publish/deploy. Trạng thái run mới ghi riêng trong [hồ sơ CI](docs/evidence/ci/README.md).
 Merge/push vào `main`, tag `a2-v*` hoặc `workflow_dispatch` chạy Delivery: quality gate → kiểm cấu hình production → publish API image full SHA → Render API và Vercel web → smoke HTTPS có retry. `main` là nguồn production duy nhất; PR vào `main` chỉ chạy `ci.yml`, không dùng environment production. Delivery gọi lại CI nên không cần thêm một run CI riêng cho cùng push `main`/tag. Ngày 04/11/2026 đã ngắt liên kết Git của project Vercel (API xác nhận `link=null`), xác minh Render auto-deploy off và giới hạn environment `production`, `release` cho nhánh `main` và tag `a2-v*`. Chỉ merge khi đạt cổng Go / No-go trong kế hoạch cutover. Render phải báo deployment mới live với đúng image commit trước smoke; Vercel CLI được cố định phiên bản; API chạy migration khi khởi động.
 Cấu hình environment, secret, deploy hook, HTTPS/DB nội bộ và rollback theo [deployment.md](docs/deployment.md). Không dùng `continue-on-error` để làm xanh.
 Rollback dùng image SHA trước trên Render và `vercel rollback`/promote deployment web trước, rồi chạy lại smoke; không reset hoặc tự đảo migration DB.

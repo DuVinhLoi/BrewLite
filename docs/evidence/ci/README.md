@@ -1,5 +1,17 @@
 # Minh chứng CI - Task 4.4
 
+## Khôi phục test — PR32, 06/11/2026
+
+PR [#32](https://github.com/DuVinhLoi/BrewLite/pull/32), nhánh `a2/restore-tests`, head `4e711a8a845c36c11ec09b2ca6dc928a196c495c`: [run 42132213624](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624) **success**. Job chạy từ `2026-11-05T23:48:46Z` đến `23:52:01Z`, **195 giây (3 phút 15)**. Unit API 219 pass, web 74 pass, integration 20 pass/1 skip INT-T11b ([PR31](https://github.com/DuVinhLoi/BrewLite/pull/31)), Chromium E2E 5 pass. Workflow có PostgreSQL 16 riêng, seed hai lần và fake secret; xem [pipeline](../../../.github/workflows/README.md) và [lệnh local](../../../tests/README.md).
+
+PR [#33](https://github.com/DuVinhLoi/BrewLite/pull/33) cố ý sai kỳ vọng UNIT-T03 (`124001` thay vì `124000`); [run 42132338210](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132338210) **failure**, unit API 218 pass/1 fail. API GitHub ghi `mergeStateStatus=BLOCKED`, `reviewDecision=REVIEW_REQUIRED`; trạng thái này gồm cả thiếu review, chưa chứng minh riêng nút merge bị chặn chỉ vì test. Ảnh public không có nút merge của người đăng nhập. Không merge PR lỗi.
+
+[Hồ sơ run/log/ảnh mới](2026-11-06-restored-tests.md) ghi metadata và giới hạn. Đã đủ ba lượt xanh liên tiếp trên cùng commit `4e711a8` (attempts 1–3). **Còn chờ:** kiểm head cuối và bằng chứng tách rõ required `ci` chặn merge khi đủ các điều kiện khác. Đã đo thời gian tuyệt đối 195 giây; chưa đo phần tăng so với CI cũ. Skip không được tính pass, CI success không chứng minh PR31 đã sửa trên main.
+
+## Hồ sơ lịch sử — 21/10/2026
+
+Các giới hạn quyền/private/branch protection và mô tả workflow phía dưới chỉ áp dụng lần thu tháng 10. Repo hiện public; `main` đã bật required `ci` strict, một approval, áp dụng cả admin theo [P1](../../planning/handoff/2026-11-owner-p1-report.md). Workflow khôi phục hiện chạy đủ tầng theo phần trên.
+
 Đã thu minh chứng thật từ GitHub Actions ngày **2026-10-21**. [Báo cáo đối chiếu Task 4 và hồ sơ xanh/đỏ](github-runs.md) có URL PR/run, commit SHA, kết quả từng bước và giới hạn nghiệm thu.
 
 | Minh chứng | GitHub | Log tải từ GitHub |

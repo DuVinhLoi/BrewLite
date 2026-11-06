@@ -13,6 +13,7 @@ ADR của Task 3 (đề A2 §5.1), đồng bộ với SRS sau PR #11 và handoff
 | [005-idempotency-and-optimistic-lock.md](005-idempotency-and-optimistic-lock.md) | API replay `SUCCESS`/`PENDING` theo BR-05/D2/D3, tối đa một `Payment PENDING` mỗi đơn (BR-10, partial unique index), transaction giữ kho; §B simulator đã được ADR-007 thay | Accepted (2026-10-21), sửa 2026-10-29 |
 | [006-ingredient-inventory-snapshots.md](006-ingredient-inventory-snapshots.md) | Số dư nguyên liệu, snapshot bất biến, marker legacy và cutover additive; thay phần kho mới của ADR-005 §C | Accepted (2026-10-29) |
 | [007-vnpay-sandbox.md](007-vnpay-sandbox.md) | Thanh toán qua VNPay sandbox: redirect + IPN + QueryDR, một hàm áp kết quả, HTTP ra VNPay ngoài transaction, cấu hình kiểm theo thao tác; thay ADR-005 §B | Proposed (2026-10-29) |
+| [008-test-strategy.md](008-test-strategy.md) | Khôi phục unit API, unit/component web, API/integration HTTP và E2E Chromium trong CI; VNPay bằng secret giả, DB test riêng có kiểm tên | Accepted (Q1/Q2, 2026-11-04); triển khai/minh chứng PR-2 còn chờ |
 
 Giữ tên file 003/004 hiện có trên nhánh để liên kết không đổi. Mỗi ADR gồm bối cảnh, quyết định, hệ quả và phương án đã loại. Khi quyết định thay đổi, ghi lý do và ngày thay đổi qua PR.
 
