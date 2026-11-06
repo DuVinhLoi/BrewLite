@@ -12,10 +12,12 @@ npm.cmd --prefix apps/web test
 ```
 
 API units use `node:test`/`tsx`; web units use Vitest/Testing Library/jsdom.
-See [current results](../docs/task5/verification.md#khôi-phục-test-pr-2--06112026)
-and [test IDs](../docs/traceability-matrix.md#phan-b). The first restored CI run is recorded in the
-[CI evidence](../docs/evidence/ci/README.md); three consecutive green runs remain pending. UNIT-T12 covers the old `stockBadge`
-helper; current menu UI has only Còn hàng/Hết hàng, covered by UNIT-T14.
+See [results recorded for the earlier suite](../docs/task5/verification.md#khôi-phục-test-pr-2--06112026)
+(not the current counts) and [test IDs and current counts](../docs/traceability-matrix.md#phan-b). The CI runs recorded in the
+[CI evidence](../docs/evidence/ci/README.md) (head `4e711a8`) belong to the earlier suite; this suite has no CI run yet. UNIT-T12 asserts only the `tone` of the old `stockBadge`
+helper; the current menu UI has only Còn hàng/Hết hàng (no cup count, AC-F01.3), covered by UNIT-T14.
+Web units have no skipped tests: AC-F20.3 (UNIT-T19), AC-F21.3 (UNIT-T20) and AC-F22.1 follow the SRS as shipped.
+The only skipped tests are the two INT-T11b cases for AC-F24.3 (see HTTP integration below).
 
 ## HTTP integration (Task 4 / B4)
 
@@ -38,6 +40,11 @@ PowerShell, from the repository root. This Compose project uses its own volume
 and binds PostgreSQL only to loopback; it does not use the application's database.
 All credentials below are deliberately fake. No `.env` file is needed; the
 integration helpers do not load `.env` files.
+
+Port 55439 may fall inside a Windows excluded port range, in which case Docker
+cannot bind it. Check with `netsh interface ipv4 show excludedportrange protocol=tcp`
+and pick a free loopback port (for example 15432), then use it in both the
+Compose file and `DATABASE_URL`. The CI database uses 5432 on the runner.
 
 ```powershell
 $env:POSTGRES_PASSWORD = 'fake-ci-only-password'
@@ -101,7 +108,15 @@ visited; callbacks are signed locally. The frontend need not be running for B4.
 `API_URL`, `WEB_URL` and `DATABASE_URL` are mandatory. Both HTTP URLs and the
 Postgres host must be `127.0.0.1` or `localhost`. The database name must match
 `^brewlite_(ci|test)(_[a-z0-9]+)?$` (for example `brewlite_test_cutover` or
-`brewlite_ci`). Database credentials must be the fake pair above. When supplied,
+`brewlite_ci`). `DATABASE_URL` may carry no query parameter except `schema`
+(a parameter such as `host` could redirect the connection). Database credentials
+must be the fake pair above. Right after a scenario registers its user, the helper
+reads that user back through the read-only database client and aborts before any
+stock write if it is missing, which means the API is not using the database under test.
+That check runs after the registration, so on a wrong database each scenario still registers one
+user there before it aborts; no stock, order or payment is written. Only the query-parameter rule
+has a test of its own (GUARD-T01); this read-back check and the copy of the guard in
+`apps/web/playwright.config.ts` have none. When supplied,
 JWT/merchant/hash variables must equal the documented fake values. Guards run
 before any HTTP request or database connection, including before seed execution.
 Do not supply real credentials or point the suite at a deployed API.
@@ -114,10 +129,10 @@ including duplicate product/ingredient/recipe and recipe-line detection.
 The suite covers API-T01–API-T05 and INT-T01–INT-T15. INT-T01 sends the normal
 order DTO and checks server-computed prices. INT-T02 rejects client `total` and
 `unitPrice` fields per SRS AC-F12.3; these fields must not be silently accepted.
-INT-T11b currently retains its required403 assertion but is narrowly skipped
+INT-T11b (Barista cancels a `PENDING` or `PAYMENT_FAILED` order) retains its required 403 assertion but is narrowly skipped
 pending [the dedicated Barista cancellation fix (PR31)](https://github.com/DuVinhLoi/BrewLite/pull/31):
-the baseline API returns409. INT-T11a paid progression remains enabled. Remove
-the skip when that runtime fix is integrated; other failures remain failures.
+the baseline API returns 409. INT-T11a paid progression remains enabled. Remove
+the skip when its runtime fix is integrated; other failures remain failures.
 
 When finished, stop the test database without removing its audit data:
 
@@ -143,11 +158,30 @@ npm.cmd --prefix apps/web run test:e2e
 On Linux runners install system dependencies as well with
 `node apps/web/node_modules/playwright/cli.js install --with-deps chromium`.
 The config requires API port **4105** and web port **3105** and validates targets
-before starting either server. It builds and starts API/web itself. Local runs
-may reuse an existing server only when it belongs to this test environment and
-database; stop unrelated servers on those ports first. CI always starts fresh
-servers. Use the config-provided `NEXT_PUBLIC_API_URL`; a production web build
-pointing elsewhere must not be reused.
+before starting either server, and rejects a `DATABASE_URL` carrying any query
+parameter except `schema`. It builds and starts API/web itself and never reuses a
+running server (`reuseExistingServer: false`). E2E does read the database through the
+integration fixture (`tests/e2e/helpers.ts` calls `scenario`), but that check runs only after the
+server is up and finds a wrong database after it has already registered a user there. A running
+API may also use other secrets or stale code, and `NEXT_PUBLIC_API_URL` is inlined into the web
+build, so a running web server may call a different API. Ports 4105 and 3105 must therefore be
+free; stop the integration API and any dev server first. Use the config-provided
+`NEXT_PUBLIC_API_URL`; a production web build pointing elsewhere must not be reused.
+
+To run E2E from a Bash-like shell after the database is migrated and seeded
+(values equal the `env` block of `.github/workflows/ci.yml`; adjust the port in
+`DATABASE_URL` to your database):
+
+```bash
+export CI=true API_URL=http://127.0.0.1:4105 WEB_URL=http://127.0.0.1:3105
+export NEXT_PUBLIC_API_URL=$API_URL CORS_ORIGINS=$WEB_URL PORT=4105
+export JWT_SECRET=FAKE_JWT_SECRET_FOR_CI_ONLY_32_CHARS_MINIMUM
+export VNP_TMN_CODE=FAKETMN1 VNP_HASH_SECRET=FAKE_SECRET_FOR_CI_ONLY
+export VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+export VNP_API_URL=http://127.0.0.1:9/vnpay-query-disabled
+export DATABASE_URL='postgresql://brewlite:fake-ci-only-password@127.0.0.1:5432/brewlite_ci?schema=public'
+npm --prefix apps/web run test:e2e
+```
 
 Five tests cover paid checkout/history, guest login with preserved cart,
 failed payment then retry, ingredient shortage and cart recovery, and Barista

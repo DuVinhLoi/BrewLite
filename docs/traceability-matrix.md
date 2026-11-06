@@ -100,7 +100,7 @@ Các phụ thuộc minimum: FR-22 → FR-23/24. FR-14/15/16 → BR-10/BR-11 (m�
 
 ## Phần B: danh mục test khôi phục PR-2
 
-Nguồn: quyết định Q1/Q2 trong [báo cáo P1](planning/handoff/2026-11-owner-p1-report.md), chiến lược [ADR-008](architecture/adr/008-test-strategy.md). Các file dưới đây đã hiện thực; một mã có thể chứa nhiều test. Kết quả local ghi nhận: API unit 219 pass, web 74 pass/0 skip, integration 20 pass/1 skip, E2E 5 pass. INT-T11b giữ assertion 403 nhưng skip vì baseline trả 409, chờ [PR31](https://github.com/DuVinhLoi/BrewLite/pull/31); INT-T11a vẫn chạy. [Run 42132213624](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624) trên head `4e711a8` success trong 195 giây; PR33/run42132338210 cố ý sai UNIT-T03 đã đỏ. Còn đủ ba run xanh và minh chứng chặn merge riêng do required ci; [hồ sơ/giới hạn](evidence/ci/README.md). Các mã trùng trước cleanup trong bảng trên chỉ là lịch sử; hướng dẫn chạy ở [tests/README.md](../tests/README.md).
+Nguồn: quyết định Q1/Q2 trong [báo cáo P1](planning/handoff/2026-11-owner-p1-report.md), chiến lược [ADR-008](architecture/adr/008-test-strategy.md). Các file dưới đây đã hiện thực; một mã có thể chứa nhiều test. Kết quả local ghi nhận: API unit 221 pass, web 100 pass/0 skip, integration 30 pass/2 skip, E2E 5 pass (đo local, trên bản sao ngày 06/11/2026 sau đợt sửa theo nghiệm thu; không phải số của CI). INT-T11b (hủy `PENDING` và `PAYMENT_FAILED`) giữ assertion 403 nhưng skip vì baseline trả 409, chờ [PR31](https://github.com/DuVinhLoi/BrewLite/pull/31); INT-T11a vẫn chạy. Chủ dự án đã đổi SRS theo hành vi đã nộp cho AC-F20.3, AC-F21.3 và AC-F22.1, nên ba tiêu chí này chạy bình thường, không còn skip; chỉ còn hai skip INT-T11b. Các run CI đã ghi thuộc **bộ test trước khi bổ sung** (head `4e711a8`): [run 42132213624](https://github.com/DuVinhLoi/BrewLite/actions/runs/42132213624) success trong 195 giây, ba lượt xanh liên tiếp (attempts 1–3), PR33/run42132338210 cố ý sai UNIT-T03 đã đỏ. Bộ test hiện tại chưa có run CI nào, nên chưa được ghi là xanh trên CI. Còn chờ: run CI trên bộ test hiện tại và minh chứng chặn merge riêng do required ci; [hồ sơ/giới hạn](evidence/ci/README.md). Các mã trùng trước cleanup trong bảng trên chỉ là lịch sử; hướng dẫn chạy ở [tests/README.md](../tests/README.md).
 
 ### Unit API và web
 
@@ -114,41 +114,42 @@ API tại `apps/api/test/`; web tại `apps/web/src/`. UNIT-T12 kiểm helper c�
 | UNIT-T04 | API `order-state.test.ts` | Mọi cặp trạng thái: 8 hợp lệ/49; từ chối chuyển ngoài bảng |
 | UNIT-T05 | API `inventory.test.ts` | Matcha 6 ly, giới hạn nguyên liệu, công thức trống/thiếu, nhu cầu gộp, topping, đơn vị |
 | UNIT-T06 | API `auth.test.ts` | Email/password, từ chối role, hash và không trả passwordHash |
+| API-T03 (unit) | API `health.test.ts` | Stub Prisma: DB lỗi thì `/health` trả 503 `{status:"error",database:"down"}`, DB ổn thì `{status:"ok",database:"up"}` (AC-N15.2) |
 | UNIT-T10 | web `lib/format.test.ts` | Định dạng VND |
 | UNIT-T11 | web `lib/shop.test.ts` | cartTotal, gộp dòng trùng lựa chọn, đổi số lượng |
-| UNIT-T12 | web `lib/stock.test.ts` | Helper `stockBadge` cũ với ngưỡng 0/1/5/6; không chứng minh nhãn UI AC-F01.3 |
+| UNIT-T12 | web `lib/stock.test.ts` | Helper `stockBadge` cũ: chỉ assert `tone` ở ngưỡng 0/1/5/6/8, không assert nhãn; không chứng minh nhãn UI AC-F01.3 |
 | UNIT-T13 | web `components/menu/MenuScreen.test.tsx` | Loading/empty/error tiếng Việt/retry |
-| UNIT-T14 | web `components/menu/ProductCard.test.tsx` | Tên/giá/ảnh, chỉ hai nhãn Còn hàng/Hết hàng; hết hàng chặn chọn, không hiện số ly |
-| UNIT-T15 | web `components/shop/ProductDetail.test.tsx` | Size/topping/giá, availability giới hạn input, bỏ phản hồi cũ, thiếu công thức chặn thêm/giữ giỏ; kiểm nhu cầu giỏ hiện có cộng lựa chọn mới |
+| UNIT-T14 | web `components/menu/ProductCard.test.tsx` | Tên/giá/ảnh, chỉ hai nhãn Còn hàng/Hết hàng; hết hàng chặn chọn; stock 1, 5, 6, 8, 99 chỉ hiện "Còn hàng", không hiện số ly (AC-F01.3) |
+| UNIT-T15 | web `components/shop/ProductDetail.test.tsx` | Size/topping/giá, availability giới hạn input, bỏ phản hồi cũ, thiếu công thức chặn thêm/giữ giỏ; kiểm nhu cầu giỏ hiện có cộng lựa chọn mới; số lượng trống/0/âm báo "từ 1 đến N", nút khoá và bấm vào không gửi kiểm tra hay thêm gì; lần kiểm lúc bấm báo thiếu thì hiện nguyên liệu cùng lượng cần/còn và giữ giỏ (AC-F04.4); không có nhãn số ly trên trang chi tiết, kể cả khi số ly nằm trong phần tử con riêng (kiểm từng phần tử lẫn `textContent` cả trang, AC-F01.3) |
 | UNIT-T16 | web `components/shop/CartScreen.test.tsx` | Tổng, tăng/giảm/xóa, giỏ trống, thiếu nguyên liệu chặn checkout |
-| UNIT-T17 | web `components/shop/AuthScreen.test.tsx` | Validate client, lỗi API 400/401 |
-| UNIT-T18 | web `components/shop/CheckoutScreen.test.tsx` | 401 login, 409 thiếu kho/payment chờ, 502, redirect paymentUrl |
-| UNIT-T19 | web `components/shop/VnpayReturnScreen.test.tsx` | Thông báo mã 00/24/51, valid false vẫn poll |
-| UNIT-T20 | web `components/shop/OrdersScreen.test.tsx` | Nhãn trạng thái, điều kiện nút hủy, danh sách trống |
+| UNIT-T17 | web `components/shop/AuthScreen.test.tsx` | Validate client (kể cả mật khẩu 7 ký tự `Abc1234`), lỗi API 400/401; `next` = `//evil`, `/\evil`, `https://evil.example/` và `HTTPS://evil.example/` bị bỏ, về `/`; `/%2F/evil` được giữ nguyên vì là đường dẫn cùng site; `/checkout` được theo (AC-F09.3). Chỉ các giá trị `next` này được kiểm. Lỗi đã biết, chưa sửa trong app: `next` có ký tự tab hoặc xuống dòng ngay sau dấu `/` đầu (ví dụ `/%09/evil.example/`) vẫn qua kiểm tra và trình duyệt hiểu thành `//evil.example/`; test này không bảo vệ trường hợp đó, sẽ xử lý ở PR riêng |
+| UNIT-T18 | web `components/shop/CheckoutScreen.test.tsx` | 401 login, 409 thiếu kho/payment chờ, 502 ở `POST /payments`, redirect paymentUrl; `POST /orders` trả HTTP 502, 500, 503, 504 hoặc mất response thì báo "Chưa xác định được kết quả tạo đơn", khoá nút, giữ giỏ, và vẫn như vậy sau hai lần unmount rồi render lại liên tiếp (giỏ lưu trong `localStorage` được truyền lại mỗi lần, có liên kết "Kiểm tra lịch sử đơn hàng" tới `/orders`; không gửi `POST /orders` thứ hai); nút "Đã kiểm tra lịch sử, bắt đầu đơn mới" mở lại form và xoá dấu chưa xác định trong `sessionStorage`; HTTP 400 ở `POST /orders` không bị coi là chưa xác định (nút vẫn mở, không để lại dấu); Barista không thấy form đặt đơn (regression guard, SRS chỉ ghi API trả 403 ở AC-F11.4) |
+| UNIT-T19 | web `components/shop/VnpayReturnScreen.test.tsx` | Thông báo mã 00/24/51, valid false vẫn poll đơn đã lưu; valid false không có đơn đã lưu báo không xác định được đơn; trang chi tiết `/orders/order-1` của đơn `PAID` hiện mã đơn, "Đã thanh toán", món và tiền, và sau khi unmount rồi render lại hiện đúng dữ liệu của lần `GET /orders/order-1` mới (lần đọc thứ hai trả trạng thái khác, đếm 2 lần gọi); SRS không đòi nút chuyển trang (AC-F20.3) |
+| UNIT-T20 | web `components/shop/OrdersScreen.test.tsx` | Nhãn trạng thái, điều kiện nút hủy, danh sách trống đúng câu "Bạn chưa có đơn hàng nào" (khớp chính xác, AC-F21.3) kèm liên kết "Quay lại menu" |
 
 ### API/integration HTTP
 
-Tại `tests/integration/`: `catalog.test.mjs` (API-T01–T03), `auth.test.mjs` (API-T04–T05), `checkout.test.mjs` (INT-T01–T12), `inventory.test.mjs` (INT-T13–T15); `helpers.mjs` lo dữ liệu/token/chữ ký độc lập. Chạy tuần tự trên DB test riêng; INT-T04 tạo cạnh tranh bên trong test. Các assert DB bổ sung dùng Prisma trong transaction READ ONLY, không gọi nghiệp vụ Nest.
+Tại `tests/integration/`: `catalog.test.mjs` (API-T01–T03), `auth.test.mjs` (API-T04–T05), `checkout.test.mjs` (INT-T01–T12), `inventory.test.mjs` (INT-T13–T15), `guard.test.mjs` (GUARD-T01: `DATABASE_URL` chỉ được mang query `schema`); `helpers.mjs` lo dữ liệu/token/chữ ký độc lập. Chạy tuần tự trên DB test riêng; INT-T04 tạo cạnh tranh bên trong test. Các assert DB bổ sung dùng Prisma trong transaction READ ONLY, không gọi nghiệp vụ Nest.
 
 | Mã | Kiểm chính |
 |---|---|
 | API-T01 | GET products 200, 8 món, stock tính từ nguyên liệu |
 | API-T02 | Chi tiết món 200; id lạ 404 |
-| API-T03 | Health 200 với status ok/database up |
+| API-T03 | Health 200 với status ok/database up (nhánh 503 kiểm ở unit `health.test.ts`) |
 | API-T04 | Register 201, không passwordHash, validation 400; login JWT sub/role/exp, sai 401 |
-| API-T05 | Không token 401; Barista bị chặn đặt/trả/lịch sử; Customer bị chặn API kho |
-| INT-T01 | Tạo đơn 201/PENDING, giá server, reserve đúng snapshot; giá client không được tin theo AC-F12.3 |
+| API-T05 | Không token 401 cho cả 6 endpoint của AC-F10.1: `POST /orders`, `POST /payments`, `GET /orders/me` và `POST /payments/:id/sync` (id lạ, kèm Barista 403) trong ma trận; `GET`/`PATCH /orders/:id` (id lạ) chỉ kiểm guest 401. Với payment và đơn thật, guest cũng nhận 401 ở `sync`, `GET` và `PATCH /orders/:id` (AC-F10.1); Barista nhận 403 từ `sync` của payment thật (AC-N05.2); Customer bị chặn API kho. Token đổi một ký tự chữ ký, ký sai secret, hết hạn (ký đúng), `alg=none` không chữ ký, sai `iss`, sai `aud`, thiếu `iss`, thiếu `aud` hoặc thiếu `exp` (ký đúng secret) đều 401, kèm đối chứng token ký tay hợp lệ 200 (AC-F10.2, AC-N05.1); `iss`/`aud` là hợp đồng của API, SRS không ghi |
+| INT-T01 | Tạo đơn 201/PENDING, giá server, reserve đúng snapshot; ví dụ SRS 2 Cappuccino L + Trân châu = 124.000; giá client không được tin theo AC-F12.3 |
 | INT-T02 | Body sai 400/VALIDATION_ERROR; DB không đổi |
 | INT-T03 | Thiếu nguyên liệu 409, DB không đổi |
 | INT-T04 | 10 yêu cầu tranh 150 ml espresso: 5 thành công/5 lỗi 409, 0 <= reserved <= onHand |
-| INT-T05 | Tạo URL ký đúng, amount = total × 100, replay key trả URL cũ, thiếu key 400 |
-| INT-T06 | IPN thành công 00, PAID, tiêu thụ snapshot một lần; IPN lặp 02 |
+| INT-T05 | Tạo URL ký đúng, amount = total × 100, replay key trả URL cũ, thiếu key 400; khi còn `PENDING`: key mới cùng phương thức 200 cùng `paymentId`/`paymentUrl`/`expiresAt` (kể cả `paymentUrl` lưu trong DB, vì `snapshot()` bỏ cột này), khác phương thức 409 `PAYMENT_IN_PROGRESS` (AC-F16.8); Customer khác tạo payment cho đơn của người khác (chưa có payment, rồi khi đã có payment `PENDING`) hoặc `sync` payment của người khác (khi `PENDING`, rồi sau khi IPN đã kết luận) đều 403, DB không đổi (AC-N05.3); đối chứng dương: sau khi IPN đã kết luận, chủ đơn `sync` nhận 200 với `orderStatus` `PAID` và payment `SUCCESS`, DB không đổi (AC-F14.13) |
+| INT-T06 | IPN thành công 00, PAID, tiêu thụ snapshot một lần; IPN lặp 02; sau `PAID`: cùng key và phương thức 200 `SUCCESS` cùng `paymentId` (AC-F16.1), key mới 409 `ORDER_NOT_PAYABLE` và không có payment mới (AC-F16.4) |
 | INT-T07 | IPN sai chữ ký 97/sai tiền 04/tham chiếu lạ 01, DB không đổi |
 | INT-T08 | IPN thất bại 24/02, PAYMENT_FAILED giữ reserved; thử lại rồi thành công |
-| INT-T09 | Hủy nhả reserved một lần, lặp 409; payment chờ 409/PAYMENT_IN_PROGRESS; hủy PAID 403 |
+| INT-T09 | Hủy nhả reserved một lần, lặp 409; payment chờ 409/PAYMENT_IN_PROGRESS; hủy PAID 403; Customer khác hủy đơn `PENDING` của người khác 403, DB không đổi (AC-F25.2); với đơn `PAYMENT_FAILED` của người khác, Customer khác đọc, trả tiền, hủy và `sync` payment `FAILED` đều 403, trạng thái không đổi (AC-N05.3); đối chứng dương: chủ đơn `sync` payment `FAILED` nhận 200 với `orderStatus` `PAYMENT_FAILED`, DB không đổi (AC-F14.13) |
 | INT-T10 | Return hợp lệ valid true, không ghi DB; chữ ký sai valid false |
-| INT-T11 | T11a: Barista PAID → PREPARING → READY → COMPLETED, sai chuyển 409; T11b: hủy PENDING phải 403, skip chờ PR31 do baseline trả 409 |
-| INT-T12 | Lịch sử chỉ đơn của mình; đọc đơn người khác 403; Barista đọc mọi đơn |
+| INT-T11 | T11a: Barista PAID → PREPARING → READY → COMPLETED, sai chuyển 409; Customer gọi PREPARING/READY/COMPLETED trên đơn của mình ở `PENDING`/`PAID`/`PREPARING`/`READY` đều 403, trạng thái không đổi (AC-F24.2); T11b: Barista hủy `PENDING` và `PAYMENT_FAILED` (vào bằng IPN `24`/`02`) phải 403, hai test con `skip` chờ PR31 do baseline trả 409 (AC-F24.3) |
+| INT-T12 | Lịch sử chỉ đơn của mình; đọc đơn người khác 403, cả khi đơn đã `PAID` (AC-N05.3); Barista đọc mọi đơn; mã đơn không tồn tại trả 404 `ORDER_NOT_FOUND` (AC-F22.1; SRS không còn liệt kê `discountAmount` trong phản hồi nên test không kiểm trường này) |
 | INT-T13 | RECEIVE/ADJUST có lý do, BELOW_RESERVED 409, movement có người thực hiện |
 | INT-T14 | Thay trọn recipe, snapshot cũ bất biến, selector cả hai/không có bị 400 |
 | INT-T15 | Seed hai lần không trùng sản phẩm/nguyên liệu/công thức, bảo toàn số dư đã nhập |
@@ -163,7 +164,7 @@ Tại `tests/e2e/checkout.spec.ts` (T01–T04), `inventory.spec.ts` (T05, Should
 | E2E-T02 | Guest checkout → login?next=/checkout → login → checkout, giỏ giữ nguyên |
 | E2E-T03 | Thất bại 24/02 → PAYMENT_FAILED → thử lại thành công |
 | E2E-T04 | Thiếu nguyên liệu, chặn checkout, sửa giỏ rồi đặt được |
-| E2E-T05 (Should) | Barista nhập kho trên /inventory, menu đổi Hết hàng → Còn hàng; kiểm số ly qua API riêng |
+| E2E-T05 (Should) | Barista nhập kho trên /inventory; menu đổi nhãn "Hết hàng" → "Còn hàng" (kiểm đúng chữ) và nút "Thêm vào giỏ" từ khoá sang mở; `stock` 0 → 3 kiểm qua API. Spec không kiểm việc ẩn số ly: việc đó do UNIT-T14 chứng minh |
 
 COMPOSE-T01 là **Should**, dự kiến ở job compose-smoke: Compose up/build với secret giả, chờ health, GET products rồi dừng môi trường test; không thay kiểm persistence AC-N14.2. Chưa có kết quả chạy. L2: test lộ bug phải có skip/lý do/PR sửa riêng; không che khoảng trống coverage bằng test ID.
 
