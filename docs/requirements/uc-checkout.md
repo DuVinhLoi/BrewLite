@@ -124,7 +124,7 @@ Barista không tham gia use-case này (xem UC-07 ở `srs.md` mục 2.3). Các t
 | 18 | NestJS API, Database | Trong một transaction giữ khóa đơn: đọc lại `Payment` và `Order`; nếu `vnp_ResponseCode = 00` và `vnp_TransactionStatus = 00` thì `Payment` → `SUCCESS` (lưu mã giao dịch, `bankCode`, `paidAt`), giảm onHand và reserved theo bản chụp, `Order` → `PAID`; commit; trả VNPay `RspCode = 00`. Nếu VNPay gửi lại IPN thì chỉ nhận `02`, kho không bị trừ lần hai |
 | 19 | VNPay sandbox, Browser | VNPay chuyển trình duyệt về trang `/payment/vnpay-return` của web. Trang này chỉ hiển thị, không quyết định kết quả (BR-11) |
 | 20 | Next.js UI, NestJS API | Gọi `GET /payments/vnpay/return` để kiểm chữ ký, rồi hỏi lại (poll) `GET /orders/:id` mỗi 2 giây, tối đa 30 giây. Nếu `Payment` vẫn `PENDING` (IPN chưa tới) thì gọi `POST /payments/:id/sync` một lần theo E10 |
-| 21 | Next.js UI | Khi DB xác nhận đơn `PAID`: hiện màn xác nhận (mã đơn, trạng thái "Đã thanh toán", món, tiền); xóa giỏ hàng; có nút "Theo dõi đơn". Use-case kết thúc thành công |
+| 21 | Next.js UI | Khi DB xác nhận đơn `PAID`: hiện màn xác nhận (mã đơn, trạng thái "Đã thanh toán", món, tiền); xóa giỏ hàng; màn này chính là trang chi tiết đơn để theo dõi tiếp. Use-case kết thúc thành công |
 
 ## 6. Luồng thay thế
 
