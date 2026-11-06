@@ -10,7 +10,7 @@ function fill(email: string, password: string) {
 }
 
 describe('UNIT-T17 authentication validation (FR-08, FR-09, NFR-06)', () => {
-  it.each([['invalid', 'Test12345', 'Email không hợp lệ'], ['test@example.invalid', 'abc', 'Mật Khẩu cần ít nhất 8 ký tự gồm chữ và số'], ['test@example.invalid', '12345678', 'Mật Khẩu cần ít nhất 8 ký tự gồm chữ và số'], ['test@example.invalid', 'abcdefgh', 'Mật Khẩu cần ít nhất 8 ký tự gồm chữ và số']])('blocks invalid registration %s / %s before calling API', async (email, password, message) => {
+  it.each([['invalid', 'Test12345', 'Email không hợp lệ'], ['test@example.invalid', 'abc', 'Mật Khẩu cần ít nhất 8 ký tự gồm chữ và số'], ['test@example.invalid', '12345678', 'Mật Khẩu cần ít nhất 8 ký tự gồm chữ và số'], ['test@example.invalid', 'abcdefgh', 'Mật Khẩu cần ít nhất 8 ký tự gồm chữ và số'], ['test@example.invalid', 'Abc1234', 'Mật Khẩu cần ít nhất 8 ký tự gồm chữ và số']])('blocks invalid registration %s / %s before calling API', async (email, password, message) => {
     renderShop(<AuthScreen register />);
     fill(email, password);
     fireEvent.click(screen.getByRole('button', { name: 'Tạo tài khoản' }));
@@ -32,6 +32,15 @@ describe('UNIT-T17 authentication validation (FR-08, FR-09, NFR-06)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(message);
     expect(router.push).not.toHaveBeenCalled();
     expect(sessionStorage.getItem('brewlite-session')).toBeNull();
+  });
+  it.each([['//evil', '/'], ['/\\evil', '/'], ['https://evil.example/', '/'], ['HTTPS://evil.example/', '/'], ['/%2F/evil', '/%2F/evil'], ['/checkout', '/checkout']])('after login follows next=%s to %s and never leaves the site (AC-F09.3)', async (next, destination) => {
+    window.history.replaceState(null, '', `/login?next=${encodeURIComponent(next)}`);
+    mockApi(() => json({ accessToken: 'fake-token', user: { email: 'test@example.invalid', role: 'CUSTOMER' } }));
+    renderShop(<AuthScreen />);
+    fill('test@example.invalid', 'Test12345');
+    fireEvent.click(screen.getByRole('button', { name: 'Đăng nhập' }));
+    await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
+    expect(router.push).toHaveBeenCalledWith(destination);
   });
   it('registers then logs in, returns to checkout, and preserves the cart', async () => {
     window.history.replaceState(null, '', '/register?next=/checkout');

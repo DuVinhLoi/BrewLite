@@ -23,4 +23,12 @@ describe('UNIT-T14 product card (FR-01)', () => {
     expect(screen.queryByText(/Sắp hết|còn \d+/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Thêm vào giỏ' })).toBeEnabled();
   });
+  it.each([6, 8, 99])('shows exactly "Còn hàng" and no cup count for stock %i above the low threshold (AC-F01.3)', (stock) => {
+    const { container } = render(<ProductCard product={{ ...product, stock }} />);
+    expect(screen.getByText('Còn hàng')).toBeInTheDocument();
+    expect(screen.queryByText(/Sắp hết|còn \d+/i)).not.toBeInTheDocument();
+    // The only digits on the card belong to the price; the stock number must not leak anywhere in the text.
+    expect(container.textContent).not.toContain(String(stock));
+    expect(screen.getByRole('button', { name: 'Thêm vào giỏ' })).toBeEnabled();
+  });
 });
