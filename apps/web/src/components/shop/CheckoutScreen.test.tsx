@@ -59,6 +59,56 @@ describe('UNIT-T18 checkout recovery (FR-10, FR-13, FR-14, FR-16)', () => {
     expect(fetch).toHaveBeenCalledTimes(3);
     expect(JSON.parse(localStorage.getItem('brewlite-cart')!)).toEqual([line]);
   });
+  // POST /orders gave no usable answer, so the order may exist: it must stay blocked, also after a reload, or the customer can order twice.
+  it.each([
+    ['HTTP 502', () => json({ statusCode: 502, error: 'BAD_GATEWAY', message: 'Upstream' }, 502)],
+    ['HTTP 500', () => json({ statusCode: 500, error: 'INTERNAL', message: 'x' }, 500)],
+    ['HTTP 503', () => json({ statusCode: 503, error: 'UNAVAILABLE', message: 'x' }, 503)],
+    ['HTTP 504', () => json({ statusCode: 504, error: 'TIMEOUT', message: 'x' }, 504)],
+    ['a lost response', () => { throw new TypeError('Failed to fetch'); }],
+  ] as const)('treats %s on POST /orders as undetermined and blocks a second submit, also after a reload', async (_name, reply) => {
+    mockApi(reply);
+    const first = renderShop(<CheckoutScreen />, [line], true);
+    await submit();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chưa xác định được kết quả tạo đơn');
+    expect(screen.getByRole('button', { name: 'Thanh toán qua VNPay' })).toBeDisabled();
+    expect(JSON.parse(localStorage.getItem('brewlite-cart')!)).toEqual([line]);
+    first.unmount();
+    // Twice: a marker that one reload consumes must not reopen the form. The stored cart is passed back so renderShop cannot hide a cleared cart.
+    for (let reload = 0; reload < 2; reload += 1) {
+      const again = renderShop(<CheckoutScreen />, JSON.parse(localStorage.getItem('brewlite-cart')!), true);
+      expect(await screen.findByRole('alert')).toHaveTextContent('Chưa xác định được kết quả tạo đơn');
+      expect(screen.getByRole('button', { name: 'Thanh toán qua VNPay' })).toBeDisabled();
+      expect(screen.getByRole('link', { name: 'Kiểm tra lịch sử đơn hàng' })).toHaveAttribute('href', '/orders');
+      await waitFor(() => expect(JSON.parse(localStorage.getItem('brewlite-cart')!)).toEqual([line]));
+      again.unmount();
+    }
+    expect(fetch).toHaveBeenCalledTimes(1); // neither the first render nor the reload may send a second POST /orders
+  });
+  it('reopens the form after the customer has checked the history', async () => {
+    mockApi(() => json({ statusCode: 502, error: 'BAD_GATEWAY', message: 'Upstream' }, 502));
+    renderShop(<CheckoutScreen />, [line], true);
+    await submit();
+    fireEvent.click(await screen.findByRole('button', { name: 'Đã kiểm tra lịch sử, bắt đầu đơn mới' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Thanh toán qua VNPay' })).toBeEnabled());
+    expect(sessionStorage.getItem('brewlite-checkout:test@example.invalid')).toBeNull();
+  });
+  it('does not treat a 400 on POST /orders as undetermined', async () => {
+    mockApi(() => json({ statusCode: 400, error: 'VALIDATION_ERROR', message: 'Sai dữ liệu' }, 400));
+    renderShop(<CheckoutScreen />, [line], true);
+    await submit();
+    expect(await screen.findByRole('alert')).not.toHaveTextContent('Chưa xác định');
+    expect(screen.getByRole('button', { name: 'Thanh toán qua VNPay' })).toBeEnabled();
+    expect(sessionStorage.getItem('brewlite-checkout:test@example.invalid')).toBeNull();
+  });
+  // Regression guard, not an SRS rule: the SRS only states that the API rejects Barista with 403 (AC-F11.4).
+  it('does not offer the order form to a Barista', async () => {
+    sessionStorage.setItem('brewlite-session', JSON.stringify({ token: 'fake-test-token', email: 'barista@example.invalid', role: 'BARISTA' }));
+    renderShop(<CheckoutScreen />, [line]);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Chỉ khách hàng được đặt và thanh toán đơn.');
+    expect(screen.queryByRole('button', { name: 'Thanh toán qua VNPay' })).not.toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it('shows a recoverable 502 provider error while preserving the existing order', async () => {
     mockApi((path) => path === '/orders' ? json(order, 201) : json({ statusCode: 502, error: 'PAYMENT_PROVIDER_ERROR', message: 'Provider unavailable' }, 502));
     renderShop(<CheckoutScreen />, [line], true);

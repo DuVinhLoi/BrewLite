@@ -28,6 +28,8 @@ export function assertSafeTargets(env = process.env) {
   assert.ok(!api.username && !api.password && !web.username && !web.password, 'HTTP targets cannot contain credentials');
   const database = loopback(env.DATABASE_URL, ['postgresql:', 'postgres:'], 'DATABASE_URL');
   assert.match(database.pathname.slice(1), /^brewlite_(ci|test)(_[a-z0-9]+)?$/, 'Database name must identify a test database');
+  // Prisma may honour extra connection-string parameters such as host; only the schema selector is allowed.
+  assert.deepEqual([...database.searchParams.keys()].filter((key) => key !== 'schema'), [], 'DATABASE_URL may only carry the schema query parameter');
   assert.ok(decodeURIComponent(database.username) === 'brewlite' && decodeURIComponent(database.password) === 'fake-ci-only-password', 'Only the known fake database credentials are allowed');
   for (const [key, expected] of Object.entries({ JWT_SECRET: fake.jwt, VNP_TMN_CODE: fake.tmnCode, VNP_HASH_SECRET: fake.hashSecret })) {
     assert.ok(env[key] === undefined || env[key] === expected, `${key} must use the known fake value`);
@@ -174,7 +176,10 @@ export async function scenario(t, { espresso = 1000 } = {}) {
     await db.$disconnect();
     throw error;
   }
+  // Stays false until the API is proven to use this database; cleanup must not write through an unverified API.
+  let apiVerified = false;
   t.after(async () => {
+    if (!apiVerified) { await db.$disconnect(); return; }
     try {
       for (const { order, user } of fixture.orders) {
         const current = expectStatus(await request(`/orders/${order.id}`, { token: user.token }), 200);
@@ -192,6 +197,13 @@ export async function scenario(t, { espresso = 1000 } = {}) {
     } finally { await db.$disconnect(); }
   });
   fixture.customer = await createUser(fixture);
+  // The guard only checks the test-side DATABASE_URL. Prove the API wrote this user into the same database
+  // before any ADJUST or other stock write, otherwise a differently configured API would be modified.
+  const stored = await read((tx) => tx.user.findUnique({ where: { id: fixture.customer.id }, select: { id: true } }));
+  if (!stored) {
+    throw new Error('API_URL is not backed by the DATABASE_URL under test: the user it just registered is missing there. Aborting before any stock write.');
+  }
+  apiVerified = true;
   fixture.barista = await login('barista.demo@brewlite.local', 'Demo@12345');
   for (const row of originalIngredients) {
     await moveStock(fixture.barista, row.id, 'ADJUST', row.id === 'espresso' ? espresso : 1000, row.unit);

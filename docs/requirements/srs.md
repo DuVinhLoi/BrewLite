@@ -438,7 +438,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 - **Tiêu chí chấp nhận:**
   - AC-F20.1: Khi DB xác nhận đơn đã `PAID` (trang `/payment/vnpay-return` đọc `GET /orders/:id` thấy đã trả, hoặc `POST /payments` replay `SUCCESS` trả 200) thì giao diện chuyển tới màn xác nhận hiển thị: mã đơn, trạng thái "Đã thanh toán", danh sách món (tên, size, topping, số lượng), số tiền đã trả, phương thức, thời gian.
   - AC-F20.2: Khi hiển thị màn xác nhận thì giỏ hàng đã được xóa (số lượng trên biểu tượng giỏ là 0); khi thanh toán thất bại hoặc `Payment` còn `PENDING` thì giỏ **không** bị xóa.
-  - AC-F20.3: Khi tải lại trang xác nhận thì nội dung vẫn đúng (dữ liệu lấy từ `GET /orders/:id`, không phụ thuộc state tạm); có nút "Theo dõi đơn" dẫn tới trang chi tiết đơn.
+  - AC-F20.3: Khi tải lại trang xác nhận thì nội dung vẫn đúng (dữ liệu lấy từ `GET /orders/:id`, không phụ thuộc state tạm); màn xác nhận chính là trang chi tiết `/orders/:id` nên không cần nút chuyển trang.
 
 #### FR-21 — Lịch sử đơn của tôi
 - **Mô tả:** Customer xem danh sách đơn của chính mình, mới nhất trước.
@@ -446,7 +446,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 - **Tiêu chí chấp nhận:**
   - AC-F21.1: Khi `GET /orders/me` với token Customer thì trả 200 với mảng các đơn của **chính người đó**, sắp theo `createdAt` giảm dần, mỗi phần tử có `id`, `status`, `total`, `createdAt`; tối đa 50 đơn mới nhất.
   - AC-F21.2: Khi có hai khách A và B, mỗi người đặt một đơn thì `GET /orders/me` của A không chứa đơn của B.
-  - AC-F21.3: Khi chưa có đơn thì trả 200 `[]` và giao diện hiển thị "Bạn chưa có đơn nào" cùng liên kết tới menu; có loading và error như FR-02.
+  - AC-F21.3: Khi chưa có đơn thì trả 200 `[]` và giao diện hiển thị "Bạn chưa có đơn hàng nào" cùng liên kết tới menu; có loading và error như FR-02.
   - AC-F21.4: Khi gọi không token thì 401; token Barista thì 403.
   - AC-F21.5: Giao diện mỗi dòng hiển thị mã đơn, ngày giờ, tổng tiền và nhãn trạng thái tiếng Việt (mục 3.6).
 
@@ -454,7 +454,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 - **Mô tả:** Customer xem chi tiết một đơn của mình và thấy trạng thái tự cập nhật, không cần tải lại trang (bước "Theo dõi đơn" của luồng).
 - **Ưu tiên:** Must · **Use-case:** UC-05 · **Stakeholder:** S1, S2
 - **Tiêu chí chấp nhận:**
-  - AC-F22.1: Khi `GET /orders/:id` của chủ đơn thì trả 200 với `status`, `total`, `discountAmount` (luôn 0 trong bản nộp), `items`, `payments` (nếu có, gồm các trường ở mục 3.1); đơn không tồn tại trả 404 `ORDER_NOT_FOUND`; đơn của người khác trả 403 `FORBIDDEN`; token Barista xem được mọi đơn (200).
+  - AC-F22.1: Khi `GET /orders/:id` của chủ đơn thì trả 200 với `status`, `total`, `items`, `payments` (nếu có, gồm các trường ở mục 3.1); đơn không tồn tại trả 404 `ORDER_NOT_FOUND`; đơn của người khác trả 403 `FORBIDDEN`; token Barista xem được mọi đơn (200).
   - AC-F22.2: Khi trang theo dõi đơn đang mở và Barista đổi trạng thái (FR-24) thì nhãn trên trang cập nhật trong vòng 6 giây mà không cần tải lại (tự làm mới mỗi 5 giây).
   - AC-F22.3: Khi đơn đã ở `COMPLETED` hoặc `CANCELLED` thì trang ngừng tự làm mới (không còn yêu cầu định kỳ).
   - AC-F22.4: Trang hiển thị tiến trình `PAID → PREPARING → READY → COMPLETED` với bước hiện tại được đánh dấu; trạng thái `CANCELLED` và `PAYMENT_FAILED` hiển thị nhãn riêng.
@@ -634,7 +634,7 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng được đặc tả đầy đủ trong
 #### NFR-17 — Continuous Integration
 - **Ưu tiên:** Must · **Stakeholder:** S4, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N17.1: Khi mở PR, CI chạy Install, Lint, Unit Test (API, web), Migration/seed, Build, Integration Test, E2E, Compose validation; bước nào lỗi thì dừng. Migration/seed chạy hai lần trên DB test riêng để kiểm INT-T15. Đây là pipeline nghiệm thu dự kiến của PR-2; kết quả phải có run URL và SHA.
+  - AC-N17.1: Khi mở PR, CI chạy Install, Lint, Unit Test (API, web), Migration/seed, Build, Integration Test, E2E, Compose validation; bước nào lỗi thì dừng. Migration chạy một lần và seed chạy hai lần trên DB test riêng để kiểm seed chạy lặp không lỗi; INT-T15 không dựa vào bước này vì tự chạy seed hai lần trong bước Integration Test. Đây là pipeline nghiệm thu dự kiến của PR-2; kết quả phải có run URL và SHA.
   - AC-N17.2: Pull request có lỗi lint, test hoặc build không merge được. Theo Q3 trong [báo cáo P1](../planning/handoff/2026-11-owner-p1-report.md), `main` đã yêu cầu PR, một approval, required check `ci` strict, dismiss stale review và áp dụng cả admin; chặn force-push/xóa. PR-2 phải bổ sung minh chứng một run xanh có đủ tầng test và một PR nháp đỏ do test bị chặn merge (đề A2 §6.4); cấu hình protection không thay thế minh chứng này.
 
 #### NFR-18 — Continuous Delivery/Deployment và rollback

@@ -2,6 +2,7 @@ import { act, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { router } from '../../../vitest.setup';
 import { json, line, mockApi, order, payment, renderShop } from '@/test/helpers';
+import { OrdersScreen } from './OrdersScreen';
 import { VnpayReturnScreen } from './VnpayReturnScreen';
 
 describe('UNIT-T19 VNPay return (FR-14, FR-15)', () => {
@@ -31,6 +32,36 @@ describe('UNIT-T19 VNPay return (FR-14, FR-15)', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Đang xác minh thanh toán, vui lòng kiểm tra lại');
     expect(router.replace).not.toHaveBeenCalled();
     expect(JSON.parse(localStorage.getItem('brewlite-cart')!)).toEqual([line]);
+  });
+  it('reports that the order cannot be identified for valid:false without a saved order', async () => {
+    window.history.replaceState(null, '', '/payment/vnpay-return?vnp_ResponseCode=00&orderId=attacker-order');
+    mockApi(() => json({ valid: false }));
+    renderShop(<VnpayReturnScreen />, [line], true);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Không xác định được đơn hàng');
+    expect(screen.getByRole('link', { name: 'Lịch sử đơn hàng' })).toHaveAttribute('href', '/orders');
+    expect(fetch).toHaveBeenCalledTimes(1); // the query-string order ID is untrusted and is never read
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem('brewlite-cart')!)).toEqual([line]);
+  });
+  // AC-F20.3: the confirmation page is the order detail /orders/:id, so after a reload the same content must come from a new GET /orders/order-1.
+  it('shows the paid order on its detail page and rebuilds it from a new GET after a reload (AC-F20.3)', async () => {
+    let reads = 0;
+    // The reload reads a newer status, so content kept from the first render or in web storage cannot pass.
+    mockApi(() => json({ ...order, status: ++reads === 1 ? 'PAID' : 'PREPARING' }));
+    const expectConfirmation = async (label: string) => {
+      expect(await screen.findByRole('heading', { name: 'Mã đơn: order-1' })).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent(label);
+      expect(screen.getByText('Cappuccino · Size L · Trân châu × 2 — 124.000đ')).toBeInTheDocument();
+      expect(screen.getByText('Tổng tiền: 124.000đ')).toBeInTheDocument();
+    };
+    const first = renderShop(<OrdersScreen id="order-1" />, [], true);
+    await expectConfirmation('Đã thanh toán');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    first.unmount();
+    renderShop(<OrdersScreen id="order-1" />, [], true);
+    await expectConfirmation('Đang pha chế');
+    expect(fetch).toHaveBeenCalledTimes(2); // a second GET, not a result kept from the first render
+    expect(vi.mocked(fetch).mock.calls.map(([url]) => new URL(String(url)).pathname)).toEqual(['/orders/order-1', '/orders/order-1']);
   });
   it('polls the saved order even for valid:false and ignores untrusted query IDs', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
