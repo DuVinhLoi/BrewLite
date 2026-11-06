@@ -303,9 +303,7 @@ test('INT-T11a: Customer cannot drive PREPARING, READY or COMPLETED on own order
   expectStatus(await request(`/orders/${order.id}`, { method: 'PATCH', body: { status: 'PREPARING' } }), 401, 'UNAUTHORIZED');
 });
 
-test('INT-T11b: Barista cannot cancel an unpaid order', {
-  skip: 'AC-F24.3: runtime returns 409 instead of required 403 for an unpaid order; dedicated fix: https://github.com/DuVinhLoi/BrewLite/pull/31',
-}, async (t) => {
+test('INT-T11b: Barista cannot cancel an unpaid order', async (t) => {
   const f = await scenario(t);
   const unpaid = await createOrder(f.customer);
   const before = await snapshot(f);
@@ -332,9 +330,7 @@ test('INT-T12: customers see only own orders and Barista can view either owner',
   expectStatus(await request(`/orders/${mine.id}`, { token: other.token }), 403, 'FORBIDDEN');
 });
 
-test('INT-T11b: Barista cannot cancel a PAYMENT_FAILED order', {
-  skip: 'AC-F24.3: runtime returns 409 instead of required 403 for PAYMENT_FAILED; dedicated fix: https://github.com/DuVinhLoi/BrewLite/pull/31',
-}, async (t) => {
+test('INT-T11b: Barista cannot cancel a PAYMENT_FAILED order', async (t) => {
   const f = await scenario(t);
   const failed = await createOrder(f.customer);
   const payment = await createPayment(f.customer, failed);

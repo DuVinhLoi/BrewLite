@@ -17,7 +17,7 @@ See [results recorded for the earlier suite](../docs/task5/verification.md#khôi
 [CI evidence](../docs/evidence/ci/README.md) (head `4e711a8`) belong to the earlier suite; this suite has no CI run yet. UNIT-T12 asserts only the `tone` of the old `stockBadge`
 helper; the current menu UI has only Còn hàng/Hết hàng (no cup count, AC-F01.3), covered by UNIT-T14.
 Web units have no skipped tests: AC-F20.3 (UNIT-T19), AC-F21.3 (UNIT-T20) and AC-F22.1 follow the SRS as shipped.
-The only skipped tests are the two INT-T11b cases for AC-F24.3 (see HTTP integration below).
+No test is skipped.
 
 ## HTTP integration (Task 4 / B4)
 
@@ -129,10 +129,8 @@ including duplicate product/ingredient/recipe and recipe-line detection.
 The suite covers API-T01–API-T05 and INT-T01–INT-T15. INT-T01 sends the normal
 order DTO and checks server-computed prices. INT-T02 rejects client `total` and
 `unitPrice` fields per SRS AC-F12.3; these fields must not be silently accepted.
-INT-T11b (Barista cancels a `PENDING` or `PAYMENT_FAILED` order) retains its required 403 assertion but is narrowly skipped
-pending [the dedicated Barista cancellation fix (PR31)](https://github.com/DuVinhLoi/BrewLite/pull/31):
-the baseline API returns 409. INT-T11a paid progression remains enabled. Remove
-the skip when its runtime fix is integrated; other failures remain failures.
+INT-T11b (Barista cancels a `PENDING` or `PAYMENT_FAILED` order) asserts the required 403 and that nothing
+changes. INT-T11a paid progression stays enabled. All HTTP integration tests run with no skips; failures remain failures.
 
 When finished, stop the test database without removing its audit data:
 
