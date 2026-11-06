@@ -33,7 +33,7 @@ describe('UNIT-T17 authentication validation (FR-08, FR-09, NFR-06)', () => {
     expect(router.push).not.toHaveBeenCalled();
     expect(sessionStorage.getItem('brewlite-session')).toBeNull();
   });
-  it.each([['//evil', '/'], ['/\\evil', '/'], ['https://evil.example/', '/'], ['HTTPS://evil.example/', '/'], ['/%2F/evil', '/%2F/evil'], ['/checkout', '/checkout']])('after login follows next=%s to %s and never leaves the site (AC-F09.3)', async (next, destination) => {
+  it.each([['//evil', '/'], ['/\\evil', '/'], ['https://evil.example/', '/'], ['HTTPS://evil.example/', '/'], ['http://', '/'], ['/\t/evil.example/', '/'], ['/\n/evil.example/', '/'], ['//[', '/'], ['/.//evil.example/', '/'], ['/x/..//evil.example/', '/'], ['/./\\evil.example/', '/'], ['/%2e//evil.example/', '/'], ['/./\t/evil.example/', '/'], ['checkout', '/'], ['/%2F/evil', '/%2F/evil'], ['/checkout', '/checkout'], ['/orders/1?x=1', '/orders/1?x=1']])('after login follows next=%s to %s and never leaves the site (AC-F09.3)', async (next, destination) => {
     window.history.replaceState(null, '', `/login?next=${encodeURIComponent(next)}`);
     mockApi(() => json({ accessToken: 'fake-token', user: { email: 'test@example.invalid', role: 'CUSTOMER' } }));
     renderShop(<AuthScreen />);

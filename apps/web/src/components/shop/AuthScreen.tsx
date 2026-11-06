@@ -4,6 +4,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { shopApi } from '@/lib/shop';
 import { useShop } from './ShopProvider';
+// The URL parser drops tabs and newlines as the browser does, so check where the value really leads.
+// A path that parses to //host is refused too: Next.js navigates to pathname + search, which the browser reads as another host.
+function safeNext(next: string | null, origin: string) {
+  if (!next?.startsWith('/')) return '/';
+  try {
+    const url = new URL(next, origin);
+    return url.origin === origin && !url.pathname.startsWith('//') ? next : '/';
+  } catch { return '/'; }
+}
 export function AuthScreen({ register = false }: { register?: boolean }) {
   const shop = useShop();
   const router = useRouter();
@@ -25,7 +34,7 @@ export function AuthScreen({ register = false }: { register?: boolean }) {
       const result = await shopApi<{ accessToken: string; user: { email: string; role: string } }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
       shop.login({ token: result.accessToken, ...result.user });
       const next = new URLSearchParams(window.location.search).get('next');
-      router.push(next?.startsWith('/') && !next.startsWith('//') && !next.includes('\\') ? next : '/');
+      router.push(safeNext(next, window.location.origin));
     } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
   }
   return <main className="shop-page"><h1>{register ? 'Đăng ký' : 'Đăng nhập'}</h1><form onSubmit={submit} noValidate><label>Email<input name="email" type="email" autoComplete="email" required aria-invalid={!!fields.email} /></label>{fields.email && <p role="alert">{fields.email}</p>}<label>Mật khẩu<input name="password" type="password" autoComplete={register ? 'new-password' : 'current-password'} required aria-invalid={!!fields.password} /></label>{fields.password && <p role="alert">{fields.password}</p>}{error && <p role="alert">{error}</p>}<button disabled={busy}>{busy ? 'Đang xử lý…' : register ? 'Tạo tài khoản' : 'Đăng nhập'}</button></form><Link href={register ? '/login' : '/register'}>{register ? 'Đã có tài khoản? Đăng nhập' : 'Tạo tài khoản mới'}</Link></main>;
