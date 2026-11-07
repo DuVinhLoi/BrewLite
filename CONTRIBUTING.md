@@ -32,7 +32,7 @@ Bảo vệ `main` đã được cấu hình và đọc lại ngày 04/11/2026 th
 3. Không cho bypass các yêu cầu trên, force-push hoặc xóa nhánh bảo vệ.
 4. Kiểm PR cố ý đỏ thực sự không merge được; lưu ảnh/log theo [hồ sơ CI](docs/evidence/ci/README.md).
 
-Đây là cấu hình GitHub, không được bật chỉ bằng workflow. Giới hạn HTTP 403/private ở [hồ sơ tháng 10](docs/evidence/ci/github-runs.md) là lịch sử; repo hiện public. PR-2 vẫn cần ba run xanh đủ tầng và một PR cố ý sai test chứng minh required `ci` chặn merge; không coi PR draft hoặc review thủ công là bằng chứng thay thế.
+Đây là cấu hình GitHub, không được bật chỉ bằng workflow. Giới hạn HTTP 403/private ở [hồ sơ tháng 10](docs/evidence/ci/github-runs.md) là lịch sử; repo hiện public. Đã có ba lượt xanh đủ tầng trên `4e711a8` và PR #33 cố ý sai test có run đỏ; vẫn cần minh chứng tách riêng required `ci` chặn merge; không coi PR draft hoặc review thủ công là bằng chứng thay thế.
 
 ## Definition of Done
 

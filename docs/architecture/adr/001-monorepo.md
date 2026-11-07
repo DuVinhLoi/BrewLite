@@ -11,7 +11,7 @@ BrewLite là một hệ thống nhỏ, có phạm vi thực thi rõ ràng: giao 
 
 Duy trì một repository duy nhất, chia theo phần `apps/web`, `apps/api`, `docs/` và cấu hình chung như `docker-compose.yml`, `.env.example`, `.github/workflows/`.
 
-Bổ sung BREW-INVENTORY-01: bộ test được loại khỏi bản phân phối sau kiểm chứng theo yêu cầu; bằng chứng trước cleanup ghi ở docs/inventory-verification.md.
+Bổ sung BREW-INVENTORY-01: bộ test được loại khỏi bản phân phối sau kiểm chứng theo yêu cầu; bằng chứng trước cleanup ghi ở docs/inventory-verification.md. Bộ test được khôi phục qua PR #32, xem [ADR-008](008-test-strategy.md).
 
 ## Hệ quả
 
