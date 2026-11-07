@@ -95,7 +95,7 @@ Trước khi bắt đầu task kế tiếp, cả nhóm kiểm checklist nghiệm
 > **Trạng thái:** đã chốt qua PR #5 (merge `0130ae0`). Phạm vi minimum ghi ở [`srs.md`](../requirements/srs.md) mục 1.4 và 8; khi mục này lệch SRS thì SRS đúng. Các quyết định đã chốt:
 > - quản lý trạng thái đơn: FR-23 và FR-24 là **Must**, Barista đổi trạng thái qua `PATCH /orders/:id` bằng **Postman collection** (AC-F24.4); FR-25 (khách hủy đơn chưa thanh toán) là **Could** vì đề A2 §7.1 không đòi hủy đơn; Swagger UI không là tiêu chí nghiệm thu;
 > - khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi Barista (FR-17, FR-18, FR-19, FR-26, FR-27) là **Won't trong bản nộp**; class diagram vẫn có `Promotion` và `LoyaltyTransaction`;
-> - SRS đã rút gọn thêm về mức tối thiểu của đề (ghi chú ở `srs.md` mục 1.4): NFR-01 giữ Must (nhóm chọn, chỉ đo ở local), NFR-12 giữ Must cho E2E tự động tối thiểu, NFR-02 và NFR-03 thành Could, NFR-10 (PWA) thành Must nhưng chỉ cần web app manifest.
+> - SRS đã rút gọn thêm về mức tối thiểu của đề (lịch sử ở `docs/requirements/README.md`): NFR-01 giữ Must (nhóm chọn, chỉ đo ở local), NFR-12 giữ Must cho E2E tự động tối thiểu, NFR-02 và NFR-03 thành Could, NFR-10 (PWA) thành Must nhưng chỉ cần web app manifest.
 
 **Nhánh gợi ý:** `a2/task-1-requirements`, tách PR theo Task 1.1, 1.2, 1.3.
 **Đầu vào tham khảo:** đề A1 §3.1–3.2 (vision, stakeholder), §4 (yêu cầu), §5 (luồng nghiệp vụ); [`docs/reference/a1/use-case-specifications.md`](../reference/a1/use-case-specifications.md) §1 (actor), §2 (Bản 1), §4 (bảng UC).

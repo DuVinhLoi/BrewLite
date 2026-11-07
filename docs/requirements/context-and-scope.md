@@ -1,6 +1,6 @@
 # Bối cảnh, stakeholder và phạm vi (Task 1.1)
 
-> **Bản chốt Task 1**, theo phạm vi tối thiểu đã thống nhất ở PR #5 và đã rút gọn thêm (SRS mục 1.4).
+> **Bản chốt Task 1**, theo phạm vi tối thiểu đã thống nhất ở PR #5 và đã rút gọn thêm ([lịch sử thay đổi](README.md#lịch-sử-thay-đổi-srs)).
 >
 > Tài liệu này trả lời đề A2 §3.1. Đề A2: [`../Assignment2-BrewLite.md`](../Assignment2-BrewLite.md). Bối cảnh lấy từ đề A1 (chỉ để tham khảo): [`../BrewLite-CongNghePhanMem-fixed.md`](../BrewLite-CongNghePhanMem-fixed.md) §3. Đọc kèm: [`srs.md`](srs.md), [`uc-checkout.md`](uc-checkout.md), [`use-case-overview.svg`](use-case-overview.svg).
 >

@@ -1,12 +1,6 @@
 # Đặc tả yêu cầu phần mềm rút gọn (SRS) — BrewLite Assignment 2
 
-> **Khôi phục test (2026-11):** Q1/Q2 đã được chủ repo duyệt; PR-2 đã có unit API/web, HTTP integration và Chromium E2E. [Kết quả local](../task5/verification.md#khôi-phục-test-pr-2--06112026) ghi rõ pass/skip; CI đã xanh trên bộ test hiện tại ([hồ sơ](../evidence/ci/README.md)); kiểm chứng chặn merge riêng do required ci còn chờ. Việc gỡ suite sau kiểm chứng là lịch sử; kết quả cũ tại [inventory-verification.md](../inventory-verification.md) không chứng minh suite mới đạt. Xem [ADR-008](../architecture/adr/008-test-strategy.md) và [danh mục test](../traceability-matrix.md#phan-b).
->
-> **BREW-INVENTORY-01 (2026-10-29):** mở rộng bản chốt Assignment 2 thêm kho nguyên liệu, công thức và hủy đơn chưa trả. FR-25 và FR-29 là Must của đợt này; các quyết định tối thiểu trước đó được giữ lại như lịch sử.
->
 > Tài liệu này trả lời đề A2 §3.2. Đề A2: [`../Assignment2-BrewLite.md`](../Assignment2-BrewLite.md). Bối cảnh, stakeholder, phạm vi: [`context-and-scope.md`](context-and-scope.md). Đặc tả use-case trọng tâm: [`uc-checkout.md`](uc-checkout.md). Truy vết: [`../traceability-matrix.md`](../traceability-matrix.md).
->
-> Tên endpoint, mã lỗi và giá trị ở mục 3 đã được đối chiếu với code đang chạy (2026-10-31). Nếu sau này đổi thì sửa SRS, sơ đồ và ma trận truy vết trong cùng một PR (xem quy tắc đồng bộ trong [`CONTRIBUTING.md`](../../CONTRIBUTING.md)).
 
 ## Mục lục
 
@@ -17,7 +11,7 @@
 5. Yêu cầu chức năng (FR)
 6. Yêu cầu phi chức năng (NFR)
 7. Ánh xạ yêu cầu → stakeholder
-8. Quyết định phạm vi và đầu vào cho task sau
+8. Quyết định phạm vi
 9. Thuật ngữ
 
 ---
@@ -44,18 +38,14 @@ BrewLite là ứng dụng đặt đồ uống không dùng tiền mặt: giao di
 ### 1.4 Baseline bản nộp và phụ thuộc
 
 - Bản hiện tại gồm FR-01–FR-16, FR-20–FR-25 và FR-29 (23 yêu cầu Must). FR-25 là bắt buộc để chủ đơn nhả được phần nguyên liệu đã giữ; FR-29 gồm quản lý kho và công thức.
-- FR-17, FR-18, FR-19, FR-26, FR-27 là **Won’t trong bản nộp**, đã gom vào bảng ở mục 5.9 (giữ nguyên mã, không đánh lại số). Không cần giao diện, endpoint, seed khuyến mãi hay giao dịch điểm cho các yêu cầu này. Nếu sau này một PR được duyệt đưa chúng trở lại phạm vi thì viết lại tiêu chí chấp nhận ngay trong PR đó.
-- NFR Must chỉ áp dụng cho các endpoint và luồng thuộc bản chốt. NFR Should và Could không phải điều kiện nghiệm thu bản tối thiểu.
+- FR-17, FR-18, FR-19, FR-26, FR-27 là **Won’t trong bản nộp**, đã gom vào bảng ở mục 5.9 (giữ nguyên mã, không đánh lại số). Không cần giao diện, endpoint, seed khuyến mãi hay giao dịch điểm cho các yêu cầu này.
+- NFR Must chỉ áp dụng cho các endpoint và luồng thuộc bản nộp. NFR Should và Could không phải điều kiện nghiệm thu bản tối thiểu.
 - Task 2 vẫn phải mô hình hóa hai lớp domain bắt buộc `Promotion` và `LoyaltyTransaction` với thuộc tính, quan hệ, multiplicity (đề A2 §4.3); điều này không có nghĩa là phải làm tính năng tương ứng.
-- **Ghi chú rút gọn (đề A2 §6.2).** Bản chốt ở PR #5 đặc tả nhiều hơn đề yêu cầu, nên bản này chỉ giữ mức tối thiểu vừa sức hai Sprint.
 - **VNPay sandbox.** Thanh toán đi qua VNPay sandbox thay cho simulator (ADR-007): `POST /payments` chỉ tạo `Payment PENDING` và URL đã ký, khách trả trên trang VNPay, kết quả về qua IPN hoặc QueryDR (BR-10, BR-11). Quy ước ở mục 3.4, hành vi ở FR-14 đến FR-16, rủi ro ở R-13 đến R-15 ([context-and-scope](context-and-scope.md)). FR-31 (cổng production thật) vẫn là Won't.
-- **Khôi phục test (2026-11).** Đề A2 §6.4, §7.2, §7.3 và checklist §9.1 yêu cầu test và bước test trong pipeline. Theo Q1 của chủ repo trong [báo cáo P1 ngày 04/11/2026](../planning/handoff/2026-11-owner-p1-report.md), PR-2 khôi phục unit API, unit/component web, API/integration qua HTTP và E2E Chromium trong CI. Q2 duyệt dependency web; API dùng `node:test` và `tsx` sẵn có. Suite và workflow đã hiện thực; [verification](../task5/verification.md#khôi-phục-test-pr-2--06112026) ghi kết quả local; CI đã xanh trên bộ test hiện tại ([hồ sơ](../evidence/ci/README.md)); minh chứng chặn merge riêng do required ci còn chờ. Mã mới ở [ma trận, Phần B](../traceability-matrix.md#phan-b); mã trước cleanup chỉ là lịch sử.
-- **Hiển thị tồn kho (2026-11-05).** Theo yêu cầu điều chỉnh giao diện, khách chỉ thấy nhãn "Còn hàng" hoặc "Hết hàng", không có nhãn số ly; AC-F01.3 và AC-F04.4 được sửa cho khớp.
-- **Rút gọn văn bản (2026-11).** Viết gọn mục 3 và các tiêu chí chấp nhận để dễ đọc; không đổi hành vi của hệ thống hay mã yêu cầu. Bốn tiêu chí được sửa câu chữ cho khớp hành vi đang chạy, code không đổi: AC-F08.3 và AC-N06.1 (`details` chứa thông điệp của lỗi đầu tiên, không theo từng trường), AC-F15.4 (trang kết quả có liên kết "Xem hoặc hủy đơn", nút "Hủy đơn" ở trang chi tiết), AC-N14.1 (cần `.env`, lệnh `--wait` và seed; PostgreSQL không mở cổng ra máy).
 
 ### 1.5 Cách đọc một yêu cầu
 
-Mỗi yêu cầu gồm: **mô tả**, dòng **Ưu tiên / Use-case / Stakeholder**, và danh sách **tiêu chí chấp nhận** đánh mã `AC-Fxx.n` (cho `FR-xx`) hoặc `AC-Nxx.n` (cho `NFR-xx`). Mỗi tiêu chí viết theo dạng *khi… thì…* để chuyển thẳng thành một test (mã test `UNIT-Txx`, `API-Txx`, `INT-Txx`, `E2E-Txx` ghi trong ma trận truy vết). Mã tiêu chí, quy tắc và luồng đã bỏ không dùng lại; các mã còn lại giữ nguyên số hiệu.
+Mỗi yêu cầu gồm: **mô tả** (khi cần), dòng **Ưu tiên / Use-case / Stakeholder**, và danh sách **tiêu chí chấp nhận** đánh mã `AC-Fxx.n` (cho `FR-xx`) hoặc `AC-Nxx.n` (cho `NFR-xx`). Mỗi tiêu chí viết để chuyển thẳng được thành một test (mã test `UNIT-Txx`, `API-Txx`, `INT-Txx`, `E2E-Txx` ghi trong ma trận truy vết). Mã tiêu chí, quy tắc và luồng đã bỏ không dùng lại; các mã còn lại giữ nguyên số hiệu.
 
 ---
 
@@ -96,7 +86,7 @@ Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Use-case trọng t�
 | UC-10 | Quản lý nguyên liệu và công thức | Barista | FR-29 |
 | UC-09 | Đăng ký tài khoản (Barista không đăng ký, tài khoản do seed tạo: giả định A-04) | Guest | FR-08 |
 
-Sơ đồ chỉ vẽ các use-case thuộc bản nộp (Must, Could). Các dòng Won’t vẫn giữ trong bảng để truy vết (xem mục 5.9).
+Sơ đồ chỉ vẽ các use-case thuộc bản nộp (Must). Các dòng Won’t vẫn giữ trong bảng để truy vết (xem mục 5.9).
 
 ---
 
@@ -202,8 +192,6 @@ Mã trên return hoặc IPN chỉ để chọn câu thông báo, không quyết 
 | BR-09 | Thanh toán thất bại không xóa giỏ hàng và không hủy đơn; tồn kho vẫn giữ cho tới khi đơn `CANCELLED` |
 | BR-10 | Mỗi đơn có tối đa một `Payment PENDING`. Chưa xác định được kết quả của payment đó (còn hạn, hoặc quá hạn mà QueryDR chưa kết luận) thì không mở lần thử mới và không cho hủy đơn: trả 409 `PAYMENT_IN_PROGRESS`. Payment không kẹt mãi: khi `now >= expiresAt + 15 phút` mà vẫn chưa kết luận, lời gọi `POST /payments`, hủy đơn hoặc `sync` đóng nó thành `FAILED` (`gatewayResponseCode = "EXPIRED"`) rồi mới mở lần thử mới hoặc cho hủy; nhóm trạng thái nghi ngờ (`04`/`05`/`06`/`07`/`09`) và `MISMATCH` không bao giờ tự đóng (AC-F16.10, AC-F16.11) |
 | BR-11 | Chỉ IPN hoặc QueryDR đã xác thực (chữ ký, merchant, mã tham chiếu, số tiền khớp) mới được quyết định kết quả cuối của `Payment` và đơn. Return URL chỉ hiển thị, không đổi trạng thái; hai nguồn kết quả áp qua cùng một hàm và không ghi đè trạng thái cuối |
-
-Mã BR giữ nguyên số hiệu; các mã bị bỏ (cùng FR-17/18 ngoài bản nộp) không dùng lại.
 
 ### 3.5a Kho nguyên liệu và thuật ngữ
 
@@ -484,8 +472,6 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 
 ### 5.8 Quản lý trạng thái đơn
 
-> **BREW-INVENTORY-01:** FR-23, FR-24, FR-25 là Must. Barista đổi tiến độ đơn đã trả; chủ đơn hủy đơn chưa trả và giải phóng snapshot. Hoàn tiền đơn đã trả và hàng đợi vẫn ngoài phạm vi.
-
 #### FR-23 — Vòng đời và chặn chuyển trạng thái sai
 - **Mô tả:** Mọi thay đổi trạng thái đơn phải theo bảng chuyển hợp lệ ở mục 3.6; chuyển nào không có trong bảng đều bị từ chối.
 - **Ưu tiên:** Must · **Use-case:** UC-07 · **Stakeholder:** S2, S3, S5
@@ -502,7 +488,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
   - AC-F24.1: Khi token Barista gọi `PATCH /orders/:id` với `{ "status": "PREPARING" }` trên đơn `PAID` thì trả 200 với `status = "PREPARING"`; tiếp tục `READY` rồi `COMPLETED` đều trả 200.
   - AC-F24.2: Customer gọi PREPARING/READY/COMPLETED trả 403 FORBIDDEN; không token trả 401. Customer chỉ hủy đơn của chính mình theo AC-F25.1–2; thao tác từ chối không đổi số dư hoặc trạng thái.
   - AC-F24.3: Khi Barista chuyển đơn `PENDING` hoặc `PAYMENT_FAILED` sang `PREPARING` thì trả 409 `INVALID_ORDER_TRANSITION`; `id` không tồn tại trả 404 `ORDER_NOT_FOUND`. Khi Barista gửi `{ "status": "CANCELLED" }` trên đơn `PENDING` hoặc `PAYMENT_FAILED` thì trả 403 `FORBIDDEN` (hai chuyển này chỉ dành cho chủ đơn, mục 3.6); trên đơn `PAID`, `PREPARING`, `READY`, `COMPLETED` hoặc `CANCELLED` thì trả 409 `INVALID_ORDER_TRANSITION` (chuyển không có trong bảng, `PAID → CANCELLED` là FR-26 Won’t). Mọi trường hợp bị từ chối đều không đổi trạng thái đơn, snapshot và số dư nguyên liệu/legacy stock.
-  - AC-F24.4: Có hướng dẫn API thủ công: Barista đăng nhập lấy Bearer token, GET /orders/:id theo mã đơn, PATCH lần lượt PREPARING/READY/COMPLETED trên đơn đã PAID; nhận 200 và các lỗi theo AC-F24.1–3. Không giao Postman collection; bộ test PR-2 gồm UNIT-T04 và INT-T11, bổ sung cho hướng dẫn API thủ công.
+  - AC-F24.4: Có hướng dẫn API thủ công: Barista đăng nhập lấy Bearer token, GET /orders/:id theo mã đơn, PATCH lần lượt PREPARING/READY/COMPLETED trên đơn đã PAID; nhận 200 và các lỗi theo AC-F24.1–3. Không giao Postman collection.
 
 #### FR-25 — Khách hủy đơn chưa thanh toán
 - **Mô tả:** Customer hủy được đơn của mình khi đơn đang PENDING/PAYMENT_FAILED; phần nguyên liệu đã giữ được nhả ra đúng một lần. Hủy đơn không đổi tồn thực tế (onHand), và đơn không tự hủy theo thời gian. Đơn còn `Payment PENDING` chưa kết luận thì chưa hủy được (409 `PAYMENT_IN_PROGRESS`, AC-F25.4).
@@ -515,7 +501,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 
 ### 5.9 Yêu cầu không thực hiện (Won't)
 
-FR-17, FR-18, FR-19, FR-26, FR-27 từng được đặc tả đầy đủ trong bản chốt PR #5; nay gom vào bảng này (xem mục 1.4), giữ nguyên mã. Nếu sau này một PR được duyệt đưa chúng trở lại phạm vi thì viết lại tiêu chí chấp nhận ngay trong PR đó.
+Các yêu cầu dưới đây không làm trong bản nộp, giữ nguyên mã (xem mục 1.4). Nếu sau này một PR được duyệt đưa chúng trở lại phạm vi thì viết lại tiêu chí chấp nhận ngay trong PR đó.
 
 | Mã | Yêu cầu | Lý do không làm | Kiểm chứng "không làm" |
 |---|---|---|---|
@@ -539,7 +525,7 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng được đặc tả đầy đủ trong
 - AC-F29.3: Nhận 0.020kg matcha thành 20g, 2l sữa thành 2000ml; số âm/sai đơn vị/quá 3 chữ số thập phân/piece lẻ bị 400. Không cho đổi khối lượng sang thể tích.
 - AC-F29.4: Barista thay trọn công thức theo product+size hoặc topping, 1–50 nguyên liệu duy nhất, lượng dương hợp đơn vị; chọn cả hai/không chọn selector bị 400. Sửa công thức nguyên tử và không sửa snapshot đơn đã giữ.
 - AC-F29.5: Seed tạo thiếu nguyên liệu ở 0 và công thức demo, update rỗng bảo toàn số dư/công thức đã sửa. Chạy lại không tạo trùng; dữ liệu demo phải nhận qua API có lý do. Migration additive đánh dấu đơn cũ false, mọi đơn mới true; không chuyển số ly cũ thành nguyên liệu.
-- AC-F29.6: Kiểm nghiệm thu theo [UC-10](uc-inventory.md), [runbook](../inventory-runbook.md) và INT-T13, INT-T14 (PR-2), gồm ví dụ Matcha 6 ly, giỏ dùng chung nguyên liệu, thanh toán thất bại/thử lại/replay, hủy lặp và sửa công thức sau đặt đơn. Kết quả thực tế được ghi riêng ở [verification](../inventory-verification.md), không suy từ đặc tả.
+- AC-F29.6: Kiểm nghiệm thu theo [UC-10](uc-inventory.md), [runbook](../inventory-runbook.md) và INT-T13, INT-T14, gồm ví dụ Matcha 6 ly, giỏ dùng chung nguyên liệu, thanh toán thất bại/thử lại/replay, hủy lặp và sửa công thức sau đặt đơn.
 
 ## 6. Yêu cầu phi chức năng (NFR)
 
@@ -657,13 +643,13 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng được đặc tả đầy đủ trong
 #### NFR-17 — Continuous Integration
 - **Ưu tiên:** Must · **Stakeholder:** S4, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N17.1: Khi mở PR, CI chạy Install, Lint, Unit Test (API, web), Migration/seed, Build, Integration Test, E2E, Compose validation; bước nào lỗi thì dừng. Migration chạy một lần và seed chạy hai lần trên DB test riêng để kiểm seed chạy lặp không lỗi; INT-T15 không dựa vào bước này vì tự chạy seed hai lần trong bước Integration Test. Đây là pipeline nghiệm thu dự kiến của PR-2; kết quả phải có run URL và SHA.
-  - AC-N17.2: Pull request có lỗi lint, test hoặc build không merge được. Theo Q3 trong [báo cáo P1](../planning/handoff/2026-11-owner-p1-report.md), `main` đã yêu cầu PR, một approval, required check `ci` strict, dismiss stale review và áp dụng cả admin; chặn force-push/xóa. PR-2 phải bổ sung minh chứng một run xanh có đủ tầng test và một PR nháp đỏ do test bị chặn merge (đề A2 §6.4); cấu hình protection không thay thế minh chứng này.
+  - AC-N17.1: Khi mở PR, CI chạy Install, Lint, Unit Test (API, web), Migration/seed, Build, Integration Test, E2E, Compose validation; bước nào lỗi thì dừng. Migration chạy một lần và seed chạy hai lần trên DB test riêng để kiểm seed chạy lặp không lỗi; INT-T15 không dựa vào bước này vì tự chạy seed hai lần trong bước Integration Test.
+  - AC-N17.2: Pull request có lỗi lint, test hoặc build không merge được. Nhánh `main` yêu cầu PR, một approval, required check `ci` strict, dismiss stale review và áp dụng cả admin; chặn force-push/xóa. Kiểm chứng bằng một run xanh có đủ tầng test và một PR nháp đỏ do test bị chặn merge (đề A2 §6.4); cấu hình protection không thay thế minh chứng này.
 
 #### NFR-18 — Continuous Delivery/Deployment và rollback
 - **Ưu tiên:** Must · **Stakeholder:** S3, S4, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N18.1: Khi push `main` hoặc đẩy tag `a2-v*`, pipeline chạy Lint và Test qua quality gate gọi lại CI ở AC-N17.1, rồi Build Docker Image (gắn tag commit SHA hoặc semantic version), Push Registry, Deploy bằng secret của CI, chạy migration, Smoke Test. Lint, test hoặc build lỗi phải chặn publish/deploy. Bằng chứng: [Delivery 42240766718](https://github.com/DuVinhLoi/BrewLite/actions/runs/42240766718) success trên `aab31c4`, chạy bộ test cuối.
+  - AC-N18.1: Khi push `main` hoặc đẩy tag `a2-v*`, pipeline chạy Lint và Test qua quality gate gọi lại CI ở AC-N17.1, rồi Build Docker Image (gắn tag commit SHA hoặc semantic version), Push Registry, Deploy bằng secret của CI, chạy migration, Smoke Test. Lint, test hoặc build lỗi phải chặn publish/deploy.
   - AC-N18.2: Sau deploy API và web, Smoke Test gọi `GET /health` (trả 200, `database = "up"`), `GET /products` và trang web; mỗi bước thử lại tới khi nhận 200, tối đa 10 phút để chống ngủ đông/lỗi tạm thời; quá hạn thì pipeline báo đỏ và dừng.
   - AC-N18.3: Có quy trình rollback ghi trong `docs/deployment.md` và README, đã thử một lần: deploy lại image có tag commit SHA của bản trước và deployment web trước, rồi chạy lại smoke test theo AC-N18.2.
 
@@ -694,18 +680,16 @@ Stakeholder gọi theo mã trong [`context-and-scope.md`](context-and-scope.md) 
 
 ---
 
-## 8. Quyết định phạm vi và đầu vào cho task sau
-
-Bản chốt này khép lại Task 1 trước khi sang Task 2, đúng thứ tự của đề A2 §1. Task 1 được merge mà không cần chờ code hay sơ đồ Task 2; các ô truy vết của Task 2–5 để trống và ghi là chờ đúng task đó.
+## 8. Quyết định phạm vi
 
 1. **Tồn kho:** đơn mới giữ chỗ nguyên liệu ngay khi tạo, trừ hẳn theo bản chụp (snapshot) khi trả tiền thành công, và nhả ra khi chủ đơn hủy lúc chưa trả. FR-25 và FR-29 là Must của BREW-INVENTORY-01. Đơn bỏ dở thì giữ reserved mãi; không có cơ chế tự hủy hay tự hết hạn đơn (expiry). Đơn cũ marker false giữ vòng đời Product.stock cũ; xem ADR-006 và runbook cutover.
-2. **Phạm vi:** FR-23/24 Must, FR-25/29 Must; FR-17/18/19/26/27 ngoài bản nộp. Mô hình domain ở Task 2 vẫn giữ `Promotion`/`LoyaltyTransaction`, nhưng không cần seed hay luồng chạy thật cho hai lớp này.
+2. **Phạm vi:** FR-23, FR-24, FR-25, FR-29 là Must; các yêu cầu Won't ở mục 5.9.
 3. **Dữ liệu và giới hạn:** bộ giá size/topping, giới hạn 20 dòng/99 ly và JWT 1 giờ ở mục 3 là mốc chuẩn để kiểm thử.
 4. **Thanh toán:** theo quy ước VNPay sandbox mục 3.4 (ADR-007): `POST /payments` chỉ tạo `Payment PENDING` và URL; chỉ IPN hoặc QueryDR đã xác thực quyết định kết quả (BR-11); chống thu trùng bằng `Idempotency-Key`, trạng thái đơn và tối đa một `Payment PENDING` mỗi đơn (BR-05, BR-10, FR-16). VNPay sandbox là hệ thống ngoài, được vẽ thành participant "VNPay sandbox" trong sequence diagram.
 5. **API và lỗi:** tên endpoint, cấu trúc lỗi và mã HTTP ở mục 3.1–3.2 là mốc chuẩn; nếu sau này đổi thì phải cập nhật tài liệu và test trong cùng PR.
 6. **Tạo đơn:** bản tối thiểu không thêm cơ chế chống gửi lặp (idempotency) cho `POST /orders`. UI khóa nút trong lúc gửi; nếu mất phản hồi khi tạo đơn thì không tự gửi lại, mà nhắc khách kiểm tra lịch sử trước khi tạo đơn mới. Khi đã biết `orderId` thì E1/A3/E4 phải tiếp tục trên đơn cũ. Rủi ro bấm hai lần từ nhiều tab vẫn được chấp nhận.
 7. **Nhân viên:** dùng Postman với `GET /orders/:id`, `PATCH /orders/:id`; mã đơn lấy từ biên lai demo. Không cam kết có Swagger UI hay màn hàng đợi.
-8. **Task 2:** dựa vào bản chốt này để vẽ activity, sequence, class; sơ đồ phải có hai nhánh E1 trước và sau khi tạo đơn, 8 chuyển trạng thái hợp lệ (gồm hai chuyển `→ CANCELLED` dù API hủy FR-25 là Must); không cần mô tả FR-26.
+8. **Sơ đồ:** activity, sequence, class có hai nhánh E1 trước và sau khi tạo đơn, 8 chuyển trạng thái hợp lệ (gồm hai chuyển `→ CANCELLED`); không cần mô tả FR-26.
 9. **Rút gọn bản nộp:** mọi mục bắt buộc của đề A2 §3–§7 vẫn có ít nhất một yêu cầu Must đáp ứng: hiệu năng API đọc đo ở local (NFR-01), menu, chi tiết và size/topping, giỏ hàng và tổng tiền, đăng ký/đăng nhập/JWT, tạo đơn, thanh toán Ví/Thẻ, ba nhánh lỗi, idempotency, transaction đơn và tồn kho, xác nhận/lịch sử/trạng thái đơn, validate hai phía, loading/empty/error, mobile-first/PWA, docker-compose, health, migration/seed, CI, CD và rollback, HTTPS và DB không public, secret.
 
 ---
@@ -732,7 +716,6 @@ Bản chốt này khép lại Task 1 trước khi sang Task 2, đúng thứ tự
 | Sandbox | Môi trường thử của nhà cung cấp dịch vụ: chạy giống thật nhưng không có tiền hay dữ liệu thật |
 | Snapshot (bản chụp nguyên liệu) | Lượng nguyên liệu của từng đơn, lưu lại lúc đặt và không đổi về sau; dùng để trừ hoặc nhả kho cho đúng |
 | onHand / reserved / available | Tồn thực tế / phần đang giữ cho đơn chưa trả / phần còn dùng được (`onHand - reserved`) |
-| Spike | Một lần thử nghiệm ngắn để kiểm tra giả định kỹ thuật trước khi làm thật |
 | Poll (hỏi lại định kỳ) | Giao diện tự gọi lại API sau mỗi khoảng thời gian để cập nhật trạng thái |
 | Seed | Dữ liệu mẫu nạp vào CSDL bằng script |
 | Smoke test | Kiểm tra nhanh sau triển khai rằng các điểm chính còn sống |
