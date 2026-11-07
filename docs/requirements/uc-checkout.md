@@ -373,9 +373,9 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để số hiệu các luồng kh�
 
 ## 10. Gợi ý test từ đặc tả
 
-Các mã dưới đây là **test dự kiến PR-2**, định nghĩa ở [ma trận, Phần B](../traceability-matrix.md#phan-b), không phải kết quả đã chạy. A1/E5 ngoài bản nộp; E8b đã bỏ. Bằng chứng trước cleanup tại [inventory-verification.md](../inventory-verification.md) giữ vai trò lịch sử.
+Các mã dưới đây là **test PR-2**, định nghĩa ở [ma trận, Phần B](../traceability-matrix.md#phan-b); kết quả chạy ở [hồ sơ CI](../evidence/ci/README.md). A1/E5 ngoài bản nộp; E8b đã bỏ. Bằng chứng trước cleanup tại [inventory-verification.md](../inventory-verification.md) giữ vai trò lịch sử.
 
-| Luồng | Test dự kiến | Phạm vi và giới hạn cần kiểm |
+| Luồng | Test | Phạm vi và giới hạn cần kiểm |
 |---|---|---|
 | Chính, bước 1–21 | INT-T01, INT-T05, INT-T06, INT-T10, INT-T12; E2E-T01 | Giá server, reserve snapshot, URL ký, IPN thành công, return không ghi DB, xác nhận `PAID`, tổng tiền và lịch sử. E2E chặn redirect VNPay, tự ký IPN/return bằng secret giả |
 | A2 đổi phương thức | INT-T05; UNIT-T18 | URL theo phương thức; khi có payment chờ, khác phương thức phải bị chặn. Cần bổ sung nhánh đổi phương thức trước khi coi A2 được phủ đầy đủ |

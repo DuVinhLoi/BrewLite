@@ -127,7 +127,7 @@ and fake environment values. It checks preservation after each invocation,
 including duplicate product/ingredient/recipe and recipe-line detection.
 
 The suite covers API-T01–API-T05 and INT-T01–INT-T15. INT-T01 sends the normal
-order DTO and checks server-computed prices. INT-T02 rejects client `total` and
+order body and checks server-computed prices. INT-T02 rejects client `total` and
 `unitPrice` fields per SRS AC-F12.3; these fields must not be silently accepted.
 INT-T11b (Barista cancels a `PENDING` or `PAYMENT_FAILED` order) asserts the required 403 and that nothing
 changes. INT-T11a paid progression stays enabled. All HTTP integration tests run with no skips; failures remain failures.

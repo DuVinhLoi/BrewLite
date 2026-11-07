@@ -49,9 +49,9 @@ BrewLite là ứng dụng đặt đồ uống không dùng tiền mặt: giao di
 - Task 2 vẫn phải mô hình hóa hai lớp domain bắt buộc `Promotion` và `LoyaltyTransaction` với thuộc tính, quan hệ, multiplicity (đề A2 §4.3); điều này không có nghĩa là phải làm tính năng tương ứng.
 - **Ghi chú rút gọn (đề A2 §6.2).** Bản chốt ở PR #5 đặc tả nhiều hơn đề yêu cầu, nên bản này chỉ giữ mức tối thiểu vừa sức hai Sprint.
 - **VNPay sandbox.** Thanh toán đi qua VNPay sandbox thay cho simulator (ADR-007): `POST /payments` chỉ tạo `Payment PENDING` và URL đã ký, khách trả trên trang VNPay, kết quả về qua IPN hoặc QueryDR (BR-10, BR-11). Quy ước ở mục 3.4, hành vi ở FR-14 đến FR-16, rủi ro ở R-13 đến R-15 ([context-and-scope](context-and-scope.md)). FR-31 (cổng production thật) vẫn là Won't.
-- **Khôi phục test (2026-11).** Đề A2 §6.4, §7.2, §7.3 và checklist §9.1 yêu cầu test và bước test trong pipeline. Theo Q1 của chủ repo trong [báo cáo P1 ngày 04/11/2026](../planning/handoff/2026-11-owner-p1-report.md), PR-2 khôi phục unit API, unit/component web, API/integration qua HTTP và E2E Chromium trong CI. Q2 duyệt dependency web; API dùng `node:test` và `tsx` sẵn có. Suite và workflow đã hiện thực; [verification](../task5/verification.md#khôi-phục-test-pr-2--06112026) ghi kết quả local và skip, CI đầu đã xanh; chuỗi ba run còn chờ. Mã mới ở [ma trận, Phần B](../traceability-matrix.md#phan-b); mã trước cleanup chỉ là lịch sử.
+- **Khôi phục test (2026-11).** Đề A2 §6.4, §7.2, §7.3 và checklist §9.1 yêu cầu test và bước test trong pipeline. Theo Q1 của chủ repo trong [báo cáo P1 ngày 04/11/2026](../planning/handoff/2026-11-owner-p1-report.md), PR-2 khôi phục unit API, unit/component web, API/integration qua HTTP và E2E Chromium trong CI. Q2 duyệt dependency web; API dùng `node:test` và `tsx` sẵn có. Suite và workflow đã hiện thực; [verification](../task5/verification.md#khôi-phục-test-pr-2--06112026) ghi kết quả local; CI đã xanh trên bộ test hiện tại ([hồ sơ](../evidence/ci/README.md)); minh chứng chặn merge riêng do required ci còn chờ. Mã mới ở [ma trận, Phần B](../traceability-matrix.md#phan-b); mã trước cleanup chỉ là lịch sử.
 - **Hiển thị tồn kho (2026-11-05).** Theo yêu cầu điều chỉnh giao diện, khách chỉ thấy nhãn "Còn hàng" hoặc "Hết hàng", không có nhãn số ly; AC-F01.3 và AC-F04.4 được sửa cho khớp.
-- **Rút gọn văn bản (2026-11).** Viết gọn mục 3 và các tiêu chí chấp nhận để dễ đọc; không đổi hành vi hay mã yêu cầu.
+- **Rút gọn văn bản (2026-11).** Viết gọn mục 3 và các tiêu chí chấp nhận để dễ đọc; không đổi hành vi của hệ thống hay mã yêu cầu. Bốn tiêu chí được sửa câu chữ cho khớp hành vi đang chạy, code không đổi: AC-F08.3 và AC-N06.1 (`details` chứa thông điệp của lỗi đầu tiên, không theo từng trường), AC-F15.4 (trang kết quả có liên kết "Xem hoặc hủy đơn", nút "Hủy đơn" ở trang chi tiết), AC-N14.1 (cần `.env`, lệnh `--wait` và seed; PostgreSQL không mở cổng ra máy).
 
 ### 1.5 Cách đọc một yêu cầu
 
@@ -207,10 +207,10 @@ Mã BR giữ nguyên số hiệu; các mã bị bỏ (cùng FR-17/18 ngoài bả
 
 ### 3.5a Kho nguyên liệu và thuật ngữ
 
-`onHand`, `reserved`, `available`: xem mục 9.
+`onHand`, `reserved`, `available`: xem mục 9. Nguyên liệu tracked là nguyên liệu được theo dõi số lượng (`Ingredient.tracked`).
 
 - **Công thức:** công thức gốc gắn với món + size S/M/L; công thức topping cộng thêm nguyên liệu (kể cả trân châu vốn đã có trong món). Không bán được khi công thức trống, thiếu, hoặc công thức gốc không có nguyên liệu tracked. Nước và đá không giới hạn, không tính vào số ly.
-- **Số ly** = `min(floor(available / requiredPerCup))` trên các nguyên liệu tracked. `stock` trên menu là ước tính cho S không topping, không làm trần cho lựa chọn khác và không cộng lại thành cam kết cho cả giỏ. Số ly không hiển thị thành nhãn, khách chỉ thấy qua ô số lượng: nhập lớn hơn N thì tự hạ về N (tối đa 99 ly mỗi dòng); để trống, nhập 0, số âm hoặc số thập phân không vượt N thì báo "từ 1 đến N".
+- **Số ly** = `min(floor(available / requiredPerCup))` trên các nguyên liệu tracked. `stock` trên menu là ước tính cho S không topping, không làm trần cho lựa chọn khác và không cộng lại thành cam kết cho cả giỏ. Số ly không hiển thị thành nhãn, khách chỉ thấy qua ô số lượng: nhập lớn hơn N thì tự hạ về N (tối đa 99 ly mỗi dòng); để trống, nhập 0, số âm hoặc số thập phân không vượt N thì báo "từ 1 đến N". Giới hạn đã biết: lựa chọn không bán được chỉ khóa nút "Thêm vào giỏ", chưa hiện lý do.
 - **Cả giỏ:** cộng nhu cầu của cùng một nguyên liệu trên mọi dòng trước khi đặt (AC-F05.4, AC-F13.3).
 - **Đơn vị:** `g`, `ml`, `piece`; decimal string tối đa 3 chữ số thập phân, DB numeric(18,3). Đổi đơn vị theo AC-F29.3; chi tiết ở [HTTP/schema contract](../inventory-contract.md).
 
@@ -431,7 +431,7 @@ Ba tình huống mà đề A2 §4.1 yêu cầu phải có nhánh riêng đều c
 - **Mô tả:** Dù cùng một yêu cầu thanh toán bị gửi nhiều lần (mất phản hồi, bấm hai lần, mạng tự gửi lại) hay VNPay gửi lại IPN, khách cũng không bị thu tiền hai lần và hệ thống không tạo bản ghi trùng. Khi lần trả trước chưa rõ kết quả thì chưa mở lần thử mới (BR-05, BR-10, BR-11). Luồng UC-04 liên quan: E4, A6, A5, E11.
 - **Ưu tiên:** Must · **Use-case:** UC-04.2 · **Stakeholder:** S1, S3, S6
 - **Tiêu chí chấp nhận:**
-  - AC-F16.1: Khi hai `POST /payments` là cùng một yêu cầu (BR-05) và lần đầu đã `Payment SUCCESS` thì lần hai trả 200 `{ paymentId, orderId, orderStatus: "PAID", amount, status: "SUCCESS" }` với `paymentId` cũ; không tạo URL, không gọi VNPay, không cần cấu hình; DB có đúng 1 `Payment SUCCESS`. Cùng key khác `paymentMethod` là yêu cầu mới, trả 409 `ORDER_NOT_PAYABLE` (UC-04 E4).
+  - AC-F16.1: Khi hai `POST /payments` là cùng một yêu cầu (BR-05) và lần đầu đã `Payment SUCCESS` thì lần hai trả 200 `{ paymentId, orderId, orderStatus: "PAID", amount, status: "SUCCESS" }` với `paymentId` cũ; không tạo URL, không gọi VNPay, không cần cấu hình; DB có đúng 1 `Payment SUCCESS`. Cùng key khác `paymentMethod` sau khi đã thành công là yêu cầu mới, trả 409 `ORDER_NOT_PAYABLE` (UC-04 E4).
   - AC-F16.4: Khi đơn đã `PAID` mà khách gửi `Idempotency-Key` **mới** thì trả 409 `ORDER_NOT_PAYABLE`, không tạo `Payment` hay URL mới (không thu tiền lần hai).
   - AC-F16.5: Khi lần trước thất bại (`Payment FAILED`, FR-15) thì gửi lại cùng key được xử lý như lần thử mới (BR-05), không trả lại kết quả thất bại cũ.
   - AC-F16.6: Khi bấm "Thanh toán qua VNPay" thì nút bị vô hiệu tới khi có phản hồi; giao diện dùng một `Idempotency-Key` cho cả phiên màn thanh toán, sinh key mới ở phiên khác; chuyển sang đăng nhập theo E1 phải giữ key cùng `orderId`.
@@ -663,7 +663,7 @@ FR-17, FR-18, FR-19, FR-26, FR-27 từng được đặc tả đầy đủ trong
 #### NFR-18 — Continuous Delivery/Deployment và rollback
 - **Ưu tiên:** Must · **Stakeholder:** S3, S4, S5
 - **Tiêu chí chấp nhận:**
-  - AC-N18.1: Khi push `main` hoặc đẩy tag `a2-v*`, pipeline chạy Lint và Test qua quality gate gọi lại CI ở AC-N17.1, rồi Build Docker Image (gắn tag commit SHA hoặc semantic version), Push Registry, Deploy bằng secret của CI, chạy migration, Smoke Test. Lint, test hoặc build lỗi phải chặn publish/deploy; CI đầu PR32 đã xanh; bằng chứng Delivery chạy suite mới trên main còn chờ merge PR-2.
+  - AC-N18.1: Khi push `main` hoặc đẩy tag `a2-v*`, pipeline chạy Lint và Test qua quality gate gọi lại CI ở AC-N17.1, rồi Build Docker Image (gắn tag commit SHA hoặc semantic version), Push Registry, Deploy bằng secret của CI, chạy migration, Smoke Test. Lint, test hoặc build lỗi phải chặn publish/deploy. Bằng chứng: [Delivery 42240766718](https://github.com/DuVinhLoi/BrewLite/actions/runs/42240766718) success trên `aab31c4`, chạy bộ test cuối.
   - AC-N18.2: Sau deploy API và web, Smoke Test gọi `GET /health` (trả 200, `database = "up"`), `GET /products` và trang web; mỗi bước thử lại tới khi nhận 200, tối đa 10 phút để chống ngủ đông/lỗi tạm thời; quá hạn thì pipeline báo đỏ và dừng.
   - AC-N18.3: Có quy trình rollback ghi trong `docs/deployment.md` và README, đã thử một lần: deploy lại image có tag commit SHA của bản trước và deployment web trước, rồi chạy lại smoke test theo AC-N18.2.
 

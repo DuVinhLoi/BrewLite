@@ -481,7 +481,7 @@ Chuỗi bắt buộc (đề A2 §7.3): **Push/Tag → Lint và Test → Build Do
 
 Quy tắc cho secret (đề A2 §7.4): chỉ nằm ở GitHub Secrets, biến môi trường Vercel và Render. Không in secret ra log CI (không `echo` biến, không bật debug in env). Gợi ý tên secret của GitHub: `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `PROD_API_URL`, `PROD_WEB_URL`.
 
-Smoke test chỉ chờ HTTP 200, không so SHA qua `/health` (SRS mục 1.4, thay đổi (7)). Chạy CD tuần tự cho cùng môi trường production để hai tag không deploy chồng nhau. Xác nhận hành vi hook: [Render Deploy Hooks](https://render.com/docs/deploy-hooks), kiểm tra ngày 2026-10-16.
+Smoke test chỉ chờ HTTP 200, không so SHA qua `/health` (SRS AC-N18.2). Chạy CD tuần tự cho cùng môi trường production để hai tag không deploy chồng nhau. Xác nhận hành vi hook: [Render Deploy Hooks](https://render.com/docs/deploy-hooks), kiểm tra ngày 2026-10-16.
 
 **Rollback (viết vào `docs/deployment.md` và README):**
 
