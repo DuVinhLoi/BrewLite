@@ -22,7 +22,6 @@ actor "Khách hàng\n(Customer)" as Customer
 actor "Nhân viên quầy\n(Barista)\nInventory UI / API" as Barista
 actor "VNPay sandbox\n(hệ thống ngoài)" as Pay <<External>>
 
-Customer --|> Guest
 
 rectangle "Hệ thống BrewLite" {
   usecase "UC-01 Xem menu và chi tiết món\n(size, topping)\nFR-01..FR-04" as UC01
@@ -39,6 +38,8 @@ rectangle "Hệ thống BrewLite" {
   usecase "UC-07 Cập nhật trạng thái đơn\nFR-23, FR-24" as UC07
 }
 
+Guest <|- Customer
+
 Guest --- UC01
 Guest --- UC02
 Guest --- UC03
@@ -47,16 +48,22 @@ Guest --- UC09
 Customer --- UC04
 Customer --- UC05
 Customer --- UC06
+Customer --- UC042
 
 Barista --- UC03
 Barista --- UC07
 Barista --- UC10
 
-UC04 .> UC041 : <<include>>
+UC04 ..> UC041 : <<include>>
 UC04 .> UC042 : <<include>>
-UC045 .> UC042 : <<extend>>
+UC042 <.. UC045 : <<extend>>
 UC03 .> UC04 : <<extend>>
+UC042 -[hidden]> UC06
+UC06 -[hidden]> UC05
+UC05 -[hidden]> UC10
+UC10 -[hidden]> UC07
 
 UC042 --- Pay
+UC06 --- Pay : đối soát khi\nPayment PENDING quá hạn
 
 @enduml

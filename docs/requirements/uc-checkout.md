@@ -31,7 +31,7 @@
 | Mục tiêu | Customer biến giỏ hàng thành một đơn đã trả tiền không dùng tiền mặt qua VNPay sandbox, và nhận mã đơn để xác nhận |
 | Giá trị nghiệp vụ | Đây là bước mang lại doanh thu cho BrewLite: khách trả tiền xong thì đơn mới được chuyển sang pha chế |
 | Ưu tiên | Must |
-| Use-case con | UC-04.1 Tạo đơn hàng (include), UC-04.2 Thanh toán đơn hàng (include), UC-04.5 Thử lại thanh toán (extend UC-04.2); UC-03 Đăng nhập extend UC-04 khi chưa đăng nhập (UC-04.3, UC-04.4 ngoài bản nộp, không vẽ; xem `srs.md` §5.9) |
+| Use-case con | UC-04.1 Tạo đơn hàng (include), UC-04.2 Thanh toán đơn hàng (include), UC-04.5 Thử lại thanh toán (extend UC-04.2); UC-03 Đăng nhập extend UC-04 khi JWT thiếu hoặc hết hạn (UC-04.3, UC-04.4 ngoài bản nộp, không vẽ; xem `srs.md` §5.9) |
 | Lý do chọn | Use-case này đi qua đủ các thành phần (UI, API, DB, VNPay sandbox) và có đủ ba nhánh lỗi bắt buộc của đề A2 §4.1 (hết hàng, chưa đăng nhập, thanh toán thất bại); đây cũng là use-case mà sequence diagram ở Task 2.2 phải vẽ |
 
 ## 2. Use-case diagram
@@ -40,31 +40,33 @@
 
 Nguồn: [`uc-checkout.puml`](uc-checkout.puml). Các quan hệ:
 
-- UC-04 `<<include>>` UC-04.1 và UC-04.2: khi đặt đơn mới, hệ thống chạy cả hai (tạo đơn rồi thanh toán). Khi khách quay lại trả tiếp một đơn đã có (E1b/A3/A6) thì chỉ chạy lại UC-04.2, không tạo đơn lần nữa. VNPay sandbox là actor phụ của UC-04.2.
-- UC-04.5 `<<extend>>` UC-04.2: chỉ chạy khi đơn đang `PAYMENT_FAILED`. Áp mã giảm giá và ghi điểm (FR-17/18) nằm ngoài bản nộp nên không vẽ.
-- UC-03 Đăng nhập `<<extend>>` UC-04: chỉ chạy khi khách chưa đăng nhập; đây là cách vẽ ngoại lệ "chưa đăng nhập" trên sơ đồ. Tiền điều kiện của use-case vẫn là đã đăng nhập (mục 4).
+- UC-04 `<<include>>` UC-04.1 và UC-04.2: khi đặt đơn mới, hệ thống chạy cả hai (tạo đơn rồi thanh toán). Khi khách quay lại trả tiếp một đơn đã có (E1b/A3/A6) thì chỉ chạy lại UC-04.2, không tạo đơn lần nữa, nên Customer nối thẳng với UC-04.2. UC-04.1 không có đường vào riêng nên Customer chỉ tới nó qua UC-04. VNPay sandbox là actor phụ của UC-04.2.
+- UC-04.5 `<<extend>>` UC-04.2, tại điểm mở rộng "kiểm tra đơn cần trả" (bước 10): chỉ chạy khi đơn đang `PAYMENT_FAILED`. UC-04.5 dùng chung actor của UC-04.2 nên không vẽ thêm đường nối. Áp mã giảm giá và ghi điểm (FR-17/18) nằm ngoài bản nộp nên không vẽ.
+- UC-03 Đăng nhập `<<extend>>` UC-04, tại điểm mở rộng "kiểm tra phiên đăng nhập" (bước 2, 6 và 10): chỉ chạy khi JWT thiếu hoặc hết hạn; đây là cách vẽ ngoại lệ E1 trên sơ đồ. Vì vậy phiên đăng nhập là một bước kiểm trong luồng, không phải tiền điều kiện (mục 4). Khi Customer vào thẳng UC-04.2 mà JWT hết hạn thì xử lý theo E1b; sơ đồ không vẽ thêm mũi tên cho đường này.
+- UC-06 Hủy đơn chưa trả (FR-25) là use-case riêng, không include hay extend UC-04. Sơ đồ vẽ nó vì nó xử lý chính đơn do UC-04 tạo ra; luồng chi tiết ở A5. Khi `Payment PENDING` đã quá hạn, API hỏi VNPay bằng QueryDR để đối soát trước khi xét hủy (E11, AC-F25.4), nên VNPay sandbox cũng là actor phụ của UC-06.
 
 ## 3. Actor
 
 | Actor | Loại | Vai trò trong use-case |
 |---|---|---|
 | **Customer** (khách hàng đã đăng nhập) | Chính | Bắt đầu use-case, chọn phương thức, bấm "Thanh toán qua VNPay", trả tiền trên trang VNPay và nhận kết quả |
-| **Guest** (khách vãng lai) | Chính (kế thừa) | Chỉ xuất hiện ở ngoại lệ E1: chưa đăng nhập thì chưa bắt đầu được, phải qua UC-03 trước. `Customer` kế thừa `Guest` |
+| **Guest** (khách vãng lai) | Chính (kế thừa) | Chỉ xuất hiện ở ngoại lệ E1: chưa đăng nhập thì phải qua UC-03, đăng nhập xong mới là Customer và đi tiếp. `Customer` kế thừa `Guest` |
 | **VNPay sandbox** (cổng thanh toán bên thứ ba, hệ thống ngoài) | Phụ | Hiện trang thanh toán để khách nhập thẻ test; gọi IPN về API khi có kết quả; chuyển trình duyệt về trang return; trả lời API khi API hỏi bằng QueryDR (quy ước sandbox: `srs.md` mục 3.4) |
 
 Barista không tham gia use-case này (xem UC-07 ở `srs.md` mục 2.3). Các thành phần kỹ thuật xuất hiện trong luồng: Browser (trình duyệt của khách, nơi chạy Next.js UI), Next.js UI, NestJS API, Database. Đây cũng là các lifeline của sequence diagram (đề A2 §4.2).
 
 ## 4. Trigger, tiền điều kiện, hậu điều kiện
 
-**Trigger (điều kiện kích hoạt):** Customer bấm nút "Thanh toán" trên màn Giỏ hàng.
+**Trigger (điều kiện kích hoạt):** Customer bấm nút "Thanh toán" trên màn Giỏ hàng. Khách chưa đăng nhập bấm nút này thì đi theo E1a.
 
 **Tiền điều kiện:**
 
-1. Customer đã đăng nhập: có JWT hợp lệ, chưa hết hạn, `role = CUSTOMER` (FR-09, FR-10).
-2. Giỏ hàng có ít nhất 1 dòng và mọi dòng đều hợp lệ: số lượng từ 1 đến 99, tối đa 20 dòng (FR-05, FR-06, BR-02).
-3. API và database đang hoạt động.
+1. Giỏ hàng có ít nhất 1 dòng và mọi dòng đều hợp lệ: số lượng từ 1 đến 99, tối đa 20 dòng (FR-05, FR-06, BR-02).
+2. API và database đang hoạt động.
 
-(Nếu tiền điều kiện 1 không đúng thì chạy ngoại lệ E1; đây không phải lỗi hệ thống. Để tạo URL thanh toán mới, API còn cần cấu hình VNPay; thiếu cấu hình thì chạy E13.)
+Phiên đăng nhập (JWT hợp lệ, chưa hết hạn, `role = CUSTOMER`; FR-09, FR-10) được kiểm ở bước 2, 6 và 10. JWT thiếu hoặc hết hạn thì chạy ngoại lệ E1; đây không phải lỗi hệ thống.
+
+(Để tạo URL thanh toán mới, API còn cần cấu hình VNPay; thiếu cấu hình thì chạy E13.)
 
 **Hậu điều kiện khi thành công (đơn đã `PAID`):**
 
@@ -331,8 +333,8 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để số hiệu các luồng kh�
 
 | Bước / luồng | Mô tả ngắn | Yêu cầu chức năng | Yêu cầu phi chức năng |
 |---|---|---|---|
-| Tiền điều kiện 1 | Đã đăng nhập, JWT hợp lệ | FR-09, FR-10 | NFR-05 |
-| Tiền điều kiện 2 | Giỏ hợp lệ | FR-05, FR-06, FR-07 | — |
+| Bước 2, 6, 10 (kiểm phiên) | Đã đăng nhập, JWT hợp lệ | FR-09, FR-10 | NFR-05 |
+| Tiền điều kiện 1 | Giỏ hợp lệ | FR-05, FR-06, FR-07 | — |
 | 1 | Bấm "Thanh toán" ở giỏ | FR-07, FR-10 | NFR-09 |
 | 2 | Màn Thanh toán | FR-07, FR-12 (AC-F12.4) | NFR-09, NFR-11 |
 | 3 | Chọn phương thức (không nhập thẻ ở BrewLite) | FR-14 | NFR-09 |
