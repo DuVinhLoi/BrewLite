@@ -6,7 +6,7 @@
 
 1. Giới thiệu
 2. Tổng quan hệ thống: actor, use-case tổng quát, danh mục use-case
-3. Quy ước dùng trong tiêu chí chấp nhận (API, mã lỗi, dữ liệu mẫu, quy tắc nghiệp vụ, từ điển miền dữ liệu)
+3. Quy ước dùng trong tiêu chí chấp nhận (API, mã lỗi, dữ liệu mẫu, quy tắc nghiệp vụ, mô hình miền và vòng đời)
 4. Bảng tóm tắt yêu cầu theo nhóm
 5. Yêu cầu chức năng (FR)
 6. Yêu cầu phi chức năng (NFR)
@@ -198,20 +198,16 @@ Mã trên return hoặc IPN chỉ để chọn câu thông báo, không quyết 
 `onHand`, `reserved`, `available`: xem mục 9. Nguyên liệu tracked là nguyên liệu được theo dõi số lượng (`Ingredient.tracked`).
 
 - **Công thức:** công thức gốc gắn với món + size S/M/L; công thức topping cộng thêm nguyên liệu (kể cả trân châu vốn đã có trong món). Không bán được khi công thức trống, thiếu, hoặc công thức gốc không có nguyên liệu tracked. Nước và đá không giới hạn, không tính vào số ly.
-- **Số ly** = `min(floor(available / requiredPerCup))` trên các nguyên liệu tracked. `stock` trên menu là ước tính cho S không topping, không làm trần cho lựa chọn khác và không cộng lại thành cam kết cho cả giỏ. Số ly không hiển thị thành nhãn, khách chỉ thấy qua ô số lượng: nhập lớn hơn N thì tự hạ về N (tối đa 99 ly mỗi dòng); để trống, nhập 0, số âm hoặc số thập phân không vượt N thì báo "từ 1 đến N". Giới hạn đã biết: lựa chọn không bán được chỉ khóa nút "Thêm vào giỏ", chưa hiện lý do.
+- **Số ly** = `min(floor(available / requiredPerCup))` trên các nguyên liệu tracked. `stock` trong `GET /products` và `GET /products/:id` là ước tính cho S không topping, không làm trần cho lựa chọn khác và không cộng lại thành cam kết cho cả giỏ. Số ly không hiển thị thành nhãn, khách chỉ thấy qua ô số lượng: nhập lớn hơn N thì tự hạ về N (tối đa 99 ly mỗi dòng); để trống, nhập 0, số âm hoặc số thập phân không vượt N thì báo "từ 1 đến N". Giới hạn đã biết: lựa chọn không bán được chỉ khóa nút "Thêm vào giỏ", chưa hiện lý do.
 - **Cả giỏ:** cộng nhu cầu của cùng một nguyên liệu trên mọi dòng trước khi đặt (AC-F05.4, AC-F13.3).
 - **Đơn vị:** `g`, `ml`, `piece`; decimal string tối đa 3 chữ số thập phân, DB numeric(18,3). Đổi đơn vị theo AC-F29.3; chi tiết ở [HTTP/schema contract](../inventory-contract.md).
 
-### 3.6 Từ điển miền dữ liệu (ràng buộc cho Task 2)
+### 3.6 Mô hình miền và vòng đời
 
-Sơ đồ dùng đúng tên dưới đây (đề A2 §4.3); luồng khuyến mãi, điểm thưởng ngoài bản nộp không bắt buộc vẽ vào sơ đồ luồng.
+Thuộc tính, quan hệ và multiplicity ở [Class-01](../diagrams/class-domain.svg) (đề A2 §4.3); `Promotion`, `LoyaltyTransaction`, `Order.discountAmount`, `Order.promotionId` chỉ có trong mô hình, chưa có trong schema.
 
-- **Lớp domain (7):** `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction`.
-- **Quan hệ:** `User` 1–n `Order`; `Order` 1–n `OrderItem`; `OrderItem` n–1 `Product`; `Order` 1–n `Payment` (tối đa một `PENDING`, BR-10); `Order` n–0..1 `Promotion`; `User` 1–n `LoyaltyTransaction`; `LoyaltyTransaction` n–0..1 `Order`.
+- **Lớp domain bắt buộc (7):** `User`, `Product`, `Order`, `OrderItem`, `Payment`, `Promotion`, `LoyaltyTransaction`. Class-01 có thêm 5 lớp kho: `Ingredient`, `Recipe`, `RecipeLine`, `StockMovement`, `OrderIngredient`.
 - **Enum:** `OrderStatus`: `PENDING`, `PAID`, `PAYMENT_FAILED`, `PREPARING`, `READY`, `COMPLETED`, `CANCELLED`; `Role`: `CUSTOMER`, `BARISTA`; `PaymentMethod`: `WALLET`, `CARD`; `PaymentStatus`: `SUCCESS`, `FAILED`, `PENDING`; `LoyaltyType`: `EARN`, `REVERSAL`. Không có `REFUNDED` (FR-26 Won't). `EXPIRED` không phải enum, chỉ là giá trị của `gatewayResponseCode` (AC-F15.8, AC-F16.10).
-- **Thuộc tính tối thiểu:** `Product(id, name, description, price, imageUrl, stock)`; `User(id, email, passwordHash, role)`; `Order(id, userId, status, total, discountAmount, promotionId?, inventoryTracked, createdAt)`; `OrderItem(id, orderId, productId, size, toppings, quantity, unitPrice, lineTotal)`; `Payment(id, orderId, method, status, amount, idempotencyKey, createdAt, provider, paymentUrl?, expiresAt?, gatewayCreateDate?, gatewayTxnNo?, gatewayResponseCode?, gatewayTransactionStatus?, bankCode?, paidAt?)`; `Promotion(id, code, discountPercent, validFrom, validTo, maxUses?, usedCount, active)`; `LoyaltyTransaction(id, userId, orderId?, type, points, createdAt)`. `provider` mặc định `VNPAY`; hàng tạo trước 2026-10-29 là `SIMULATOR`. `Order.discountAmount`, `Order.promotionId`, `Promotion` và `LoyaltyTransaction` chỉ có trong mô hình Task 2, chưa có trong schema.
-- `discountAmount` là thuộc tính miền cạnh `Promotion` (đề A2 §4.3), không có cột DB hay trường API.
-- **Kho:** `Ingredient(id,name,unit,tracked,onHand,reserved)`, `Recipe(id,productId?,size?,topping?)`, `RecipeLine(recipeId,ingredientId,quantity)`, `StockMovement(id,ingredientId,actorId,kind,quantity,onHandAfter,reason,createdAt)`, `OrderIngredient(orderId,ingredientId,quantity)`. `Product.stock` là cột cũ; `stock` trong response là giá trị tính ra. Xem [Class-01](../diagrams/class-domain.svg) và [contract](../inventory-contract.md).
 
 **Máy trạng thái đơn (BR-08, nguồn đề A1 §9.1).** Có đúng 8 chuyển hợp lệ. `COMPLETED`, `CANCELLED` là trạng thái kết thúc; chuyển khác bị từ chối, gồm `PAID → CANCELLED` (FR-26 Won't).
 

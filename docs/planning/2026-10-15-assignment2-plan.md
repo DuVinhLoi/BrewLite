@@ -253,7 +253,7 @@ Yêu cầu của đề: tối thiểu 7 lớp, có thuộc tính chính, quan h�
 
 Enum: trạng thái đơn (A1 có 7 trạng thái, xem đề A1 §9.1 và [`docs/reference/a1/user-sequence-specifications.md`](../reference/a1/user-sequence-specifications.md) §2.5 mục B2), phương thức thanh toán, trạng thái thanh toán, vai trò. Tên enum, giá trị và 8 chuyển trạng thái hợp lệ của minimum đã chốt ở `srs.md` mục 3.6.
 
-Thuộc tính, quan hệ và multiplicity của `Promotion` và `LoyaltyTransaction` lấy theo `srs.md` mục 3.6. Hai lớp có mặt trong mô hình dù luồng runtime của chúng ngoài bản nộp.
+Thuộc tính, quan hệ và multiplicity của `Promotion` và `LoyaltyTransaction` lấy theo `docs/diagrams/class-domain.puml`. Hai lớp có mặt trong mô hình dù luồng runtime của chúng ngoài bản nộp.
 
 Tùy chọn nhưng nên có: `docs/diagrams/state-order.puml` và `state-order.svg` (state machine của đơn hàng), để nhất quán với yêu cầu "quản lý trạng thái đơn". Đề A1 §9.1 là nguồn tham khảo.
 
