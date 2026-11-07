@@ -31,6 +31,6 @@ Hướng dẫn từng bước: `docs/planning/2026-10-15-assignment2-plan.md`, p
 
 ## Lịch sử thay đổi SRS
 
-- Rút gọn theo đề A2 §6.2. Bản chốt ở PR #5 đặc tả nhiều hơn đề yêu cầu, nên bản này chỉ giữ mức tối thiểu vừa sức hai Sprint.
+- Rút gọn phạm vi (ghi lý do theo đề A2 §6.2). Bản chốt ở PR #5 đặc tả nhiều hơn đề yêu cầu, nên bản này chỉ giữ mức tối thiểu vừa sức hai Sprint.
 - Hiển thị tồn kho (2026-11-05). Theo yêu cầu điều chỉnh giao diện, khách chỉ thấy nhãn "Còn hàng" hoặc "Hết hàng", không có nhãn số ly; AC-F01.3 và AC-F04.4 được sửa cho khớp.
 - Rút gọn văn bản (2026-11). Viết gọn mục 3 và các tiêu chí chấp nhận để dễ đọc; không đổi hành vi của hệ thống hay mã yêu cầu. Bốn tiêu chí được sửa câu chữ cho khớp hành vi đang chạy, code không đổi: AC-F08.3 và AC-N06.1 (`details` chứa thông điệp của lỗi đầu tiên, không theo từng trường), AC-F15.4 (trang kết quả có liên kết "Xem hoặc hủy đơn", nút "Hủy đơn" ở trang chi tiết), AC-N14.1 (cần `.env`, lệnh `--wait` và seed; PostgreSQL không mở cổng ra máy).
