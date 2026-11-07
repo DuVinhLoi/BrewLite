@@ -1,6 +1,6 @@
 # Đặc tả yêu cầu phần mềm rút gọn (SRS) — BrewLite Assignment 2
 
-> **Khôi phục test (2026-11):** Q1/Q2 đã được chủ repo duyệt; PR-2 đã có unit API/web, HTTP integration và Chromium E2E. [Kết quả local](../task5/verification.md#khôi-phục-test-pr-2--06112026) ghi rõ pass/skip; run CI đầu đã xanh, ba run xanh và kiểm chứng chặn merge riêng do required ci còn chờ. Việc gỡ suite sau kiểm chứng là lịch sử; kết quả cũ tại [inventory-verification.md](../inventory-verification.md) không chứng minh suite mới đạt. Xem [ADR-008](../architecture/adr/008-test-strategy.md) và [danh mục test](../traceability-matrix.md#phan-b).
+> **Khôi phục test (2026-11):** Q1/Q2 đã được chủ repo duyệt; PR-2 đã có unit API/web, HTTP integration và Chromium E2E. [Kết quả local](../task5/verification.md#khôi-phục-test-pr-2--06112026) ghi rõ pass/skip; CI đã xanh trên bộ test hiện tại ([hồ sơ](../evidence/ci/README.md)); kiểm chứng chặn merge riêng do required ci còn chờ. Việc gỡ suite sau kiểm chứng là lịch sử; kết quả cũ tại [inventory-verification.md](../inventory-verification.md) không chứng minh suite mới đạt. Xem [ADR-008](../architecture/adr/008-test-strategy.md) và [danh mục test](../traceability-matrix.md#phan-b).
 >
 > **BREW-INVENTORY-01 (2026-10-29):** mở rộng bản chốt Assignment 2 thêm kho nguyên liệu, công thức và hủy đơn chưa trả. FR-25 và FR-29 là Must của đợt này; các quyết định tối thiểu trước đó được giữ lại như lịch sử.
 >
