@@ -67,6 +67,6 @@ UC03 -[hidden]> UC041
 UC041 -[hidden]> UC045
 
 UC042 --- Pay
-UC06 --- Pay : kiểm tra giao dịch\nquá hạn
+UC06 --- Pay
 
 @enduml
