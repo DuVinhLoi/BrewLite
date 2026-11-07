@@ -1,7 +1,5 @@
 # Đặc tả use-case trọng tâm: UC-04 Đặt và thanh toán đơn hàng (Task 1.3)
 
-> **BREW-INVENTORY-01:** đơn mới lưu bản chụp nguyên liệu (snapshot) lúc đặt; hủy đơn (cancellation) là Must. Việc gỡ bộ test sau kiểm chứng là lịch sử tại [inventory-verification.md](../inventory-verification.md). Q1/Q2 đã duyệt khôi phục test; mục 10 mô tả các mã dự kiến PR-2, chưa phải bằng chứng chạy.
->
 > **Bản chốt Task 1**, theo phạm vi tối thiểu đã thống nhất ở PR #5 và đã rút gọn thêm ([lịch sử thay đổi](README.md#lịch-sử-thay-đổi-srs)).
 >
 > Tài liệu này trả lời đề A2 §3.3. Yêu cầu: [`srs.md`](srs.md) (mã `FR-xx`, `NFR-xx`, quy tắc `BR-xx`, mã lỗi ở mục 3). Phạm vi: [`context-and-scope.md`](context-and-scope.md). Use-case tổng quát: [`use-case-overview.svg`](use-case-overview.svg). Truy vết: [`../traceability-matrix.md`](../traceability-matrix.md).
