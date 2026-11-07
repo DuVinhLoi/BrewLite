@@ -24,7 +24,7 @@ Frontend chịu trách nhiệm hiển thị và trạng thái giỏ hàng; API l
 |---|---|---|
 | Thiết bị người dùng, Browser/PWA | Chạy web từ `apps/web`; state giỏ ở client, giữ đơn/key khi đăng nhập lại cùng tài khoản | HTTPS 443 tới Vercel, API và (khi thanh toán) trang VNPay sandbox qua redirect; PWA manifest, không yêu cầu offline/service worker |
 | Next.js Web | `apps/web`: mobile-first, trang menu/chi tiết, giỏ, checkout, trang nhận kết quả từ VNPay (`/payment/vnpay-return`), lịch sử; loading/empty/error | Local :3000; production Vercel CDN/Edge; `NEXT_PUBLIC_API_URL` trỏ API HTTPS |
-| NestJS API | `apps/api`: JWT, DTO, nghiệp vụ đơn và thanh toán, Prisma; endpoint IPN/return công khai cho VNPay | Local :4000; Render Docker container :4000 sau HTTPS proxy 443; chỉ chấp nhận origin cấu hình |
+| NestJS API | `apps/api`: JWT, kiểm body, nghiệp vụ đơn và thanh toán, Prisma; endpoint IPN/return công khai cho VNPay | Local :4000; Render Docker container :4000 sau HTTPS proxy 443; chỉ chấp nhận origin cấu hình |
 | VNPay sandbox (hệ thống ngoài) | Cổng thanh toán bên thứ ba, không thuộc mã nguồn BrewLite; module `payments` trong `apps/api` ký URL thanh toán, nhận IPN, kiểm return và gọi QueryDR | HTTPS 443, ba luồng: trình duyệt ↔ VNPay (redirect), VNPay → API (IPN), API → VNPay (QueryDR); không nhận/lưu/log số thẻ; xem mục "Tích hợp VNPay sandbox" |
 | PostgreSQL | Prisma schema/migrations/seed của `apps/api`; dữ liệu domain theo SRS §3.6 | Local :5432 với named volume; production Render Postgres, internal TCP 5432 và persistent storage |
 | GHCR | Artifact build từ `apps/api/Dockerfile`, do `.github/workflows/cd.yml` phát hành | `ghcr.io/duvinhloi/brewlite-api:<commit-sha>`; Render pull qua HTTPS 443 |
@@ -54,7 +54,7 @@ Nguyên tắc: chỉ IPN hoặc QueryDR đã xác thực quyết định thanh t
 
 ### API theo domain
 
-NestJS chia controller → service nghiệp vụ → Prisma/truy cập dữ liệu; DTO ở biên HTTP. Transaction thuộc service nghiệp vụ để giữ cùng ranh giới cập nhật đơn và tồn kho (ADR-002).
+NestJS chia controller → service nghiệp vụ → Prisma/truy cập dữ liệu; service kiểm body theo danh sách trường cho phép. Transaction thuộc service nghiệp vụ để giữ cùng ranh giới cập nhật đơn và tồn kho (ADR-002).
 
 | Module | Trách nhiệm |
 |---|---|
@@ -64,13 +64,13 @@ NestJS chia controller → service nghiệp vụ → Prisma/truy cập dữ li�
 | `orders` | Tính giá server, tạo đơn/giữ tồn trong transaction; lịch sử, chi tiết, kiểm chuyển trạng thái |
 | `payments` | Tạo `Payment PENDING` và URL VNPay, nhận IPN/return, đối soát QueryDR, replay theo BR-05 ở API (ADR-005); cập nhật Payment, trạng thái đơn và kho cùng transaction. Chỉ phần cần đăng nhập mới gắn guard; IPN/return công khai. Đây là module logic như `orders`: code dự kiến ở `apps/api/src/payment/`, đăng ký trong `CheckoutModule`, không tạo Nest module riêng (plan bước 5.2–5.5) |
 | `health` | `GET /health` kiểm DB, trả 200/503 (NFR-15) |
-| Logging/cấu hình dùng chung | DTO whitelist, lỗi chuẩn SRS §3.2, log JSON, biến môi trường và CORS |
+| Logging/cấu hình dùng chung | Danh sách trường cho phép, lỗi chuẩn SRS §3.2, log JSON, biến môi trường và CORS |
 
 ### Luồng đặt đơn và thanh toán
 
 1. Browser tải web từ CDN, gọi API đọc menu/chi tiết; giỏ hàng chỉ là state của client.
 2. Guest đi đăng nhập trước checkout; token hết hạn thì giữ giỏ, `orderId`, chủ đơn và key để tiếp tục đúng đơn sau khi đăng nhập lại cùng tài khoản (AC-F10.4).
-3. `POST /orders`: kiểm DTO/quyền, tính giá server; khóa recipe theo ID, đọc base+size+topping, cộng nhu cầu toàn giỏ, khóa ingredient theo ID và kiểm onHand-reserved. Một transaction tăng reserved và tạo Order marker true, OrderItem, OrderIngredient bất biến. Thiếu công thức trả RECIPE_UNAVAILABLE; thiếu lượng trả OUT_OF_STOCK có details nguyên liệu, rollback toàn bộ.
+3. `POST /orders`: kiểm body/quyền, tính giá server; khóa recipe theo ID, đọc base+size+topping, cộng nhu cầu toàn giỏ, khóa ingredient theo ID và kiểm onHand-reserved. Một transaction tăng reserved và tạo Order marker true, OrderItem, OrderIngredient bất biến. Thiếu công thức trả RECIPE_UNAVAILABLE; thiếu lượng trả OUT_OF_STOCK có details nguyên liệu, rollback toàn bộ.
 4. `POST /payments`: kiểm xác thực/quyền sở hữu, replay nếu cùng chủ đơn + `orderId` + `Idempotency-Key` + `paymentMethod` đã thành công; request không còn `cardNumber`, thẻ chỉ nhập trên trang VNPay. Yêu cầu mới chỉ xử lý với đơn `PENDING`/`PAYMENT_FAILED`: tạo `Payment PENDING` (tối đa một cho mỗi đơn, BR-10), ký URL và trả `paymentUrl`, `expiresAt` (hạn 15 phút). Đơn vẫn `PENDING`, nguyên liệu vẫn giữ.
 5. Khách trả trên trang VNPay. Kết quả về qua IPN, hoặc QueryDR khi IPN không tới; chỉ kết quả đã xác thực mới quyết định (BR-11). Thành công: dưới khóa đơn/nguyên liệu, giảm onHand/reserved theo snapshot và lưu Payment SUCCESS + Order PAID cùng transaction, đúng một lần. Thất bại giữ nguyên snapshot/reserved, ghi Payment FAILED và đưa đơn về `PAYMENT_FAILED`; retry cùng đơn không giữ thêm. Replay thành công trả kết quả trước xét trạng thái và không tiêu thụ thêm. Chủ đơn hủy PENDING/PAYMENT_FAILED chỉ giảm reserved theo snapshot trong transaction với CANCELLED; hủy lặp bị từ chối; có `Payment PENDING` còn hạn thì trả 409 `PAYMENT_IN_PROGRESS`, đã quá hạn thì đối soát QueryDR trước rồi mới xét hủy.
 6. VNPay chuyển trình duyệt về `/payment/vnpay-return`; web đọc lại `GET /orders/:id` (poll có giới hạn, gọi `POST /payments/:id/sync` khi còn `PENDING`) rồi mới xóa giỏ và hiển thị biên lai khi DB xác nhận đã trả; `GET /orders/me` chỉ trả đơn của chủ token.
@@ -97,7 +97,7 @@ Module `catalog` dùng truy vấn Prisma có phạm vi theo dữ liệu mẫu �
 
 `auth` băm bcrypt cost ≥10 hoặc argon2; JWT đọc khóa ≥32 ký tự từ env, `exp` ≤3600 giây. Guard kiểm role và chủ đơn theo SRS; lỗi xác thực 401, sai quyền 403. Không trả/log mật khẩu, hash, token hay số thẻ; với VNPay còn không log `VNP_HASH_SECRET`, chữ ký, payment URL hay toàn bộ query IPN/payload QueryDR, log vận hành chỉ gồm `vnp_TxnRef` và mã kết quả. `.env` không commit; `.env.example` chỉ giá trị mẫu; CI che secret. `CORS_ORIGINS` là allow list origin Vercel.
 
-NFR-06 được xử lý ở biên DTO với whitelist (trường lạ trả 400), truy vấn ORM có tham số và validation phía web (§4); client không được quyết định giá.
+NFR-06 được xử lý bằng danh sách trường cho phép ở service (trường lạ trả 400), truy vấn ORM có tham số và validation phía web (§4); client không được quyết định giá.
 
 ### NFR-08, NFR-14: Kết nối và môi trường
 

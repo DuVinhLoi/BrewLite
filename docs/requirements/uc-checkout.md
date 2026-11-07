@@ -109,7 +109,7 @@ Barista không tham gia use-case này (xem UC-07 ở `srs.md` mục 2.3). Các t
 | 3 | Customer | Chọn phương thức (`WALLET` hoặc `CARD`). Số thẻ chỉ nhập trên trang VNPay; BrewLite không có ô nhập số thẻ |
 | 4 | Customer | Bấm "Thanh toán qua VNPay" |
 | 5 | Next.js UI | Khóa nút để tránh bấm hai lần, tạo `Idempotency-Key` cho phiên thanh toán; gửi `POST /orders` kèm JWT và danh sách dòng (không gửi giá) |
-| 6 | NestJS API | Xác thực JWT và vai trò `CUSTOMER`; kiểm dữ liệu theo DTO (số lượng, size, topping, số dòng) |
+| 6 | NestJS API | Xác thực JWT và vai trò `CUSTOMER`; kiểm dữ liệu theo danh sách trường cho phép (số lượng, size, topping, số dòng) |
 | 7 | NestJS API | Tính giá từng dòng và `total` theo giá lưu trong Database (BR-01) |
 | 8 | NestJS API, Database | Trong một transaction: khóa công thức theo ID; cộng nhu cầu base + size + topping của cả giỏ; khóa nguyên liệu theo ID; kiểm available; tăng reserved; tạo Order PENDING (marker true), OrderItems và bản chụp OrderIngredient; commit. Thiếu công thức hoặc thiếu nguyên liệu thì hoàn tác (rollback) toàn bộ |
 | 9 | Next.js UI | Gửi `POST /payments` với `orderId`, `paymentMethod`, kèm header `Idempotency-Key` |
@@ -208,7 +208,7 @@ Ba nhánh lỗi bắt buộc theo đề A2 §4.1 là **E1, E2, E3**; E4 là yêu
   1. Trong một transaction giữ khóa đơn, API đổi `Payment` từ `PENDING` sang `FAILED`, lưu riêng `gatewayResponseCode` và `gatewayTransactionStatus`, và đổi `Order` từ `PENDING` sang `PAYMENT_FAILED`. Nguyên liệu vẫn được giữ. IPN trả VNPay `RspCode = 00`.
   2. `POST /payments` không còn trả 402: thất bại luôn đến qua IPN hoặc QueryDR, không phải do API tự gọi cổng thanh toán.
   3. Trang return chỉ báo thất bại và cho thử lại/hủy **sau khi DB đã xác nhận** `PAYMENT_FAILED`. Thông báo theo mã VNPay chỉ để khách dễ hiểu: `24` khách hủy giao dịch; `11`, `15` và `EXPIRED` (payment bị đóng do quá hạn, E11) là hết thời gian thanh toán ("Đã hết thời gian thanh toán"); `51` không đủ số dư; `13` sai OTP; `09`/`10`/`12`/`79` lỗi thẻ hoặc tài khoản; mã còn lại hiện "Thanh toán không thành công". Khi payment còn `PENDING` thì hiện "Đang xác minh thanh toán, vui lòng kiểm tra lại", không khuyên khách trả lần hai.
-  4. UI giữ giỏ và `orderId`, hiện nút "Thử lại" (và "Hủy đơn" theo FR-25).
+  4. UI giữ giỏ và `orderId`, hiện "Thử lại" và liên kết "Xem hoặc hủy đơn" (FR-25).
   5. Customer chọn A3 (thử lại) hoặc A5 (hủy đơn, theo FR-25).
 - **Kết quả:** giỏ hàng và đơn vẫn còn; tồn kho vẫn giữ chỗ; khách không bị trừ tiền (giao dịch thất bại hoặc bị hủy trên VNPay không ghi nhận khoản thu).
 - **Yêu cầu:** FR-15 (AC-F15.1), FR-16, NFR-03.
@@ -225,8 +225,8 @@ Xảy ra khi khách bấm hai lần, mất phản hồi rồi bấm lại, hoặ
 Các nhánh con:
 
 - **E4a — lần đầu đã thành công:** API thấy `Idempotency-Key` đã gắn với một `Payment` `SUCCESS` của đúng chủ đơn/`orderId`/`paymentMethod` này (BR-05; xét trước trạng thái đơn), nên **không** tạo `Payment`, không ký URL, mà trả 200 `{ paymentId, orderId, orderStatus: "PAID", amount, status: "SUCCESS" }` với cùng `paymentId` (AC-F16.1). UI hiện màn xác nhận như bước 21. Cùng key nhưng khác `paymentMethod` thì không tính là gửi lại: xử lý như yêu cầu mới, và vì đơn đã `PAID` nên theo E4d.
-- **E4b:** Đã bỏ khỏi bản nộp (rút gọn, SRS mục 1.4). Giữ mã để số hiệu các luồng khác không bị xáo trộn.
-- **E4c:** Đã bỏ khỏi bản nộp (rút gọn, SRS mục 1.4). Giữ mã để số hiệu các luồng khác không bị xáo trộn.
+- **E4b:** Đã bỏ khỏi bản nộp (rút gọn). Giữ mã để số hiệu các luồng khác không bị xáo trộn.
+- **E4c:** Đã bỏ khỏi bản nộp (rút gọn). Giữ mã để số hiệu các luồng khác không bị xáo trộn.
 - **E4d — đơn đã `PAID`, key mới:** API trả 409 `ORDER_NOT_PAYABLE`, không tạo `Payment`, không ký URL, nên không thu tiền lần hai (AC-F16.4).
 - **E4e — lần đầu đã thất bại (E3):** gửi lại được tính là lần thử mới (BR-05, `FAILED` không khóa key), xem A3.
 - **Yêu cầu:** FR-16, NFR-13.
@@ -250,7 +250,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để số hiệu các luồng kh�
 ### E8 — Lỗi hệ thống (tại bước 10 đến 14)
 
 - **E8a — máy chủ đã lưu xong nhưng client mất phản hồi:** UI báo "Có lỗi xảy ra, vui lòng thử lại". Thử lại cùng `orderId`/key sẽ nhận kết quả đã lưu: `Payment` `SUCCESS` theo E4a, hoặc `Payment PENDING` còn hạn theo E4 (URL cũ). Không tạo thêm `Payment`, không ký lại URL.
-- **E8b:** Đã bỏ khỏi bản nộp (rút gọn, SRS mục 1.4). Rủi ro từng chấp nhận trước đây không còn, vì IPN và QueryDR (E10, E11) xác định kết quả thay cho simulator. Giữ mã để số hiệu các luồng khác không bị xáo trộn.
+- **E8b:** Đã bỏ khỏi bản nộp (rút gọn). Rủi ro từng chấp nhận trước đây không còn, vì IPN và QueryDR (E10, E11) xác định kết quả thay cho simulator. Giữ mã để số hiệu các luồng khác không bị xáo trộn.
 - E8a chỉ áp dụng khi đã biết `orderId`; không gọi lại `POST /orders`. Nếu mất phản hồi tạo đơn mà chưa biết mã đơn thì làm theo SRS mục 8.6.
 - **Yêu cầu:** NFR-13, FR-16.
 

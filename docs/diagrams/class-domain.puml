@@ -145,7 +145,7 @@ note bottom of Product
 end note
 note bottom of Promotion
   Domain only: FR-17 is Won't.
-  discountAmount = 0 in minimum.
+  discountAmount is a domain attribute: no DB column or API field.
 end note
 note bottom of LoyaltyTransaction
   Domain only: FR-18/19 are Won't.

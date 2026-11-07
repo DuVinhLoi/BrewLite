@@ -1,6 +1,6 @@
 # docs/requirements — Task 1: Khai thác và đặc tả yêu cầu
 
-Thư mục này chứa **bản chốt Task 1**: phạm vi tối thiểu đã thống nhất ở PR #5, sau đó rút gọn thêm về đúng mức tối thiểu của đề. Các quyết định, phần phụ thuộc và lý do rút gọn nằm ở [SRS mục 1.4 và 8](srs.md).
+Thư mục này chứa **bản chốt Task 1**: phạm vi tối thiểu đã thống nhất ở PR #5, sau đó rút gọn thêm về đúng mức tối thiểu của đề. Các quyết định và phần phụ thuộc nằm ở [SRS mục 1.4 và 8](srs.md).
 
 Tóm tắt phạm vi:
 
