@@ -64,7 +64,7 @@ Mỗi yêu cầu gồm: **mô tả** (khi cần), dòng **Ưu tiên / Use-case /
 
 ![Use-case tổng quát](use-case-overview.svg)
 
-Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Use-case trọng tâm UC-04 được đặc tả ở [`uc-checkout.md`](uc-checkout.md).
+Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Sơ đồ chỉ ghi tên use-case; mã yêu cầu của từng use-case ở mục 2.3. Use-case trọng tâm UC-04 được đặc tả ở [`uc-checkout.md`](uc-checkout.md).
 
 ### 2.3 Danh mục use-case
 

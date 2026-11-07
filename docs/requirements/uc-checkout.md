@@ -38,12 +38,12 @@
 
 ![Use-case UC-04](uc-checkout.svg)
 
-Nguồn: [`uc-checkout.puml`](uc-checkout.puml). Các quan hệ:
+Nguồn: [`uc-checkout.puml`](uc-checkout.puml). Sơ đồ chỉ ghi tên use-case và điều kiện bằng lời thường; mã yêu cầu ở mục 9. Các quan hệ:
 
 - UC-04 `<<include>>` UC-04.1 và UC-04.2: khi đặt đơn mới, hệ thống chạy cả hai (tạo đơn rồi thanh toán). Khi khách quay lại trả tiếp một đơn đã có (E1b/A3/A6) thì chỉ chạy lại UC-04.2, không tạo đơn lần nữa, nên Customer nối thẳng với UC-04.2. UC-04.1 không có đường vào riêng nên Customer chỉ tới nó qua UC-04. VNPay sandbox là actor phụ của UC-04.2.
-- UC-04.5 `<<extend>>` UC-04.2, tại điểm mở rộng "kiểm tra đơn cần trả" (bước 10): chỉ chạy khi đơn đang `PAYMENT_FAILED`. UC-04.5 dùng chung actor của UC-04.2 nên không vẽ thêm đường nối. Áp mã giảm giá và ghi điểm (FR-17/18) nằm ngoài bản nộp nên không vẽ.
-- UC-03 Đăng nhập `<<extend>>` UC-04, tại điểm mở rộng "kiểm tra phiên đăng nhập" (bước 2, 6 và 10): chỉ chạy khi JWT thiếu hoặc hết hạn; đây là cách vẽ ngoại lệ E1 trên sơ đồ. Vì vậy phiên đăng nhập là một bước kiểm trong luồng, không phải tiền điều kiện (mục 4). Khi Customer vào thẳng UC-04.2 mà JWT hết hạn thì xử lý theo E1b; sơ đồ không vẽ thêm mũi tên cho đường này.
-- UC-06 Hủy đơn chưa trả (FR-25) là use-case riêng, không include hay extend UC-04. Sơ đồ vẽ nó vì nó xử lý chính đơn do UC-04 tạo ra; luồng chi tiết ở A5. Khi `Payment PENDING` đã quá hạn, API hỏi VNPay bằng QueryDR để đối soát trước khi xét hủy (E11, AC-F25.4), nên VNPay sandbox cũng là actor phụ của UC-06.
+- UC-04.5 `<<extend>>` UC-04.2, tại bước 10: chỉ chạy khi đơn đang `PAYMENT_FAILED` (trên sơ đồ ghi "thanh toán thất bại"). UC-04.5 dùng chung actor của UC-04.2 nên không vẽ thêm đường nối. Áp mã giảm giá và ghi điểm (FR-17/18) nằm ngoài bản nộp nên không vẽ.
+- UC-03 Đăng nhập `<<extend>>` UC-04, tại các bước kiểm phiên (1, 2, 6, 10 và 20): chỉ chạy khi JWT thiếu hoặc hết hạn (trên sơ đồ ghi "chưa đăng nhập hoặc hết phiên"); đây là cách vẽ ngoại lệ E1 trên sơ đồ. Vì vậy phiên đăng nhập là một bước kiểm trong luồng, không phải tiền điều kiện (mục 4). Khi Customer vào thẳng UC-04.2 mà JWT hết hạn thì xử lý theo E1b; sơ đồ không vẽ thêm mũi tên cho đường này.
+- UC-06 Hủy đơn chưa trả (FR-25) là use-case riêng, không include hay extend UC-04. Sơ đồ vẽ nó vì nó xử lý chính đơn do UC-04 tạo ra; luồng chi tiết ở A5. Khi `Payment PENDING` đã quá hạn, API hỏi VNPay bằng QueryDR để đối soát trước khi xét hủy (E11, AC-F25.4), nên VNPay sandbox cũng là actor phụ của UC-06 (trên sơ đồ ghi "kiểm tra giao dịch quá hạn").
 
 ## 3. Actor
 
@@ -64,7 +64,7 @@ Barista không tham gia use-case này (xem UC-07 ở `srs.md` mục 2.3). Các t
 1. Giỏ hàng có ít nhất 1 dòng và mọi dòng đều hợp lệ: số lượng từ 1 đến 99, tối đa 20 dòng (FR-05, FR-06, BR-02).
 2. API và database đang hoạt động.
 
-Phiên đăng nhập (JWT hợp lệ, chưa hết hạn, `role = CUSTOMER`; FR-09, FR-10) được kiểm ở bước 2, 6 và 10. JWT thiếu hoặc hết hạn thì chạy ngoại lệ E1; đây không phải lỗi hệ thống.
+Phiên đăng nhập (JWT hợp lệ, chưa hết hạn, `role = CUSTOMER`; FR-09, FR-10) được kiểm trong luồng: UI kiểm đã có phiên ở bước 1, 2; API kiểm JWT ở bước 6, 10 và các lời gọi ở bước 20. JWT thiếu hoặc hết hạn thì chạy ngoại lệ E1; đây không phải lỗi hệ thống.
 
 (Để tạo URL thanh toán mới, API còn cần cấu hình VNPay; thiếu cấu hình thì chạy E13.)
 
@@ -105,7 +105,7 @@ Phiên đăng nhập (JWT hợp lệ, chưa hết hạn, `role = CUSTOMER`; FR-0
 | Bước | Tác nhân | Hành động |
 |---|---|---|
 | 1 | Customer | Mở màn Giỏ hàng và bấm "Thanh toán" |
-| 2 | Next.js UI | Kiểm giỏ không rỗng và JWT còn hợp lệ; hiện màn Thanh toán với tóm tắt các dòng, tổng tiền và lựa chọn Ví/Thẻ |
+| 2 | Next.js UI | Kiểm giỏ không rỗng và đã có phiên đăng nhập; hiện màn Thanh toán với tóm tắt các dòng, tổng tiền và lựa chọn Ví/Thẻ |
 | 3 | Customer | Chọn phương thức (`WALLET` hoặc `CARD`). Số thẻ chỉ nhập trên trang VNPay; BrewLite không có ô nhập số thẻ |
 | 4 | Customer | Bấm "Thanh toán qua VNPay" |
 | 5 | Next.js UI | Khóa nút để tránh bấm hai lần, tạo `Idempotency-Key` cho phiên thanh toán; gửi `POST /orders` kèm JWT và danh sách dòng (không gửi giá) |
@@ -333,7 +333,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để số hiệu các luồng kh�
 
 | Bước / luồng | Mô tả ngắn | Yêu cầu chức năng | Yêu cầu phi chức năng |
 |---|---|---|---|
-| Bước 2, 6, 10 (kiểm phiên) | Đã đăng nhập, JWT hợp lệ | FR-09, FR-10 | NFR-05 |
+| Bước 1, 2, 6, 10, 20 (kiểm phiên) | Đã đăng nhập, JWT hợp lệ | FR-09, FR-10 | NFR-05 |
 | Tiền điều kiện 1 | Giỏ hợp lệ | FR-05, FR-06, FR-07 | — |
 | 1 | Bấm "Thanh toán" ở giỏ | FR-07, FR-10 | NFR-09 |
 | 2 | Màn Thanh toán | FR-07, FR-12 (AC-F12.4) | NFR-09, NFR-11 |
