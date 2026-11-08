@@ -12,11 +12,11 @@ npm.cmd --prefix apps/web test
 ```
 
 API units use `node:test`/`tsx`; web units use Vitest/Testing Library/jsdom.
-See [results recorded for the earlier suite](../docs/task5/verification.md#khôi-phục-test-pr-2--06112026)
-(not the current counts) and [test IDs and current counts](../docs/traceability-matrix.md#phan-b). The CI runs recorded in the
-[CI evidence](../docs/evidence/ci/README.md) (head `4e711a8`) belong to the earlier suite; this suite has no CI run yet. UNIT-T12 asserts only the `tone` of the old `stockBadge`
+See [recorded results](../docs/task5/verification.md#khôi-phục-test-pr-2--06112026)
+and [test IDs and current counts](../docs/traceability-matrix.md#phan-b). The latest run in the
+[CI evidence](../docs/evidence/ci/README.md) is [run 42227618920](https://github.com/DuVinhLoi/BrewLite/actions/runs/42227618920) on head `3e2cc28` (API 229, web 100, integration 32 pass with 0 skip, E2E 5), then [Delivery 42240766718](https://github.com/DuVinhLoi/BrewLite/actions/runs/42240766718) on merge commit `aab31c4`; runs on heads `6e4ff31` and `4e711a8` belong to the earlier suites. UNIT-T12 asserts only the `tone` of the old `stockBadge`
 helper; the current menu UI has only Còn hàng/Hết hàng (no cup count, AC-F01.3), covered by UNIT-T14.
-Web units have no skipped tests: AC-F20.3 (UNIT-T19), AC-F21.3 (UNIT-T20) and AC-F22.1 follow the SRS as shipped.
+Web units have no skipped tests: AC-F20.3 (UNIT-T19) and AC-F21.3 (UNIT-T20) follow the SRS. AC-F22.1 (unknown order id returns 404) is checked by the integration test INT-T12.
 No test is skipped.
 
 ## HTTP integration (Task 4 / B4)
@@ -127,7 +127,7 @@ and fake environment values. It checks preservation after each invocation,
 including duplicate product/ingredient/recipe and recipe-line detection.
 
 The suite covers API-T01–API-T05 and INT-T01–INT-T15. INT-T01 sends the normal
-order DTO and checks server-computed prices. INT-T02 rejects client `total` and
+order body and checks server-computed prices. INT-T02 rejects client `total` and
 `unitPrice` fields per SRS AC-F12.3; these fields must not be silently accepted.
 INT-T11b (Barista cancels a `PENDING` or `PAYMENT_FAILED` order) asserts the required 403 and that nothing
 changes. INT-T11a paid progression stays enabled. All HTTP integration tests run with no skips; failures remain failures.

@@ -1,5 +1,5 @@
 @startuml uc-checkout
-' BrewLite A2 - Use-case diagram cho UC-04 "Dat va thanh toan don hang" (de A2 3.3). Dac ta: docs/requirements/uc-checkout.md
+' BrewLite A2 - Use-case diagram cho UC-04 "Dat va thanh toan don hang" (de A2 3.3). Dac ta va ma yeu cau: docs/requirements/uc-checkout.md
 skinparam DefaultFontColor #1f2937
 skinparam ArrowColor #5b6b8c
 skinparam ArrowFontColor #1f2937
@@ -17,28 +17,31 @@ title UC-04 Đặt và thanh toán đơn hàng - phạm vi use-case
 
 actor "Khách vãng lai\n(Guest)" as Guest
 actor "Khách hàng\n(Customer)" as Customer
-actor "VNPay sandbox\n(hệ thống ngoài)" as Pay <<External>>
-
-Customer --|> Guest
+actor "VNPay sandbox\n(hệ thống ngoài)" as Pay
 
 rectangle "Hệ thống BrewLite" {
-  usecase "UC-04 Đặt và thanh toán đơn hàng\nFR-10..FR-16" as UC04
-  usecase "UC-04.1 Tạo đơn hàng\nFR-11, FR-12, FR-13" as UC041
-  usecase "UC-04.2 Thanh toán đơn hàng\nFR-14, FR-15, FR-16" as UC042
-  usecase "UC-04.5 Thử lại thanh toán\nFR-15, FR-16" as UC045
-  usecase "UC-06 Hủy đơn chưa trả\nFR-25 Must; giải phóng snapshot" as UC06
-  usecase "UC-03 Đăng nhập\nFR-09, FR-10" as UC03
+  usecase "UC-03 Đăng nhập" as UC03
+  usecase "UC-04 Đặt và thanh toán đơn hàng" as UC04
+  usecase "UC-04.1 Tạo đơn hàng" as UC041
+  usecase "UC-04.2 Thanh toán đơn hàng" as UC042
+  usecase "UC-04.5 Thử lại thanh toán" as UC045
+  usecase "UC-06 Hủy đơn chưa trả" as UC06
 }
 
-Customer --- UC04
-Customer --- UC06
-Guest --- UC03
+Guest <|- Customer
 
-UC04 .> UC041 : <<include>>
+Guest --- UC03
+Customer --- UC04
+Customer --- UC042
+Customer --- UC06
+
+UC03 .> UC04 : <<extend>>\n[chưa đăng nhập hoặc hết phiên]
 UC04 .> UC042 : <<include>>
-UC045 .> UC042 : <<extend>>
-UC03 .> UC04 : <<extend>>
+UC04 ..> UC041 : <<include>>
+UC042 <.. UC045 : <<extend>>\n[thanh toán thất bại]
+UC042 -[hidden]> UC06
 
 UC042 --- Pay
+UC06 --- Pay : kiểm tra giao dịch\nquá hạn
 
 @enduml

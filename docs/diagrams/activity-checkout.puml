@@ -52,7 +52,7 @@ endif
 :Disable button; create payment key (no card field);
 :POST /orders with JWT and cart; no client prices;
 |NestJS API|
-:Validate role/DTO; compute server prices;
+:Validate role/body; compute server prices;
 if (Invalid input or unknown product?) then (E6)
   :400 / 404; no order or balance change;
   |Next.js UI|
@@ -83,7 +83,7 @@ if (JWT expired after order creation?) then (E1b)
 else (valid)
 endif
 |NestJS API|
-:Validate DTO/key; read Order and verify ownership (no lock yet);
+:Validate body/key; read Order and verify ownership (no lock yet);
 if (Invalid / forbidden / missing order?) then (E6/E7)
   :400 / 403 / 404; no Payment created, no URL;
   stop

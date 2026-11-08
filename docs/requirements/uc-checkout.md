@@ -1,8 +1,6 @@
 # Đặc tả use-case trọng tâm: UC-04 Đặt và thanh toán đơn hàng (Task 1.3)
 
-> **BREW-INVENTORY-01:** đơn mới lưu bản chụp nguyên liệu (snapshot) lúc đặt; hủy đơn (cancellation) là Must. Việc gỡ bộ test sau kiểm chứng là lịch sử tại [inventory-verification.md](../inventory-verification.md). Q1/Q2 đã duyệt khôi phục test; mục 10 mô tả các mã dự kiến PR-2, chưa phải bằng chứng chạy.
->
-> **Bản chốt Task 1**, theo phạm vi tối thiểu đã thống nhất ở PR #5 và đã rút gọn thêm (SRS mục 1.4).
+> **Bản chốt Task 1**, theo phạm vi tối thiểu đã thống nhất ở PR #5 và đã rút gọn thêm ([lịch sử thay đổi](README.md#lịch-sử-thay-đổi-srs)).
 >
 > Tài liệu này trả lời đề A2 §3.3. Yêu cầu: [`srs.md`](srs.md) (mã `FR-xx`, `NFR-xx`, quy tắc `BR-xx`, mã lỗi ở mục 3). Phạm vi: [`context-and-scope.md`](context-and-scope.md). Use-case tổng quát: [`use-case-overview.svg`](use-case-overview.svg). Truy vết: [`../traceability-matrix.md`](../traceability-matrix.md).
 >
@@ -33,40 +31,42 @@
 | Mục tiêu | Customer biến giỏ hàng thành một đơn đã trả tiền không dùng tiền mặt qua VNPay sandbox, và nhận mã đơn để xác nhận |
 | Giá trị nghiệp vụ | Đây là bước mang lại doanh thu cho BrewLite: khách trả tiền xong thì đơn mới được chuyển sang pha chế |
 | Ưu tiên | Must |
-| Use-case con | UC-04.1 Tạo đơn hàng (include), UC-04.2 Thanh toán đơn hàng (include), UC-04.5 Thử lại thanh toán (extend UC-04.2); UC-03 Đăng nhập extend UC-04 khi chưa đăng nhập (UC-04.3, UC-04.4 ngoài bản nộp, không vẽ; xem `srs.md` §5.9) |
+| Use-case con | UC-04.1 Tạo đơn hàng (include), UC-04.2 Thanh toán đơn hàng (include), UC-04.5 Thử lại thanh toán (extend UC-04.2); UC-03 Đăng nhập extend UC-04 khi JWT thiếu hoặc hết hạn (UC-04.3, UC-04.4 ngoài bản nộp, không vẽ; xem `srs.md` §5.9) |
 | Lý do chọn | Use-case này đi qua đủ các thành phần (UI, API, DB, VNPay sandbox) và có đủ ba nhánh lỗi bắt buộc của đề A2 §4.1 (hết hàng, chưa đăng nhập, thanh toán thất bại); đây cũng là use-case mà sequence diagram ở Task 2.2 phải vẽ |
 
 ## 2. Use-case diagram
 
 ![Use-case UC-04](uc-checkout.svg)
 
-Nguồn: [`uc-checkout.puml`](uc-checkout.puml). Các quan hệ:
+Nguồn: [`uc-checkout.puml`](uc-checkout.puml). Sơ đồ chỉ ghi tên use-case và điều kiện bằng lời thường; mã yêu cầu ở mục 9. Các quan hệ:
 
-- UC-04 `<<include>>` UC-04.1 và UC-04.2: khi đặt đơn mới, hệ thống chạy cả hai (tạo đơn rồi thanh toán). Khi khách quay lại trả tiếp một đơn đã có (E1b/A3/A6) thì chỉ chạy lại UC-04.2, không tạo đơn lần nữa. VNPay sandbox là actor phụ của UC-04.2.
-- UC-04.5 `<<extend>>` UC-04.2: chỉ chạy khi đơn đang `PAYMENT_FAILED`. Áp mã giảm giá và ghi điểm (FR-17/18) nằm ngoài bản nộp nên không vẽ.
-- UC-03 Đăng nhập `<<extend>>` UC-04: chỉ chạy khi khách chưa đăng nhập; đây là cách vẽ ngoại lệ "chưa đăng nhập" trên sơ đồ. Tiền điều kiện của use-case vẫn là đã đăng nhập (mục 4).
+- UC-04 `<<include>>` UC-04.1 và UC-04.2: khi đặt đơn mới, hệ thống chạy cả hai (tạo đơn rồi thanh toán). Khi khách quay lại trả tiếp một đơn đã có (E1b/A3/A6) thì chỉ chạy lại UC-04.2, không tạo đơn lần nữa, nên Customer nối thẳng với UC-04.2. UC-04.1 không có đường vào riêng nên Customer chỉ tới nó qua UC-04. VNPay sandbox là actor phụ của UC-04.2.
+- UC-04.5 `<<extend>>` UC-04.2, tại bước 10: chỉ chạy khi đơn đang `PAYMENT_FAILED` (trên sơ đồ ghi "thanh toán thất bại"). UC-04.5 dùng chung actor của UC-04.2 nên không vẽ thêm đường nối. Áp mã giảm giá và ghi điểm (FR-17/18) nằm ngoài bản nộp nên không vẽ.
+- UC-03 Đăng nhập `<<extend>>` UC-04, tại các bước kiểm phiên (1, 2, 6, 10 và 20): chỉ chạy khi JWT thiếu hoặc hết hạn (trên sơ đồ ghi "chưa đăng nhập hoặc hết phiên"); đây là cách vẽ ngoại lệ E1 trên sơ đồ. Vì vậy phiên đăng nhập là một bước kiểm trong luồng, không phải tiền điều kiện (mục 4). Khi Customer vào thẳng UC-04.2 mà JWT hết hạn thì xử lý theo E1b; sơ đồ không vẽ thêm mũi tên cho đường này.
+- UC-06 Hủy đơn chưa trả (FR-25) là use-case riêng, không include hay extend UC-04. Sơ đồ vẽ nó vì nó xử lý chính đơn do UC-04 tạo ra; luồng chi tiết ở A5. Khi `Payment PENDING` đã quá hạn, API hỏi VNPay bằng QueryDR để đối soát trước khi xét hủy (E11, AC-F25.4), nên VNPay sandbox cũng là actor phụ của UC-06 (trên sơ đồ ghi "kiểm tra giao dịch quá hạn").
 
 ## 3. Actor
 
 | Actor | Loại | Vai trò trong use-case |
 |---|---|---|
 | **Customer** (khách hàng đã đăng nhập) | Chính | Bắt đầu use-case, chọn phương thức, bấm "Thanh toán qua VNPay", trả tiền trên trang VNPay và nhận kết quả |
-| **Guest** (khách vãng lai) | Chính (kế thừa) | Chỉ xuất hiện ở ngoại lệ E1: chưa đăng nhập thì chưa bắt đầu được, phải qua UC-03 trước. `Customer` kế thừa `Guest` |
+| **Guest** (khách vãng lai) | Chính (kế thừa) | Chỉ xuất hiện ở ngoại lệ E1: chưa đăng nhập thì phải qua UC-03, đăng nhập xong mới là Customer và đi tiếp. `Customer` kế thừa `Guest` |
 | **VNPay sandbox** (cổng thanh toán bên thứ ba, hệ thống ngoài) | Phụ | Hiện trang thanh toán để khách nhập thẻ test; gọi IPN về API khi có kết quả; chuyển trình duyệt về trang return; trả lời API khi API hỏi bằng QueryDR (quy ước sandbox: `srs.md` mục 3.4) |
 
 Barista không tham gia use-case này (xem UC-07 ở `srs.md` mục 2.3). Các thành phần kỹ thuật xuất hiện trong luồng: Browser (trình duyệt của khách, nơi chạy Next.js UI), Next.js UI, NestJS API, Database. Đây cũng là các lifeline của sequence diagram (đề A2 §4.2).
 
 ## 4. Trigger, tiền điều kiện, hậu điều kiện
 
-**Trigger (điều kiện kích hoạt):** Customer bấm nút "Thanh toán" trên màn Giỏ hàng.
+**Trigger (điều kiện kích hoạt):** Customer bấm nút "Thanh toán" trên màn Giỏ hàng. Khách chưa đăng nhập bấm nút này thì đi theo E1a.
 
 **Tiền điều kiện:**
 
-1. Customer đã đăng nhập: có JWT hợp lệ, chưa hết hạn, `role = CUSTOMER` (FR-09, FR-10).
-2. Giỏ hàng có ít nhất 1 dòng và mọi dòng đều hợp lệ: số lượng từ 1 đến 99, tối đa 20 dòng (FR-05, FR-06, BR-02).
-3. API và database đang hoạt động.
+1. Giỏ hàng có ít nhất 1 dòng và mọi dòng đều hợp lệ: số lượng từ 1 đến 99, tối đa 20 dòng (FR-05, FR-06, BR-02).
+2. API và database đang hoạt động.
 
-(Nếu tiền điều kiện 1 không đúng thì chạy ngoại lệ E1; đây không phải lỗi hệ thống. Để tạo URL thanh toán mới, API còn cần cấu hình VNPay; thiếu cấu hình thì chạy E13.)
+Phiên đăng nhập (JWT hợp lệ, chưa hết hạn, `role = CUSTOMER`; FR-09, FR-10) được kiểm trong luồng: UI kiểm đã có phiên ở bước 1, 2; API kiểm JWT ở bước 6, 10 và các lời gọi ở bước 20. JWT thiếu hoặc hết hạn thì chạy ngoại lệ E1; đây không phải lỗi hệ thống.
+
+(Để tạo URL thanh toán mới, API còn cần cấu hình VNPay; thiếu cấu hình thì chạy E13.)
 
 **Hậu điều kiện khi thành công (đơn đã `PAID`):**
 
@@ -105,11 +105,11 @@ Barista không tham gia use-case này (xem UC-07 ở `srs.md` mục 2.3). Các t
 | Bước | Tác nhân | Hành động |
 |---|---|---|
 | 1 | Customer | Mở màn Giỏ hàng và bấm "Thanh toán" |
-| 2 | Next.js UI | Kiểm giỏ không rỗng và JWT còn hợp lệ; hiện màn Thanh toán với tóm tắt các dòng, tổng tiền và lựa chọn Ví/Thẻ |
+| 2 | Next.js UI | Kiểm giỏ không rỗng và đã có phiên đăng nhập; hiện màn Thanh toán với tóm tắt các dòng, tổng tiền và lựa chọn Ví/Thẻ |
 | 3 | Customer | Chọn phương thức (`WALLET` hoặc `CARD`). Số thẻ chỉ nhập trên trang VNPay; BrewLite không có ô nhập số thẻ |
 | 4 | Customer | Bấm "Thanh toán qua VNPay" |
 | 5 | Next.js UI | Khóa nút để tránh bấm hai lần, tạo `Idempotency-Key` cho phiên thanh toán; gửi `POST /orders` kèm JWT và danh sách dòng (không gửi giá) |
-| 6 | NestJS API | Xác thực JWT và vai trò `CUSTOMER`; kiểm dữ liệu theo DTO (số lượng, size, topping, số dòng) |
+| 6 | NestJS API | Xác thực JWT và vai trò `CUSTOMER`; kiểm dữ liệu theo danh sách trường cho phép (số lượng, size, topping, số dòng) |
 | 7 | NestJS API | Tính giá từng dòng và `total` theo giá lưu trong Database (BR-01) |
 | 8 | NestJS API, Database | Trong một transaction: khóa công thức theo ID; cộng nhu cầu base + size + topping của cả giỏ; khóa nguyên liệu theo ID; kiểm available; tăng reserved; tạo Order PENDING (marker true), OrderItems và bản chụp OrderIngredient; commit. Thiếu công thức hoặc thiếu nguyên liệu thì hoàn tác (rollback) toàn bộ |
 | 9 | Next.js UI | Gửi `POST /payments` với `orderId`, `paymentMethod`, kèm header `Idempotency-Key` |
@@ -208,7 +208,7 @@ Ba nhánh lỗi bắt buộc theo đề A2 §4.1 là **E1, E2, E3**; E4 là yêu
   1. Trong một transaction giữ khóa đơn, API đổi `Payment` từ `PENDING` sang `FAILED`, lưu riêng `gatewayResponseCode` và `gatewayTransactionStatus`, và đổi `Order` từ `PENDING` sang `PAYMENT_FAILED`. Nguyên liệu vẫn được giữ. IPN trả VNPay `RspCode = 00`.
   2. `POST /payments` không còn trả 402: thất bại luôn đến qua IPN hoặc QueryDR, không phải do API tự gọi cổng thanh toán.
   3. Trang return chỉ báo thất bại và cho thử lại/hủy **sau khi DB đã xác nhận** `PAYMENT_FAILED`. Thông báo theo mã VNPay chỉ để khách dễ hiểu: `24` khách hủy giao dịch; `11`, `15` và `EXPIRED` (payment bị đóng do quá hạn, E11) là hết thời gian thanh toán ("Đã hết thời gian thanh toán"); `51` không đủ số dư; `13` sai OTP; `09`/`10`/`12`/`79` lỗi thẻ hoặc tài khoản; mã còn lại hiện "Thanh toán không thành công". Khi payment còn `PENDING` thì hiện "Đang xác minh thanh toán, vui lòng kiểm tra lại", không khuyên khách trả lần hai.
-  4. UI giữ giỏ và `orderId`, hiện nút "Thử lại" (và "Hủy đơn" theo FR-25).
+  4. UI giữ giỏ và `orderId`, hiện "Thử lại" và liên kết "Xem hoặc hủy đơn" (FR-25).
   5. Customer chọn A3 (thử lại) hoặc A5 (hủy đơn, theo FR-25).
 - **Kết quả:** giỏ hàng và đơn vẫn còn; tồn kho vẫn giữ chỗ; khách không bị trừ tiền (giao dịch thất bại hoặc bị hủy trên VNPay không ghi nhận khoản thu).
 - **Yêu cầu:** FR-15 (AC-F15.1), FR-16, NFR-03.
@@ -225,8 +225,8 @@ Xảy ra khi khách bấm hai lần, mất phản hồi rồi bấm lại, hoặ
 Các nhánh con:
 
 - **E4a — lần đầu đã thành công:** API thấy `Idempotency-Key` đã gắn với một `Payment` `SUCCESS` của đúng chủ đơn/`orderId`/`paymentMethod` này (BR-05; xét trước trạng thái đơn), nên **không** tạo `Payment`, không ký URL, mà trả 200 `{ paymentId, orderId, orderStatus: "PAID", amount, status: "SUCCESS" }` với cùng `paymentId` (AC-F16.1). UI hiện màn xác nhận như bước 21. Cùng key nhưng khác `paymentMethod` thì không tính là gửi lại: xử lý như yêu cầu mới, và vì đơn đã `PAID` nên theo E4d.
-- **E4b:** Đã bỏ khỏi bản nộp (rút gọn, SRS mục 1.4). Giữ mã để số hiệu các luồng khác không bị xáo trộn.
-- **E4c:** Đã bỏ khỏi bản nộp (rút gọn, SRS mục 1.4). Giữ mã để số hiệu các luồng khác không bị xáo trộn.
+- **E4b:** Đã bỏ khỏi bản nộp (rút gọn). Giữ mã để số hiệu các luồng khác không bị xáo trộn.
+- **E4c:** Đã bỏ khỏi bản nộp (rút gọn). Giữ mã để số hiệu các luồng khác không bị xáo trộn.
 - **E4d — đơn đã `PAID`, key mới:** API trả 409 `ORDER_NOT_PAYABLE`, không tạo `Payment`, không ký URL, nên không thu tiền lần hai (AC-F16.4).
 - **E4e — lần đầu đã thất bại (E3):** gửi lại được tính là lần thử mới (BR-05, `FAILED` không khóa key), xem A3.
 - **Yêu cầu:** FR-16, NFR-13.
@@ -250,7 +250,7 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để số hiệu các luồng kh�
 ### E8 — Lỗi hệ thống (tại bước 10 đến 14)
 
 - **E8a — máy chủ đã lưu xong nhưng client mất phản hồi:** UI báo "Có lỗi xảy ra, vui lòng thử lại". Thử lại cùng `orderId`/key sẽ nhận kết quả đã lưu: `Payment` `SUCCESS` theo E4a, hoặc `Payment PENDING` còn hạn theo E4 (URL cũ). Không tạo thêm `Payment`, không ký lại URL.
-- **E8b:** Đã bỏ khỏi bản nộp (rút gọn, SRS mục 1.4). Rủi ro từng chấp nhận trước đây không còn, vì IPN và QueryDR (E10, E11) xác định kết quả thay cho simulator. Giữ mã để số hiệu các luồng khác không bị xáo trộn.
+- **E8b:** Đã bỏ khỏi bản nộp (rút gọn). Rủi ro từng chấp nhận trước đây không còn, vì IPN và QueryDR (E10, E11) xác định kết quả thay cho simulator. Giữ mã để số hiệu các luồng khác không bị xáo trộn.
 - E8a chỉ áp dụng khi đã biết `orderId`; không gọi lại `POST /orders`. Nếu mất phản hồi tạo đơn mà chưa biết mã đơn thì làm theo SRS mục 8.6.
 - **Yêu cầu:** NFR-13, FR-16.
 
@@ -333,8 +333,8 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để số hiệu các luồng kh�
 
 | Bước / luồng | Mô tả ngắn | Yêu cầu chức năng | Yêu cầu phi chức năng |
 |---|---|---|---|
-| Tiền điều kiện 1 | Đã đăng nhập, JWT hợp lệ | FR-09, FR-10 | NFR-05 |
-| Tiền điều kiện 2 | Giỏ hợp lệ | FR-05, FR-06, FR-07 | — |
+| Bước 1, 2, 6, 10, 20 (kiểm phiên) | Đã đăng nhập, JWT hợp lệ | FR-09, FR-10 | NFR-05 |
+| Tiền điều kiện 1 | Giỏ hợp lệ | FR-05, FR-06, FR-07 | — |
 | 1 | Bấm "Thanh toán" ở giỏ | FR-07, FR-10 | NFR-09 |
 | 2 | Màn Thanh toán | FR-07, FR-12 (AC-F12.4) | NFR-09, NFR-11 |
 | 3 | Chọn phương thức (không nhập thẻ ở BrewLite) | FR-14 | NFR-09 |
@@ -373,9 +373,9 @@ Ngoài bản nộp (FR-17 Won’t). Giữ mã để số hiệu các luồng kh�
 
 ## 10. Gợi ý test từ đặc tả
 
-Các mã dưới đây là **test dự kiến PR-2**, định nghĩa ở [ma trận, Phần B](../traceability-matrix.md#phan-b), không phải kết quả đã chạy. A1/E5 ngoài bản nộp; E8b đã bỏ. Bằng chứng trước cleanup tại [inventory-verification.md](../inventory-verification.md) giữ vai trò lịch sử.
+Các mã dưới đây là **test PR-2**, định nghĩa ở [ma trận, Phần B](../traceability-matrix.md#phan-b); kết quả chạy ở [hồ sơ CI](../evidence/ci/README.md). A1/E5 ngoài bản nộp; E8b đã bỏ. Bằng chứng trước cleanup tại [inventory-verification.md](../inventory-verification.md) giữ vai trò lịch sử.
 
-| Luồng | Test dự kiến | Phạm vi và giới hạn cần kiểm |
+| Luồng | Test | Phạm vi và giới hạn cần kiểm |
 |---|---|---|
 | Chính, bước 1–21 | INT-T01, INT-T05, INT-T06, INT-T10, INT-T12; E2E-T01 | Giá server, reserve snapshot, URL ký, IPN thành công, return không ghi DB, xác nhận `PAID`, tổng tiền và lịch sử. E2E chặn redirect VNPay, tự ký IPN/return bằng secret giả |
 | A2 đổi phương thức | INT-T05; UNIT-T18 | URL theo phương thức; khi có payment chờ, khác phương thức phải bị chặn. Cần bổ sung nhánh đổi phương thức trước khi coi A2 được phủ đầy đủ |

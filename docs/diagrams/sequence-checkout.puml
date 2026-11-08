@@ -62,11 +62,11 @@ alt Missing / expired JWT (E1a)
   API -> API : Recheck JWT and CUSTOMER role
 else Valid Customer JWT
 end
-API -> API : Validate DTO (BR-02); reject client prices (BR-01)
-alt Bad DTO / unknown product (E6)
+API -> API : Validate body (BR-02); reject client prices (BR-01)
+alt Invalid body / unknown product (E6)
   API --> UI : 400 VALIDATION_ERROR / 404 PRODUCT_NOT_FOUND
   UI --> Customer : Fix cart; no Order created; stop checkout
-else DTO accepted
+else Body accepted
   API -> DB : Read Product prices and options
   DB --> API : Product records
   API -> API : Compute unitPrice, lineTotal and Order.total
@@ -113,10 +113,10 @@ alt Expired JWT after Order exists (E1b)
   end
 else JWT valid
 end
-API -> API : Validate payment DTO + key (E6)
+API -> API : Validate payment body + key (E6)
 API -> DB : Read Order (no lock yet); verify owner (E7)
 DB --> API : Order or 403/404
-alt Invalid payment DTO/key or wrong order (E6/E7)
+alt Invalid payment body/key or wrong order (E6/E7)
   API --> UI : 400 VALIDATION_ERROR / IDEMPOTENCY_KEY_REQUIRED\nor 403 FORBIDDEN / 404 ORDER_NOT_FOUND
   UI --> Customer : Explain error; keep cart; no Payment created
 else Valid body, owner verified
