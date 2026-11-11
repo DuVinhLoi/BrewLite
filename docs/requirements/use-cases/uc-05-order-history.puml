@@ -1,0 +1,37 @@
+@startuml uc-05-order-history
+' BrewLite A2 - Use-case diagram cho UC-05. Dac ta va ma yeu cau: docs/requirements/use-cases/uc-05-order-history.md
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam RectangleBackgroundColor #ffffff
+skinparam RectangleBorderColor #94a3b8
+skinparam ActorBackgroundColor #eef2fb
+skinparam ActorBorderColor #5b6b8c
+skinparam UsecaseBackgroundColor #eef2fb
+skinparam UsecaseBorderColor #5b6b8c
+skinparam Shadowing false
+
+left to right direction
+
+title UC-05 Xem lịch sử và theo dõi đơn - phạm vi use-case
+
+actor "Khách hàng\n(Customer)" as Customer
+actor "Nhân viên quầy\n(Barista)" as Barista
+
+rectangle "Hệ thống BrewLite" {
+  usecase "UC-05 Xem lịch sử và theo dõi đơn" as UC05
+  usecase "UC-04 Đặt và thanh toán đơn hàng" as UC04
+  usecase "UC-06 Hủy đơn chưa trả" as UC06
+  usecase "UC-07 Cập nhật trạng thái đơn" as UC07
+}
+
+Customer --- UC05
+Customer --- UC04
+Customer --- UC06
+Barista --- UC07
+
+UC04 .. UC05 : màn xác nhận\nlà trang chi tiết đơn
+UC05 .. UC06 : hủy từ\ntrang chi tiết
+UC05 .. UC07 : Barista đọc đơn\ntrước khi đổi trạng thái
+
+@enduml
