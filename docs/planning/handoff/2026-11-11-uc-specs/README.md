@@ -105,7 +105,7 @@ Nhãn actor dùng nguyên văn của overview: `Khách vãng lai\n(Guest)`, `Kh�
 Chạy trong `.worktrees/uc-specs`:
 
 1. `git branch --show-current` ra `a2/uc-specs`.
-2. Render thử nếu có PlantUML: `java -jar <plantuml.jar> -charset UTF-8 -tsvg -o <thư mục tạm ngoài repo> docs/requirements/use-cases/<file>.puml`, rồi kiểm SVG không có chữ `Syntax Error`. Đường dẫn jar do người giao việc cung cấp; không có thì ghi "chưa render" vào report, Integrator sẽ render. Không tự tải jar.
+2. Render thử từng file `.puml`: `java -jar C:/Users/Admin/tools/plantuml/plantuml-1.2026.8.jar -charset UTF-8 -tsvg -o <thư mục tạm ngoài repo> docs/requirements/use-cases/<file>.puml`, rồi kiểm SVG không có chữ `Syntax Error`. `-o` phải là đường dẫn tuyệt đối ngoài repo; không chép `.svg` vào repo (Integrator làm ở I3). Nếu jar không còn ở đường dẫn trên thì ghi "chưa render" vào report, không tự tải jar.
 3. Với từng file mới: `git diff --no-index --check /dev/null <file>`. Lệnh này **luôn trả exit 1 khi file sạch** (vì file khác `/dev/null`) và exit 3 khi có lỗi khoảng trắng. Dòng `warning: ... LF will be replaced by CRLF` là bình thường trên máy này. Đạt khi không có dòng nào dạng `<file>:<dòng>: trailing whitespace` hay lỗi khoảng trắng khác.
 4. `git status --porcelain`: mọi file do mình tạo đều nằm trong allowed paths của card. File của card khác có thể xuất hiện ở đây, bỏ qua và không đụng tới.
 5. Mọi link tương đối trong `.md` mới trỏ tới file tồn tại (trừ `.svg` chưa render của chính UC đó).

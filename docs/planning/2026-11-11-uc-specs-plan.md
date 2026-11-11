@@ -61,7 +61,7 @@ Xong thì ghi report-<X>.md và trả về DONE / DONE_WITH_CONCERNS / BLOCKED /
 
 - [ ] **I1.** Với từng card: đọc report; kiểm `git status --porcelain` chỉ có file trong allowed paths; đọc từng đặc tả đối chiếu SRS (mã FR, AC, mã lỗi, tên trạng thái, endpoint) và đối chiếu quan hệ actor với `use-case-overview.puml`. Sai thì trả card về worker, tối đa 3 vòng.
 - [ ] **I2.** Commit từng card (file đặc tả và `report-<X>.md`) bằng message ghi ở bước cuối của card, không có trailer `Co-Authored-By`.
-- [ ] **I3.** Render 7 file `.puml` ra `.svg` bằng PlantUML 1.2026.8 (lệnh mẫu ở `docs/diagrams/README.md`; đường dẫn jar do người dùng cung cấp), kiểm không có "Syntax Error", chép `.svg` vào `use-cases/`.
+- [ ] **I3.** Render 7 file `.puml` ra `.svg` bằng PlantUML 1.2026.8 (`java -jar C:/Users/Admin/tools/plantuml/plantuml-1.2026.8.jar -charset UTF-8 -tsvg -o <thư mục tạm ngoài repo> docs/requirements/use-cases/*.puml`), kiểm không có "Syntax Error", chép `.svg` vào `use-cases/`.
 - [ ] **I4.** Viết `docs/requirements/use-cases/README.md`: mục lục 9 use-case, ghi UC-04 là trọng tâm và dẫn về `../uc-checkout.md`, `../uc-inventory.md`.
 - [ ] **I5.** Cập nhật bảng ở `docs/requirements/README.md` và thêm một dòng dẫn link ở `docs/requirements/srs.md` mục 2.3. Không đổi nội dung yêu cầu nào.
 - [ ] **I6.** Commit I3–I5: `docs(requirements): index use-case specifications and render diagrams`.
@@ -78,8 +78,11 @@ Push và merge vào `main` chỉ làm khi người dùng đồng ý.
 
 ## 7. Việc còn mở
 
-- **PlantUML jar:** máy có Java 24 nhưng không có jar (đường dẫn cũ `Temp/opencode/puml/plantuml.jar` không còn). Người dùng cần cung cấp đường dẫn `plantuml-1.2026.8.jar` trước bước I3; cho tới lúc đó tiêu chí "mọi `.puml` render được" chưa kiểm được và worker ghi "chưa render".
+Không có.
+
+PlantUML đã sẵn sàng: jar 1.2026.8 nằm ở `C:/Users/Admin/tools/plantuml/plantuml-1.2026.8.jar` (ngoài repo, SHA-256 `5e1ecfa8ecd32c90b03bbf3b1eb6f020943f98ab0fcf4032be31a0002ee2c462`), chạy bằng Java 24, không cần Graphviz. Đã render thử `use-case-overview.puml` và `uc-checkout.puml` ra thư mục tạm, không có "Syntax Error". Worker dùng jar này ở lệnh acceptance 2.
 
 ## 8. Lịch sử sửa plan
 
 - 2026-11-11, sau review: rebase lên `origin/main` (`213d7bb`); sửa actor UC-06 (thêm VNPay sandbox), bỏ mã FR khỏi mẫu `.puml`, bỏ mục "quyền hủy của Barista còn mở" vì PR #31 đã merge và AC-F24.3 đã chốt 403; sửa phần FR-29 của Card B, cách xử lý Barista ở UC-05, lệnh acceptance 3 và quy định commit report.
+- 2026-11-11, PlantUML: chép jar 1.2026.8 từ thư mục tạm của phiên cũ ra `C:/Users/Admin/tools/plantuml/`; ghi đường dẫn vào bước I3 và lệnh acceptance 2, đóng việc còn mở ở mục 7.
