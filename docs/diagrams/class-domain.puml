@@ -18,20 +18,31 @@ skinparam SequenceLifeLineBorderColor #5b6b8c
 skinparam NoteBackgroundColor #fef3c7
 skinparam NoteBorderColor #d97706
 skinparam NoteFontColor #1f2937
-' BrewLite A2 SRS section 3.6 is the authoritative source.
+' Persisted classes follow schema.prisma; optional domain concepts follow SRS 3.6.
 skinparam shadowing false
 skinparam defaultFontName "DejaVu Sans"
 skinparam classAttributeIconSize 0
-skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam nodesep 40
+skinparam ranksep 55
+skinparam linetype polyline
 hide empty members
-title BrewLite A2 — Class: Domain model (SRS 3.6)
+title BrewLite A2 — Domain model: ingredient inventory and order snapshots
 
+package "Identity" {
 class User {
   +id: String
   +email: String
   +passwordHash: String
   +role: Role
 }
+enum Role {
+  CUSTOMER
+  BARISTA
+}
+}
+
+package "Catalogue and recipes" {
 class Product {
   +id: String
   +name: String
@@ -40,33 +51,85 @@ class Product {
   +imageUrl: String
   +stock: Integer <<legacy>>
 }
+class Recipe {
+  +id: String
+  +productId: String [0..1]
+  +size: String [0..1]
+  +topping: String [0..1]
+}
+class RecipeLine {
+  +recipeId: String <<PK>>
+  +ingredientId: String <<PK>>
+  +quantity: Decimal(18,3)
+}
+note bottom of Product
+  Product.stock used only for legacy orders (marker false).
+  Public stock = ingredient capacity for S without toppings.
+  Client choices are validated; server recomputes prices.
+end note
+note bottom of Recipe
+  Exactly one selector: productId+size OR topping.
+  Unique product+size and unique topping.
+  Unique recipeId+ingredientId; positive quantities.
+  Empty/missing base or no tracked base line is unavailable.
+end note
+}
+
+package "Orders and immutable snapshots" {
 class Order {
   +id: String
   +userId: String
   +status: OrderStatus
   +inventoryTracked: Boolean
   +total: Integer
-  +discountAmount: Integer
-  +promotionId: String [0..1]
+  +discountAmount: Integer <<domain only>>
+  +promotionId: String [0..1] <<domain only>>
   +createdAt: DateTime
 }
 class OrderItem {
   +id: String
   +orderId: String
   +productId: String
+  +name: String <<snapshot>>
   +size: String
   +toppings: String[*]
   +quantity: Integer
   +unitPrice: Integer
   +lineTotal: Integer
 }
+class OrderIngredient {
+  +orderId: String <<PK>>
+  +ingredientId: String <<PK>>
+  +quantity: Decimal(18,3) <<immutable>>
+}
+note bottom of OrderIngredient
+  Composite key: orderId + ingredientId; aggregate ALL cart lines.
+  New orders: inventoryTracked = true; reserve snapshot atomically.
+  Success consumes onHand and reserved exactly once.
+  Failure keeps reservations; owner cancel releases reserved once.
+  Recipe edits never modify snapshots; legacy false has no snapshot.
+end note
+enum OrderStatus {
+  PENDING
+  PAID
+  PAYMENT_FAILED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+}
+
+package "Payments" {
 class Payment {
   +id: String
   +orderId: String
+  +userId: String
   +method: PaymentMethod
   +status: PaymentStatus
   +amount: Integer
   +idempotencyKey: String
+  +fingerprint: String
   +provider: String
   +paymentUrl: String [0..1]
   +expiresAt: DateTime [0..1]
@@ -78,7 +141,61 @@ class Payment {
   +paidAt: DateTime [0..1]
   +createdAt: DateTime
 }
-class Promotion {
+enum PaymentMethod {
+  WALLET
+  CARD
+}
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+note bottom of Payment
+  BR-05: replay SUCCESS only for the same owner,
+  orderId, idempotency key and method; FAILED permits retry.
+  BR-10: at most one PENDING per order (partial unique index).
+  provider: VNPAY; pre-VNPay rows retain SIMULATOR.
+  QueryDR reuses the exact signed gatewayCreateDate.
+  EXPIRED is a response code; refunds (FR-26) are Won't.
+  Card details are entered on VNPay and never stored here.
+end note
+}
+
+package "Ingredient balances and staff audit" {
+class Ingredient {
+  +id: String
+  +name: String
+  +unit: String
+  +tracked: Boolean
+  +onHand: Decimal(18,3)
+  +reserved: Decimal(18,3)
+}
+class StockMovement {
+  +id: String
+  +ingredientId: String
+  +actorId: String
+  +kind: String
+  +quantity: Decimal(18,3) <<signed delta>>
+  +onHandAfter: Decimal(18,3)
+  +reason: String
+  +createdAt: DateTime
+}
+note bottom of Ingredient
+  available = onHand - reserved; 0 <= reserved <= onHand.
+  Canonical unit values: g, ml, piece (stored as String).
+  Only tracked ingredients limit cups or enter snapshots.
+  Water / ice are unlimited; HTTP quantities are decimal strings.
+end note
+note bottom of StockMovement
+  kind values: RECEIVE or ADJUST (stored as String).
+  RECEIVE adds stock; ADJUST sets the counted onHand.
+  Stored quantity is the signed delta; onHandAfter >= reserved.
+  Manual balance updates and audit rows share one transaction.
+end note
+}
+
+package "Optional domain — not persisted (Won't)" {
+class Promotion <<domain only>> {
   +id: String
   +code: String
   +discountPercent: Decimal
@@ -88,7 +205,7 @@ class Promotion {
   +usedCount: Integer
   +active: Boolean
 }
-class LoyaltyTransaction {
+class LoyaltyTransaction <<domain only>> {
   +id: String
   +userId: String
   +orderId: String [0..1]
@@ -96,110 +213,28 @@ class LoyaltyTransaction {
   +points: Integer
   +createdAt: DateTime
 }
-
-enum Role {
-  CUSTOMER
-  BARISTA
-}
-enum OrderStatus {
-  PENDING
-  PAID
-  PAYMENT_FAILED
-  PREPARING
-  READY
-  COMPLETED
-  CANCELLED
-}
-enum PaymentMethod {
-  WALLET
-  CARD
-}
-enum PaymentStatus {
-  SUCCESS
-  FAILED
-  PENDING
-}
 enum LoyaltyType {
   EARN
   REVERSAL
+}
+note bottom of Promotion
+  FR-17 is Won't: no Promotion table or runtime API.
+  Order.promotionId and discountAmount are domain only.
+end note
+note bottom of LoyaltyTransaction
+  Domain only: FR-18/19 are Won't.
+  No runtime accrual in minimum.
+end note
 }
 
 User "1" -- "0..*" Order : places
 Order "1" *-- "1..*" OrderItem : contains
 Product "1" -- "0..*" OrderItem : selected in
 Order "1" *-- "0..*" Payment : payment attempts
+User "1" -- "0..*" Payment : initiates
 Promotion "0..1" -- "0..*" Order : applied to
 User "1" -- "0..*" LoyaltyTransaction : earns / reverses
 Order "0..1" -- "0..*" LoyaltyTransaction : origin
-
-User ..> Role
-Order ..> OrderStatus
-Payment ..> PaymentMethod
-Payment ..> PaymentStatus
-LoyaltyTransaction ..> LoyaltyType
-
-note bottom of Product
-  Product.stock used only for legacy orders (marker false).
-  Public stock = ingredient capacity for S without toppings.
-  Client size/toppings are validated, prices recomputed on server.
-end note
-note bottom of Promotion
-  Domain only: FR-17 is Won't.
-  discountAmount is a domain attribute: no DB column or API field.
-end note
-note bottom of LoyaltyTransaction
-  Domain only: FR-18/19 are Won't.
-  No runtime accrual in minimum.
-end note
-note bottom of Payment
-  Only SUCCESS results are cached by API key (BR-05); FAILED does not lock the key.
-  At most one PENDING per Order (BR-10), enforced by a partial unique index.
-  provider = "VNPAY" for new rows; rows created before VNPay keep "SIMULATOR".
-  gatewayCreateDate = the exact signed vnp_CreateDate string; QueryDR needs it unchanged.
-  gatewayResponseCode and gatewayTransactionStatus are stored apart.
-  "EXPIRED" is an internal gatewayResponseCode value, not a PaymentStatus.
-  No card number is stored: the card is entered only on the VNPay page.
-  No REFUNDED value: refund (FR-26) is Won't.
-end note
-class Ingredient {
-  +id: String
-  +name: String
-  +unit: IngredientUnit
-  +tracked: Boolean
-  +onHand: Decimal(18,3)
-  +reserved: Decimal(18,3)
-}
-class Recipe {
-  +id: String
-  +productId: String [0..1]
-  +size: String [0..1]
-  +topping: String [0..1]
-}
-class RecipeLine {
-  +recipeId: String
-  +ingredientId: String
-  +quantity: Decimal(18,3)
-}
-class StockMovement {
-  +id: String
-  +ingredientId: String
-  +actorId: String
-  +kind: RECEIVE | ADJUST
-  +quantity: Decimal(18,3) <<signed delta>>
-  +onHandAfter: Decimal(18,3)
-  +reason: String
-  +createdAt: DateTime
-}
-class OrderIngredient {
-  +orderId: String
-  +ingredientId: String
-  +quantity: Decimal(18,3) <<immutable>>
-}
-enum IngredientUnit {
-  g
-  ml
-  piece
-}
 Product "0..1" -- "0..*" Recipe : product + size selector
 Recipe "1" *-- "1..*" RecipeLine : contains
 Ingredient "1" -- "0..*" RecipeLine : requires
@@ -207,22 +242,10 @@ Ingredient "1" -- "0..*" StockMovement : balance audit
 User "1" -- "0..*" StockMovement : records
 Order "1" *-- "0..*" OrderIngredient : aggregate snapshot
 Ingredient "1" -- "0..*" OrderIngredient : reserved / consumed
-Ingredient ..> IngredientUnit
-note bottom of Ingredient
-  available = onHand - reserved; 0 <= reserved <= onHand.
-  Water / ice unlimited; only tracked lines limit cups.
-  HTTP amounts are decimal strings; canonical units.
-end note
-note right of Recipe
-  Exactly one selector: productId+size OR topping.
-  Unique product+size and unique topping.
-  Unique recipeId+ingredientId; positive quantities.
-  Empty/missing base or no tracked base line is unavailable.
-end note
-note bottom of OrderIngredient
-  Unique orderId+ingredientId; quantities aggregate ALL cart lines.
-  New orders marker true: reserve snapshot; payment consumes;
-  decline keeps; owner cancel releases reserved exactly once.
-  Recipe edits never modify snapshot; legacy false has no snapshot.
-end note
+
+User ..> Role
+Order ..> OrderStatus
+Payment ..> PaymentMethod
+Payment ..> PaymentStatus
+LoyaltyTransaction ..> LoyaltyType
 @enduml

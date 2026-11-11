@@ -52,24 +52,47 @@ endif
 :Disable button; create payment key (no card field);
 :POST /orders with JWT and cart; no client prices;
 |NestJS API|
-:Validate role/body; compute server prices;
-if (Invalid input or unknown product?) then (E6)
-  :400 / 404; no order or balance change;
+:Validate role/body;
+if (Invalid input?) then (E6)
+  :400; no order or balance change;
   |Next.js UI|
   :Keep cart; show correction;
   stop
 else (valid)
 endif
 |NestJS API|
-:BEGIN; lock recipes in ID order;\nread base and topping recipes; aggregate ALL cart lines;\nlock ingredients in ID order; check onHand - reserved;
-if (Missing recipe or aggregate shortage?) then (E2)
-  :ROLLBACK; 409 RECIPE_UNAVAILABLE / OUT_OF_STOCK;
+:BEGIN; read Product records;
+if (Unknown product?) then (E6)
+  :ROLLBACK; 404 PRODUCT_NOT_FOUND;
+  |Next.js UI|
+  :Keep cart; show correction;
+  stop
+else (products found)
+endif
+|NestJS API|
+:Compute server prices; lock recipes by ID (FOR SHARE);\nread base and topping RecipeLines;\nlock ingredients by ID (FOR UPDATE); read balances;
+:Aggregate tracked ingredient demand across ALL cart lines;
+note right
+  demand(i) = sum of cart quantity x
+  (base recipe + selected topping quantities for i).
+  Only tracked=true ingredients enter demand and snapshot.
+end note
+if (Missing/invalid recipe or no tracked base ingredient?) then (E2 recipe)
+  :ROLLBACK; 409 RECIPE_UNAVAILABLE;
+  |Next.js UI|
+  :Keep cart; ask customer to change the unavailable selection;
+  stop
+else (recipes valid)
+endif
+|NestJS API|
+if (Any aggregate demand > onHand - reserved?) then (E2 shortage)
+  :ROLLBACK; 409 OUT_OF_STOCK + ingredient shortages;
   |Next.js UI|
   :Keep cart; report changed ingredients; link to edit cart;
   stop
 else (fits)
   |NestJS API|
-  :Increase reserved; create Order PENDING marker true;\ncreate OrderItems and immutable OrderIngredient snapshot; COMMIT;
+  :reserved += demand; onHand unchanged;\ncreate Order PENDING (inventoryTracked=true), OrderItems\nand immutable aggregate OrderIngredient snapshot; COMMIT;
 endif
 |Next.js UI|
 :Keep orderId / owner / same payment key;
@@ -209,10 +232,11 @@ else (yes)
     :RspCode 02; Order, Payment and stock unchanged;
   else (yes)
     if (vnp_ResponseCode 00 and vnp_TransactionStatus 00?) then (success)
-      :Payment SUCCESS; lock ingredients in ID order;\ndecrease onHand AND reserved by snapshot; Order PAID; COMMIT;
+      :Payment SUCCESS; if inventoryTracked=true:\nlock snapshot ingredients by ID (FOR UPDATE);\nonHand -= snapshot; reserved -= snapshot;\nOrder PAID; COMMIT;
       note right
         Never use edited recipes to consume old snapshots.
-        Legacy marker false uses original Product.stock lifecycle.
+        Legacy inventoryTracked=false: successful payment
+        changes neither ingredients nor Product.stock.
       end note
       :RspCode 00;
     elseif (vnp_TransactionStatus 02?) then (E3 failure)
@@ -265,7 +289,7 @@ if (Owner confirms cancel unpaid order?) then (A5)
   else (none open)
   endif
   |NestJS API|
-  :BEGIN; lock Order; validate owner and unpaid state;\nlock ingredients by ID; decrease reserved by snapshot;\nkeep onHand; set CANCELLED; COMMIT;
+  :BEGIN; lock Order; validate owner and unpaid state;\nif inventoryTracked=true: lock snapshot ingredients by ID;\nreserved -= snapshot; onHand unchanged;\notherwise restore legacy Product.stock; set CANCELLED; COMMIT;
   note right
     Repeated cancel returns 409; no second release.
     Legacy false marker restores Product.stock instead.
