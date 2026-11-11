@@ -17,7 +17,7 @@
 - `docs/requirements/context-and-scope.md`: giả định A-04 (tài khoản Barista do seed tạo, không có màn tự đăng ký).
 - `docs/requirements/uc-checkout.md`: ngoại lệ E1 (chưa đăng nhập hoặc JWT hết hạn) và phần màn xác nhận đơn, để dẫn chiếu chứ không chép lại.
 - `docs/requirements/use-case-overview.puml`, `docs/requirements/uc-checkout.puml` (cách vẽ UC-03 extend UC-04), `docs/diagrams/state-order.puml`.
-- Code để đối chiếu: `apps/api/src/auth/`, phần đọc đơn trong `apps/api/src/checkout/`, các trang `apps/web/src/app/login`, `register`, `orders`.
+- Code để đối chiếu: `apps/api/src/auth/`, phần đọc đơn trong `apps/api/src/checkout/`, các trang `apps/web/src/app/login`, `register`, `orders`, và `apps/web/src/app/payment/vnpay-return/page.tsx` (AC-F20.1: trang này đọc `GET /orders/:id` rồi chuyển tới màn xác nhận).
 
 ## Nội dung từng use-case
 

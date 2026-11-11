@@ -73,8 +73,8 @@ Push và merge vào `main` chỉ làm khi người dùng đồng ý.
 
 - Đủ 7 bộ `.md` + `.puml` + `.svg` và `use-cases/README.md`.
 - Mọi AC của FR-01 đến FR-10 và FR-20 đến FR-25 xuất hiện trong mục 8 của ít nhất một đặc tả.
-- Mọi `.puml` render được; `git diff --check main...HEAD` sạch; link tương đối trỏ tới file tồn tại.
-- `uc-checkout.*`, `uc-inventory.md`, `apps/`, `tests/` không đổi so với `main`.
+- Mọi `.puml` render được; `git diff --check origin/main...HEAD` sạch; link tương đối trỏ tới file tồn tại.
+- `uc-checkout.*`, `uc-inventory.md`, `apps/`, `tests/` không đổi so với `origin/main`: `git diff --name-only origin/main...HEAD -- docs/requirements/uc-checkout.md docs/requirements/uc-checkout.puml docs/requirements/uc-checkout.svg docs/requirements/uc-inventory.md apps tests` ra 0 dòng. Không so với `main` local, vì nó còn ở `5f09264` và sẽ báo sai.
 
 ## 7. Việc còn mở
 
