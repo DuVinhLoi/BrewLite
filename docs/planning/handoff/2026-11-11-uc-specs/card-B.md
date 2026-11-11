@@ -1,8 +1,8 @@
 # Card B: UC-01 Xem menu và chi tiết món, UC-02 Quản lý giỏ hàng (trung bình)
 
-> Chỉ mục và quy tắc chung: [`README.md`](README.md). Đọc README trước, rồi `.claude/rules/doc-code-sync.md` và mục "Worker phải tuân" của `.claude/rules/multi-agent-workflow.md`.
+> Plan: [`../../2026-11-11-uc-specs-plan.md`](../../2026-11-11-uc-specs-plan.md). Quy tắc chung, khung file và lệnh acceptance: [`README.md`](README.md). Đọc README trước, rồi `.claude/rules/doc-code-sync.md`.
 
-**Branch:** `a2/uc-b-menu-cart` · **Worktree:** `.worktrees/uc-b` · **Base:** `a2/uc-specs`
+**Branch:** `a2/uc-specs` · **Worktree:** `.worktrees/uc-specs` (dùng chung với các card khác, xem README mục "Một nhánh, một worktree")
 
 **Allowed paths (chỉ tạo mới):**
 
@@ -37,10 +37,10 @@
 
 ## Các bước
 
-- [ ] **B0.** `git branch --show-current` ra `a2/uc-b-menu-cart`; `git status --porcelain` sạch.
+- [ ] **B0.** `git branch --show-current` ra `a2/uc-specs`. Không chạy lệnh git nào làm đổi repo.
 - [ ] **B1.** Đọc đầu vào. Lập danh sách AC của FR-01 đến FR-07 và các AC của FR-29 liên quan tới khách.
 - [ ] **B2.** Viết hai file `.puml` theo mẫu trong README.
 - [ ] **B3.** Viết hai file `.md` theo khung 8 mục trong README.
 - [ ] **B4.** Đối chiếu code, ghi chỗ lệch.
 - [ ] **B5.** Chạy các lệnh acceptance trong README.
-- [ ] **B6.** `git add docs/requirements/use-cases docs/planning/handoff/2026-11-11-uc-specs/report-B.md` rồi commit: `docs(requirements): add UC-01 and UC-02 specifications`. Không có trailer `Co-Authored-By`.
+- [ ] **B6.** Ghi `report-B.md` và dừng. **Không `git add`, không commit**: Integrator kiểm rồi commit với message `docs(requirements): add UC-01 and UC-02 specifications`.

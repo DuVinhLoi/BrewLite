@@ -4,17 +4,26 @@
 
 Đây là tài liệu Task 1 nên agent được soạn nháp (`.claude/rules/doc-code-sync.md`). Nhóm đọc lại, sửa và chốt; mỗi người phải giải thích được phần mình khi vấn đáp.
 
-## Card, branch, worktree
+Plan của đợt: [`../../2026-11-11-uc-specs-plan.md`](../../2026-11-11-uc-specs-plan.md).
 
-Branch tích hợp: `a2/uc-specs` (worktree `.worktrees/uc-specs`), tạo từ `main` tại `5f09264`.
+## Card
 
-| Card | Use-case | Độ phức tạp | Branch | Worktree |
-|---|---|---|---|---|
-| [A](card-A.md) | UC-03 Đăng nhập, UC-09 Đăng ký, UC-05 Lịch sử đơn | Đơn giản | `a2/uc-a-auth-history` | `.worktrees/uc-a` |
-| [B](card-B.md) | UC-01 Menu, UC-02 Giỏ hàng | Trung bình | `a2/uc-b-menu-cart` | `.worktrees/uc-b` |
-| [C](card-C.md) | UC-06 Hủy đơn, UC-07 Cập nhật trạng thái | Phức tạp | `a2/uc-c-order-lifecycle` | `.worktrees/uc-c` |
+| Card | Use-case | Độ phức tạp |
+|---|---|---|
+| [A](card-A.md) | UC-03 Đăng nhập, UC-09 Đăng ký, UC-05 Lịch sử đơn | Đơn giản |
+| [B](card-B.md) | UC-01 Menu, UC-02 Giỏ hàng | Trung bình |
+| [C](card-C.md) | UC-06 Hủy đơn, UC-07 Cập nhật trạng thái | Phức tạp |
 
-Ba card không chung file nào nên chạy song song được. Worker tuân `.claude/rules/multi-agent-workflow.md` (mục "Worker phải tuân"). Integrator làm sau khi merge: render `.svg`, viết `use-cases/README.md`, cập nhật `docs/requirements/README.md` và dòng dẫn link ở `srs.md` mục 2.3.
+## Một nhánh, một worktree
+
+Cả đợt chỉ dùng nhánh `a2/uc-specs` trong worktree `.worktrees/uc-specs`, tạo từ `main` tại `5f09264`. Người dùng đã chọn cách này thay cho "mỗi card một worktree" của `.claude/rules/multi-agent-workflow.md`; đây là ngoại lệ được khai trong plan. Ba card vẫn chạy song song được vì không card nào chung file với card khác. Để dùng chung một worktree an toàn:
+
+- Worker **chỉ tạo file trong allowed paths của card mình**, không mở, sửa hay xóa file của card khác.
+- Worker **không chạy lệnh git làm đổi repo**: không `add`, `commit`, `stash`, `checkout`, `switch`, `reset`, `clean`, `merge`, `rebase`, `push`, `worktree`. Chỉ được dùng lệnh đọc (`status`, `diff`, `log`, `show`, `grep`).
+- Mọi commit do Integrator làm, mỗi card một commit, sau khi kiểm report.
+- Các mục còn lại của "Worker phải tuân" (không `npm install`, không docker, không `graphify update`, không gọi agent con) vẫn áp dụng.
+
+Integrator làm sau khi commit cả ba card: render `.svg`, viết `use-cases/README.md`, cập nhật `docs/requirements/README.md` và dòng dẫn link ở `srs.md` mục 2.3.
 
 ## Quy tắc chung cho cả ba card
 
@@ -92,16 +101,15 @@ Nhãn actor dùng nguyên văn của overview: `Khách vãng lai\n(Guest)`, `Kh�
 
 ## Lệnh acceptance (mọi card)
 
-Chạy trong worktree của card, `<base>` là `a2/uc-specs`:
+Chạy trong `.worktrees/uc-specs`:
 
-1. `git branch --show-current` ra đúng tên branch của card.
+1. `git branch --show-current` ra `a2/uc-specs`.
 2. Render thử nếu có PlantUML: `java -jar <plantuml.jar> -charset UTF-8 -tsvg -o <thư mục tạm ngoài repo> docs/requirements/use-cases/<file>.puml`, rồi kiểm SVG không có chữ `Syntax Error`. Không có jar thì ghi "chưa render" vào report, Integrator sẽ render.
-3. `git diff --check a2/uc-specs...HEAD` sạch.
-4. `git diff --name-only a2/uc-specs...HEAD` chỉ gồm allowed paths của card.
+3. Với từng file mới: `git diff --no-index --check /dev/null <file>` không in dòng cảnh báo khoảng trắng nào (file chưa được `add` nên `git diff --check` thường không thấy).
+4. `git status --porcelain`: mọi file do mình tạo đều nằm trong allowed paths của card. File của card khác có thể xuất hiện ở đây, bỏ qua và không đụng tới.
 5. Mọi link tương đối trong `.md` mới trỏ tới file tồn tại (trừ `.svg` chưa render của chính UC đó).
 6. Mọi mã `FR-xx`, `AC-Fxx.y`, `BR-xx` và mã lỗi dùng trong đặc tả đều tìm thấy trong `docs/requirements/srs.md`.
-7. `git status --porcelain` sạch sau khi commit.
 
 ## Report
 
-Ghi `report-<card>.md` trong thư mục này: hash commit, danh sách file, kết quả từng lệnh acceptance, **danh sách chỗ code lệch SRS** (hoặc "không có"), điểm còn mơ hồ trong SRS mà nhóm cần chốt. Trả về `DONE` / `DONE_WITH_CONCERNS` / `BLOCKED` / `NEEDS_CONTEXT`.
+Ghi `report-<card>.md` trong thư mục này: danh sách file đã tạo, kết quả từng lệnh acceptance, **danh sách chỗ code lệch SRS** (hoặc "không có"), điểm còn mơ hồ trong SRS mà nhóm cần chốt. Trả về `DONE` / `DONE_WITH_CONCERNS` / `BLOCKED` / `NEEDS_CONTEXT`.

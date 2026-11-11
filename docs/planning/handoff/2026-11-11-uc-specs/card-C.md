@@ -1,8 +1,8 @@
 # Card C: UC-06 Hủy đơn chưa trả, UC-07 Cập nhật trạng thái đơn (phức tạp)
 
-> Chỉ mục và quy tắc chung: [`README.md`](README.md). Đọc README trước, rồi `.claude/rules/doc-code-sync.md` và mục "Worker phải tuân" của `.claude/rules/multi-agent-workflow.md`.
+> Plan: [`../../2026-11-11-uc-specs-plan.md`](../../2026-11-11-uc-specs-plan.md). Quy tắc chung, khung file và lệnh acceptance: [`README.md`](README.md). Đọc README trước, rồi `.claude/rules/doc-code-sync.md`.
 
-**Branch:** `a2/uc-c-order-lifecycle` · **Worktree:** `.worktrees/uc-c` · **Base:** `a2/uc-specs`
+**Branch:** `a2/uc-specs` · **Worktree:** `.worktrees/uc-specs` (dùng chung với các card khác, xem README mục "Một nhánh, một worktree")
 
 **Allowed paths (chỉ tạo mới):**
 
@@ -36,10 +36,10 @@
 
 ## Các bước
 
-- [ ] **C0.** `git branch --show-current` ra `a2/uc-c-order-lifecycle`; `git status --porcelain` sạch.
+- [ ] **C0.** `git branch --show-current` ra `a2/uc-specs`. Không chạy lệnh git nào làm đổi repo.
 - [ ] **C1.** Đọc đầu vào. Lập danh sách AC của FR-23, 24, 25 và bảng chuyển trạng thái từ `state-order.puml`.
 - [ ] **C2.** Viết hai file `.puml` theo mẫu trong README. Sơ đồ UC-06 không mâu thuẫn với `uc-checkout.puml`.
 - [ ] **C3.** Viết hai file `.md` theo khung 8 mục trong README.
 - [ ] **C4.** Đối chiếu code, ghi chỗ lệch (đặc biệt: quyền hủy, thứ tự kiểm 401/403/404/409, nhả giữ chỗ).
 - [ ] **C5.** Chạy các lệnh acceptance trong README.
-- [ ] **C6.** `git add docs/requirements/use-cases docs/planning/handoff/2026-11-11-uc-specs/report-C.md` rồi commit: `docs(requirements): add UC-06 and UC-07 specifications`. Không có trailer `Co-Authored-By`.
+- [ ] **C6.** Ghi `report-C.md` và dừng. **Không `git add`, không commit**: Integrator kiểm rồi commit với message `docs(requirements): add UC-06 and UC-07 specifications`.
