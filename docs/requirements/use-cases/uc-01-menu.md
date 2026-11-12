@@ -10,8 +10,8 @@
 | Mục tiêu | Khách xem được danh sách đồ uống, mở chi tiết một món, chọn size và topping và thấy giá cập nhật ngay, để sẵn sàng thêm món vào giỏ |
 | Giá trị nghiệp vụ | Đây là cửa vào của mọi đơn hàng: khách không đăng nhập vẫn xem và chọn món được, nên không bị chặn trước khi thấy sản phẩm |
 | Ưu tiên | Must (FR-01 đến FR-04) |
-| FR liên quan | FR-01, FR-02, FR-03, FR-04; NFR-02, NFR-09, NFR-11 |
-| Quan hệ với UC khác | Không include/extend UC nào (khớp [`use-case-overview.puml`](../use-case-overview.puml)). Bấm "Thêm vào giỏ" là trigger của [UC-02](uc-02-cart.md). Số liệu "Còn hàng" / "Hết hàng" và giới hạn số lượng lấy từ kho nguyên liệu do [UC-10](../uc-inventory.md) nuôi |
+| FR liên quan | FR-01, FR-02, FR-03, FR-04; NFR-02 (Could), NFR-09, NFR-11 |
+| Quan hệ với UC khác | Không include/extend UC nào (khớp [`use-case-overview.puml`](../use-case-overview.puml)). Bấm "Thêm vào giỏ" là trigger của [UC-02](uc-02-cart.md). Số liệu "Còn hàng" / "Hết hàng" và giới hạn số lượng lấy từ kho nguyên liệu do [UC-10](../uc-inventory.md) quản lý |
 
 ## 2. Use-case diagram
 
@@ -20,7 +20,7 @@
 Nguồn: [`uc-01-menu.puml`](uc-01-menu.puml). Sơ đồ chỉ ghi mã và tên use-case; mã yêu cầu ở mục 8. Các quan hệ:
 
 - Guest nối với UC-01. Customer kế thừa Guest (`Guest <|- Customer`) nên làm được mọi việc của Guest; use-case không đòi đăng nhập.
-- UC-01 không có `<<include>>` hay `<<extend>>` với UC-02 hay UC-04 (SRS mục 2.3 không khai quan hệ này). Thứ tự "xem món rồi mới thêm vào giỏ" chỉ được ghi bằng ghi chú trên sơ đồ.
+- UC-01 không có `<<include>>` hay `<<extend>>` với UC-02 hay UC-04 (SRS mục 2.3 không khai quan hệ này). Khách xem và chọn món xong mới thêm vào giỏ; bước chuyển tiếp này được mô tả ở luồng chính (mục 5).
 
 ## 3. Actor
 
@@ -123,7 +123,7 @@ Khi bấm thêm, UI kiểm lại availability cho cả giỏ dự kiến (giỏ 
 
 | Bước / luồng | Mô tả ngắn | Yêu cầu chức năng | Tiêu chí chấp nhận | NFR |
 |---|---|---|---|---|
-| 1 đến 3 | Tải danh sách món, không cần đăng nhập | FR-01 | AC-F01.1 | NFR-02 (AC-N02.1, AC-N02.2) |
+| 1 đến 3 | Tải danh sách món, không cần đăng nhập | FR-01 | AC-F01.1 | NFR-02, Could (AC-N02.1, AC-N02.2) |
 | 2 | Trạng thái loading | FR-02 | AC-F02.1 | NFR-11 (AC-N11.1) |
 | 4 | Lưới thẻ món, giá `45.000đ` | FR-01 | AC-F01.2 | NFR-09 |
 | 4, A2 | Nhãn "Còn hàng" / "Hết hàng", không hiện số ly | FR-01 | AC-F01.3 | — |

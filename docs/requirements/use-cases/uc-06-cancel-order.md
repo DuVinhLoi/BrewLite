@@ -61,7 +61,7 @@ Chủ đơn hủy đơn `PENDING` hoặc `PAYMENT_FAILED` thuộc loại `invent
 
 | Bước | Tác nhân | Hành động |
 |---|---|---|
-| 1 | Customer | Mở trang chi tiết đơn (xem ở UC-05) |
+| 1 | Customer | Mở trang chi tiết đơn (xem ở [UC-05](uc-05-order-history.md)) |
 | 2 | Next.js UI | Đọc `GET /orders/:id`. Đơn `PENDING` hoặc `PAYMENT_FAILED` và không có `Payment PENDING` chưa kết luận thì hiện nút "Hủy đơn" (AC-F25.3) |
 | 3 | Customer | Bấm "Hủy đơn" |
 | 4 | Next.js UI | Hỏi xác nhận "Bạn chắc chắn muốn hủy đơn?". Customer xác nhận; chọn không thì use-case dừng, không có tác dụng phụ |
@@ -92,7 +92,7 @@ Luồng thay thế vẫn kết thúc tốt đẹp hoặc dừng lại có kiểm
 
 | Kết quả đối soát | Payment / đơn sau đối soát | UC-06 |
 |---|---|---|
-| `00/00` (khách đã trả) | `SUCCESS`, đơn `PAID` | Không hủy được: 403 `FORBIDDEN` theo AC-F25.2 (Customer hủy đơn `PAID`). Kết thúc, đơn không đổi thêm |
+| `00/00` (khách đã trả) | `SUCCESS`, đơn `PAID` | Không hủy được. AC-F25.4 không nêu mã trả về; suy từ AC-F25.2 (Customer hủy đơn `PAID`) thì là 403 `FORBIDDEN`. Kết thúc, đơn không đổi thêm |
 | `00/02`, hoặc `91` sau hạn | `FAILED`, đơn `PAYMENT_FAILED` | Không còn payment chưa kết luận, quay lại bước 7 và hủy bình thường |
 | Chưa kết luận, đã quá `expiresAt + 15 phút` (trừ nhóm đáng ngờ và `MISMATCH`) | Đóng `FAILED` với `gatewayResponseCode = "EXPIRED"`, đơn `PAYMENT_FAILED`, kho không đổi (AC-F16.10) | Quay lại bước 7 và hủy bình thường. Nguyên liệu chỉ được nhả ở bước 9, không phải lúc payment bị đóng |
 | Chưa kết luận, còn trong khoảng chờ | `Payment` giữ `PENDING` | E5 (409 `PAYMENT_IN_PROGRESS`) hoặc E8 (502 `PAYMENT_PROVIDER_ERROR`), không hủy |
@@ -112,16 +112,16 @@ Customer không xác nhận hộp thoại: UI không gọi API, đơn và kho kh
 
 ## 7. Luồng ngoại lệ
 
-Mọi lỗi theo định dạng `srs.md` mục 3.2. Mọi nhánh dưới đây đều không đổi `Order`, `Payment`, snapshot, `reserved`, `onHand`, `Product.stock`. Thứ tự kiểm là 401, 403 vai trò, 404 hoặc 403 sở hữu, rồi 403/409 theo trạng thái; SRS không quy định thứ tự giữa các mã này.
+Mọi lỗi theo định dạng `srs.md` mục 3.2. Mọi nhánh dưới đây đều không đổi `Order`, `Payment`, snapshot, `reserved`, `onHand`, `Product.stock`. SRS không quy định thứ tự kiểm giữa các mã này. Theo code hiện tại, thứ tự là: 401, 400 (body), 404 rồi 403 sở hữu, sau đó 403 hoặc 409 theo trạng thái đơn.
 
 | Mã | Tình huống | Phản hồi | Yêu cầu |
 |---|---|---|---|
-| E1 | Chưa đăng nhập, JWT sai hoặc hết hạn | 401 `UNAUTHORIZED`. UI dẫn tới trang đăng nhập (UC-03) | AC-F10.1, AC-F10.2 |
+| E1 | Chưa đăng nhập, JWT sai hoặc hết hạn | 401 `UNAUTHORIZED`. UI dẫn tới trang đăng nhập ([UC-03](uc-03-login.md)) | AC-F10.1, AC-F10.2 |
 | E2 | Hủy đơn của người khác | 403 `FORBIDDEN` | AC-F25.2, AC-N05.3 |
 | E3 | Customer hủy đơn `PAID` | 403 `FORBIDDEN`. Đơn `PAID` trở đi không hủy được ở bản nộp (FR-26 Won't) | AC-F25.2 |
 | E4 | Đơn `PREPARING`, `READY`, `COMPLETED` hoặc `CANCELLED`, kể cả bấm hủy lần hai | 409 `INVALID_ORDER_TRANSITION`. Hủy lần hai không nhả nguyên liệu lần nữa | AC-F25.1, AC-F25.2, AC-F23.2 |
 | E5 | Đơn có `Payment PENDING` còn hạn (hoặc quá hạn mà đối soát chưa kết luận trong khoảng chờ) | 409 `PAYMENT_IN_PROGRESS`; đơn và kho giữ nguyên. Tránh trường hợp khách vừa trả tiền vừa hủy | AC-F25.4, BR-10, [UC-04 A5](../uc-checkout.md) |
-| E6 | `id` không tồn tại | 404 `ORDER_NOT_FOUND` | AC-F22.1 |
+| E6 | `id` không tồn tại | 404 `ORDER_NOT_FOUND` | AC-F24.3 |
 | E7 | Body sai: thiếu `status`, `status` không hợp lệ, có trường lạ | 400 `VALIDATION_ERROR` | AC-N06.1 |
 | E8 | Đối soát ở A2 gặp lỗi mạng, hết thời gian chờ, sai chữ ký, nhóm đáng ngờ hoặc `MISMATCH` | 502 `PAYMENT_PROVIDER_ERROR`; `Payment` giữ `PENDING`, không hủy. Quá `expiresAt + 15 phút` (trừ nhóm đáng ngờ và `MISMATCH`) thì đóng payment rồi hủy tiếp theo A2 | AC-F16.10, AC-F16.11 |
 
@@ -139,7 +139,7 @@ Khi nhận E5 hoặc E8, giao diện cho thấy đơn đang chờ xác minh than
 | E2, E3 | FR-25 | AC-F25.2 | AC-N05.3, NFR-05 (AC-N05.2) |
 | E4 | FR-25, FR-23 | AC-F25.1, AC-F25.2, AC-F23.2 | BR-08 |
 | E5 | FR-25 | AC-F25.4 | BR-10 |
-| E6, E7 | FR-22, NFR-06 | AC-F22.1, AC-N06.1 | — |
+| E6, E7 | FR-24, NFR-06 | AC-F24.3, AC-N06.1 | — |
 | E8 | FR-16 | AC-F16.10, AC-F16.11 | BR-11 |
 | Trạng thái đơn `PENDING`/`PAYMENT_FAILED` → `CANCELLED` | FR-23 | AC-F23.1, AC-F23.4 | `srs.md` mục 3.6, [state-order.svg](../../diagrams/state-order.svg) |
 | Payment `FAILED` không nhả kho | FR-15 | AC-F15.3 | BR-09 |

@@ -20,7 +20,7 @@
 Nguồn: [`uc-02-cart.puml`](uc-02-cart.puml). Sơ đồ chỉ ghi mã và tên use-case; mã yêu cầu ở mục 8. Các quan hệ:
 
 - Guest nối với UC-02: giỏ dùng được khi chưa đăng nhập (AC-F05.3). Customer kế thừa Guest (`Guest <|- Customer`).
-- UC-02 không có `<<include>>` hay `<<extend>>` với UC-01 hay UC-04 (SRS mục 2.3 không khai quan hệ này). Thứ tự UC-01, UC-02, rồi UC-04 chỉ được ghi bằng ghi chú trên sơ đồ.
+- UC-02 không có `<<include>>` hay `<<extend>>` với UC-01 hay UC-04 (SRS mục 2.3 không khai quan hệ này). Khách đi từ UC-01 sang UC-02 rồi tới UC-04; các bước chuyển tiếp này được mô tả ở mục 4 và mục 5.
 
 ## 3. Actor
 
@@ -133,4 +133,4 @@ Khách tải lại trang hoặc đăng nhập xong: giỏ vẫn còn nguyên cá
 | 6 | Đơn giá, thành tiền, tổng giỏ (BR-01) | FR-07 | AC-F07.1 | — |
 | 8 | Tổng cập nhật ngay khi đổi số lượng hoặc xóa dòng | FR-07 | AC-F07.2 | — |
 | Ghi chú sau mục 5 | Tổng ở giỏ bằng `Order.total` do server tính | FR-07 | AC-F07.3 | — |
-| 10 | Bấm "Thanh toán" sang UC-04 | FR-07 | — | NFR-09 (AC-N09.2) |
+| 10 | Bấm "Thanh toán" sang UC-04 (Guest bị dẫn tới đăng nhập) | FR-10 | AC-F10.3 | NFR-09 (AC-N09.2) |

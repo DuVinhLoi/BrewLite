@@ -27,11 +27,4 @@ rectangle "Hệ thống BrewLite" {
 Guest <|- Customer
 
 Guest --- UC01
-
-note right of UC01
-  Không cần đăng nhập.
-  Chọn size, topping xong,
-  nút "Thêm vào giỏ" chuyển
-  sang UC-02 Quản lý giỏ hàng.
-end note
 @enduml

@@ -11,26 +11,27 @@
 | Giá trị nghiệp vụ | Là bước "Theo dõi đơn" cuối cùng của luồng đặt đồ uống (đề A2 §1.1): khách biết khi nào đồ uống sẵn sàng nhận mà không phải hỏi quầy |
 | Ưu tiên | Must |
 | Yêu cầu liên quan | FR-20, FR-21, FR-22 |
-| Quan hệ với UC khác | Màn xác nhận sau [UC-04](../uc-checkout.md) (bước 21) chính là trang chi tiết đơn của use-case này; hủy đơn là UC-06, đổi trạng thái là UC-07, chỉ nhắc ở đây và không đặc tả lại |
+| Quan hệ với UC khác | Màn xác nhận sau [UC-04](../uc-checkout.md) (bước 21) chính là trang chi tiết đơn của use-case này; hủy đơn là [UC-06](uc-06-cancel-order.md), đổi trạng thái là [UC-07](uc-07-order-status.md), chỉ nhắc ở đây và không đặc tả lại |
 
 ## 2. Use-case diagram
 
 ![Use-case UC-05](uc-05-order-history.svg)
 
-Nguồn: [`uc-05-order-history.puml`](uc-05-order-history.puml). Sơ đồ chỉ ghi mã, tên use-case; mã yêu cầu ở mục 8. UC-05 không có include hay extend. Đường nét đứt có nhãn là quan hệ liên quan, không phải include hay extend:
+Nguồn: [`uc-05-order-history.puml`](uc-05-order-history.puml). Sơ đồ chỉ ghi mã, tên use-case; mã yêu cầu ở mục 8. Các quan hệ:
 
-- UC-04 → UC-05: màn xác nhận đơn sau khi trả tiền là trang chi tiết đơn (A2).
-- UC-05 → UC-06: nút "Hủy đơn" nằm ở trang chi tiết đơn chưa trả (AC-F25.3); luồng hủy ở UC-06.
-- UC-05 → UC-07: Barista đọc đơn trước khi đổi trạng thái (A3, AC-F24.4); Barista nối với UC-07, **không** nối với UC-05, đúng như `use-case-overview.puml`.
+- Customer nối với UC-05, đúng như `use-case-overview.puml`. Không có actor nào khác.
+- UC-05 không có include hay extend. UC-05 liên quan tới ba use-case khác như sau:
+  - màn xác nhận đơn sau [UC-04](../uc-checkout.md) là trang chi tiết đơn (A2);
+  - nút "Hủy đơn" nằm ở trang chi tiết đơn chưa trả (AC-F25.3), luồng hủy ở [UC-06](uc-06-cancel-order.md);
+  - trạng thái đơn do Barista đổi ở [UC-07](uc-07-order-status.md).
 
 ## 3. Actor
 
 | Actor | Loại | Vai trò trong use-case |
 |---|---|---|
 | **Customer** (khách hàng đã đăng nhập) | Chính | Xem danh sách và chi tiết đơn của chính mình, theo dõi trạng thái |
-| **Barista** (nhân viên quầy) | Phụ, chỉ ở A3 | Đọc chi tiết một đơn bất kỳ qua API để đổi trạng thái (UC-07). Không có danh sách đơn riêng: `GET /orders/me` trả 403 (AC-F21.4) |
 
-Thành phần kỹ thuật: Next.js UI, NestJS API, Database.
+Barista không phải actor của use-case này (`srs.md` mục 2.3). Barista chỉ dùng chung endpoint `GET /orders/:id` khi làm [UC-07](uc-07-order-status.md), xem ghi chú ở A3. Thành phần kỹ thuật: Next.js UI, NestJS API, Database.
 
 ## 4. Trigger, tiền điều kiện, hậu điều kiện
 
@@ -61,7 +62,7 @@ Customer đã đăng nhập, có đơn, đơn đang trong quá trình pha chế.
 | 8 | Next.js UI | Gửi `GET /orders/:id` kèm JWT |
 | 9 | NestJS API, Database | Xác thực JWT, kiểm đơn có tồn tại và Customer là chủ đơn; trả 200 với `status`, `total`, `items` và `payments` nếu có (AC-F22.1) |
 | 10 | Next.js UI | Hiện món (tên, size, topping, số lượng), tổng tiền, các payment và tiến trình `PAID → PREPARING → READY → COMPLETED` với bước hiện tại được đánh dấu (AC-F22.4) |
-| 11 | Next.js UI | Trong lúc trang mở, cứ 5 giây lại gọi `GET /orders/:id` để làm mới. Khi Barista đổi trạng thái (UC-07), nhãn cập nhật trong vòng 6 giây mà không cần tải lại (AC-F22.2) |
+| 11 | Next.js UI | Trong lúc trang mở, cứ 5 giây lại gọi `GET /orders/:id` để làm mới. Khi Barista đổi trạng thái ([UC-07](uc-07-order-status.md)), nhãn cập nhật trong vòng 6 giây mà không cần tải lại (AC-F22.2) |
 | 12 | Next.js UI | Khi đơn đã `COMPLETED` hoặc `CANCELLED` thì ngừng làm mới, không còn yêu cầu định kỳ (AC-F22.3). Use-case kết thúc |
 
 ## 6. Luồng thay thế
@@ -77,20 +78,20 @@ API trả 200 `[]`. UI hiện "Bạn chưa có đơn hàng nào" cùng liên k�
 3. Giỏ hàng đã được xóa khi màn này hiện ra. Khi thanh toán thất bại hoặc `Payment` còn `PENDING` thì giỏ **không** bị xóa (AC-F20.2).
 4. Tải lại trang thì nội dung vẫn đúng vì lấy từ `GET /orders/:id`, không phụ thuộc state tạm (AC-F20.3). Tiếp tục từ bước 9.
 
-### A3 — Barista đọc chi tiết đơn (tại bước 9)
+### A3 — Ghi chú: Barista dùng chung endpoint đọc đơn (tại bước 9)
 
-Token Barista gọi `GET /orders/:id` được 200 với **mọi** đơn (AC-F22.1). Việc này phục vụ UC-07 (`srs.md` mục 2.3): Barista lấy Bearer token, đọc đơn theo mã, rồi `PATCH` lần lượt `PREPARING`, `READY`, `COMPLETED` (AC-F24.4). Barista không có danh sách đơn (E5). Overview không nối Barista với UC-05; việc có vẽ thêm đường nối hay không là điểm nhóm cần chốt.
+Đây không phải luồng của Customer mà là ghi chú về quyền trên cùng endpoint. Token Barista gọi `GET /orders/:id` được 200 với **mọi** đơn (AC-F22.1). Việc này thuộc [UC-07](uc-07-order-status.md): Barista lấy Bearer token, đọc đơn theo mã, rồi `PATCH` lần lượt `PREPARING`, `READY`, `COMPLETED` (AC-F24.4). Barista không có danh sách đơn (E5). Vì vậy sơ đồ và bảng actor của UC-05 không có Barista, khớp overview và `srs.md` mục 2.3.
 
 ### A4 — Đơn chưa thanh toán, thanh toán thất bại hoặc đã hủy (tại bước 10)
 
-Đơn `PENDING`, `PAYMENT_FAILED` hay `CANCELLED` hiện nhãn riêng của mình thay cho tiến trình pha chế (AC-F22.4). Hành động tiếp theo thuộc use-case khác: trả tiếp hoặc thử lại ở UC-04 (A3, A6), hủy ở UC-06 (UC-04 A5). Không đặc tả lại ở đây.
+Đơn `PAYMENT_FAILED` và `CANCELLED` hiện nhãn riêng thay cho tiến trình pha chế (AC-F22.4); đơn `PENDING` hiện nhãn "Chờ thanh toán" (`srs.md` mục 3.6). Hành động tiếp theo thuộc use-case khác: trả tiếp hoặc thử lại ở [UC-04](../uc-checkout.md) (A3, A6), hủy ở [UC-06](uc-06-cancel-order.md). Không đặc tả lại ở đây.
 
 ## 7. Luồng ngoại lệ
 
 ### E1 — Chưa đăng nhập hoặc JWT hết hạn (tại bước 2, 8 và 11)
 
 - **Kích hoạt:** không có header `Authorization`, token sai chữ ký hoặc hết hạn.
-- **Phản ứng:** API trả 401 `UNAUTHORIZED` cho `GET /orders/me` và `GET /orders/:id` (AC-F10.1, AC-F10.2, AC-F21.4). UI dẫn tới đăng nhập (UC-03); đăng nhập xong thì quay lại đúng trang đơn (mô tả FR-10).
+- **Phản ứng:** API trả 401 `UNAUTHORIZED` cho `GET /orders/me` và `GET /orders/:id` (AC-F10.1, AC-F10.2, AC-F21.4). UI dẫn tới đăng nhập ([UC-03](uc-03-login.md)); đăng nhập xong thì quay lại đúng trang đơn (mô tả FR-10).
 
 ### E2 — Đơn của người khác (tại bước 9)
 
@@ -119,8 +120,8 @@ Token Barista gọi `GET /orders/me` nhận 403 (AC-F21.4); danh sách này ch�
 | 12 | Ngừng làm mới khi `COMPLETED` hoặc `CANCELLED` | FR-22 | AC-F22.3 |
 | A1 | Danh sách rỗng | FR-21 | AC-F21.3 |
 | A2 | Màn xác nhận là trang chi tiết đơn sau UC-04 | FR-20 | AC-F20.1, AC-F20.2, AC-F20.3 |
-| A3 | Barista đọc mọi đơn qua API (UC-07) | FR-22; FR-24 | AC-F22.1; AC-F24.4 |
-| A4 | Nhãn riêng cho `PENDING`, `PAYMENT_FAILED`, `CANCELLED`; hủy ở UC-06 | FR-22; FR-25 | AC-F22.4; AC-F25.3 |
+| A3 (ghi chú) | Barista dùng chung `GET /orders/:id`, thuộc UC-07 | FR-22; FR-24 | AC-F22.1; AC-F24.4 |
+| A4 | Nhãn riêng cho `PAYMENT_FAILED`, `CANCELLED`; nhãn "Chờ thanh toán" cho `PENDING` (mục 3.6); hủy ở UC-06 | FR-22; FR-25 | AC-F22.4; AC-F25.3 |
 | E1 | Chưa đăng nhập hoặc hết hạn | FR-10 | AC-F10.1, AC-F10.2, AC-F21.4 |
 | E2 | Đơn của người khác | FR-22 | AC-F22.1; AC-N05.3 |
 | E3 | ID không tồn tại | FR-22 | AC-F22.1 |

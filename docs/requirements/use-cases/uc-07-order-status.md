@@ -11,7 +11,7 @@
 | Giá trị nghiệp vụ | Đây là bước nối "đã trả tiền" với "khách nhận được đồ uống"; trạng thái đơn trên màn của khách chỉ đúng khi Barista cập nhật đúng |
 | Ưu tiên | Must |
 | FR liên quan | FR-23, FR-24 (Must). FR-27 (hàng đợi Barista) là Won't, không vẽ trong sơ đồ |
-| Quan hệ với UC khác | Đăng nhập lấy token ở UC-03. Đơn `PAID` do UC-04 tạo ra; Customer theo dõi kết quả ở UC-05. Cùng endpoint `PATCH /orders/:id` với [UC-06](uc-06-cancel-order.md) nhưng khác actor và khác trạng thái đích |
+| Quan hệ với UC khác | Đăng nhập lấy token ở [UC-03](uc-03-login.md). Đơn `PAID` do [UC-04](../uc-checkout.md) tạo ra; Customer theo dõi kết quả ở [UC-05](uc-05-order-history.md). Cùng endpoint `PATCH /orders/:id` với [UC-06](uc-06-cancel-order.md) nhưng khác actor và khác trạng thái đích |
 
 ## 2. Use-case diagram
 
@@ -19,7 +19,7 @@
 
 Nguồn: [`uc-07-order-status.puml`](uc-07-order-status.puml). Sơ đồ chỉ ghi mã và tên use-case; mã yêu cầu ở mục 8. Các quan hệ:
 
-- Barista nối với UC-07, khớp `use-case-overview.puml` (`UC07 -- Barista`). Không có actor nào khác: Customer chỉ theo dõi kết quả qua UC-05 và hủy đơn qua UC-06.
+- Barista nối với UC-07, khớp `use-case-overview.puml` (`UC07 -- Barista`). Không có actor nào khác: Customer chỉ theo dõi kết quả qua [UC-05](uc-05-order-history.md) và hủy đơn qua [UC-06](uc-06-cancel-order.md).
 - UC-07 không include hay extend use-case nào. Việc đăng nhập (UC-03) là tiền điều kiện, không phải bước con. Overview nối UC-03 với Barista riêng, nên sơ đồ này không vẽ lại.
 - Hàng đợi đơn cho Barista (FR-27) là Won't nên không có use-case hay đường nối nào cho nó.
 

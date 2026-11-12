@@ -27,12 +27,4 @@ rectangle "Hệ thống BrewLite" {
 Guest <|- Customer
 
 Guest --- UC02
-
-note right of UC02
-  Giỏ lưu ở trình duyệt, dùng được
-  khi chưa đăng nhập.
-  Đi tiếp từ UC-01 Xem menu và chi tiết món;
-  nút "Thanh toán" chuyển sang
-  UC-04 Đặt và thanh toán đơn hàng.
-end note
 @enduml

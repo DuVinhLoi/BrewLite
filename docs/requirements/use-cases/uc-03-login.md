@@ -11,7 +11,7 @@
 | Giá trị nghiệp vụ | Là cửa vào của mọi chức năng gắn với danh tính: đặt đơn, thanh toán, xem đơn của mình (Customer) và đổi trạng thái đơn, quản lý kho (Barista) |
 | Ưu tiên | Must |
 | Yêu cầu liên quan | FR-09, FR-10; NFR-04, NFR-05, NFR-06 |
-| Quan hệ với UC khác | `<<extend>>` [UC-04](../uc-checkout.md) khi chưa đăng nhập hoặc hết phiên (E1 của UC-04); [UC-09](uc-09-register.md) tạo tài khoản Customer; UC-05, UC-07 cũng cần JWT |
+| Quan hệ với UC khác | `<<extend>>` [UC-04](../uc-checkout.md) khi chưa đăng nhập hoặc hết phiên (E1 của UC-04); [UC-09](uc-09-register.md) tạo tài khoản Customer; [UC-05](uc-05-order-history.md), [UC-06](uc-06-cancel-order.md), [UC-07](uc-07-order-status.md) cũng cần JWT |
 
 Phạm vi: Guest không bị chặn khi xem menu, xem chi tiết món và thêm món vào giỏ (AC-F10.5), nên đăng nhập chỉ là bước bắt buộc khi khách đi tới một chức năng cần danh tính.
 
@@ -79,7 +79,7 @@ Luồng suôn sẻ nhất: Guest có tài khoản Customer nhập đúng thông 
 
 ### A3 — Barista đăng nhập (tại bước 3, quay lại bước 4)
 
-Barista nhập email, mật khẩu của tài khoản Barista vào cùng form. Luồng giống luồng chính; token có `role = "BARISTA"` (AC-F09.4). Sau đó Barista dùng token cho các chức năng của mình (đổi trạng thái đơn: UC-07; kho nguyên liệu: UC-10).
+Barista nhập email, mật khẩu của tài khoản Barista vào cùng form. Luồng giống luồng chính; token có `role = "BARISTA"` (AC-F09.4). Sau đó Barista dùng token cho các chức năng của mình (đổi trạng thái đơn: [UC-07](uc-07-order-status.md); kho nguyên liệu: [UC-10](../uc-inventory.md)).
 
 ### A4 — Đăng xuất (không đi qua bước 1 đến 9)
 
@@ -125,5 +125,5 @@ Token hợp lệ nhưng vai trò không được phép ở endpoint đó thì AP
 | E2 | Thiếu, sai hoặc hết hạn token | FR-10 | AC-F10.1, AC-F10.2; AC-N05.1 |
 | E3 | 401 giữa lúc thanh toán (dẫn UC-04 E1) | FR-10 | AC-F10.4 |
 | E4 | Dữ liệu sai định dạng, thử tiêm lệnh | FR-09 | AC-N06.1, AC-N06.2, AC-N06.3 |
-| E5 | Sai vai trò, sai chủ đơn | FR-10 | AC-N05.2, AC-N05.3 |
+| E5 | Sai vai trò, sai chủ đơn | NFR-05 | AC-N05.2, AC-N05.3 |
 | Phạm vi | Guest không bị chặn ở menu, chi tiết món, giỏ | FR-10 | AC-F10.5 |
