@@ -20,6 +20,9 @@ opencode.json
 .opencode/
 graphify-out/
 
+# Postman desktop/CLI workspace scaffold (the importable collection is docs/postman/BrewLite.postman_collection.json)
+docs/postman/postman/
+
 # Planning & agent artifacts in docs
 docs/superpowers/
 docs/**/plans/
