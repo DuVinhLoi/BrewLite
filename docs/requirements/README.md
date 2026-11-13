@@ -20,6 +20,7 @@ Task 1 được nghiệm thu dựa trên tài liệu yêu cầu, hai use-case di
 | `uc-checkout.md` | Đặc tả use-case trọng tâm "Đặt và thanh toán đơn hàng": actor, điều kiện kích hoạt, trước/sau, luồng chính, luồng thay thế, ngoại lệ, mã yêu cầu liên quan | §3.3 |
 | `uc-inventory.md` | UC-10: quản lý số dư nguyên liệu, nhập/kiểm kê, công thức và nhãn còn hàng/hết hàng; FR-29 | BREW-INVENTORY-01 |
 | `uc-checkout.puml` và `.svg` | Use-case diagram cho phạm vi use-case đã chọn | §3.3 |
+| [`use-cases/`](use-cases/README.md) | Đặc tả 7 use-case còn lại (UC-01, UC-02, UC-03, UC-05, UC-06, UC-07, UC-09), mỗi use-case có `.md`, `.puml` và `.svg`; bổ sung cho use-case trọng tâm UC-04 | §3.3 (bổ sung) |
 
 Các nhóm yêu cầu tối thiểu trong SRS: menu, chi tiết sản phẩm, giỏ hàng, xác thực, đặt đơn, thanh toán, lịch sử đơn, quản lý trạng thái đơn, hiệu năng, bảo mật, tính khả dụng, khả năng triển khai.
 

@@ -88,6 +88,8 @@ Nguồn: [`use-case-overview.puml`](use-case-overview.puml). Sơ đồ chỉ ghi
 
 Sơ đồ chỉ vẽ các use-case thuộc bản nộp (Must). Các dòng Won’t vẫn giữ trong bảng để truy vết (xem mục 5.9).
 
+Đặc tả từng use-case: UC-04 ở [`uc-checkout.md`](uc-checkout.md), UC-10 ở [`uc-inventory.md`](uc-inventory.md), bảy use-case còn lại ở [`use-cases/`](use-cases/README.md).
+
 ---
 
 ## 3. Quy ước dùng trong tiêu chí chấp nhận

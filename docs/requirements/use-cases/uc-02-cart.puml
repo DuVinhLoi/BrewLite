@@ -1,0 +1,30 @@
+@startuml uc-02-cart
+' BrewLite A2 - Use-case diagram cho UC-02. Dac ta va ma yeu cau: docs/requirements/use-cases/uc-02-cart.md
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam RectangleBackgroundColor #ffffff
+skinparam RectangleBorderColor #94a3b8
+skinparam ActorBackgroundColor #eef2fb
+skinparam ActorBorderColor #5b6b8c
+skinparam UsecaseBackgroundColor #eef2fb
+skinparam UsecaseBorderColor #5b6b8c
+skinparam NoteBackgroundColor #fff8e1
+skinparam NoteBorderColor #94a3b8
+skinparam Shadowing false
+
+left to right direction
+
+title UC-02 Quản lý giỏ hàng - phạm vi use-case
+
+actor "Khách vãng lai\n(Guest)" as Guest
+actor "Khách hàng\n(Customer)" as Customer
+
+rectangle "Hệ thống BrewLite" {
+  usecase "UC-02 Quản lý giỏ hàng" as UC02
+}
+
+Guest <|- Customer
+
+Guest --- UC02
+@enduml
