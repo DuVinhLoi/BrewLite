@@ -63,25 +63,39 @@ alt Missing / expired JWT (E1a)
 else Valid Customer JWT
 end
 API -> API : Validate body (BR-02); reject client prices (BR-01)
-alt Invalid body / unknown product (E6)
-  API --> UI : 400 VALIDATION_ERROR / 404 PRODUCT_NOT_FOUND
+alt Invalid body (E6)
+  API --> UI : 400 VALIDATION_ERROR
   UI --> Customer : Fix cart; no Order created; stop checkout
 else Body accepted
-  API -> DB : Read Product prices and options
-  DB --> API : Product records
-  API -> API : Compute unitPrice, lineTotal and Order.total
   group Transaction T1: recipe locks, ingredient reservation, snapshot (FR-11/13; NFR-13)
-    API -> DB : BEGIN; lock recipes in ID order; read base + topping recipes\nAggregate ingredient quantities across ALL cart lines\nLock Ingredient rows in ID order; check onHand - reserved
-    alt Missing/invalid recipe or ingredient shortage (E2)
-      DB --> API : Recipe unavailable or aggregate ingredient shortage
-      API -> DB : ROLLBACK (no Order, OrderItem, snapshot or balance change)
-      API --> UI : 409 RECIPE_UNAVAILABLE / OUT_OF_STOCK + ingredient details
-      UI --> Customer : Keep cart; report changed ingredients; link to edit cart
-    else All recipes valid and aggregate demand fits
-      API -> DB : Increase Ingredient.reserved; INSERT Order(PENDING, inventoryTracked=true)\nINSERT OrderItems and immutable aggregate OrderIngredient snapshot
-      DB --> API : COMMIT T1; orderId, total
-      API --> UI : 201 { id:orderId, status:PENDING, total }
-      UI -> UI : Persist orderId/owner/key to continue same order
+    API -> DB : BEGIN; read Product prices and options
+    DB --> API : Product records or missing product
+    alt Unknown product (E6)
+      API -> DB : ROLLBACK; no Order or balance change
+      API --> UI : 404 PRODUCT_NOT_FOUND
+      UI --> Customer : Fix cart; stop checkout
+    else Products found
+      API -> API : Compute unitPrice, lineTotal and Order.total
+      API -> DB : Lock recipes by ID (FOR SHARE); read base + topping RecipeLines\nLock Ingredient rows by ID (FOR UPDATE); read balances
+      API -> API : Aggregate tracked ingredient demand across ALL cart lines
+      note over API,DB
+        demand(i) = sum of cart quantity x (base + selected topping quantities for i).
+        Only tracked=true ingredients enter demand and the immutable snapshot.
+      end note
+      alt Missing/invalid recipe or no tracked base ingredient (E2)
+        API -> DB : ROLLBACK (no Order, OrderItem, snapshot or balance change)
+        API --> UI : 409 RECIPE_UNAVAILABLE + invalid recipe details
+        UI --> Customer : Keep cart; change unavailable selection
+      else Any aggregate demand > onHand - reserved (E2)
+        API -> DB : ROLLBACK (no Order, OrderItem, snapshot or balance change)
+        API --> UI : 409 OUT_OF_STOCK + ingredient shortages
+        UI --> Customer : Keep cart; report changed ingredients; link to edit cart
+      else All recipes valid and aggregate demand fits
+        API -> DB : Ingredient.reserved += demand; onHand unchanged\nINSERT Order(PENDING, inventoryTracked=true), OrderItems\nand immutable aggregate OrderIngredient snapshot
+        DB --> API : COMMIT T1; orderId, total
+        API --> UI : 201 { id:orderId, status:PENDING, total }
+        UI -> UI : Persist orderId/owner/key to continue same order
+      end
     end
   end
 end
@@ -138,7 +152,7 @@ else Valid body, owner verified
         group Transaction T3: apply QueryDR result (same applyGatewayResult as IPN)
           API -> DB : BEGIN; lock Order; re-read THAT Payment\nIf IPN finalized it meanwhile: keep DB state, discard stale result
           alt 00/00 paid
-            API -> DB : Payment SUCCESS; consume snapshot (onHand AND reserved); Order PAID; COMMIT
+            API -> DB : Payment SUCCESS; if inventoryTracked=true: lock snapshot ingredients by ID\nonHand -= snapshot; reserved -= snapshot; Order PAID; COMMIT
           else 00/02 final failure
             API -> DB : Payment FAILED (codes kept apart); Order PAYMENT_FAILED; COMMIT
           else 91 after expiry (verified), or grace elapsed without a verdict (D6)
@@ -227,7 +241,7 @@ else Signature valid
         end
         API --> Pay : {"RspCode":"02"}; Order, Payment and stock unchanged\n(a repeated IPN for an already successful Payment only gets 02)
       else vnp_ResponseCode=00 AND vnp_TransactionStatus=00 (success)
-        API -> DB : UPDATE Payment SUCCESS (gatewayTxnNo, bankCode, paidAt, both gateway codes)\nIf inventoryTracked: lock ingredients in ID order; decrease onHand AND reserved by snapshot\nUPDATE Order -> PAID; COMMIT
+        API -> DB : UPDATE Payment SUCCESS (gatewayTxnNo, bankCode, paidAt, both gateway codes)\nIf inventoryTracked=true: lock snapshot ingredients by ID (FOR UPDATE)\nonHand -= snapshot; reserved -= snapshot; UPDATE Order -> PAID; COMMIT
         DB --> API : One Payment SUCCESS; Order PAID
         API --> Pay : {"RspCode":"00","Message":"Confirm Success"}
       else vnp_TransactionStatus=02 (E3 failure)
@@ -283,7 +297,7 @@ opt E10: Payment still PENDING (IPN lost or late: Render asleep, or local run wi
       group Transaction T3: applyGatewayResult (same function as IPN; mapping of E11)
         API -> DB : BEGIN; lock Order; re-read THAT Payment; keep the DB state if IPN already finalized it
         alt 00/00 paid
-          API -> DB : Payment SUCCESS; consume snapshot once; Order PAID; COMMIT
+          API -> DB : Payment SUCCESS; if inventoryTracked=true: lock snapshot ingredients by ID\nonHand -= snapshot; reserved -= snapshot (once); Order PAID; COMMIT
           API --> UI : 200 { orderStatus:PAID, status:SUCCESS }
         else 00/02 final failure
           API -> DB : Payment FAILED; Order PAYMENT_FAILED; COMMIT
@@ -321,7 +335,7 @@ opt Owner chooses cancel while PENDING / PAYMENT_FAILED
     API --> UI : 409 PAYMENT_IN_PROGRESS (502 PAYMENT_PROVIDER_ERROR if QueryDR failed)
     UI --> Customer : Explain payment in progress; continue (A6) or check status
   else Valid unpaid order, inventoryTracked=true, no unresolved Payment
-    API -> DB : Lock ingredients in ID order; decrease reserved by snapshot\nKeep onHand unchanged; set CANCELLED; COMMIT
+    API -> DB : Lock snapshot ingredients by ID (FOR UPDATE); reserved -= snapshot\nKeep onHand unchanged; set CANCELLED; COMMIT
     API --> UI : 200 CANCELLED
   else Legacy inventoryTracked=false
     API -> DB : Restore original Product.stock quantities; set CANCELLED; COMMIT
@@ -332,7 +346,8 @@ opt Owner chooses cancel while PENDING / PAYMENT_FAILED
   end
 end
 note over API,DB
-  Legacy false-marker orders preserve original Product.stock payment/cancel lifecycle.
+  Legacy inventoryTracked=false: successful payment changes no inventory balances;
+  owner cancellation restores original Product.stock quantities.
   New true-marker orders use snapshot, never current recipes for consume/release.
   Ingredients are released only by owner cancellation, never because a Payment became FAILED/EXPIRED.
   No automatic cancellation or reservation expiry.

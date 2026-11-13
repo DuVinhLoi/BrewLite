@@ -45,7 +45,10 @@ COMPLETED --> [*]
 CANCELLED --> [*]
 
 note right of PENDING
-  New orders reserve ingredients and snapshot atomically.
+  New orders set inventoryTracked=true, reserve tracked ingredients
+  and save an immutable aggregate OrderIngredient snapshot atomically.
+  Demand sums base + topping quantities across ALL cart lines.
+  reserved += snapshot; onHand unchanged.
   Order stays PENDING while it waits for VNPay: Payment PENDING
   (15 min), and past expiry until QueryDR concludes or the
   15-min grace after expiresAt ends (E11).
@@ -56,8 +59,11 @@ note right of PENDING
   04/05/06/07/09 and MISMATCH).
 end note
 note left of PAID
-  First confirmed success (IPN or QueryDR) consumes the snapshot:
-  decrease onHand + reserved, once. Replay returns cached SUCCESS;
+  With inventoryTracked=true, first confirmed success (IPN or QueryDR)
+  consumes the saved snapshot: onHand -= quantity; reserved -= quantity.
+  Lock snapshot ingredients by ID; never re-read current recipes.
+  With inventoryTracked=false, no inventory balance changes on payment.
+  Replay returns cached SUCCESS;
   repeated IPN gets 02; no further consumption.
 end note
 note right of PAID
@@ -66,9 +72,9 @@ note right of PAID
   409 INVALID_ORDER_TRANSITION.
 end note
 note bottom of CANCELLED
-  Owner unpaid cancellation releases reserved by snapshot once.
-  onHand unchanged; repeated cancel rejected.
-  Legacy false marker restores original Product.stock.
+  Owner unpaid cancellation with inventoryTracked=true releases once:
+  reserved -= saved snapshot; onHand unchanged; repeated cancel rejected.
+  Legacy inventoryTracked=false restores original Product.stock instead.
   A Payment turning FAILED does not release ingredients.
 end note
 
