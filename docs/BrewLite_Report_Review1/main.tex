@@ -80,7 +80,7 @@ TP. Hồ Chí Minh, tháng 10 năm 2026
 \section{Tóm tắt và phạm vi}
 BrewLite cho khách chọn đồ uống, chọn size và topping, quản lý giỏ hàng, đăng nhập, tạo đơn, thanh toán bằng Ví hoặc Thẻ qua cổng giả lập và xem lịch sử đơn. Frontend viết bằng Next.js, backend bằng NestJS, dữ liệu lưu trong PostgreSQL qua Prisma. Docker Compose dựng ba dịch vụ: cơ sở dữ liệu ở cổng 5432, backend ở cổng 3000, frontend ở cổng 3001.
 
-Đề chia sản phẩm thành 10 task, mỗi task 1 điểm. Báo cáo đối chiếu từng task với tiêu chí ở mục 8 và mục 9 của đề. Số liệu kiểm thử lấy từ lần chạy ngày 21/10/2026 trên nhánh \texttt{develop-agile}.
+Đề chia sản phẩm thành 10 task, mỗi task 1 điểm. Báo cáo đối chiếu từng task với tiêu chí ở mục 8 và mục 9 của đề.
 
 \section{Yêu cầu và kiến trúc}
 \subsection{Bên liên quan}
@@ -134,7 +134,7 @@ Thanh toán & Cổng giả lập \path|backend/src/payment/mock-payment-gateway.
 Bàn giao & Docker Compose, README, collection Postman \path|docs/postman/BrewLite.postman_collection.json|\\
 \end{longtable}
 \endgroup
-Backend tính lại giá từ bảng giá ở \path|backend/src/order/pricing.ts| và bỏ qua giá client gửi lên, nên khách không sửa được số tiền phải trả.
+Backend tự tính giá theo bảng giá ở \path|backend/src/order/pricing.ts|, không dùng giá client gửi lên, khách không tự sửa được số tiền phải trả.
 
 \subsection{Luồng đặt món và thanh toán}
 \begin{enumerate}
@@ -179,7 +179,7 @@ Burndown dưới đây tính cho cả 10 task. Một task tính là xong vào ng
 23/10 & Không có, ngày Review 1 & Không có & 0 & 0\\
 \end{longtable}
 \endgroup
-Những ngày không có trong bảng giữ nguyên số task của ngày liền trước. Theo cách đọc ở mục 2.4 của đề, đường thực tế nằm trên đường lý tưởng là chậm tiến độ. Nhóm chậm trong ba khoảng: 01/10 đến 06/10 khi chưa task nào có commit, 10/10 đến 12/10 trước đợt commit ngày 13/10, và 19/10 đến 20/10 khi Task 2 và Task 9 chưa có commit. Các ngày còn lại nhóm đi trước đường lý tưởng. Không có ngày bắt đầu và kết thúc từng Sprint nên chưa tách được burndown riêng cho mỗi Sprint.
+Những ngày không có trong bảng giữ nguyên số task của ngày liền trước. Theo cách đọc ở mục 2.4 của đề, đường thực tế nằm trên đường lý tưởng là chậm tiến độ. Nhóm chậm trong ba khoảng: 01/10 đến 06/10 khi chưa task nào có commit, 10/10 đến 12/10 trước đợt commit ngày 13/10, và 19/10 đến 20/10 khi Task 2 và Task 9 chưa có commit. Các ngày còn lại nhóm đi trước đường lý tưởng. Nhóm không ghi ngày bắt đầu và kết thúc từng Sprint, chưa tách được burndown riêng cho mỗi Sprint.
 
 \section{Phân công và commit}
 \begingroup\small
@@ -254,7 +254,7 @@ T03.2 & Tải ảnh theo \texttt{imageUrl} của một món & 200, kiểu \textt
 \end{bangca}
 \endgroup
 
-Postman chỉ kiểm được phía server. Phần hiển thị dựa vào test vitest và ảnh chụp trình duyệt.
+Postman chỉ kiểm được phía server, phần hiển thị kiểm bằng test vitest và ảnh chụp trình duyệt.
 
 \textbf{Mã nguồn.} \path|frontend/src/components/ProductGrid.tsx|, hàm \texttt{getProducts} trong \path|frontend/src/lib/api.ts|.
 
@@ -351,7 +351,7 @@ T07.7 & Gọi API bằng token giả & 401\\
 \end{bangca}
 \endgroup
 
-Ca sai mật khẩu và ca email không tồn tại trả cùng một thông báo, nên người ngoài không dò được email nào đã đăng ký. Guard của route đặt đơn được kiểm ở ca T06.1.
+Trường hợp sai mật khẩu và email không tồn tại, hệ thống trả cùng một thông báo, người dùng khác không dò được email nào đã đăng ký. Route đặt đơn yêu cầu đăng nhập, gửi request không kèm token sẽ nhận 401 (ca T06.1).
 
 \textbf{Mã nguồn.} \path|backend/src/auth/auth.controller.ts|, \path|backend/src/auth/auth.service.ts|, \path|backend/src/auth/jwt-auth.guard.ts|, \path|frontend/src/app/login/page.tsx|.
 
@@ -423,7 +423,7 @@ T09.6 & \texttt{GET} \path|{{webUrl}}/history| & 200\\
 \subsection{Task 10 — Nghiệp vụ backend}
 \textbf{Tiêu chí của đề.} Mục 9 của đề gồm bốn phần: máy trạng thái đơn hàng, thanh toán idempotent (gửi lại nhiều lần vẫn chỉ tính một lần), giữ đúng tồn kho khi nhiều khách đặt cùng lúc, và khuyến mãi kèm điểm thưởng. Bộ test cần cho thấy ba điều: chuyển trạng thái sai bị chặn, gửi lại cùng một \texttt{Idempotency-Key} chỉ tạo một đơn, và đặt hàng đồng thời không bán quá số lượng còn trong kho.
 
-\textbf{(a) Máy trạng thái đơn hàng.} Đơn hàng chỉ được đổi trạng thái theo các bước trong bảng dưới. Hàm \texttt{assertTransition} trong \path|backend/src/state-machine/order-state.machine.ts| trả mã 400 cho mọi bước nằm ngoài bảng. Hoàn tất và Đã hủy là hai trạng thái cuối, không chuyển tiếp được nữa. Backend kiểm quyền trước rồi mới kiểm bước chuyển, nên khách gọi API tiến đơn vẫn nhận mã 403 dù bước đó hợp lệ.
+\textbf{(a) Máy trạng thái đơn hàng.} Đơn hàng chỉ được đổi trạng thái theo các bước trong bảng dưới. Hàm \texttt{assertTransition} trong \path|backend/src/state-machine/order-state.machine.ts| trả mã 400 cho mọi bước nằm ngoài bảng. Hoàn tất và Đã hủy là hai trạng thái cuối, không chuyển tiếp được nữa. Hệ thống kiểm quyền trước, kiểm bước chuyển sau: khách gọi API tiến đơn luôn nhận 403, kể cả khi bước đó hợp lệ.
 
 \begingroup\small
 \begin{longtable}{L{0.22\linewidth}L{0.22\linewidth}L{0.48\linewidth}}
@@ -463,7 +463,7 @@ T10a.10 & Quầy hủy đơn \texttt{PAID} & 200, \texttt{CANCELLED}\\
 
 \textbf{Màn Quầy.} Trang \path|/barista| xếp hàng đợi thành ba cột Chờ pha, Đang pha, Sẵn sàng và tự tải lại sau mỗi 5 giây. Ba nút Nhận pha, Pha xong và Đã giao gửi đúng request \texttt{PATCH} đã dùng trong các ca T10a.3, T10a.5 và T10a.6. Khoảng 3 giây sau, biên lai và trang Lịch sử của khách cập nhật theo. Mã nguồn: \path|frontend/src/components/BaristaView.tsx|, \path|frontend/src/lib/barista.ts|; test: \path|frontend/src/lib/barista.test.ts|, \path|frontend/src/components/BaristaView.test.ts|.
 
-\textbf{(b) Thanh toán idempotent.} Backend lưu \texttt{Idempotency-Key} trong bảng Order và bảng Payment, mỗi khóa là duy nhất. Khi một request được gửi lại với cùng khóa, backend trả lại kết quả của lần trước với mã 200. Đơn không bị tạo thêm, tiền và kho không bị trừ lần hai, điểm thưởng cũng không được cộng thêm.
+\textbf{(b) Thanh toán idempotent.} Backend lưu \texttt{Idempotency-Key} trong bảng Order và bảng Payment, mỗi khóa là duy nhất. Khi một request được gửi lại với cùng khóa, backend trả lại kết quả của lần trước với mã 200. Không có đơn mới; tiền, kho và điểm thưởng giữ nguyên như sau lần đầu.
 
 \begingroup\small
 \begin{bangca}
@@ -477,7 +477,7 @@ T10b.9 & Khách khác dùng lại khóa đó & 422\\
 
 \textbf{Test.} \path|backend/test/order-payment.integration.spec.ts|, ca ``(b) same Idempotency-Key charges once''.
 
-\textbf{(c) Tồn kho khi đặt đồng thời.} Kho được trừ lúc thanh toán, trong cùng một transaction với ba việc khác: chuyển đơn sang Đã thanh toán, cộng điểm thưởng và lưu biên lai. Mỗi lần trừ kho, backend đối chiếu cột \texttt{Product.version}. Nếu một request khác vừa sửa sản phẩm đó, lần ghi bị từ chối; backend đọc lại số liệu mới rồi thử lại, tối đa 3 lần. Cách làm này gọi là optimistic locking: không khóa dữ liệu trước mà phát hiện xung đột ngay lúc ghi. Sau 3 lần vẫn không trừ được thì transaction rollback, backend hoàn tiền và đơn chuyển sang Thanh toán lỗi.
+\textbf{(c) Tồn kho khi đặt đồng thời.} Kho được trừ lúc thanh toán, trong cùng một transaction với ba việc khác: chuyển đơn sang Đã thanh toán, cộng điểm thưởng và lưu biên lai. Mỗi lần trừ kho, backend đối chiếu cột \texttt{Product.version}. Nếu một request khác vừa sửa sản phẩm đó, lần ghi bị từ chối; backend đọc lại số liệu mới rồi thử lại, tối đa 3 lần. Đây là optimistic locking: không khóa dữ liệu trước, chỉ phát hiện xung đột lúc ghi. Sau 3 lần vẫn không trừ được thì transaction rollback, backend hoàn tiền và đơn chuyển sang Thanh toán lỗi.
 
 \begingroup\small
 \begin{bangca}
@@ -487,7 +487,7 @@ T10c.3 & Khách gọi API kho & 403\\
 \end{bangca}
 \endgroup
 
-Postman Runner gửi từng request một nên không tạo được tải đồng thời. Vì vậy trường hợp nhiều khách đặt cùng lúc được kiểm bằng test ``(c) concurrent stock never negative'' trong \path|backend/test/order-payment.integration.spec.ts| và \path|backend/test/pg-payment.integration.spec.ts|. File thứ hai chạy trên PostgreSQL thật nên chỉ chạy khi có biến \path|DATABASE_URL|. Lần chạy ngày 21/10/2026 không đặt biến này, nên 2 ca trong file đó bị bỏ qua.
+Postman Runner gửi lần lượt từng request, không tạo được tải đồng thời. Trường hợp nhiều khách đặt cùng lúc, nhóm kiểm bằng test ``(c) concurrent stock never negative'' trong \path|backend/test/order-payment.integration.spec.ts| và \path|backend/test/pg-payment.integration.spec.ts|. File thứ hai chạy trên PostgreSQL thật, chỉ chạy khi có biến \path|DATABASE_URL|.
 
 \textbf{(d) Khuyến mãi và điểm thưởng.} Đề không quy định mã giảm giá hay tỉ lệ, nên nhóm chọn mã \texttt{BREWLITE10} giảm 10\% và tính như sau:
 \[
@@ -495,7 +495,7 @@ Postman Runner gửi từng request một nên không tạo được tải đồ
 \text{số tiền trả}=\text{tổng}-\text{giảm giá},\qquad
 \text{điểm}=\left\lfloor \frac{\text{số tiền trả}\times0{,}1}{1000}\right\rfloor.
 \]
-Điểm chỉ được cộng sau khi đơn sang Đã thanh toán. Ví dụ ở lần chạy ngày 21/10/2026: đơn 58.000 đồng được giảm 5.800 đồng, khách trả 52.200 đồng và nhận 5 điểm.
+Điểm chỉ được cộng sau khi đơn sang Đã thanh toán. Ví dụ: đơn 58.000 đồng được giảm 5.800 đồng, khách trả 52.200 đồng và nhận 5 điểm.
 
 \begingroup\small
 \begin{bangca}
@@ -513,7 +513,7 @@ T10d.6 & Trả kèm mã không hợp lệ \texttt{SAIMA} & \texttt{discount} = 0
 \end{figure}
 
 \section{Kiểm thử, Definition of Done và bàn giao}
-\subsection{Kết quả kiểm thử ngày 21/10/2026}
+\subsection{Kết quả kiểm thử}
 \begingroup\small
 \begin{longtable}{L{0.30\linewidth}L{0.62\linewidth}}
 \toprule Bộ kiểm thử & Kết quả\\\midrule\endfirsthead
@@ -557,7 +557,7 @@ README có hướng dẫn chạy & \path|README.md|\newline \path|.env.example|\
 \textbf{Điều làm tốt.}
 \begin{itemize}
 \item Nghiệp vụ khó đều có test tự động: idempotency (gửi lặp cùng khóa vẫn chỉ tạo một đơn), máy trạng thái và tồn kho khi đặt đồng thời.
-\item Bảo mật được làm ở backend, không phụ thuộc giao diện: server tự tính giá và bỏ qua giá client gửi lên (ca T06.5), mật khẩu băm bằng bcrypt.
+\item Kiểm tra bảo mật đặt ở backend: server tự tính giá, bỏ qua giá client gửi lên (ca T06.5), mật khẩu băm bằng bcrypt.
 \item Xong đủ 10 task trước hạn.
 \end{itemize}
 
