@@ -36,9 +36,9 @@ describe('userIdFromToken (sub của JWT, dùng để biết phiên thanh toán 
   });
 });
 
-test('homeFor: barista và admin → /barista (chưa có màn Kho), khách → /', () => {
+test('homeFor: barista → /barista, admin → /admin, khách → /', () => {
   expect(homeFor('BARISTA')).toBe('/barista');
-  expect(homeFor('ADMIN')).toBe('/barista');
+  expect(homeFor('ADMIN')).toBe('/admin');
   expect(homeFor('CUSTOMER')).toBe('/');
 });
 

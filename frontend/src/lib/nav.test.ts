@@ -18,9 +18,9 @@ describe('navLinks', () => {
     expect(hrefs('BARISTA')).toEqual(['/barista']);
   });
 
-  test('ADMIN: chỉ Quầy (chưa có màn Kho), không có Menu, Lịch sử', () => {
-    expect(labels('ADMIN')).toEqual(['Quầy']);
-    expect(hrefs('ADMIN')).toEqual(['/barista']);
+  test('ADMIN: Quầy và Kho (/admin), không có Menu, Lịch sử', () => {
+    expect(labels('ADMIN')).toEqual(['Quầy', 'Kho']);
+    expect(hrefs('ADMIN')).toEqual(['/barista', '/admin']);
   });
 });
 
@@ -29,11 +29,11 @@ describe('staffRedirect', () => {
     expect(staffRedirect(p, 'BARISTA')).toBe('/barista');
   });
 
-  test.each(['/', '/cart', '/history', '/profile'])('ADMIN ở %s → /barista', (p) => {
-    expect(staffRedirect(p, 'ADMIN')).toBe('/barista');
+  test.each(['/', '/cart', '/history', '/profile'])('ADMIN ở %s → /admin', (p) => {
+    expect(staffRedirect(p, 'ADMIN')).toBe('/admin');
   });
 
-  test.each(['/barista', '/login'])('nhân viên ở %s → null', (p) => {
+  test.each(['/barista', '/admin', '/login'])('nhân viên ở %s → null', (p) => {
     expect(staffRedirect(p, 'BARISTA')).toBeNull();
     expect(staffRedirect(p, 'ADMIN')).toBeNull();
   });
@@ -63,11 +63,13 @@ describe('isActive', () => {
     expect(isActive('/cart', '/cart')).toBe(true);
     expect(isActive('/profile/edit', '/profile')).toBe(true);
     expect(isActive('/barista', '/barista')).toBe(true);
+    expect(isActive('/admin/stock', '/admin')).toBe(true);
   });
 
-  test('tiền tố chung chữ nhưng khác đoạn không khớp (/historyx, /profiles)', () => {
+  test('tiền tố chung chữ nhưng khác đoạn không khớp (/historyx, /profiles, /administrator)', () => {
     expect(isActive('/historyx', '/history')).toBe(false);
     expect(isActive('/profiles', '/profile')).toBe(false);
+    expect(isActive('/administrator', '/admin')).toBe(false);
   });
 
   test('pathname null (chưa biết) không mục nào đang chọn', () => {

@@ -95,6 +95,7 @@ describe('postLoginTarget (đích sau đăng nhập)', () => {
     ['?x=1&next=%2Fbarista', 'CUSTOMER', '/barista'],
     ['?next=%2Fbarista', 'BARISTA', '/barista'],
     ['?next=%2Fbarista', 'ADMIN', '/barista'],
+    ['?next=%2Fadmin', 'ADMIN', '/admin'],
   ] as const)('next hợp lệ thắng role: %s (%s) → %s', (search, role, expected) => {
     expect(postLoginTarget(search, role)).toBe(expected);
   });
@@ -102,8 +103,8 @@ describe('postLoginTarget (đích sau đăng nhập)', () => {
   test.each([
     ['?next=%2Fhistory', 'BARISTA', '/barista'],
     ['?next=%2Fhistory%3Ftab%3D1', 'BARISTA', '/barista'],
-    ['?next=%2Fcart', 'ADMIN', '/barista'],
-    ['?next=%2Fprofile', 'ADMIN', '/barista'],
+    ['?next=%2Fcart', 'ADMIN', '/admin'],
+    ['?next=%2Fprofile', 'ADMIN', '/admin'],
     ['?next=%2F', 'BARISTA', '/barista'],
     ['?next=%2Fhistory', 'CUSTOMER', '/history'],
   ] as const)('nhân viên có next là trang khách: %s (%s) → %s', (search, role, expected) => {
@@ -126,7 +127,7 @@ describe('postLoginTarget (đích sau đăng nhập)', () => {
     ['', 'CUSTOMER', '/'],
     ['?x=1', 'CUSTOMER', '/'],
     ['', 'BARISTA', '/barista'],
-    ['', 'ADMIN', '/barista'],
+    ['', 'ADMIN', '/admin'],
   ] as const)('thiếu next: %j (%s) → %s', (search, role, expected) => {
     expect(postLoginTarget(search, role)).toBe(expected);
   });

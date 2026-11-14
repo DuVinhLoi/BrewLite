@@ -60,6 +60,5 @@ export function userIdFromToken(token: string | null): string | null {
   return typeof sub === 'string' && sub ? sub : null;
 }
 
-// ADMIN dùng chung màn Quầy; màn Kho chưa làm, ADMIN chỉnh kho qua API.
-const HOME: Record<Role, string> = { CUSTOMER: '/', BARISTA: '/barista', ADMIN: '/barista' };
+const HOME: Record<Role, string> = { CUSTOMER: '/', BARISTA: '/barista', ADMIN: '/admin' };
 export const homeFor = (role: Role): string => HOME[role];

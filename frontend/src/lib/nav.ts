@@ -1,7 +1,6 @@
 import { homeFor, isStaff, type Role } from '@/lib/auth';
 
-// Nav của header: chỉ ẩn/hiện theo vai trò (server mới chặn quyền). Khách: Menu, Lịch sử. Nhân viên (BARISTA, ADMIN) chỉ thấy Quầy;
-// màn Kho cho ADMIN chưa làm, ADMIN chỉnh kho qua API.
+// Nav của header: chỉ ẩn/hiện theo vai trò (server mới chặn quyền). Khách: Menu, Lịch sử. Nhân viên chỉ thấy Quầy (BARISTA) hoặc Quầy, Kho (ADMIN).
 export interface NavLink {
   href: string;
   label: string;
@@ -14,7 +13,9 @@ export function navLinks(role: Role | null): NavLink[] {
       { href: '/history', label: 'Lịch sử' },
     ];
   }
-  return [{ href: '/barista', label: 'Quầy' }];
+  const links: NavLink[] = [{ href: '/barista', label: 'Quầy' }];
+  if (role === 'ADMIN') links.push({ href: '/admin', label: 'Kho' });
+  return links;
 }
 
 // Trang của khách: nhân viên không dùng, mở ra thì bị chuyển về trang nhà (server vẫn chặn API bằng 403).

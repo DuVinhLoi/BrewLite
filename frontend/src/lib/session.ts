@@ -42,7 +42,7 @@ export function safeNext(raw: string | null | undefined): string | null {
 
 /**
  * Đích sau đăng nhập: ?next= trong chuỗi query (window.location.search) nếu qua safeNext, không thì trang theo role.
- * Nhân viên có next là trang khách thì về trang nhà (không nháy qua trang khách); next ngoài trang khách (như /barista) giữ nguyên, trang đó tự kiểm quyền.
+ * Nhân viên có next là trang khách thì về trang nhà (không nháy qua trang khách); next ngoài trang khách (như /barista, /admin) giữ nguyên, trang đó tự kiểm quyền.
  */
 export function postLoginTarget(search: string, role: Role): string {
   const next = safeNext(new URLSearchParams(search).get('next'));
