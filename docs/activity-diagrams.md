@@ -205,7 +205,7 @@ stop
 ## AD2. NHÂN VIÊN XỬ LÝ HÀNG ĐỢI QUẦY (US-10)
 
 ### A. Bối cảnh
-Phân hệ quầy là **mở rộng ngoài đề §3.2**. Nhân viên (BARISTA, hoặc ADMIN kế thừa quyền Barista) làm trên **màn Quầy** `/barista` của web; cùng các API đó nhóm kiểm bằng Postman (`docs/postman/`, thư mục Task 10). Web chưa có màn quản trị kho. Nhân viên lấy token bằng `POST /auth/login`, xem hàng đợi `GET /orders?status=PAID,PREPARING,READY`, rồi lần lượt đẩy từng đơn theo Order State Machine đề §9.1: `PAID → PREPARING → READY → COMPLETED`, hoặc hủy đơn `PAID` vì hết nguyên liệu (hoàn tiền qua cổng rồi hoàn kho). Khách hàng gọi các API quầy bị 403.
+Phân hệ quầy là **mở rộng ngoài đề §3.2**. Nhân viên (BARISTA, hoặc ADMIN kế thừa quyền Barista) làm trên **màn Quầy** `/barista` của web; cùng các API đó nhóm kiểm bằng Postman (`docs/postman/`, thư mục Task 10). Việc chỉnh tồn kho của ADMIN nằm ở màn Kho `/admin`, ngoài luồng hàng đợi này. Nhân viên lấy token bằng `POST /auth/login`, xem hàng đợi `GET /orders?status=PAID,PREPARING,READY`, rồi lần lượt đẩy từng đơn theo Order State Machine đề §9.1: `PAID → PREPARING → READY → COMPLETED`, hoặc hủy đơn `PAID` vì hết nguyên liệu (hoàn tiền qua cổng rồi hoàn kho). Khách hàng gọi các API quầy bị 403.
 Vòng `repeat` là một phiên làm việc: sau mỗi thao tác hàng đợi được tải lại bằng `GET /orders?status=...` cho tới khi hết đơn (màn Quầy tải lại ngay sau mỗi nút bấm và tự tải lại mỗi 5 giây). Tiêu chí chấp nhận: US-10 trong [product-backlog.md](product-backlog.md).
 
 ### B. Sơ đồ (PlantUML)

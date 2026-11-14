@@ -9,8 +9,8 @@
 
 Các bên liên quan (đề §3.2): khách hàng, nhân viên quầy/Barista, quản lý cửa hàng/Product Owner, giảng viên nghiệm thu, nhóm phát triển, đơn vị thanh toán (mô phỏng bằng mock payment).
 
-- **Barista nằm ngoài MVP** (đề §3.2: "nằm ngoài phạm vi MVP và là phần mở rộng"). Nhóm làm thêm **màn Quầy** `/barista` để State Machine (US-10) có người vận hành trên web; **không có** màn quản trị kho. Backend giữ vai trò `BARISTA` / `ADMIN`; phần API của nhân viên vẫn kiểm bằng **Postman** (`docs/postman/BrewLite.postman_collection.json`).
-- Đăng nhập tài khoản nhân viên (BARISTA hoặc ADMIN) trên web thì vào thẳng `/barista`; header chỉ có mục "Quầy", không có giỏ hàng; mở trang khách (`/`, `/cart`, `/history`, `/profile`) bị chuyển về `/barista`. ADMIN chỉnh kho qua API.
+- **Barista nằm ngoài MVP** (đề §3.2: "nằm ngoài phạm vi MVP và là phần mở rộng"). Nhóm làm thêm **màn Quầy** `/barista` để State Machine (US-10) có người vận hành trên web, và **màn Kho** `/admin` để ADMIN xem, chỉnh tồn kho. Backend giữ vai trò `BARISTA` / `ADMIN`; phần API của nhân viên vẫn kiểm bằng **Postman** (`docs/postman/BrewLite.postman_collection.json`).
+- Đăng nhập trên web: BARISTA vào thẳng `/barista`, header chỉ có mục "Quầy"; ADMIN vào thẳng `/admin`, header có "Quầy" và "Kho". Nhân viên không có giỏ hàng; mở trang khách (`/`, `/cart`, `/history`, `/profile`) bị chuyển về trang nhà của vai trò (`/barista` hoặc `/admin`).
 - **Kiểm thử API bằng Postman.** Ở thời điểm hiện tại nhóm không dùng Swagger để test hay demo; Swagger UI `/docs` vẫn còn trong code.
 
 ## 2. Tổng quan backlog
@@ -152,17 +152,18 @@ Tiêu chí chấp nhận, theo 4 yêu cầu và tiêu chí chấm của đề §
 - **(a) trên web, màn Quầy `/barista`** (mở rộng đề §3.2). Đăng nhập `barista@brewlite.vn` thấy 3 cột Chờ pha / Đang pha / Sẵn sàng (`GET /orders?status=PAID,PREPARING,READY`, đơn cũ nhất trước, tự tải lại mỗi 5 giây). Nút "Nhận pha", "Pha xong", "Đã giao" gửi `PATCH /orders/:id` lần lượt `PREPARING`, `READY`, `COMPLETED`; "Hủy (hết nguyên liệu)" chỉ có ở cột Chờ pha và hỏi xác nhận trước khi gửi `CANCELLED`. Biên lai và `/history` của khách (tab khác) đổi bước theo trong vòng 3 giây.
 - **(b) Thanh toán idempotent.** Gửi 2 lần cùng `Idempotency-Key` chỉ tạo 1 đơn (`POST /orders`) và chỉ trừ tiền 1 lần (`POST /payments`); gửi lặp trả kết quả cũ với mã 200.
 - **(c) Tồn kho đồng thời.** Nhiều khách đặt cùng lúc dùng transaction và optimistic locking (`Product.version`): tồn kho không bao giờ âm.
+- **(c) trên web, màn Kho `/admin`** (mở rộng đề §3.2, chỉ ADMIN). Đăng nhập `admin@brewlite.vn` thấy bảng mọi món kể cả hết hàng (`GET /admin/products`) kèm nhãn còn hàng / sắp hết / hết hàng. Nút −1, +1, +10 và ô "Đặt số" + "Lưu" gửi `PATCH /admin/products/:id/stock` với `version` đang thấy. Kho vừa bị đổi ở nơi khác thì backend trả 409, màn hình tải lại bảng rồi báo "Tồn kho vừa thay đổi"; số âm trả 400 và báo "Tồn kho không được âm". Tài khoản không phải ADMIN mở `/admin` chỉ thấy lời nhắc đăng nhập bằng tài khoản quản trị.
 - **(d) Khuyến mãi và điểm thưởng.** Mã `BREWLITE10` giảm 10% (`floor(total * 0.1)`); điểm thưởng `floor(finalAmount * 0.1 / 1000)` cộng sau khi đơn `PAID` (chốt của nhóm, đề §9).
 
-Bằng chứng: `backend/src/state-machine/order-state.machine.ts`, `backend/src/payment/payment.service.ts`, `PATCH /orders/:id`, `scripts/demo-state-machine.sh` (dự phòng); test `backend/src/state-machine/order-state.machine.spec.ts` (a), `backend/test/order-advance.spec.ts`, `backend/test/order-payment.integration.spec.ts` (ca "(b) same Idempotency-Key charges once", "(c) concurrent stock never negative", voucher `BREWLITE10`), `backend/test/pg-payment.integration.spec.ts` (Postgres thật, chỉ chạy khi có `DATABASE_URL`), `frontend/src/lib/order-status.test.ts`. Màn Quầy: `frontend/src/app/barista/page.tsx`, `frontend/src/components/BaristaView.tsx`, `frontend/src/lib/barista.ts`, `frontend/src/lib/api.ts` (`advanceOrder`, `cancelOrder`); test `frontend/src/lib/barista.test.ts`, `frontend/src/components/BaristaView.test.ts`, `frontend/src/lib/api.test.ts`, `frontend/src/lib/nav.test.ts`, `backend/test/barista-queue.spec.ts`. Postman: thư mục `Task 10`.
+Bằng chứng: `backend/src/state-machine/order-state.machine.ts`, `backend/src/payment/payment.service.ts`, `PATCH /orders/:id`, `scripts/demo-state-machine.sh` (dự phòng); test `backend/src/state-machine/order-state.machine.spec.ts` (a), `backend/test/order-advance.spec.ts`, `backend/test/order-payment.integration.spec.ts` (ca "(b) same Idempotency-Key charges once", "(c) concurrent stock never negative", voucher `BREWLITE10`), `backend/test/pg-payment.integration.spec.ts` (Postgres thật, chỉ chạy khi có `DATABASE_URL`), `frontend/src/lib/order-status.test.ts`. Màn Quầy: `frontend/src/app/barista/page.tsx`, `frontend/src/components/BaristaView.tsx`, `frontend/src/lib/barista.ts`, `frontend/src/lib/api.ts` (`advanceOrder`, `cancelOrder`); test `frontend/src/lib/barista.test.ts`, `frontend/src/components/BaristaView.test.ts`, `frontend/src/lib/api.test.ts`, `frontend/src/lib/nav.test.ts`, `backend/test/barista-queue.spec.ts`. Màn Kho: `frontend/src/app/admin/page.tsx`, `frontend/src/components/InventoryView.tsx`, `frontend/src/lib/admin.ts`; test `frontend/src/lib/admin.test.ts`, `frontend/src/components/InventoryView.test.ts`, `backend/test/admin-inventory.spec.ts`. Postman: thư mục `Task 10`.
 
 ## 4. API mở rộng của nhóm (đề §12.1)
 
-Đề §12.1 giữ 7 endpoint tối thiểu; nhóm hiện thực thêm 6 endpoint mở rộng (ghi chú nhóm trong đề). Phần dành cho nhân viên kiểm bằng Postman; hàng đợi và tiến đơn có thêm màn Quầy `/barista`, kho chỉ qua API:
+Đề §12.1 giữ 7 endpoint tối thiểu; nhóm hiện thực thêm 6 endpoint mở rộng (ghi chú nhóm trong đề). Phần dành cho nhân viên kiểm bằng Postman; hàng đợi và tiến đơn có thêm màn Quầy `/barista`, tồn kho có thêm màn Kho `/admin`:
 
 - `PATCH /orders/:id`: khách hủy đơn của mình; BARISTA/ADMIN tiến đơn `PREPARING` → `READY` → `COMPLETED` và hủy đơn `PAID` (US-10). Giao diện: nút trên thẻ đơn ở `/barista`.
 - `GET /orders?status=`: hàng đợi quầy, mặc định `PAID,PREPARING,READY`; chỉ BARISTA/ADMIN. Giao diện: `/barista`, tự tải lại mỗi 5 giây.
-- `GET /admin/products` và `PATCH /admin/products/:id/stock`: xem và chỉnh tồn kho; chỉ ADMIN, không có màn hình.
+- `GET /admin/products` và `PATCH /admin/products/:id/stock`: xem và chỉnh tồn kho; chỉ ADMIN. Giao diện: `/admin` (màn Kho).
 - `GET /orders/:id` (chi tiết đơn của chủ đơn) và `GET /users/me` (hồ sơ và điểm tích lũy, trang `/profile`) dành cho khách và có giao diện.
 
 ## 5. Quy ước làm việc

@@ -367,8 +367,8 @@ Một task được tính điểm khi thỏa **Definition of Done (DoD)**:
 > | `GET /orders/:id` | Chi tiết một đơn, chỉ chủ đơn (404 đơn lạ, 403 đơn người khác) | Xem trạng thái một đơn qua API; màn biên lai (sau khi thanh toán) gọi lặp lại mỗi 3 giây để tự cập nhật trạng thái đến `COMPLETED` / `CANCELLED`, lịch sử vẫn dùng `GET /orders/me` (cũng tự làm mới mỗi 3 giây) |
 > | `GET /orders?status=` | Hàng đợi quầy, mặc định `PAID,PREPARING,READY`; JWT + BARISTA/ADMIN | Barista xem đơn cần pha; mở rộng ngoài phạm vi MVP §3.2. Giao diện: màn Quầy `/barista` (3 cột, tự tải lại mỗi 5 giây); nhóm kiểm API bằng Postman |
 > | `GET /users/me` | Hồ sơ người đang đăng nhập `{ id, email, role, loyaltyPoints }`; chỉ cần JWT (404 khi user đã bị xoá) | Hiển thị tổng điểm tích lũy: `POST /auth/login` và JWT không mang điểm, `POST /payments` chỉ trả điểm cộng thêm của lần đó (biên lai hiện "+N điểm" từ đó). Giao diện: trang `/profile` |
-> | `GET /admin/products` | Mọi món kể cả hết hàng; chỉ ADMIN | Admin kiểm tồn kho; mở rộng ngoài phạm vi MVP §3.2, gọi qua API bằng Postman (không có màn hình) |
-> | `PATCH /admin/products/:id/stock` | Đặt số / cộng trừ tồn kho `{ mode: set\|delta, value, version }`; chỉ ADMIN, gọi qua API bằng Postman; 409 khi `version` lệch, 400 khi âm | Điều chỉnh kho theo cùng cơ chế optimistic lock của §9 ý 3 |
+> | `GET /admin/products` | Mọi món kể cả hết hàng; chỉ ADMIN | Admin kiểm tồn kho; mở rộng ngoài phạm vi MVP §3.2. Giao diện: màn Kho `/admin`; nhóm kiểm API bằng Postman |
+> | `PATCH /admin/products/:id/stock` | Đặt số / cộng trừ tồn kho `{ mode: set\|delta, value, version }`; chỉ ADMIN; 409 khi `version` lệch, 400 khi âm. Giao diện: nút −1 / +1 / +10 và ô "Đặt số" ở màn Kho `/admin`; nhóm kiểm API bằng Postman | Điều chỉnh kho theo cùng cơ chế optimistic lock của §9 ý 3 |
 >
 > Kiểm thử API: ở thời điểm hiện tại nhóm test toàn bộ endpoint bằng **Postman** (collection `docs/postman/BrewLite.postman_collection.json`), không dùng Swagger; Swagger UI `/docs` vẫn còn trong code nhưng không dùng để test hay demo. Minh chứng theo 10 task: `docs/minh-chung-10-task.md`.
 

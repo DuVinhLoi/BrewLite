@@ -52,11 +52,11 @@ describe('HeaderView: nav theo vai trò', () => {
     expect(out).not.toContain('>Menu</a>');
   });
 
-  test('ADMIN: chỉ Quầy (chưa có màn Kho), không có Menu, Lịch sử', () => {
+  test('ADMIN: có Quầy và Kho, không có Menu, Lịch sử', () => {
     const out = html({ session: session('ADMIN') });
     expect(hasLink(out, '/barista')).toBe(true);
-    expect(hasLink(out, '/admin')).toBe(false);
-    expect(out).not.toContain('>Kho</a>');
+    expect(hasLink(out, '/admin')).toBe(true);
+    expect(out).toContain('>Kho</a>');
     expect(hasLink(out, '/history')).toBe(false);
   });
 });
@@ -71,7 +71,7 @@ describe('HeaderView: nhân viên', () => {
 
   test.each([
     ['BARISTA', '/barista'],
-    ['ADMIN', '/barista'],
+    ['ADMIN', '/admin'],
   ] as const)('%s: logo trỏ về %s', (role, home) => {
     const out = html({ session: session(role) });
     expect(out).toMatch(new RegExp(`<a[^>]*href="${home}"[^>]*>(?:(?!</a>).)*BrewLite</span>`));
@@ -100,6 +100,7 @@ describe('HeaderView: aria-current', () => {
     ['/history/x', 'Lịch sử', 'CUSTOMER'],
     ['/barista', 'Quầy', 'BARISTA'],
     ['/barista', 'Quầy', 'ADMIN'],
+    ['/admin', 'Kho', 'ADMIN'],
   ] as const)('pathname %s: đúng một mục "%s" có aria-current="page"', (pathname, label, role) => {
     const out = html({ session: session(role), pathname });
     expect(ariaCurrent(out)).toHaveLength(1);
@@ -170,7 +171,7 @@ describe('HeaderView: chung', () => {
     html(),
     html({ session: session('CUSTOMER'), count: 5 }),
     html({ session: session('BARISTA'), pathname: '/barista' }),
-    html({ session: session('ADMIN'), pathname: '/barista' }),
+    html({ session: session('ADMIN'), pathname: '/admin' }),
   ];
 
   test('không emoji, không em-dash, không href="#"', () => {

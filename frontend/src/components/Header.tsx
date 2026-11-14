@@ -9,11 +9,11 @@ import { useCart } from '@/store/cart';
 import HeaderView from './HeaderView';
 
 // FEATURE: App header — nối phiên của TAB này (mỗi tab một phiên, xem lib/auth.ts), badge tổng số ly trong giỏ
-// và Đăng xuất vào HeaderView (phần hiển thị thuần). Link Quầy theo vai trò chỉ ẩn/hiện, server mới chặn quyền.
+// và Đăng xuất vào HeaderView (phần hiển thị thuần). Link Quầy/Kho theo vai trò chỉ ẩn/hiện, server mới chặn quyền.
 export default function Header() {
   const count = useCart((s) => s.count);
   // Header nằm trong layout: App Router không mount lại layout sau router.push('/barista'),
-  // nên đọc lại phiên mỗi lần đổi trang (không thì phải F5 mới thấy tài khoản / link Quầy sau khi đăng nhập).
+  // nên đọc lại phiên mỗi lần đổi trang (không thì phải F5 mới thấy tài khoản / link Quầy, Kho sau khi đăng nhập).
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<SessionInfo | null>(null);

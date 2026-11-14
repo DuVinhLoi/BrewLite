@@ -91,11 +91,11 @@ BrewLite cho khách chọn đồ uống, chọn size và topping, quản lý gi�
 \bottomrule\endfoot
 Khách hàng & Xem menu, chọn size và topping, đặt đơn, thanh toán, hủy đơn của mình, xem lịch sử và điểm thưởng & Web\\
 Nhân viên quầy (Barista) & Xem hàng đợi đơn đã thanh toán, chuyển đơn sang các bước pha chế, hủy đơn đã thanh toán khi hết nguyên liệu & Web (màn Quầy), REST API kiểm bằng Postman\\
-Quản lý (Admin) & Mọi việc của Barista, xem kho kể cả món hết hàng, chỉnh tồn kho & Web (màn Quầy); kho qua REST API, kiểm bằng Postman\\
+Quản lý (Admin) & Mọi việc của Barista, xem kho kể cả món hết hàng, chỉnh tồn kho & Web (màn Quầy, màn Kho), REST API kiểm bằng Postman\\
 Cổng thanh toán giả lập & Chấp nhận hoặc từ chối giao dịch Ví/Thẻ & Backend gọi trực tiếp\\
 \end{longtable}
 \endgroup
-Mục 3.2 của đề xếp chức năng quầy ngoài MVP. Nhóm làm phần API phục vụ máy trạng thái đơn hàng của Task 10 và thêm màn Quầy \path|/barista| để nhân viên tiến đơn trên web; Barista và Admin dùng chung màn này. Web chưa có màn quản lý kho, Admin chỉnh kho qua API.
+Mục 3.2 của đề xếp chức năng quầy ngoài MVP. Nhóm làm phần API phục vụ máy trạng thái đơn hàng của Task 10 và thêm màn Quầy \path|/barista| để nhân viên tiến đơn trên web; Barista và Admin dùng chung màn này. Admin có thêm màn Kho \path|/admin| để xem mọi món kể cả hết hàng và chỉnh tồn kho.
 
 \subsection{Yêu cầu chức năng và phi chức năng}
 \begingroup\small
