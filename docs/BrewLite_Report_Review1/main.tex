@@ -182,8 +182,6 @@ Burndown dưới đây tính cho cả 10 task. Một task tính là xong vào ng
 Những ngày không có trong bảng giữ nguyên số task của ngày liền trước. Theo cách đọc ở mục 2.4 của đề, đường thực tế nằm trên đường lý tưởng là chậm tiến độ. Nhóm chậm trong ba khoảng: 01/10 đến 06/10 khi chưa task nào có commit, 10/10 đến 12/10 trước đợt commit ngày 13/10, và 19/10 đến 20/10 khi Task 2 và Task 9 chưa có commit. Các ngày còn lại nhóm đi trước đường lý tưởng. Không có ngày bắt đầu và kết thúc từng Sprint nên chưa tách được burndown riêng cho mỗi Sprint.
 
 \section{Phân công và commit}
-Thuận commit dưới bốn tên Git: Thuan-Test, Trần Vĩnh Thuận, Thuan-Lap và Thuan-AFK666. Toàn bộ dữ liệu Git nằm ở \path|git-evidence.txt|.
-
 \begingroup\small
 \begin{longtable}{L{0.16\linewidth}L{0.18\linewidth}L{0.24\linewidth}L{0.30\linewidth}}
 \toprule Thành viên & Commit, tác giả & Nhánh & Nội dung\\\midrule\endfirsthead
@@ -423,9 +421,9 @@ T09.6 & \texttt{GET} \path|{{webUrl}}/history| & 200\\
 \end{figure}
 
 \subsection{Task 10 — Nghiệp vụ backend}
-\textbf{Tiêu chí của đề.} Mục 9 của đề yêu cầu đủ bốn phần: máy trạng thái đơn hàng, thanh toán idempotent, kiểm soát tồn kho khi đặt đồng thời, khuyến mãi và điểm thưởng. Test phải chứng minh ba điều: chặn được chuyển trạng thái sai; gửi hai lần cùng \texttt{Idempotency-Key} chỉ tạo một đơn; đặt đồng thời không vượt tồn kho.
+\textbf{Tiêu chí của đề.} Mục 9 của đề gồm bốn phần: máy trạng thái đơn hàng, thanh toán idempotent (gửi lại nhiều lần vẫn chỉ tính một lần), giữ đúng tồn kho khi nhiều khách đặt cùng lúc, và khuyến mãi kèm điểm thưởng. Bộ test cần cho thấy ba điều: chuyển trạng thái sai bị chặn, gửi lại cùng một \texttt{Idempotency-Key} chỉ tạo một đơn, và đặt hàng đồng thời không bán quá số lượng còn trong kho.
 
-\textbf{(a) Máy trạng thái đơn hàng.} Hàm \texttt{assertTransition} trong \path|backend/src/state-machine/order-state.machine.ts| chặn mọi chuyển tiếp không có trong bảng dưới với mã 400. Hoàn tất và Đã hủy là trạng thái cuối. Quyền được kiểm riêng trước khi kiểm chuyển tiếp: khách gọi API tiến đơn bị chặn với mã 403 dù chuyển tiếp đó hợp lệ.
+\textbf{(a) Máy trạng thái đơn hàng.} Đơn hàng chỉ được đổi trạng thái theo các bước trong bảng dưới. Hàm \texttt{assertTransition} trong \path|backend/src/state-machine/order-state.machine.ts| trả mã 400 cho mọi bước nằm ngoài bảng. Hoàn tất và Đã hủy là hai trạng thái cuối, không chuyển tiếp được nữa. Backend kiểm quyền trước rồi mới kiểm bước chuyển, nên khách gọi API tiến đơn vẫn nhận mã 403 dù bước đó hợp lệ.
 
 \begingroup\small
 \begin{longtable}{L{0.22\linewidth}L{0.22\linewidth}L{0.48\linewidth}}
@@ -440,10 +438,10 @@ T09.6 & \texttt{GET} \path|{{webUrl}}/history| & 200\\
 \texttt{READY} & \texttt{COMPLETED} & Barista hoặc Admin\\
 \texttt{PENDING} & \texttt{CANCELLED} & Khách chủ đơn\\
 \texttt{PAYMENT\_FAILED} & \texttt{CANCELLED} & Khách chủ đơn\\
-\texttt{PAID} & \texttt{CANCELLED} & Khách chủ đơn, hoặc Barista và Admin khi hết nguyên liệu\\
+\texttt{PAID} & \texttt{CANCELLED} & Khách chủ đơn; Barista hoặc Admin khi hết nguyên liệu\\
 \end{longtable}
 \endgroup
-Giao diện hiển thị các trạng thái theo nhãn trong \path|frontend/src/lib/order-status.ts|: \texttt{PENDING} là Chờ thanh toán, \texttt{PAID} là Đã thanh toán, \texttt{PREPARING} là Đang pha, \texttt{READY} là Sẵn sàng, \texttt{COMPLETED} là Hoàn tất, \texttt{PAYMENT\_FAILED} là Thanh toán lỗi, \texttt{CANCELLED} là Đã hủy.
+Trên giao diện, mỗi trạng thái hiện bằng nhãn tiếng Việt khai trong \path|frontend/src/lib/order-status.ts|: \texttt{PENDING} là Chờ thanh toán, \texttt{PAID} là Đã thanh toán, \texttt{PREPARING} là Đang pha, \texttt{READY} là Sẵn sàng, \texttt{COMPLETED} là Hoàn tất, \texttt{PAYMENT\_FAILED} là Thanh toán lỗi, \texttt{CANCELLED} là Đã hủy.
 
 \begingroup\small
 \begin{bangca}
@@ -463,9 +461,9 @@ T10a.10 & Quầy hủy đơn \texttt{PAID} & 200, \texttt{CANCELLED}\\
 
 \textbf{Test.} \path|backend/src/state-machine/order-state.machine.spec.ts|, \path|backend/test/order-advance.spec.ts|, \path|backend/test/barista-queue.spec.ts|, \path|frontend/src/lib/order-status.test.ts|.
 
-\textbf{Màn Quầy.} Trang \path|/barista| chia hàng đợi thành 3 cột Chờ pha, Đang pha, Sẵn sàng và tự tải lại mỗi 5 giây. Nút Nhận pha, Pha xong, Đã giao gửi cùng request \texttt{PATCH} như các ca T10a.3, T10a.5, T10a.6; biên lai và trang Lịch sử của khách đổi bước theo trong khoảng 3 giây. Mã nguồn \path|frontend/src/components/BaristaView.tsx|, \path|frontend/src/lib/barista.ts|; test \path|frontend/src/lib/barista.test.ts|, \path|frontend/src/components/BaristaView.test.ts|.
+\textbf{Màn Quầy.} Trang \path|/barista| xếp hàng đợi thành ba cột Chờ pha, Đang pha, Sẵn sàng và tự tải lại sau mỗi 5 giây. Ba nút Nhận pha, Pha xong và Đã giao gửi đúng request \texttt{PATCH} đã dùng trong các ca T10a.3, T10a.5 và T10a.6. Khoảng 3 giây sau, biên lai và trang Lịch sử của khách cập nhật theo. Mã nguồn: \path|frontend/src/components/BaristaView.tsx|, \path|frontend/src/lib/barista.ts|; test: \path|frontend/src/lib/barista.test.ts|, \path|frontend/src/components/BaristaView.test.ts|.
 
-\textbf{(b) Thanh toán idempotent.} Backend lưu \texttt{Idempotency-Key} với ràng buộc duy nhất ở bảng Order và bảng Payment. Request lặp lại cùng khóa nhận lại kết quả cũ với mã 200, không tạo đơn mới, không trừ tiền, không trừ kho và không cộng điểm thêm lần nữa.
+\textbf{(b) Thanh toán idempotent.} Backend lưu \texttt{Idempotency-Key} trong bảng Order và bảng Payment, mỗi khóa là duy nhất. Khi một request được gửi lại với cùng khóa, backend trả lại kết quả của lần trước với mã 200. Đơn không bị tạo thêm, tiền và kho không bị trừ lần hai, điểm thưởng cũng không được cộng thêm.
 
 \begingroup\small
 \begin{bangca}
@@ -479,7 +477,7 @@ T10b.9 & Khách khác dùng lại khóa đó & 422\\
 
 \textbf{Test.} \path|backend/test/order-payment.integration.spec.ts|, ca ``(b) same Idempotency-Key charges once''.
 
-\textbf{(c) Tồn kho khi đặt đồng thời.} Kho bị trừ lúc thanh toán, trong cùng transaction với việc chuyển đơn sang Đã thanh toán, ghi điểm thưởng và lưu biên lai. Mỗi lần trừ kho so cột \texttt{Product.version}: bản ghi đã bị request khác sửa thì lần ghi thất bại và backend đọc lại, thử tối đa 3 lần. Cách khóa này gọi là optimistic locking. Hết 3 lần vẫn không trừ được thì transaction rollback, backend hoàn tiền và đơn sang Thanh toán lỗi.
+\textbf{(c) Tồn kho khi đặt đồng thời.} Kho được trừ lúc thanh toán, trong cùng một transaction với ba việc khác: chuyển đơn sang Đã thanh toán, cộng điểm thưởng và lưu biên lai. Mỗi lần trừ kho, backend đối chiếu cột \texttt{Product.version}. Nếu một request khác vừa sửa sản phẩm đó, lần ghi bị từ chối; backend đọc lại số liệu mới rồi thử lại, tối đa 3 lần. Cách làm này gọi là optimistic locking: không khóa dữ liệu trước mà phát hiện xung đột ngay lúc ghi. Sau 3 lần vẫn không trừ được thì transaction rollback, backend hoàn tiền và đơn chuyển sang Thanh toán lỗi.
 
 \begingroup\small
 \begin{bangca}
@@ -489,15 +487,15 @@ T10c.3 & Khách gọi API kho & 403\\
 \end{bangca}
 \endgroup
 
-Postman Runner gửi request lần lượt nên không tạo được tải đồng thời. Trường hợp nhiều khách đặt cùng lúc được chứng minh bằng test ``(c) concurrent stock never negative'' trong \path|backend/test/order-payment.integration.spec.ts| và \path|backend/test/pg-payment.integration.spec.ts|. Test thứ hai chạy trên PostgreSQL thật và chỉ chạy khi có biến \path|DATABASE_URL|; lần chạy ngày 21/10/2026 không đặt biến này nên 2 ca của nó bị bỏ qua.
+Postman Runner gửi từng request một nên không tạo được tải đồng thời. Vì vậy trường hợp nhiều khách đặt cùng lúc được kiểm bằng test ``(c) concurrent stock never negative'' trong \path|backend/test/order-payment.integration.spec.ts| và \path|backend/test/pg-payment.integration.spec.ts|. File thứ hai chạy trên PostgreSQL thật nên chỉ chạy khi có biến \path|DATABASE_URL|. Lần chạy ngày 21/10/2026 không đặt biến này, nên 2 ca trong file đó bị bỏ qua.
 
-\textbf{(d) Khuyến mãi và điểm thưởng.} Đề không quy định mã và tỉ lệ, nhóm chọn mã \texttt{BREWLITE10} giảm 10\%:
+\textbf{(d) Khuyến mãi và điểm thưởng.} Đề không quy định mã giảm giá hay tỉ lệ, nên nhóm chọn mã \texttt{BREWLITE10} giảm 10\% và tính như sau:
 \[
 \text{giảm giá}=\lfloor \text{tổng}\times0{,}1\rfloor,\qquad
 \text{số tiền trả}=\text{tổng}-\text{giảm giá},\qquad
 \text{điểm}=\left\lfloor \frac{\text{số tiền trả}\times0{,}1}{1000}\right\rfloor.
 \]
-Điểm chỉ cộng sau khi đơn sang Đã thanh toán. Lần chạy ngày 21/10/2026: đơn 58.000 đồng được giảm 5.800 đồng, khách trả 52.200 đồng và được cộng 5 điểm.
+Điểm chỉ được cộng sau khi đơn sang Đã thanh toán. Ví dụ ở lần chạy ngày 21/10/2026: đơn 58.000 đồng được giảm 5.800 đồng, khách trả 52.200 đồng và nhận 5 điểm.
 
 \begingroup\small
 \begin{bangca}
@@ -507,7 +505,7 @@ T10d.6 & Trả kèm mã không hợp lệ \texttt{SAIMA} & \texttt{discount} = 0
 \end{bangca}
 \endgroup
 
-\textbf{Test.} \path|backend/test/order-payment.integration.spec.ts|, các ca của mã \texttt{BREWLITE10}.
+\textbf{Test.} \path|backend/test/order-payment.integration.spec.ts|, các ca dùng mã \texttt{BREWLITE10}.
 
 \begin{figure}[H]\centering
 \khunganh{0.8\linewidth}{task10-jest.png}
