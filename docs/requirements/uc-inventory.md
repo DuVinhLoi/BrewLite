@@ -1,6 +1,6 @@
 # UC-10 — Quản lý nguyên liệu và công thức
 
-Thuộc đợt **BREW-INVENTORY-01**, yêu cầu FR-29 (Must), áp dụng cho Task 1–5 của Assignment 2. Người dùng chính là **Barista**; Customer và Guest không có nhãn số ly: menu chỉ hiện "Còn hàng" hoặc "Hết hàng", trang chi tiết giới hạn ô số lượng, giỏ hàng báo nguyên liệu thiếu và lượng cần/còn. Hợp đồng API chi tiết: [inventory-contract.md](../inventory-contract.md). Hướng dẫn vận hành: [inventory-runbook.md](../inventory-runbook.md).
+Yêu cầu FR-29 (Must). Người dùng chính là **Barista**; Customer và Guest không có nhãn số ly: menu chỉ hiện "Còn hàng" hoặc "Hết hàng", trang chi tiết giới hạn ô số lượng, giỏ hàng báo nguyên liệu thiếu và lượng cần/còn. Hợp đồng API chi tiết: [inventory-contract.md](../inventory-contract.md). Hướng dẫn vận hành: [inventory-runbook.md](../inventory-runbook.md).
 
 ## Mục tiêu và điều kiện
 

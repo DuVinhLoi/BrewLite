@@ -1,0 +1,25 @@
+@startuml uc-07-order-status
+' BrewLite A2 - Use-case diagram cho UC-07. Dac ta va ma yeu cau: docs/requirements/use-cases/uc-07-order-status.md
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam RectangleBackgroundColor #ffffff
+skinparam RectangleBorderColor #94a3b8
+skinparam ActorBackgroundColor #eef2fb
+skinparam ActorBorderColor #5b6b8c
+skinparam UsecaseBackgroundColor #eef2fb
+skinparam UsecaseBorderColor #5b6b8c
+skinparam Shadowing false
+
+left to right direction
+
+title UC-07 Cập nhật trạng thái đơn - phạm vi use-case
+
+actor "Nhân viên quầy\n(Barista)" as Barista
+
+rectangle "Hệ thống BrewLite" {
+  usecase "UC-07 Cập nhật trạng thái đơn" as UC07
+}
+
+Barista --- UC07
+@enduml

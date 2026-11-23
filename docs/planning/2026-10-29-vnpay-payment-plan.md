@@ -179,7 +179,7 @@ Chỉ hiển thị thất bại và cho thử lại/hủy sau khi trạng thái 
 - **`PAYMENT_PROVIDER`:** mặc định `vnpay`. `fake` là phần Could hoãn theo D4; chỉ hỗ trợ nếu được yêu cầu triển khai riêng, không đăng ký endpoint fake khi chạy `vnpay`. Cố bật `fake` khi chưa triển khai, giá trị không hỗ trợ, hoặc `fake` với `NODE_ENV=production` → dừng khởi động. **Không tự chuyển sang `fake`** khi thiếu biến VNPay.
 - **Thiếu biến cho thao tác:** API vẫn khởi động để Docker/local chạy các chức năng không cần cổng thanh toán mà không phải phát secret cho mọi thành viên. Endpoint cần biến nào mới kiểm biến đó: tạo URL mới/QueryDR thiếu biến → 502; IPN thiếu biến → `99`, không đọc/ghi DB; return thiếu biến → `valid: false`. Các nhánh replay và đọc trạng thái vẫn hoạt động.
 - **Cảnh báo lúc khởi động:** một dòng, **chỉ ghi tên biến thiếu**, ví dụ `VNPay configuration incomplete: missing VNP_HASH_SECRET, WEB_URL`. Không in giá trị của bất kỳ biến nào.
-- **`/health` giữ nguyên** `{ status, database }` theo SRS §1.4 thay đổi (7), không thêm trường trạng thái cổng thanh toán.
+- **`/health` giữ nguyên** `{ status, database }` theo SRS AC-N15.1, AC-N15.2, không thêm trường trạng thái cổng thanh toán.
 - **Điều kiện phát hành:** biến trên Render phải được lưu **trước lần deploy đầu tiên chứa code thay simulator bằng VNPay** (bước 0.4); API vẫn khởi động khi thiếu biến không thay thế điều kiện này. `cd.yml` hiện có push ở nhánh delivery, tag `a2-v*` và chạy tay; không suy luận push nhánh payment sẽ tự deploy.
 
 ---

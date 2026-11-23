@@ -1,6 +1,6 @@
 # docs/requirements — Task 1: Khai thác và đặc tả yêu cầu
 
-Thư mục này chứa **bản chốt Task 1**: phạm vi tối thiểu đã thống nhất ở PR #5, sau đó rút gọn thêm về đúng mức tối thiểu của đề. Các quyết định, phần phụ thuộc và lý do rút gọn nằm ở [SRS mục 1.4 và 8](srs.md).
+Thư mục này chứa **bản chốt Task 1**: phạm vi tối thiểu đã thống nhất ở PR #5, sau đó rút gọn thêm về đúng mức tối thiểu của đề. Các quyết định và phần phụ thuộc nằm ở [SRS mục 1.4 và 8](srs.md).
 
 Tóm tắt phạm vi:
 
@@ -20,6 +20,7 @@ Task 1 được nghiệm thu dựa trên tài liệu yêu cầu, hai use-case di
 | `uc-checkout.md` | Đặc tả use-case trọng tâm "Đặt và thanh toán đơn hàng": actor, điều kiện kích hoạt, trước/sau, luồng chính, luồng thay thế, ngoại lệ, mã yêu cầu liên quan | §3.3 |
 | `uc-inventory.md` | UC-10: quản lý số dư nguyên liệu, nhập/kiểm kê, công thức và nhãn còn hàng/hết hàng; FR-29 | BREW-INVENTORY-01 |
 | `uc-checkout.puml` và `.svg` | Use-case diagram cho phạm vi use-case đã chọn | §3.3 |
+| [`use-cases/`](use-cases/README.md) | Đặc tả 7 use-case còn lại (UC-01, UC-02, UC-03, UC-05, UC-06, UC-07, UC-09), mỗi use-case có `.md`, `.puml` và `.svg`; bổ sung cho use-case trọng tâm UC-04 | §3.3 (bổ sung) |
 
 Các nhóm yêu cầu tối thiểu trong SRS: menu, chi tiết sản phẩm, giỏ hàng, xác thực, đặt đơn, thanh toán, lịch sử đơn, quản lý trạng thái đơn, hiệu năng, bảo mật, tính khả dụng, khả năng triển khai.
 
@@ -28,3 +29,9 @@ Các nhóm yêu cầu tối thiểu trong SRS: menu, chi tiết sản phẩm, gi
 Người đọc biết rõ hệ thống làm gì, không làm gì, và dùng được tiêu chí chấp nhận để viết test ở các task sau.
 
 Hướng dẫn từng bước: `docs/planning/2026-10-15-assignment2-plan.md`, phần Task 1.
+
+## Lịch sử thay đổi SRS
+
+- Rút gọn phạm vi (ghi lý do theo đề A2 §6.2). Bản chốt ở PR #5 đặc tả nhiều hơn đề yêu cầu, nên bản này chỉ giữ mức tối thiểu vừa sức hai Sprint.
+- Hiển thị tồn kho (2026-11-05). Theo yêu cầu điều chỉnh giao diện, khách chỉ thấy nhãn "Còn hàng" hoặc "Hết hàng", không có nhãn số ly; AC-F01.3 và AC-F04.4 được sửa cho khớp.
+- Rút gọn văn bản (2026-11). Viết gọn mục 3 và các tiêu chí chấp nhận để dễ đọc; không đổi hành vi của hệ thống hay mã yêu cầu. Bốn tiêu chí được sửa câu chữ cho khớp hành vi đang chạy, code không đổi: AC-F08.3 và AC-N06.1 (`details` chứa thông điệp của lỗi đầu tiên, không theo từng trường), AC-F15.4 (trang kết quả có liên kết "Xem hoặc hủy đơn", nút "Hủy đơn" ở trang chi tiết), AC-N14.1 (cần `.env`, lệnh `--wait` và seed; PostgreSQL không mở cổng ra máy).

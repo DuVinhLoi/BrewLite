@@ -75,12 +75,13 @@ test('INT-T15: actual seed twice preserves received balance, edited recipe and h
   for (let iteration = 0; iteration < 2; iteration++) {
     await runSeed();
     assert.deepEqual(await snapshot(f), before, `Seed run ${iteration + 1} must preserve all stored inventory/order data`);
-    assert.deepEqual(expectStatus(await request('/products'), 200), catalogBefore);
+    const catalog = expectStatus(await request('/products'), 200); // read after this seed run
+    assert.deepEqual(catalog, catalogBefore);
     const ingredients = expectStatus(await request('/inventory/ingredients', { token: f.barista.token }), 200);
     const recipes = expectStatus(await request('/inventory/recipes', { token: f.barista.token }), 200);
-    assert.equal(catalogBefore.length, 8);
-    assert.equal(new Set(catalogBefore.map((row) => row.id)).size, 8);
-    assert.equal(new Set(catalogBefore.map((row) => row.name)).size, 8);
+    assert.equal(catalog.length, 8);
+    assert.equal(new Set(catalog.map((row) => row.id)).size, 8);
+    assert.equal(new Set(catalog.map((row) => row.name)).size, 8);
     assert.equal(ingredients.length, 15);
     assert.equal(new Set(ingredients.map((row) => row.name)).size, 15);
     assert.equal(recipes.length, 27);

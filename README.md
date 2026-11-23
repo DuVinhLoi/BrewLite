@@ -135,7 +135,7 @@ Demo thủ công: đăng nhập BARISTA → vào /inventory → nhập Matcha 20
 
 Production local: build với API URL phù hợp, rồi `npm.cmd --prefix apps/api run start:prod` và `npm.cmd --prefix apps/web start`.
 
-Đã có [PR #9 CI xanh](https://github.com/DuVinhLoi/BrewLite/pull/9) và [PR #10 CI bắt lỗi test, đã đóng không merge](https://github.com/DuVinhLoi/BrewLite/pull/10); đây là lịch sử, log ở [hồ sơ CI](docs/evidence/ci/README.md). Ngày 04/11/2026 đã bật và đọc lại branch protection cho `main`: bắt buộc PR với một approval, check `ci` xanh trên nhánh cập nhật với base, chặn force push/xóa và áp dụng cả admin. Repository hiện public. Đã có một run xanh PR32 và PR33 cố ý sai test đỏ; đủ ba run xanh và minh chứng chặn merge riêng do required ci còn chờ; cấu hình protection không thay thế minh chứng đó.
+Đã có [PR #9 CI xanh](https://github.com/DuVinhLoi/BrewLite/pull/9) và [PR #10 CI bắt lỗi test, đã đóng không merge](https://github.com/DuVinhLoi/BrewLite/pull/10); đây là lịch sử, log ở [hồ sơ CI](docs/evidence/ci/README.md). Ngày 04/11/2026 đã bật và đọc lại branch protection cho `main`: bắt buộc PR với một approval, check `ci` xanh trên nhánh cập nhật với base, chặn force push/xóa và áp dụng cả admin. Repository hiện public. Đã có ba lượt xanh liên tiếp trên `4e711a8` (bộ trước), [run 42227618920](https://github.com/DuVinhLoi/BrewLite/actions/runs/42227618920) xanh trên bộ cuối và PR33 cố ý sai test đỏ; minh chứng chặn merge riêng do required ci còn chờ; cấu hình protection không thay thế minh chứng đó.
 
 ## CI/CD và production
 

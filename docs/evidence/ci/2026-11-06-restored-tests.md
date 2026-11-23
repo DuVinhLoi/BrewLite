@@ -3,6 +3,28 @@
 PR khôi phục: [#32](https://github.com/DuVinhLoi/BrewLite/pull/32),
 nhánh `a2/restore-tests`. Ngày dưới đây dùng múi giờ Việt Nam (UTC+7).
 
+## Bộ test cuối — head `3e2cc28` và merge `aab31c4`
+
+[Run 42227618920](https://github.com/DuVinhLoi/BrewLite/actions/runs/42227618920) **success** trên `3e2cc28` (head PR #31, sự kiện `pull_request`), job `ci` 20:42:10–20:44:38. Log: 229/229 unit API, 100/100 unit/component web, integration 32 ca gồm 32 pass, 0 skip, 0 fail, Chromium E2E 5/5 pass. [Metadata từng bước](2026-11-06-pr31-head-run.json).
+
+PR #31 đã merge thành `aab31c4`. [Delivery 42240766718](https://github.com/DuVinhLoi/BrewLite/actions/runs/42240766718) **success** (sự kiện `push` vào `main`): job `quality / ci` cho đúng các số trên, rồi preflight, publish image `ghcr.io/duvinhloi/brewlite-api:aab31c4b7f616ebe6ee2dac34ea9fcb0ba2f7b3f`, deploy API (Render `dep-dbmuubtg1s2s73c00et0`), deploy web (Vercel `https://brewlite-a2-ahlcr60r3-du-vinh-loi.vercel.app`) và smoke đều đạt; `rollback-instructions` bị bỏ qua vì không có bước lỗi. [Metadata Delivery](2026-11-06-delivery-aab31c4.json).
+
+INT-T11b (AC-F24.3) không còn skip: bản sửa quyền của PR #31 đã nằm trong `main`. Bộ cuối chưa có chuỗi ba lượt xanh liên tiếp trên cùng commit.
+
+## Bộ test trước PR #31 — head `6e4ff31`
+
+[Run 42221930878](https://github.com/DuVinhLoi/BrewLite/actions/runs/42221930878) **success** trên `6e4ff31` (sự kiện `pull_request`), job 20:00:00–20:12:22. Log: 221/221 unit API, 100/100 unit/component web, integration 32 ca gồm 30 pass, 2 skip, 0 fail, Chromium E2E 5/5 pass. Lint, migration, seed hai lần, build và Compose validation đều thành công. [Metadata từng bước](2026-11-06-final-head-run.json).
+
+Lịch sử: hai skip đều là INT-T11b (AC-F24.3), lúc đó chờ [PR #31](https://github.com/DuVinhLoi/BrewLite/pull/31); PR #31 đã sửa và bật lại test ở bộ cuối phía trên. Bộ này chưa có chuỗi ba lượt xanh liên tiếp trên cùng commit.
+
+Bước `Install Chromium` mất 9 phút 54 giây (20:01:59–20:11:53), so với 20 giây ở lần chạy bộ trước. Log cho thấy apt tải font chậm từ mirror của Ubuntu, có khoảng dừng 79–219 giây giữa các gói; các bước test không chậm đi (integration 43 giây, E2E 25 giây). Job có `timeout-minutes: 30`.
+
+PR #32 đã merge thành `552b5d7` lúc 20:20:06, cùng nội dung với `6e4ff31`. [Delivery 42224663420](https://github.com/DuVinhLoi/BrewLite/actions/runs/42224663420) **success**, job `quality` cho đúng các số trên (221, 100, 30 pass/2 skip, 5 E2E), rồi publish, deploy API (Render `dep-dbmta7e417fc739ofm20`), deploy web và smoke đều đạt. [Metadata Delivery](2026-11-06-delivery-552b5d7.json).
+
+Kiểm tra chỉ đọc sau deploy: `/health` trả `{"status":"ok","database":"up"}`, `/products` trả 8 món, web 200, `/orders/me` không token trả 401, `/payments/vnpay/ipn` không chữ ký trả `RspCode` 97. Chưa kiểm tra đăng nhập, thanh toán sandbox và màn Barista trên production (A6.4, A6.5).
+
+Các mục dưới đây thuộc bộ test trước khi bổ sung (head `4e711a8`), giữ làm lịch sử; riêng mục "Nhánh sửa quyền riêng" và "Giới hạn bàn giao" phản ánh thời điểm khi đó.
+
 ## Lần chạy xanh đã xác nhận
 
 | Run / attempt | Commit | Kết quả | Thời gian job |
@@ -64,8 +86,9 @@ PR #33 đã đóng, `mergedAt=null`, nhánh remote thử nghiệm đã xóa. Com
 
 ## Giới hạn bàn giao
 
-Chưa merge PR #32/#31, chưa chạy Delivery từ các thay đổi này và chưa tạo tag hoặc
-release. Compose được validate cấu hình; không có bằng chứng Compose smoke chạy
+Lịch sử lúc bàn giao PR #32: chưa merge PR #32/#31 và chưa chạy Delivery. Nay cả hai
+đã merge (`552b5d7`, `aab31c4`) và Delivery đã chạy, xem phần đầu hồ sơ; chưa tạo tag
+hoặc release. Compose được validate cấu hình; không có bằng chứng Compose smoke chạy
 đủ ba container trong lượt CI này. Gia hạn/thay DB production là công việc riêng.
 
 ## Phạm vi và cách kiểm chứng

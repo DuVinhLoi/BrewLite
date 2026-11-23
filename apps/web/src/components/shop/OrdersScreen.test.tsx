@@ -7,7 +7,8 @@ describe('UNIT-T20 order history and controls (FR-21, FR-22, FR-25)', () => {
   it('shows an empty history and a link to the menu', async () => {
     mockApi(() => json([]));
     renderShop(<OrdersScreen />, [], true);
-    expect(await screen.findByText(/Bạn chưa có đơn/)).toBeInTheDocument();
+    // Exact string (AC-F21.3). findByText reads only the element's own text, so textContent also rejects wording added in a child element.
+    expect((await screen.findByText('Bạn chưa có đơn hàng nào')).textContent).toBe('Bạn chưa có đơn hàng nào');
     expect(screen.getByRole('link', { name: 'Quay lại menu' })).toHaveAttribute('href', '/');
   });
   it.each([['PENDING', 'Chờ thanh toán', true], ['PAYMENT_FAILED', 'Thanh toán thất bại', true], ['PAID', 'Đã thanh toán', false], ['PREPARING', 'Đang pha chế', false], ['READY', 'Sẵn sàng nhận', false], ['COMPLETED', 'Hoàn tất', false], ['CANCELLED', 'Đã hủy', false]] as const)('labels %s and limits cancellation to unpaid orders', async (status, label, cancellable) => {

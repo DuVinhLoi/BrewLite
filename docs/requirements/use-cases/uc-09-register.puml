@@ -1,0 +1,26 @@
+@startuml uc-09-register
+' BrewLite A2 - Use-case diagram cho UC-09. Dac ta va ma yeu cau: docs/requirements/use-cases/uc-09-register.md
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam RectangleBackgroundColor #ffffff
+skinparam RectangleBorderColor #94a3b8
+skinparam ActorBackgroundColor #eef2fb
+skinparam ActorBorderColor #5b6b8c
+skinparam UsecaseBackgroundColor #eef2fb
+skinparam UsecaseBorderColor #5b6b8c
+skinparam Shadowing false
+
+left to right direction
+
+title UC-09 Đăng ký tài khoản - phạm vi use-case
+
+actor "Khách vãng lai\n(Guest)" as Guest
+
+rectangle "Hệ thống BrewLite" {
+  usecase "UC-09 Đăng ký tài khoản" as UC09
+}
+
+Guest --- UC09
+
+@enduml

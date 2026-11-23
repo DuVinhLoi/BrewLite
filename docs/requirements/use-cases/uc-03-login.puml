@@ -1,0 +1,35 @@
+@startuml uc-03-login
+' BrewLite A2 - Use-case diagram cho UC-03. Dac ta va ma yeu cau: docs/requirements/use-cases/uc-03-login.md
+skinparam DefaultFontColor #1f2937
+skinparam ArrowColor #5b6b8c
+skinparam ArrowFontColor #1f2937
+skinparam RectangleBackgroundColor #ffffff
+skinparam RectangleBorderColor #94a3b8
+skinparam ActorBackgroundColor #eef2fb
+skinparam ActorBorderColor #5b6b8c
+skinparam UsecaseBackgroundColor #eef2fb
+skinparam UsecaseBorderColor #5b6b8c
+skinparam Shadowing false
+
+left to right direction
+
+title UC-03 Đăng nhập - phạm vi use-case
+
+actor "Khách vãng lai\n(Guest)" as Guest
+actor "Khách hàng\n(Customer)" as Customer
+actor "Nhân viên quầy\n(Barista)" as Barista
+
+rectangle "Hệ thống BrewLite" {
+  usecase "UC-03 Đăng nhập" as UC03
+  usecase "UC-04 Đặt và thanh toán đơn hàng" as UC04
+}
+
+Guest <|- Customer
+
+Guest --- UC03
+Barista --- UC03
+Customer --- UC04
+
+UC03 .> UC04 : <<extend>>\n[chưa đăng nhập hoặc hết phiên]
+
+@enduml

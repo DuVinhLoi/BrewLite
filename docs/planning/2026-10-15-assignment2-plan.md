@@ -95,7 +95,7 @@ Trước khi bắt đầu task kế tiếp, cả nhóm kiểm checklist nghiệm
 > **Trạng thái:** đã chốt qua PR #5 (merge `0130ae0`). Phạm vi minimum ghi ở [`srs.md`](../requirements/srs.md) mục 1.4 và 8; khi mục này lệch SRS thì SRS đúng. Các quyết định đã chốt:
 > - quản lý trạng thái đơn: FR-23 và FR-24 là **Must**, Barista đổi trạng thái qua `PATCH /orders/:id` bằng **Postman collection** (AC-F24.4); FR-25 (khách hủy đơn chưa thanh toán) là **Could** vì đề A2 §7.1 không đòi hủy đơn; Swagger UI không là tiêu chí nghiệm thu;
 > - khuyến mãi, điểm thưởng, hoàn tiền, hàng đợi Barista (FR-17, FR-18, FR-19, FR-26, FR-27) là **Won't trong bản nộp**; class diagram vẫn có `Promotion` và `LoyaltyTransaction`;
-> - SRS đã rút gọn thêm về mức tối thiểu của đề (ghi chú ở `srs.md` mục 1.4): NFR-01 giữ Must (nhóm chọn, chỉ đo ở local), NFR-12 giữ Must cho E2E tự động tối thiểu, NFR-02 và NFR-03 thành Could, NFR-10 (PWA) thành Must nhưng chỉ cần web app manifest.
+> - SRS đã rút gọn thêm về mức tối thiểu của đề (lịch sử ở `docs/requirements/README.md`): NFR-01 giữ Must (nhóm chọn, chỉ đo ở local), NFR-12 giữ Must cho E2E tự động tối thiểu, NFR-02 và NFR-03 thành Could, NFR-10 (PWA) thành Must nhưng chỉ cần web app manifest.
 
 **Nhánh gợi ý:** `a2/task-1-requirements`, tách PR theo Task 1.1, 1.2, 1.3.
 **Đầu vào tham khảo:** đề A1 §3.1–3.2 (vision, stakeholder), §4 (yêu cầu), §5 (luồng nghiệp vụ); [`docs/reference/a1/use-case-specifications.md`](../reference/a1/use-case-specifications.md) §1 (actor), §2 (Bản 1), §4 (bảng UC).
@@ -253,7 +253,7 @@ Yêu cầu của đề: tối thiểu 7 lớp, có thuộc tính chính, quan h�
 
 Enum: trạng thái đơn (A1 có 7 trạng thái, xem đề A1 §9.1 và [`docs/reference/a1/user-sequence-specifications.md`](../reference/a1/user-sequence-specifications.md) §2.5 mục B2), phương thức thanh toán, trạng thái thanh toán, vai trò. Tên enum, giá trị và 8 chuyển trạng thái hợp lệ của minimum đã chốt ở `srs.md` mục 3.6.
 
-Thuộc tính, quan hệ và multiplicity của `Promotion` và `LoyaltyTransaction` lấy theo `srs.md` mục 3.6. Hai lớp có mặt trong mô hình dù luồng runtime của chúng ngoài bản nộp.
+Thuộc tính, quan hệ và multiplicity của `Promotion` và `LoyaltyTransaction` lấy theo `docs/diagrams/class-domain.puml`. Hai lớp có mặt trong mô hình dù luồng runtime của chúng ngoài bản nộp.
 
 Tùy chọn nhưng nên có: `docs/diagrams/state-order.puml` và `state-order.svg` (state machine của đơn hàng), để nhất quán với yêu cầu "quản lý trạng thái đơn". Đề A1 §9.1 là nguồn tham khảo.
 
@@ -481,7 +481,7 @@ Chuỗi bắt buộc (đề A2 §7.3): **Push/Tag → Lint và Test → Build Do
 
 Quy tắc cho secret (đề A2 §7.4): chỉ nằm ở GitHub Secrets, biến môi trường Vercel và Render. Không in secret ra log CI (không `echo` biến, không bật debug in env). Gợi ý tên secret của GitHub: `RENDER_DEPLOY_HOOK_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `PROD_API_URL`, `PROD_WEB_URL`.
 
-Smoke test chỉ chờ HTTP 200, không so SHA qua `/health` (SRS mục 1.4, thay đổi (7)). Chạy CD tuần tự cho cùng môi trường production để hai tag không deploy chồng nhau. Xác nhận hành vi hook: [Render Deploy Hooks](https://render.com/docs/deploy-hooks), kiểm tra ngày 2026-10-16.
+Smoke test chỉ chờ HTTP 200, không so SHA qua `/health` (SRS AC-N18.2). Chạy CD tuần tự cho cùng môi trường production để hai tag không deploy chồng nhau. Xác nhận hành vi hook: [Render Deploy Hooks](https://render.com/docs/deploy-hooks), kiểm tra ngày 2026-10-16.
 
 **Rollback (viết vào `docs/deployment.md` và README):**
 
