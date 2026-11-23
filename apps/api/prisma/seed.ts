@@ -63,6 +63,7 @@ const products = [
   },
 ];
 
+/** Bổ sung sản phẩm, nguyên liệu và công thức mẫu còn thiếu; tạo tài khoản demo khi được bật trong cấu hình. */
 async function main(): Promise<void> {
   for (const product of products) {
     await prisma.product.upsert({

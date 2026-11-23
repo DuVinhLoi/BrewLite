@@ -7,6 +7,7 @@ import { calculateAvailability, canonicalQuantity } from '../src/inventory/inven
 import type { ItemInput } from '../src/checkout/pricing';
 
 type Recipe = Parameters<typeof calculateAvailability>[1][number];
+/** Tạo số Decimal từ chuỗi để kiểm thử định lượng nguyên liệu mà không mất độ chính xác. */
 const decimal = (value: string) => new Prisma.Decimal(value);
 const ingredients: Ingredient[] = [
   { id: 'matcha', name: 'Matcha', unit: 'g', tracked: true, onHand: decimal('20'), reserved: decimal('0') },

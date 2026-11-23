@@ -5,8 +5,10 @@ import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class CatalogService {
+  /** Nhận các dịch vụ phụ thuộc do NestJS cung cấp để sử dụng trong các phương thức của lớp. */
   constructor(private readonly prisma: PrismaService, private readonly inventory: InventoryService) {}
 
+  /** Lấy danh sách sản phẩm và tính số ly còn bán được dựa trên nguyên liệu khả dụng. */
   findAll(): Promise<Product[]> {
     return this.prisma.$transaction(async (tx) => {
       const products = await tx.product.findMany({ orderBy: { name: 'asc' } });
@@ -15,6 +17,7 @@ export class CatalogService {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   }
 
+  /** Lấy sản phẩm theo mã kèm số ly khả dụng; báo lỗi nếu sản phẩm không tồn tại. */
   async findOne(id: string): Promise<Product> {
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.findUnique({ where: { id } });

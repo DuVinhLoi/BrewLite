@@ -12,23 +12,31 @@ FONT='DejaVu Sans'
 C={'ink':'#20354a','blue':'#315c7e','line':'#65829c','pale':'#eef5fb','gold':'#fff3d7','goldline':'#b38a40','green':'#e5f5e9','red':'#ffecea','bg':'#ffffff','muted':'#64788d'}
 NS='http://www.w3.org/2000/svg'
 ET.register_namespace('',NS)
+# Tạo phần tử SVG đúng namespace và chuẩn hóa tên thuộc tính.
 def svg_elem(tag,**attrs):return ET.Element('{'+NS+'}'+tag,{k.replace('_','-'):str(v) for k,v in attrs.items() if v is not None})
+# Tạo phần tử SVG rồi gắn vào phần tử cha.
 def add(parent,tag,**attrs):
  e=svg_elem(tag,**attrs);parent.append(e);return e
+# Vẽ văn bản SVG nhiều dòng với kiểu chữ và căn lề tùy chọn.
 def txt(parent,x,y,s,fontsize=14,bold=False,anchor='middle',fill=None,linespace=1.3):
  arr=str(s).replace('\\n','\n').split('\n'); el=add(parent,'text',x=x,y=y,fill=fill or C['ink'],font_family=FONT,font_size=fontsize,font_weight='bold' if bold else 'normal',text_anchor=anchor)
  for i,t in enumerate(arr):
   e=add(el,'tspan',x=x,dy='0' if i==0 else str(fontsize*linespace));e.text=t
  return el
+# Ngắt dòng theo độ rộng mong muốn, giữ nguyên từ dài.
 def wrap(s,width=38):
  segments=str(s).replace('\\n','\n').split('\n');r=[]
  for seg in segments:
   r.extend(textwrap.wrap(seg,width=width,break_long_words=False,break_on_hyphens=False) or [''])
  return '\n'.join(r)
+# Vẽ hình chữ nhật với màu nền, đường viền và góc bo tùy chọn.
 def rect(p,x,y,w,h,fill,stroke=None,rx=10,sw=1.6):return add(p,'rect',x=x,y=y,width=w,height=h,rx=rx,fill=fill,stroke=stroke or 'none',stroke_width=sw)
+# Vẽ đường nối với màu, độ dày và nét đứt tùy chọn.
 def line(p,x1,y1,x2,y2,dashed=False,color=None,width=1.8):return add(p,'line',x1=x1,y1=y1,x2=x2,y2=y2,stroke=color or C['line'],stroke_width=width,stroke_dasharray='6,5' if dashed else None)
+# Ghi SVG dưới dạng UTF-8 kèm khai báo XML.
 def save_svg(svg,file):
  tree=ET.ElementTree(svg);tree.write(file,encoding='utf-8',xml_declaration=True)
+# Tạo khung SVG với nền, tiêu đề và phụ đề dùng chung.
 def make_canvas(w,h,title,subtitle):
  s=svg_elem('svg',viewBox=f'0 0 {w} {h}',width=w,height=h)
  rect(s,0,0,w,h,C['bg'],rx=0)
@@ -38,6 +46,7 @@ def make_canvas(w,h,title,subtitle):
  return s
 
 # Class diagram: exact types, attributes and relations read from PlantUML source.
+# Đọc sơ đồ lớp PlantUML và tạo bản xem trước bằng Graphviz.
 def render_class():
  src=(ROOT/'class-domain.puml').read_text(); d=Digraph('ClassDomain',format='svg',engine='dot')
  d.attr(rankdir='LR',bgcolor='white',splines='spline',nodesep='0.52',ranksep='1.05',pad='0.36',fontname=FONT)
@@ -64,6 +73,7 @@ def render_class():
  out=ROOT/'class-domain.svg';d.render(filename=str(out.with_suffix('')),cleanup=True,format='svg')
  return out
 
+# Tạo bản xem trước SVG cho sơ đồ trạng thái.
 def render_state():
  src=(ROOT/'state-order.puml').read_text();d=Digraph('StateOrder',format='svg',engine='dot')
  d.attr(rankdir='LR',bgcolor='white',pad='.45',nodesep='.7',ranksep='1.0',splines='spline',fontname=FONT)
@@ -87,6 +97,7 @@ def render_state():
  return out
 
 # Sequence renderer: lifelines, message ordering, requests and returns taken from the canonical source.
+# Tạo bản xem trước SVG cho sơ đồ tuần tự.
 def render_sequence():
  src=(ROOT/'sequence-checkout.puml').read_text().splitlines()
  people=[];rows=[];i=0
@@ -165,6 +176,7 @@ def render_sequence():
  out=ROOT/'sequence-checkout.svg';save_svg(s,out);return out
 
 # Swimlane activity visual: summarized from the detailed actions/decision structure of activity-checkout.puml.
+# Tạo bản xem trước SVG cho sơ đồ hoạt động.
 def render_activity():
  # An offline swimlane view of the UC-04 branches in activity-checkout.puml.
  w,h=1860,4020;s=make_canvas(w,h,'Activity diagram · UC-04 Checkout','SRS A2 · E1a/E1b authentication | E2 stock | E3 payment | E4a replay')

@@ -4,6 +4,7 @@ import { router } from '../../../vitest.setup';
 import { json, line, mockApi, renderShop } from '@/test/helpers';
 import { AuthScreen } from './AuthScreen';
 
+/** Điền email và mật khẩu vào biểu mẫu đăng nhập trong kiểm thử. */
 function fill(email: string, password: string) {
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: email } });
   fireEvent.change(screen.getByLabelText('Mật khẩu'), { target: { value: password } });

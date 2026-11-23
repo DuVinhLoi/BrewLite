@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configureApp } from './app.setup';
 
+/** Kiểm tra khóa JWT, khởi tạo ứng dụng NestJS và mở cổng phục vụ API. */
 async function bootstrap(): Promise<void> {
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
     throw new Error('JWT_SECRET must contain at least 32 characters');

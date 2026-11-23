@@ -5,6 +5,7 @@ import { checkoutKey, isExpired, paymentError, paymentLabels, pendingPayment, sh
 import { formatVnd } from '@/lib/format';
 import { useShop } from './ShopProvider';
 import { ApiError } from '@/lib/api';
+/** Hiển thị lịch sử hoặc chi tiết đơn, định kỳ cập nhật trạng thái và hỗ trợ hủy, kiểm tra thanh toán. */
 export function OrdersScreen({ id }: { id?: string }) {
   const { session, ready } = useShop();
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -17,6 +18,7 @@ export function OrdersScreen({ id }: { id?: string }) {
   useEffect(() => {
     if (!session) return;
     let active = true; let loading = false; let terminal = false;
+    /** Tải danh sách hoặc chi tiết đơn, cập nhật giao diện và theo dõi khi đơn chưa kết thúc. */
     async function load() {
       if (loading || terminal) return; loading = true;
       try {
@@ -28,6 +30,7 @@ export function OrdersScreen({ id }: { id?: string }) {
     void load(); const timer = id ? setInterval(() => void load(), 5000) : undefined;
     return () => { active = false; if (timer) clearInterval(timer); };
   }, [session, id, attempt]);
+  /** Yêu cầu xác nhận hủy đơn, gọi API cập nhật và tải lại trạng thái đơn. */
   async function cancel(order: Order) {
     if (!window.confirm('Bạn chắc chắn muốn hủy đơn?')) return;
     setBusy(true);
@@ -39,6 +42,7 @@ export function OrdersScreen({ id }: { id?: string }) {
     } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
   }
   // The API asks VNPay (QueryDR) for a payment that passed expiresAt; the answer is read back from the DB by loading the order again.
+  /** Yêu cầu tra cứu giao dịch đang chờ với VNPay rồi cập nhật lại màn hình đơn hàng. */
   async function reconcile(payment: Payment) {
     setBusy(true);
     try {

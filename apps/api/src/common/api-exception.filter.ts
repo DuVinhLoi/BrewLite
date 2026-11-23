@@ -36,6 +36,7 @@ interface HttpExceptionPayload {
 export class ApiExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ApiExceptionFilter.name);
 
+  /** Bắt lỗi phát sinh trong API và gửi phản hồi JSON thống nhất cho phía gọi. */
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();
     const body = this.toErrorBody(exception);
@@ -50,6 +51,7 @@ export class ApiExceptionFilter implements ExceptionFilter {
     response.status(body.statusCode).json(body);
   }
 
+  /** Chuyển ngoại lệ thành nội dung lỗi API; che thông tin nội bộ đối với lỗi không xác định. */
   private toErrorBody(exception: unknown): ApiErrorBody {
     if (!(exception instanceof HttpException)) {
       return {

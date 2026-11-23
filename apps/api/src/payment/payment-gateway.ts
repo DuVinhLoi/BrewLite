@@ -9,6 +9,7 @@ const QUERY_TIMEOUT_MS = 10_000;
 // vnp_IpAddr of QueryDR is the server calling the API (plan 1.2); the spike records the value VNPay accepts.
 const QUERY_IP_ADDR = '127.0.0.1';
 
+/** Tạo nội dung thanh toán từ mã đơn hàng để gửi sang VNPay. */
 const orderInfo = (orderId: string) => `Thanh toan don ${orderId}`;
 
 export type CreateUrlInput = { paymentId: string; orderId: string; amount: number; method: PaymentMethod; ipAddr: string; now?: Date };
@@ -25,6 +26,7 @@ export type QueryResult =
 // Talks to VNPay. The signing itself lives in vnpay.ts; this class adds the configuration and the HTTP call.
 @Injectable()
 export class VnpayGateway {
+  /** Đọc cấu hình, xác định thời hạn và tạo URL thanh toán VNPay có chữ ký. */
   createUrl(input: CreateUrlInput): CreateUrlResult {
     const config = readVnpayConfig();
     if (!canCreateUrl(config)) return { ok: false, reason: 'NOT_CONFIGURED' };
@@ -43,6 +45,7 @@ export class VnpayGateway {
   }
 
   // Every failure comes back as { ok: false, reason }; nothing is thrown and nothing is collapsed into a boolean.
+  /** Gửi yêu cầu QueryDR có thời gian chờ và xác thực phản hồi để tra cứu giao dịch VNPay. */
   async query(input: QueryInput): Promise<QueryResult> {
     const config = readVnpayConfig();
     if (!canVerify(config)) return { ok: false, reason: 'NOT_CONFIGURED' };

@@ -13,18 +13,22 @@ export const session = { token: 'fake-test-token', email: 'test@example.invalid'
 export const order: Order = { id: 'order-1', status: 'PENDING', total: 124000, createdAt: '2026-11-04T03:00:00Z', items: [{ ...line, id: 'item-1', lineTotal: 124000 }], payments: [] };
 export const payment: Payment = { id: 'payment-1', method: 'WALLET', status: 'PENDING', amount: 124000, createdAt: '2026-11-04T03:00:00Z', paymentUrl: 'https://sandbox.example.invalid/pay', expiresAt: '2099-01-01T00:00:00Z', gatewayResponseCode: null, gatewayTransactionStatus: null };
 
+/** Tạo kết quả tồn kho đủ nguyên liệu giả lập để dùng trong kiểm thử giao diện. */
 export function available(items: InventoryItem[], cups = 8): Availability {
   return { canOrder: true, lines: items.map((item) => ({ ...item, cups, sellable: true, limitingIngredients: [{ id: 'milk', name: 'Sữa', unit: 'ml' }] })), shortages: [] };
 }
 
+/** Tạo Response JSON với mã HTTP tùy chọn để giả lập phản hồi API trong kiểm thử. */
 export function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
+/** Giả lập fetch và chuyển đường dẫn, tùy chọn yêu cầu cho hàm xử lý của bài kiểm thử. */
 export function mockApi(handler: (path: string, init: RequestInit) => Response | Promise<Response>) {
   return vi.mocked(fetch).mockImplementation(async (input, init = {}) => handler(new URL(String(input)).pathname, init));
 }
 
+/** Giả lập endpoint kiểm tra nguyên liệu và trả kết quả đủ hàng theo các món gửi lên. */
 export function availabilityApi() {
   return mockApi((path, init) => {
     if (path !== '/inventory/availability') throw new Error(`Unexpected path: ${path}`);
@@ -33,12 +37,14 @@ export function availabilityApi() {
   });
 }
 
+/** Chuẩn bị giỏ hàng, phiên đăng nhập giả lập và render giao diện trong ShopProvider để kiểm thử. */
 export function renderShop(children: ReactNode, cart: CartLine[] = [], loggedIn = false) {
   localStorage.setItem('brewlite-cart', JSON.stringify(cart));
   if (loggedIn) sessionStorage.setItem('brewlite-session', JSON.stringify(session));
   return render(<ShopProvider>{children}</ShopProvider>);
 }
 
+/** Tạo Promise có thể chủ động hoàn tất để kiểm tra các tình huống phản hồi bất đồng bộ. */
 export function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => { resolve = done; });

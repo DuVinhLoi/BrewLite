@@ -14,12 +14,16 @@ export const statusLabels: Record<string, string> = { PENDING: 'Chờ thanh toá
 export const paymentLabels: Record<string, string> = { SUCCESS: 'Đã trả', PENDING: 'Đang chờ VNPay', FAILED: 'Thất bại' };
 export const paidStatuses = ['PAID', 'PREPARING', 'READY', 'COMPLETED'];
 // Same key in CheckoutScreen, VnpayReturnScreen and OrdersScreen: { orderId, key, paymentId, paymentMethod } of the current checkout.
+/** Tạo khóa sessionStorage riêng theo email để lưu phiên thanh toán của từng tài khoản. */
 export function checkoutKey(email: string) { return `brewlite-checkout:${email}`; }
 // BR-10: an order has at most one PENDING payment.
+/** Tìm giao dịch đang ở trạng thái PENDING trong danh sách thanh toán của đơn. */
 export function pendingPayment(order: Order) { return order.payments?.find((payment) => payment.status === 'PENDING'); }
 // After expiresAt the stored URL must not be reused; the API has to ask VNPay first (plan 1.6). A missing expiresAt counts as expired.
+/** Kiểm tra URL thanh toán đã hết hạn; xem giao dịch thiếu expiresAt là hết hạn để yêu cầu xác minh. */
 export function isExpired(payment: Payment, now: number) { return !payment.expiresAt || now >= Date.parse(payment.expiresAt); }
 // Customer message for a VNPay response code (plan 1.7). The code only picks the wording; the order status in the DB decides the outcome.
+/** Đổi mã kết quả VNPay thành thông báo tiếng Việt phù hợp để khách hàng đọc. */
 export function vnpayMessage(code: string): string {
   switch (code) {
     case '24': return 'Bạn đã hủy giao dịch';
@@ -34,21 +38,27 @@ export function vnpayMessage(code: string): string {
 // Shown while a payment has no final answer; never says "failed" and never suggests paying a second time (AC-F15.4).
 export const verifyingText = 'Đang xác minh thanh toán, vui lòng kiểm tra lại';
 // Message for a failed POST /payments or POST /payments/:id/sync. 502 or a lost response = VNPay side failed (UC-04 E8a, E13); 409 = no final answer yet.
+/** Chọn thông báo lỗi thanh toán; mã 409 hiển thị đang xác minh thay vì kết luận thất bại. */
 export function paymentError(err: unknown) {
   if (!(err instanceof ApiError) || err.status === 502) return 'Có lỗi xảy ra, vui lòng thử lại';
   return err.status === 409 ? verifyingText : err.message;
 }
+/** Tính giá một ly trên giao diện từ giá gốc, kích cỡ và các topping được chọn. */
 export function priceFor(product: Product, size: string, selected: string[], options: Options) {
   return product.price + options.sizes[size] + selected.reduce((sum, name) => sum + options.toppings[name], 0);
 }
+/** Tạo khóa dòng giỏ hàng từ sản phẩm, kích cỡ và bộ topping đã sắp xếp để gộp lựa chọn giống nhau. */
 export function cartKey(productId: string, size: string, toppings: string[]) { return JSON.stringify([productId, size, [...toppings].sort()]); }
+/** Thêm món hoặc gộp số lượng vào dòng có cùng lựa chọn, giới hạn 20 dòng và 99 ly mỗi dòng. */
 export function addLine(lines: CartLine[], next: CartLine): CartLine[] {
   const existing = lines.find((line) => line.key === next.key);
   if (existing && existing.quantity + next.quantity > 99) throw new Error('Mỗi dòng tối đa 99 ly');
   if (!existing && lines.length >= 20) throw new Error('Giỏ hàng tối đa 20 món');
   return existing ? lines.map((line) => line.key === next.key ? { ...line, quantity: line.quantity + next.quantity } : line) : [...lines, next];
 }
+/** Tính tổng tiền giỏ hàng bằng tổng đơn giá nhân số lượng của từng dòng. */
 export function cartTotal(lines: CartLine[]) { return lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0); }
+/** Gọi API với JSON và token nếu có; chuyển phản hồi lỗi thành ApiError và trả dữ liệu JSON khi thành công. */
 export async function shopApi<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
   const response = await fetch(`${apiBaseUrl()}${path}`, { ...init, cache: 'no-store', headers: { ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...init.headers } });
   if (!response.ok) {

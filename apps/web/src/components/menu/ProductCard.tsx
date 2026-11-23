@@ -8,6 +8,7 @@ type ProductCardProps = {
   product: Product;
 };
 
+/** Hiển thị ảnh, giá, tồn kho và liên kết chọn sản phẩm; chặn chọn khi hết hàng. */
 export function ProductCard({ product }: ProductCardProps) {
   const badge = stockBadge(product.stock);
   const soldOut = product.stock <= 0;

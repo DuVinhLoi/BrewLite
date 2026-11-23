@@ -16,7 +16,9 @@ export const fake = Object.freeze({
 });
 
 // Fail before constructing a database client or issuing any HTTP request.
+/** Kiểm tra URL đích chỉ thuộc môi trường kiểm thử cục bộ. */
 export function assertSafeTargets(env = process.env) {
+  /** Xác minh từng địa chỉ đích trước khi chạy kiểm thử. */
   const loopback = (value, protocols, label) => {
     let url;
     try { url = new URL(value); } catch { throw new Error(`${label} must be an explicit loopback URL`); }
@@ -37,6 +39,7 @@ export function assertSafeTargets(env = process.env) {
 
 export const targets = assertSafeTargets();
 
+/** Gửi yêu cầu HTTP và đọc phản hồi JSON từ API kiểm thử. */
 export async function request(path, { method = 'GET', token, body, headers = {} } = {}) {
   assertSafeTargets();
   assert.ok(path.startsWith('/') && !path.startsWith('//'), 'Only API-relative paths are allowed');
@@ -48,6 +51,7 @@ export async function request(path, { method = 'GET', token, body, headers = {} 
   return { status: response.status, body: await response.json() };
 }
 
+/** Xác nhận mã HTTP và mã lỗi mong đợi. */
 export function expectStatus(result, status, error) {
   // Deliberately do not dump bodies: they may contain JWTs or signed URLs.
   assert.equal(result.status, status, `Expected HTTP ${status}; received ${result.status} (${result.body?.error ?? 'no error code'})`);
@@ -55,12 +59,14 @@ export function expectStatus(result, status, error) {
   return result.body;
 }
 
+/** Đăng nhập tài khoản kiểm thử và trả thông tin xác thực. */
 export async function login(email, password = fake.password) {
   const body = expectStatus(await request('/auth/login', { method: 'POST', body: { email, password } }), 200);
   assert.ok(typeof body.accessToken === 'string' && body.accessToken.length > 0, 'Login must return an access token');
   return { ...body.user, token: body.accessToken };
 }
 
+/** Tạo tài khoản ngẫu nhiên, kiểm tra dữ liệu công khai rồi đăng nhập. */
 export async function createUser(fixture) {
   const email = `integration-${randomUUID()}@example.test`;
   const user = expectStatus(await request('/auth/register', { method: 'POST', body: { email, password: fake.password } }), 201);
@@ -68,20 +74,24 @@ export async function createUser(fixture) {
   return { ...await login(email), fixture };
 }
 
+/** Nhập kho hoặc kiểm đếm bằng tài khoản nhân viên trong fixture. */
 export async function moveStock(staff, ingredientId, kind, quantity, unit = 'ml', reason = 'Isolated integration fixture') {
   return expectStatus(await request(`/inventory/ingredients/${ingredientId}/movements`, {
     method: 'POST', token: staff.token, body: { kind, quantity: String(quantity), unit, reason },
   }), 201);
 }
 
+/** Tạo món Americano mẫu với các tùy chọn ghi đè. */
 export const item = (overrides = {}) => ({ productId: 'americano', size: 'S', toppings: [], quantity: 1, ...overrides });
 
+/** Tạo đơn và ghi lại để fixture dọn trạng thái sau kiểm thử. */
 export async function createOrder(user, items = [item()]) {
   const order = expectStatus(await request('/orders', { method: 'POST', token: user.token, body: { items } }), 201);
   user.fixture.orders.push({ order, user });
   return order;
 }
 
+/** Tạo thanh toán thẻ với khóa idempotency để kiểm tra chống trùng. */
 export async function createPayment(user, order, key = randomUUID()) {
   return expectStatus(await request('/payments', {
     method: 'POST', token: user.token, headers: { 'Idempotency-Key': key }, body: { orderId: order.id, paymentMethod: 'CARD' },
@@ -89,13 +99,16 @@ export async function createPayment(user, order, key = randomUUID()) {
 }
 
 // Independent protocol oracle: no imports from application signing code.
+/** Tính chữ ký VNPay độc lập với mã ứng dụng. */
 export function signVnpay(params) {
   const fields = Object.keys(params).filter((key) => key.startsWith('vnp_') && !['vnp_SecureHash', 'vnp_SecureHashType'].includes(key)).sort();
+  /** Mã hóa tham số VNPay, dùng dấu cộng cho khoảng trắng. */
   const encode = (value) => encodeURIComponent(value).replace(/[!'()~]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`).replace(/%20/g, '+');
   const canonical = fields.map((key) => `${encode(key)}=${encode(String(params[key]))}`).join('&');
   return createHmac('sha512', fake.hashSecret).update(canonical, 'utf8').digest('hex');
 }
 
+/** Tạo tham số callback giả lập có chữ ký và kết quả tùy chọn. */
 export function callbackParams(payment, overrides = {}) {
   const params = {
     vnp_TmnCode: fake.tmnCode, vnp_TxnRef: payment.paymentId, vnp_Amount: String(payment.amount * 100),
@@ -106,21 +119,25 @@ export function callbackParams(payment, overrides = {}) {
   return { ...params, vnp_SecureHash: signVnpay(params) };
 }
 
+/** Gửi callback đã ký đến endpoint IPN hoặc return của API local. */
 export async function callback(payment, overrides = {}, endpoint = 'ipn') {
   return request(`/payments/vnpay/${endpoint}?${new URLSearchParams(callbackParams(payment, overrides))}`);
 }
 
+/** Tạo thanh toán và IPN thành công giả lập cho đơn kiểm thử. */
 export async function payOrder(fixture, order) {
   const payment = await createPayment(fixture.customer, order);
   assert.equal(expectStatus(await callback(payment), 200).RspCode, '00');
   return payment;
 }
 
+/** Đọc tồn kho và lượng đang giữ để đối chiếu kết quả. */
 export async function balance(fixture, id = 'espresso') {
   const row = await fixture.read((db) => db.ingredient.findUniqueOrThrow({ where: { id } }));
   return { onHand: row.onHand.toString(), reserved: row.reserved.toString() };
 }
 
+/** Chụp dữ liệu theo thứ tự ổn định và bỏ trường nhạy cảm để so sánh. */
 export async function snapshot(fixture) {
   const rows = await fixture.read((db) => Promise.all([
     db.product.findMany({ orderBy: { id: 'asc' } }),
@@ -136,6 +153,7 @@ export async function snapshot(fixture) {
   return JSON.parse(JSON.stringify(rows));
 }
 
+/** Chạy seed bằng Node hiện tại với DB và cấu hình kiểm thử. */
 export async function runSeed() {
   assertSafeTargets();
   const { stdout } = await run(process.execPath, ['--import', 'tsx', 'prisma/seed.ts'], {
@@ -146,6 +164,7 @@ export async function runSeed() {
   assert.match(stdout, /8/);
 }
 
+/** Ghi nhận công thức gốc và thay công thức qua API cho fixture. */
 export async function saveRecipe(fixture, body) {
   const original = fixture.recipes.find((recipe) => body.topping ? recipe.topping === body.topping : recipe.productId === body.productId && recipe.size === body.size);
   assert.ok(original, 'Fixture only replaces existing seeded recipes');
@@ -154,9 +173,11 @@ export async function saveRecipe(fixture, body) {
 }
 
 // Use only with suite concurrency 1 and an exclusive, seeded local test database.
+/** Chuẩn bị tài khoản, tồn kho và cơ chế phục hồi cho kịch bản kiểm thử. */
 export async function scenario(t, { espresso = 1000 } = {}) {
   assertSafeTargets();
   const db = new PrismaClient({ datasourceUrl: targets.databaseUrl });
+  /** Chạy thao tác đọc trong giao dịch READ ONLY để bảo vệ dữ liệu fixture. */
   const read = (operation) => db.$transaction(async (tx) => {
     await tx.$executeRaw`SET TRANSACTION READ ONLY`;
     return operation(tx);

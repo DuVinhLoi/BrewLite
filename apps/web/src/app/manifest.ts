@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 
+/** Khai báo tên, biểu tượng và chế độ hiển thị khi cài website như ứng dụng. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'BrewLite – Đặt đồ uống',

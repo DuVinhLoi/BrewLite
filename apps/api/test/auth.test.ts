@@ -43,6 +43,7 @@ describe('UNIT-T06 registration', () => {
       let savedHash = '';
       const prisma = {
         user: {
+          /** Giả lập tạo người dùng, kiểm tra dữ liệu ghi và giữ lại mật khẩu băm để xác nhận trong test. */
           async create(args: Prisma.UserCreateArgs) {
             // Verify the real write boundary rather than returning an unconditionally safe fake.
             assert.deepEqual(args.select, { id: true, email: true, role: true });

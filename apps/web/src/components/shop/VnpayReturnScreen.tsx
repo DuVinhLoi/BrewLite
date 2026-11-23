@@ -14,6 +14,7 @@ type View =
   | { kind: 'cancelled' | 'unpaid'; orderId: string }
   | { kind: 'missing' }
   | { kind: 'error'; message: string };
+/** Xác minh dữ liệu sau khi quay về từ VNPay và theo dõi trạng thái đơn để hiển thị kết quả đáng tin cậy. */
 export function VnpayReturnScreen() {
   const { ready, session, clear, logout } = useShop(); const router = useRouter();
   const query = useSearchParams().toString();
@@ -24,8 +25,10 @@ export function VnpayReturnScreen() {
     if (!ready || !session) return;
     let active = true; let timer: ReturnType<typeof setTimeout> | undefined;
     const token = session.token; const key = checkoutKey(session.email);
+    /** Tải chi tiết đơn bằng token của phiên hiện tại để đọc trạng thái từ máy chủ. */
     const readOrder = (orderId: string) => shopApi<Order>(`/orders/${encodeURIComponent(orderId)}`, {}, token);
     // The return query is only a hint to find the order; a signed answer gives the IDs, otherwise trust only this browser's checkout session.
+    /** Tìm mã đơn từ dữ liệu return đã xác thực; nếu không có thì dùng phiên checkout lưu trong trình duyệt. */
     async function locate() {
       try {
         const result = await shopApi<VnpayReturn>(`/payments/vnpay/return?${query}`);
@@ -38,6 +41,7 @@ export function VnpayReturnScreen() {
       return null;
     }
     // True when the DB shows a final state for the order; the VNPay code only picks the failure wording.
+    /** Dựa vào trạng thái đơn từ cơ sở dữ liệu để điều hướng hoặc hiển thị kết quả; chỉ xóa giỏ khi đã thanh toán. */
     function settle(order: Order, code: string): boolean {
       if (paidStatuses.includes(order.status)) {
         try { const saved = JSON.parse(sessionStorage.getItem(key) ?? 'null'); if (saved?.orderId === order.id) { clear(); sessionStorage.removeItem(key); } } catch { /* No saved checkout. */ }
@@ -49,6 +53,7 @@ export function VnpayReturnScreen() {
       return true;
     }
     // One sync call (QueryDR on the API side); 409 = still processing, 502 = VNPay unreachable.
+    /** Yêu cầu đồng bộ một giao dịch đang chờ rồi tải lại đơn để cập nhật kết quả. */
     async function syncOnce(order: Order, code: string) {
       const waiting = pendingPayment(order);
       if (!waiting) return;
@@ -62,6 +67,7 @@ export function VnpayReturnScreen() {
       const latest = await readOrder(order.id);
       if (active && !settle(latest, code)) setView({ kind: 'verifying' });
     }
+    /** Xác định đơn rồi thăm dò trạng thái trong thời gian chờ; sau đó yêu cầu tra cứu VNPay nếu chưa có kết quả. */
     async function check() {
       const target = await locate();
       if (!active) return;
@@ -82,6 +88,7 @@ export function VnpayReturnScreen() {
     });
     return () => { active = false; clearTimeout(timer); };
   }, [ready, session, query, returnPath, attempt, router, clear, logout]);
+  /** Đặt lại trạng thái kiểm tra và kích hoạt một lượt xác minh thanh toán mới. */
   function recheck() { setView({ kind: 'checking' }); setAttempt((value) => value + 1); }
   if (!ready) return <main className="shop-page" role="status">Đang tải…</main>;
   if (!session) return <main className="shop-page"><Link href={`/login?next=${encodeURIComponent(returnPath)}`}>Đăng nhập để xem kết quả thanh toán</Link></main>;

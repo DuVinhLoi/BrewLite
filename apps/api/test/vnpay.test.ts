@@ -51,6 +51,7 @@ const RETURN_HASH_PLUS =
 const RETURN_HASH_PERCENT20 =
   '86700abb04005501c191382a8963e4bacf5c35b95dc7e849f6918349aa2b147333b2a7ad9e8f33e598dacff7b3b77cdc14cedd06e1f760da1f435c43d7112efc';
 // The same fields as VNPay sends them after the web framework decoded the query.
+/** Tạo bộ tham số return VNPay mẫu dùng cho các trường hợp kiểm thử chữ ký. */
 const returnQuery = (): Record<string, string> => ({
   vnp_Amount: '1000000',
   vnp_BankCode: 'NCB',
@@ -73,6 +74,7 @@ const QUERYDR_REQUEST_HASH =
 // QueryDR response: 15 fields joined with '|', absent optional fields stay empty but keep their '|'.
 //   vnp_ResponseId|vnp_Command|vnp_ResponseCode|vnp_Message|vnp_TmnCode|vnp_TxnRef|vnp_Amount|vnp_BankCode|vnp_PayDate
 //   |vnp_TransactionNo|vnp_TransactionType|vnp_TransactionStatus|vnp_OrderInfo|vnp_PromotionCode|vnp_PromotionAmount
+/** Tạo đối tượng phản hồi QueryDR từ chuỗi trường và chữ ký đã chuẩn bị. */
 const queryDrBody = (signed: string, hash: string): Record<string, string> => {
   const names = [
     'vnp_ResponseId', 'vnp_Command', 'vnp_ResponseCode', 'vnp_Message', 'vnp_TmnCode', 'vnp_TxnRef', 'vnp_Amount',
@@ -154,6 +156,7 @@ describe('buildPaymentUrl', () => {
 });
 
 describe('verifyReturn (IPN and return URL)', () => {
+  /** Tạo dữ liệu return có chữ ký mẫu và cho phép ghi đè trường để kiểm thử dữ liệu sai. */
   const signed = (overrides: Record<string, unknown> = {}) => ({ ...returnQuery(), vnp_SecureHash: RETURN_HASH_PLUS, ...overrides });
   it('accepts a correct signature over decoded values (space encoded as +)', () => {
     assert.equal(verifyReturn(signed(), SECRET, TMN), true);
@@ -216,6 +219,7 @@ describe('QueryDR request', () => {
 });
 
 describe('verifyQueryDrResponse', () => {
+  /** Xác minh phản hồi QueryDR mẫu theo thông tin giao dịch mong đợi trong kiểm thử. */
   const ok = (signed: string, hash: string, expect = expectation) => verifyQueryDrResponse(queryDrBody(signed, hash), expect);
   it('accepts a signed 00/00 response, keeping empty optional fields in the signed string', () => {
     const result = ok(RESP_SUCCESS, RESP_SUCCESS_HASH);
@@ -464,13 +468,16 @@ describe('vnpay-config', () => {
 
 describe('VnpayGateway', () => {
   const savedEnv = { ...process.env };
+  /** Thiết lập các biến môi trường VNPay cho trường hợp kiểm thử. */
   const useEnv = (env: Record<string, string>) => {
     for (const name of ['VNP_TMN_CODE', 'VNP_HASH_SECRET', 'WEB_URL', 'VNP_URL', 'VNP_API_URL']) delete process.env[name];
     Object.assign(process.env, env);
   };
   const FULL_ENV = { VNP_TMN_CODE: TMN, VNP_HASH_SECRET: SECRET, WEB_URL: 'http://localhost:3000' };
   const queryInput = { paymentId: 'PAYMENT1', orderId: 'ORDER1', amount: 10000, gatewayCreateDate: '20261029100000' };
+  /** Tạo hàm fetch giả trả về nội dung JSON và mã HTTP đã chỉ định. */
   const respond = (body: unknown, status = 200) => async () => new Response(JSON.stringify(body), { status });
+  /** Thay fetch bằng hàm giả lập để kiểm thử cổng VNPay mà không gọi mạng. */
   const stubFetch = (impl: (url: string | URL | Request, init?: RequestInit) => Promise<Response>) => mock.method(globalThis, 'fetch', impl);
   afterEach(() => {
     mock.restoreAll();
@@ -511,6 +518,7 @@ describe('VnpayGateway', () => {
   });
 
   describe('query', () => {
+    /** Tạo phản hồi QueryDR thành công có chữ ký mẫu hợp lệ. */
     const goodBody = () => queryDrBody(RESP_SUCCESS, RESP_SUCCESS_HASH);
     it('returns the verified response code, transaction status and metadata separately', async () => {
       useEnv(FULL_ENV);

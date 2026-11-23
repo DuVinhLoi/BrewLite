@@ -7,6 +7,7 @@ import { validAmount, type Ingredient, type StockMovement } from '@/lib/inventor
 import { useShop } from './ShopProvider';
 
 type InventoryData = { ingredients: Ingredient[]; movements: StockMovement[] };
+/** Tải song song số dư nguyên liệu và lịch sử biến động kho bằng token nhân viên. */
 async function loadInventory(token: string, signal?: AbortSignal): Promise<InventoryData> {
   const [ingredients, movements] = await Promise.all([
     shopApi<Ingredient[]>('/inventory/ingredients', { signal }, token),
@@ -15,6 +16,7 @@ async function loadInventory(token: string, signal?: AbortSignal): Promise<Inven
   return { ingredients, movements };
 }
 
+/** Kiểm tra phiên và vai trò nhân viên trước khi hiển thị màn hình quản lý kho. */
 export function InventoryScreen() {
   const { session, ready } = useShop();
   if (!ready) return <main className="shop-page" role="status">Đang tải phiên…</main>;
@@ -23,6 +25,7 @@ export function InventoryScreen() {
   return <InventoryWorkspace key={session.token} token={session.token} />;
 }
 
+/** Hiển thị số dư, biểu mẫu nhập hoặc kiểm đếm và lịch sử kho; hỗ trợ tải lại dữ liệu. */
 function InventoryWorkspace({ token }: { token: string }) {
   const [data, setData] = useState<InventoryData | null>(null);
   const [error, setError] = useState('');
@@ -30,6 +33,7 @@ function InventoryWorkspace({ token }: { token: string }) {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState('');
   const pendingLoad = useRef<AbortController | null>(null);
+  /** Hủy lượt tải kho cũ, tải dữ liệu mới và cập nhật trạng thái lỗi hoặc hết phiên. */
   const load = useCallback(() => {
     pendingLoad.current?.abort();
     const controller = new AbortController();
@@ -41,6 +45,7 @@ function InventoryWorkspace({ token }: { token: string }) {
     }).finally(() => { if (!controller.signal.aborted) setRefreshing(false); });
   }, [token]);
   useEffect(() => { void load(); return () => pendingLoad.current?.abort(); }, [load]);
+  /** Xóa lỗi cũ, bật trạng thái làm mới và tải lại dữ liệu kho. */
   function refresh() { setRefreshing(true); setError(''); return load(); }
   if (expired) return <main className="shop-page"><p role="alert">Phiên nhân viên đã hết hạn.</p><Link href="/login?next=/inventory">Đăng nhập lại</Link></main>;
   const ingredient = data?.ingredients.find((item) => item.id === selectedIngredient) ?? data?.ingredients[0];
@@ -59,6 +64,7 @@ function InventoryWorkspace({ token }: { token: string }) {
   </main>;
 }
 
+/** Hiển thị biểu mẫu nhập nguyên liệu hoặc ghi nhận tổng tồn thực tế sau kiểm đếm. */
 function MovementForm({ ingredient, token, onSaved }: { ingredient: Ingredient; token: string; onSaved: () => Promise<void> }) {
   const [kind, setKind] = useState('RECEIVE');
   const [quantity, setQuantity] = useState('');
@@ -68,6 +74,7 @@ function MovementForm({ ingredient, token, onSaved }: { ingredient: Ingredient; 
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const units = ingredient.unit === 'g' ? ['g', 'kg'] : ingredient.unit === 'ml' ? ['ml', 'l'] : ['piece'];
+  /** Kiểm tra số lượng, đơn vị và lý do rồi gửi biến động kho, sau đó làm mới dữ liệu. */
   async function submit(event: FormEvent) {
     event.preventDefault(); if (busy) return; setError(''); setNotice('');
     if (!validAmount(quantity, unit, kind === 'ADJUST')) { setError('Số lượng không hợp lệ'); return; }

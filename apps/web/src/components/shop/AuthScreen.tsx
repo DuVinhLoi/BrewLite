@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { shopApi } from '@/lib/shop';
 import { useShop } from './ShopProvider';
+/** Hiển thị biểu mẫu đăng nhập hoặc đăng ký và điều hướng sau khi xác thực thành công. */
 export function AuthScreen({ register = false }: { register?: boolean }) {
   const shop = useShop();
   const router = useRouter();
@@ -11,6 +12,7 @@ export function AuthScreen({ register = false }: { register?: boolean }) {
   const [error, setError] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
   useEffect(() => { if (new URLSearchParams(window.location.search).has('expired')) Promise.resolve().then(() => setError('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại')); }, []);
+  /** Kiểm tra biểu mẫu, đăng ký nếu cần rồi đăng nhập, lưu phiên và chuyển đến trang tiếp theo. */
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (busy) return;
     const form = new FormData(event.currentTarget);

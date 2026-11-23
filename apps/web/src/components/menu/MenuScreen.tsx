@@ -12,6 +12,7 @@ type LoadState =
 
 const SKELETON_COUNT = 4;
 
+/** Tải thực đơn từ API và hiển thị trạng thái đang tải, lỗi, rỗng hoặc danh sách sản phẩm. */
 export function MenuScreen() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
@@ -35,6 +36,7 @@ export function MenuScreen() {
     };
   }, [attempt]);
 
+  /** Đặt lại trạng thái đang tải và kích hoạt tải lại thực đơn sau lỗi. */
   const retry = useCallback(() => {
     setState({ status: 'loading' });
     setAttempt((value) => value + 1);

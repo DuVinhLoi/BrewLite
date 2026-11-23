@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   description: 'Thực đơn đồ uống BrewLite: cà phê, trà và thức uống pha chế mỗi ngày.',
 };
 
+/** Tạo khung HTML tiếng Việt và bọc các trang trong ShopProvider để dùng chung giỏ hàng, phiên đăng nhập. */
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi">

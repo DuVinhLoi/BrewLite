@@ -15,10 +15,14 @@ const IPN_MESSAGES: Record<string, string> = {
   '00': 'Confirm Success', '01': 'Order not found', '02': 'Order already confirmed', '04': 'Invalid amount', '97': 'Invalid signature', '99': 'Unknown error',
 };
 
+/** Tạo lỗi 409 để báo giao dịch vẫn đang chờ VNPay xác nhận. */
 const inProgress = () => new ConflictException({ code: 'PAYMENT_IN_PROGRESS', message: 'Thanh toán đang chờ VNPay xác nhận, vui lòng kiểm tra lại sau' });
+/** Tạo lỗi 502 để báo không thể kết nối hoặc nhận kết quả hợp lệ từ VNPay. */
 const providerError = () => new BadGatewayException({ code: 'PAYMENT_PROVIDER_ERROR', message: 'Không kết nối được cổng thanh toán VNPay, vui lòng thử lại sau' });
 // now >= expiresAt (plan 1.6).
+/** Kiểm tra giao dịch đã hết thời hạn thanh toán hay chưa. */
 const isExpired = (payment: { expiresAt: Date | null }, now: Date) => payment.expiresAt !== null && payment.expiresAt <= now;
+/** Giữ lại chuỗi không rỗng; trả về null cho giá trị không hợp lệ. */
 const text = (value: unknown) => (typeof value === 'string' && value ? value : null);
 
 // Final result of an authenticated IPN or QueryDR answer, already normalized for applyGatewayResult (plan 1.3).
@@ -34,14 +38,18 @@ const EXPIRED_RESULT: GatewayResult = { outcome: 'FAILED', responseCode: 'EXPIRE
 @Injectable()
 export class CheckoutService {
   private readonly logger = new Logger(CheckoutService.name);
+  /** Nhận các dịch vụ phụ thuộc do NestJS cung cấp để sử dụng trong các phương thức của lớp. */
   constructor(private readonly prisma: PrismaService, private readonly inventory: InventoryService, private readonly gateway: VnpayGateway) {}
+  /** Chặn thao tác nếu người dùng không có vai trò khách hàng. */
   customer(user: Identity) { if (user.role !== 'CUSTOMER') throw new ForbiddenException(); }
+  /** Tìm đơn hàng và kiểm tra quyền truy cập của chủ đơn hoặc nhân viên pha chế. */
   private async owned(tx: Prisma.TransactionClient, id: string, user: Identity) {
     const order = await tx.order.findUnique({ where: { id }, include: { items: true } });
     if (!order) throw new NotFoundException({ code: 'ORDER_NOT_FOUND', message: 'Không tìm thấy đơn hàng' });
     if (user.role !== 'BARISTA' && order.userId !== user.sub) throw new ForbiddenException();
     return order;
   }
+  /** Kiểm tra giỏ hàng, tính giá từng món, giữ nguyên liệu và tạo đơn trong cùng giao dịch cơ sở dữ liệu. */
   async create(user: Identity, body: unknown) {
     this.customer(user);
     const items = parseItems(body);
@@ -57,15 +65,18 @@ export class CheckoutService {
       return tx.order.create({ data: { userId: user.sub, inventoryTracked: true, ingredients: { create: ingredients }, total: lines.reduce((total, line) => total + line.lineTotal, 0), items: { create: lines } }, include: { items: true } });
     }, { maxWait: 20000, timeout: 20000 });
   }
+  /** Lấy tối đa 50 đơn gần nhất của khách hàng, kèm các món đã đặt. */
   async list(user: Identity) {
     this.customer(user);
     return this.prisma.order.findMany({ where: { userId: user.sub }, include: { items: true }, orderBy: { createdAt: 'desc' }, take: 50 });
   }
+  /** Kiểm tra quyền xem đơn rồi trả về chi tiết món và lịch sử thanh toán. */
   async detail(user: Identity, id: string) {
     const order = await this.owned(this.prisma, id, user);
     const payments = await this.prisma.payment.findMany({ where: { orderId: id }, select: { id: true, method: true, status: true, amount: true, createdAt: true, paymentUrl: true, expiresAt: true, gatewayResponseCode: true, gatewayTransactionStatus: true }, orderBy: { createdAt: 'desc' } });
     return { ...order, payments };
   }
+  /** Kiểm tra quyền và bước chuyển trạng thái đơn, đồng thời xử lý phần nguyên liệu giữ cho đơn. */
   async transition(user: Identity, id: string, body: unknown) {
     const { status } = record(body, ['status']);
     if (typeof status !== 'string' || !['PREPARING', 'READY', 'COMPLETED', 'CANCELLED'].includes(status)) invalid('status không hợp lệ');
@@ -95,6 +106,7 @@ export class CheckoutService {
     }, transactionOptions);
   }
   // POST /payments, in the order of plan 1.5. replay=true is answered with HTTP 200, replay=false with 201.
+  /** Kiểm tra yêu cầu và khóa chống tạo thanh toán trùng, rồi tạo hoặc trả lại giao dịch tương ứng. */
   async pay(user: Identity, body: unknown, key: string | undefined, ipAddr: string) {
     this.customer(user);
     if (!key?.trim() || key.length > 255) throw new HttpException({ code: 'IDEMPOTENCY_KEY_REQUIRED', message: 'Thiếu Idempotency-Key hợp lệ' }, 400);
@@ -116,6 +128,7 @@ export class CheckoutService {
     return result;
   }
   // One pass of steps 2-7 under the order lock. Returns null when an expired PENDING payment has to be reconciled first.
+  /** Khóa đơn trong giao dịch cơ sở dữ liệu để tạo thanh toán an toàn hoặc trả lại kết quả đã có. */
   private async tryPay(user: Identity, input: PayInput) {
     const { orderId, paymentMethod, key } = input;
     return this.prisma.$transaction(async (tx) => {
@@ -148,6 +161,7 @@ export class CheckoutService {
     }, transactionOptions);
   }
   // POST /payments/:id/sync: permission checks first, then QueryDR only while the payment is still PENDING.
+  /** Kiểm tra quyền sở hữu giao dịch rồi hỏi VNPay để đồng bộ trạng thái thanh toán. */
   async sync(user: Identity, paymentId: string) {
     this.customer(user);
     const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
@@ -159,6 +173,7 @@ export class CheckoutService {
     return { paymentId: current.id, orderId: current.orderId, orderStatus: current.order.status, status: current.status };
   }
   // Plan 1.6: settle the PENDING payment of an order if it is past expiresAt. Throws while it is still undecided.
+  /** Tìm thanh toán đang chờ đã hết hạn của đơn và xác minh lại với VNPay. */
   async resolveExpired(orderId: string) {
     const pending = await this.prisma.payment.findFirst({ where: { orderId, status: 'PENDING' } });
     if (pending && isExpired(pending, new Date())) await this.settleByQuery(pending.id);
@@ -166,6 +181,7 @@ export class CheckoutService {
   // Asks VNPay about one PENDING payment (HTTP, no transaction), then applies the answer under the order lock.
   // Returns once the payment is no longer PENDING; throws 409 while undecided and 502 when VNPay cannot be trusted.
   // D6: 15 minutes after expiresAt a payment without a usable answer is closed as FAILED "EXPIRED" instead of staying PENDING.
+  /** Tra cứu VNPay bằng QueryDR và quyết định cập nhật, tiếp tục chờ hay báo lỗi đối soát. */
   private async settleByQuery(paymentId: string) {
     const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
     if (!payment || payment.status !== 'PENDING') return;
@@ -214,6 +230,7 @@ export class CheckoutService {
   }
   // Plan 1.3 steps 4-6, shared by IPN and QueryDR. The caller holds the order lock inside tx.
   // Returns true when this call changed the payment, false when it was already final (nothing is overwritten).
+  /** Ghi kết quả thanh toán cuối cùng và cập nhật trạng thái đơn trong giao dịch cơ sở dữ liệu. */
   private async applyGatewayResult(tx: Prisma.TransactionClient, paymentId: string, result: GatewayResult) {
     const payment = await tx.payment.findUniqueOrThrow({ where: { id: paymentId }, include: { order: true } });
     if (payment.status !== 'PENDING' || payment.order.status !== 'PENDING') {
@@ -229,6 +246,7 @@ export class CheckoutService {
     return true;
   }
   // GET /payments/vnpay/ipn (plan 1.3). Always answers with an RspCode; an unexpected error is 99 so that VNPay calls again.
+  /** Xác thực thông báo IPN của VNPay, kiểm tra giao dịch và xử lý kết quả thanh toán. */
   async ipn(query: Record<string, unknown>) {
     let details = '';
     try {
@@ -269,6 +287,7 @@ export class CheckoutService {
     }
   }
   // GET /payments/vnpay/return: checks the signature and the merchant, writes nothing.
+  /** Xác thực dữ liệu VNPay trả về trình duyệt và cung cấp mã đơn, không tự xác nhận đơn đã thanh toán. */
   async checkReturn(query: Record<string, unknown>) {
     const config = readVnpayConfig();
     if (!canVerify(config) || !verifyReturn(query, config.hashSecret, config.tmnCode)) return { valid: false };
@@ -277,15 +296,18 @@ export class CheckoutService {
     if (!payment) return { valid: false };
     return { valid: true, paymentId: payment.id, orderId: payment.orderId, responseCode: text(query.vnp_ResponseCode) };
   }
+  /** Ghi log và tạo phản hồi RspCode, Message theo định dạng VNPay yêu cầu. */
   private ipnReply(code: string, details = '') {
     this.logger.log(`VNPAY_IPN RspCode=${code}${details}`);
     return { RspCode: code, Message: IPN_MESSAGES[code] };
   }
   // Staff look the payment up by vnp_TxnRef in the VNPay Merchant Admin and refund by hand.
+  /** Ghi cảnh báo giao dịch có dấu hiệu bất thường cần được đối soát thủ công. */
   private reconciliationRequired(paymentId: string, responseCode: string, transactionStatus: string | null) {
     this.logger.warn(`PAYMENT_RECONCILIATION_REQUIRED vnp_TxnRef=${paymentId} vnp_ResponseCode=${responseCode} vnp_TransactionStatus=${transactionStatus ?? ''}`);
   }
   // D6: a payment closed with no clear answer from VNPay. The detail is the verified codes, or the reason code of the failed call.
+  /** Ghi cảnh báo giao dịch hết hạn nhưng chưa nhận được kết quả xác minh rõ ràng. */
   private expiredUnconfirmed(paymentId: string, answer: QueryResult) {
     const detail = answer.ok ? `vnp_ResponseCode=${answer.responseCode} vnp_TransactionStatus=${answer.transactionStatus}` : `reason=${answer.reason}`;
     this.logger.warn(`PAYMENT_EXPIRED_UNCONFIRMED vnp_TxnRef=${paymentId} ${detail}`);

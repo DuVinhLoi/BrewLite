@@ -40,12 +40,14 @@ export const test = base.extend<{ shop: Fixture }>({
 });
 export { expect, fake, expectStatus, targets };
 
+/** Điền và gửi biểu mẫu đăng nhập bằng tài khoản kiểm thử trên trình duyệt. */
 export async function signIn(page: Page, email: string, password: string = fake.password) {
   await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
 }
 
+/** Mở thực đơn, chọn Americano với tùy chọn yêu cầu và thêm vào giỏ trong kiểm thử end-to-end. */
 export async function addAmericano(page: Page, { size = 'S', topping = false, quantity = 1 } = {}) {
   await page.goto('/');
   await page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Americano', exact: true }) }).getByRole('button', { name: 'Thêm vào giỏ' }).click();
@@ -59,6 +61,7 @@ export async function addAmericano(page: Page, { size = 'S', topping = false, qu
   await expect(page.getByRole('heading', { name: 'Giỏ hàng', exact: true })).toBeVisible();
 }
 
+/** Đi từ giỏ sang thanh toán và đăng nhập khách hàng bằng dữ liệu kiểm thử khi cần. */
 export async function checkoutAsCustomer(page: Page, shop: Fixture) {
   await page.getByRole('link', { name: 'Thanh toán', exact: true }).click();
   await expect(page).toHaveURL(`${targets.webUrl}/login?next=/checkout`);
@@ -67,6 +70,7 @@ export async function checkoutAsCustomer(page: Page, shop: Fixture) {
   await expect(page.getByRole('button', { name: 'Thanh toán qua VNPay', exact: true })).toBeEnabled();
 }
 
+/** Thực hiện luồng thanh toán qua cổng giả lập và trả thông tin giao dịch cho kiểm thử. */
 export async function payThroughFakeGateway(page: Page, shop: Fixture, code = '00') {
   const result = new Promise<{ orderId: string; paymentId: string; amount: number }>((resolve, reject) => {
     void page.route('https://sandbox.vnpayment.vn/**', async (route) => {
@@ -95,6 +99,7 @@ export async function payThroughFakeGateway(page: Page, shop: Fixture, code = '0
   return result;
 }
 
+/** Chờ trình duyệt đến trang chi tiết rồi kiểm tra qua API rằng đơn PAID và chỉ có một thanh toán SUCCESS. */
 export async function expectPaid(page: Page, shop: Fixture, orderId: string) {
   // A predicate avoids printing the signed return URL in an assertion failure.
   await expect.poll(() => new URL(page.url()).pathname).toBe(`/orders/${orderId}`);
