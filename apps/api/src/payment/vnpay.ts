@@ -19,13 +19,16 @@ export type QueryDrFailure = 'BAD_RESPONSE' | 'BAD_SIGNATURE' | 'MISMATCH' | 'UN
 // Every way a QueryDR call can end without a verified answer (used by the gateway result and unansweredQueryAction).
 export type QueryFailureReason = 'NOT_CONFIGURED' | 'MISSING_CREATE_DATE' | 'TIMEOUT' | 'NETWORK' | QueryDrFailure;
 
+/** Tính chữ ký HMAC-SHA512 dạng hex cho dữ liệu bằng khóa bí mật VNPay. */
 const sign = (secret: string, data: string) => createHmac('sha512', secret).update(data, 'utf8').digest('hex');
 
 // Date format yyyyMMddHHmmss in GMT+7, whatever the server time zone is (Render runs UTC).
+/** Định dạng thời điểm theo giờ Việt Nam thành chuỗi yyyyMMddHHmmss mà VNPay yêu cầu. */
 export function formatVnDate(date: Date) {
   return new Date(date.getTime() + VN_OFFSET_MS).toISOString().slice(0, 19).replace(/[-T:]/g, '');
 }
 
+/** Chuyển chuỗi ngày giờ VNPay về Date; trả null nếu định dạng hoặc ngày thực tế không hợp lệ. */
 export function parseVnDate(value: string) {
   const match = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(value);
   if (!match) return null;
@@ -37,16 +40,19 @@ export function parseVnDate(value: string) {
 
 // Signed string of a payment URL, IPN or return: vnp_* params sorted by name, without the hash fields.
 // URLSearchParams encodes a space as '+' like the VNPay samples; encodeURIComponent would give %20.
+/** Sắp xếp và mã hóa các tham số vnp_ thành chuỗi dùng để ký, bỏ qua các trường chữ ký. */
 function signedQuery(params: Record<string, string>) {
   const names = Object.keys(params).filter((name) => name.startsWith('vnp_') && name !== 'vnp_SecureHash' && name !== 'vnp_SecureHashType').sort();
   return new URLSearchParams(names.map((name) => [name, params[name]])).toString();
 }
 
 // The length check comes first because timingSafeEqual throws on buffers of different length.
+/** Kiểm tra định dạng chữ ký và so sánh bằng timingSafeEqual để hạn chế lộ thông tin qua thời gian xử lý. */
 function sameSignature(received: string, expected: string) {
   return SHA512_HEX.test(received) && timingSafeEqual(Buffer.from(received, 'hex'), Buffer.from(expected, 'hex'));
 }
 
+/** Tạo URL thanh toán có chữ ký, quy đổi số tiền VND sang đơn vị nhân 100 theo VNPay. */
 export function buildPaymentUrl(input: {
   vnpUrl: string; tmnCode: string; secret: string; txnRef: string; amountVnd: number; orderInfo: string;
   returnUrl: string; ipAddr: string; createDate: string; expireDate: string; bankCode?: string;
@@ -62,6 +68,7 @@ export function buildPaymentUrl(input: {
 }
 
 // Used for both the IPN and the return URL. Never throws: a bad, missing or non-string value is just "false".
+/** Kiểm tra mã đơn vị và chữ ký dữ liệu IPN hoặc return; trả false nếu dữ liệu không hợp lệ. */
 export function verifyReturn(params: Record<string, unknown>, secret: string, tmnCode: string) {
   const received = params.vnp_SecureHash;
   if (typeof received !== 'string' || params.vnp_TmnCode !== tmnCode) return false;
@@ -75,8 +82,10 @@ export function verifyReturn(params: Record<string, unknown>, secret: string, tm
 }
 
 // QueryDR signs raw values (no URL-encoding) joined with '|'; an absent optional field is an empty string.
+/** Ghép giá trị theo thứ tự trường bằng dấu | để tạo chuỗi ký cho QueryDR. */
 const joinFields = (names: readonly string[], values: Record<string, string>) => names.map((name) => values[name] ?? '').join('|');
 
+/** Tạo nội dung yêu cầu tra cứu giao dịch QueryDR kèm chữ ký HMAC-SHA512. */
 export function buildQueryDr(input: {
   tmnCode: string; secret: string; requestId: string; txnRef: string; transactionDate: string; createDate: string; ipAddr: string; orderInfo: string;
 }) {
@@ -92,6 +101,7 @@ export function buildQueryDr(input: {
 // MISMATCH (never closed) for 00 only; for any other code, 91 included, it is BAD_RESPONSE, which the grace can still close.
 // UNSIGNED (spike 2026-10-30: the sandbox answers 99 with no vnp_SecureHash) carries the response code for the log only:
 // it is the code of an unverified body, so it is kept only when it is exactly 2 digits and is never used to decide anything.
+/** Xác thực chữ ký và đối chiếu đơn vị, mã giao dịch, số tiền, loại giao dịch trong phản hồi QueryDR. */
 export function verifyQueryDrResponse(body: unknown, expected: { secret: string; tmnCode: string; txnRef: string; amountVnd: number }):
   { ok: true; fields: QueryDrFields } | { ok: false; reason: QueryDrFailure; responseCode?: string | null } {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return { ok: false, reason: 'BAD_RESPONSE' };
@@ -130,12 +140,14 @@ export type QueryDrAction =
 export const EXPIRY_GRACE_MS = 15 * 60 * 1000;
 
 // now >= expiresAt + 15 minutes. A payment without expiresAt never leaves its grace.
+/** Kiểm tra đã qua thời điểm hết hạn thanh toán cộng thêm 15 phút chờ xác minh hay chưa. */
 export function isPastGrace(expiresAt: Date | null, now: Date) {
   return expiresAt !== null && now.getTime() >= expiresAt.getTime() + EXPIRY_GRACE_MS;
 }
 
 // Plan table 1.6 and D6 for a verified QueryDR response. vnp_ResponseCode is the answer to the query,
 // vnp_TransactionStatus is the state of the payment itself. "expired" is now >= expiresAt, "pastGrace" is isPastGrace.
+/** Chuyển mã phản hồi và trạng thái QueryDR thành quyết định xử lý theo thời hạn giao dịch. */
 export function queryDrAction(responseCode: string, transactionStatus: string, expired: boolean, pastGrace: boolean): QueryDrAction {
   if (responseCode === '91') {
     // Spike 2026-10-30 never saw 91 (the sandbox QueryDR answers 99 unsigned); 91 after expiry still closes the payment, before it stays PENDING.
@@ -156,6 +168,7 @@ export function queryDrAction(responseCode: string, transactionStatus: string, e
 // D6 for a QueryDR call with no verified answer. MISMATCH is a signed 00 answer about another merchant, reference, amount or type:
 // a human must look, so it is never closed. Every other reason closes the payment once the grace has ended.
 // Without a verified answer there is no SUCCESS, FAILED or IN_PROGRESS, hence the narrower return type.
+/** Quyết định đóng giao dịch hết hạn hoặc báo lỗi khi QueryDR không có phản hồi xác thực dùng được. */
 export function unansweredQueryAction(reason: QueryFailureReason, pastGrace: boolean): Extract<QueryDrAction, { kind: 'EXPIRED' | 'PROVIDER_ERROR' }> {
   if (reason === 'MISMATCH') return { kind: 'PROVIDER_ERROR', reconcile: true };
   return pastGrace ? { kind: 'EXPIRED' } : { kind: 'PROVIDER_ERROR', reconcile: false };
@@ -165,6 +178,7 @@ export type IpnAction = { kind: 'SUCCESS' } | { kind: 'FAILED' } | { kind: 'UNRE
 
 // Plan 1.3 steps 5-7 for a verified IPN. UNRESOLVED means: change nothing and answer 99 so VNPay calls again.
 // reconcile = some code hints that money was taken, so log PAYMENT_RECONCILIATION_REQUIRED.
+/** Phân loại IPN đã xác thực thành thành công, thất bại hoặc chưa rõ kết quả cần kiểm tra thêm. */
 export function ipnAction(responseCode: string, transactionStatus: string): IpnAction {
   if (responseCode === '00' && transactionStatus === '00') return { kind: 'SUCCESS' };
   // Spike 2026-10-30: the customer cancelling (24/02) and expiry at the OTP step (15/02) both arrive as status 02 with a response code other than 00/07.

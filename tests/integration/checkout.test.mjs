@@ -6,7 +6,9 @@ import {
   item, payOrder, request, scenario, signVnpay, snapshot, targets,
 } from './helpers.mjs';
 
+/** Gửi yêu cầu đổi trạng thái đơn bằng token của người dùng được chỉ định. */
 const transition = (user, order, status) => request(`/orders/${order.id}`, { method: 'PATCH', token: user.token, body: { status } });
+/** Đọc chi tiết đơn qua API và xác nhận HTTP 200. */
 const detail = async (user, order) => expectStatus(await request(`/orders/${order.id}`, { token: user.token }), 200);
 
 const payRequest = (user, orderId, key, paymentMethod = 'CARD') => request('/payments', {

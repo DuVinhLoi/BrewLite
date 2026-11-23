@@ -8,6 +8,7 @@ type RecipeData = { id: string; productId: string | null; size: string | null; t
 type Shortage = { ingredientId: string; name: string; unit: string; requested: string; available: string };
 type Availability = { productId: string; size: string; toppings: string[]; quantity: number; cups: number; sellable: boolean; limitingIngredients: { id: string; name: string; unit: string }[]; reason?: string };
 
+/** Kiểm tra số lượng và đổi đơn vị nhập sang đơn vị chuẩn của nguyên liệu bằng số Decimal. */
 export function canonicalQuantity(value: unknown, unit: unknown, canonical: string, allowZero = false): Prisma.Decimal {
   if (typeof value !== 'string' || !/^\d{1,15}(\.\d{1,3})?$/.test(value)) invalid('Định lượng phải là chuỗi số thập phân, tối đa 3 chữ số sau dấu chấm');
   const factor = unit === canonical ? 1 : (unit === 'kg' && canonical === 'g') || (unit === 'l' && canonical === 'ml') ? 1000 : 0;
@@ -18,6 +19,7 @@ export function canonicalQuantity(value: unknown, unit: unknown, canonical: stri
   return quantity;
 }
 
+/** Tổng hợp nhu cầu theo công thức để tính số ly khả dụng và danh sách nguyên liệu thiếu. */
 export function calculateAvailability(items: ItemInput[], recipes: RecipeData[], ingredients: Ingredient[]) {
   const inventory = new Map(ingredients.map((i) => [i.id, i]));
   const demand = new Map<string, Prisma.Decimal>();

@@ -4,6 +4,7 @@ import { router } from '../../../vitest.setup';
 import { json, line, mockApi, order, payment, renderShop } from '@/test/helpers';
 import { CheckoutScreen } from './CheckoutScreen';
 
+/** Chờ nút thanh toán sẵn sàng rồi bấm gửi biểu mẫu trong kiểm thử. */
 async function submit() {
   const button = await screen.findByRole('button', { name: 'Thanh toán qua VNPay' });
   await waitFor(() => expect(button).toBeEnabled());
@@ -121,7 +122,9 @@ describe('UNIT-T18 checkout recovery (FR-10, FR-13, FR-14, FR-16)', () => {
   it('redirects to the returned paymentUrl with the correct payment payload and keeps the unpaid cart', async () => {
     const assign = vi.fn();
     const browser = window;
-    vi.stubGlobal('window', new Proxy(browser, { get(target, property) {
+    vi.stubGlobal('window', new Proxy(browser, {
+      /** Giả lập location để theo dõi chuyển trang, giữ nguyên các thuộc tính window khác. */
+      get(target, property) {
       return property === 'location' ? { search: '', assign } : Reflect.get(target, property, target);
     } }));
     mockApi((path) => {

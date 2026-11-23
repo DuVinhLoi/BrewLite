@@ -6,18 +6,22 @@ export type Size = keyof typeof sizes;
 export type Topping = keyof typeof toppings;
 export type ItemInput = { productId: string; size: Size; toppings: Topping[]; quantity: number };
 
+/** Ném lỗi dữ liệu đầu vào với mã VALIDATION_ERROR và thông báo cụ thể. */
 export function invalid(message: string): never {
   throw new BadRequestException({ code: 'VALIDATION_ERROR', message, details: [message] });
 }
+/** Yêu cầu dữ liệu là một đối tượng và chỉ chứa các trường được cho phép. */
 export function record(value: unknown, allowed: string[]): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) invalid('Body phải là object');
   const result = value as Record<string, unknown>;
   if (Object.keys(result).some((key) => !allowed.includes(key))) invalid('Body chứa trường không được phép');
   return result;
 }
+/** Tính giá một ly bằng giá gốc cộng phụ phí kích cỡ và các topping đã chọn. */
 export function unitPrice(price: number, size: Size, selected: Topping[]): number {
   return price + sizes[size] + selected.reduce((sum, name) => sum + toppings[name], 0);
 }
+/** Kiểm tra cấu trúc giỏ hàng, sản phẩm, kích cỡ, topping và giới hạn số lượng từng dòng. */
 export function parseItems(body: unknown): ItemInput[] {
   const { items } = record(body, ['items']);
   if (!Array.isArray(items) || items.length < 1 || items.length > 20) invalid('items phải có từ 1 đến 20 dòng');

@@ -10,26 +10,32 @@ const transactionOptions = { maxWait: 20000, timeout: 20000 };
 
 @Injectable()
 export class InventoryService {
+  /** Nhận các dịch vụ phụ thuộc do NestJS cung cấp để sử dụng trong các phương thức của lớp. */
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Chỉ cho phép nhân viên pha chế thực hiện thao tác quản lý kho. */
   private staff(user: Identity) {
     if (user.role !== 'BARISTA') throw new ForbiddenException();
   }
 
+  /** Chuyển số lượng Decimal thành chuỗi và tính lượng nguyên liệu khả dụng sau khi trừ phần đang giữ. */
   private balance(ingredient: { id: string; name: string; unit: string; tracked: boolean; onHand: Prisma.Decimal; reserved: Prisma.Decimal }) {
     return { ...ingredient, onHand: ingredient.onHand.toString(), reserved: ingredient.reserved.toString(), available: ingredient.onHand.sub(ingredient.reserved).toString() };
   }
 
+  /** Kiểm tra quyền nhân viên rồi lấy danh sách nguyên liệu cùng số dư khả dụng. */
   async ingredients(user: Identity) {
     this.staff(user);
     return (await this.prisma.ingredient.findMany({ orderBy: { name: 'asc' } })).map((i) => this.balance(i));
   }
 
+  /** Kiểm tra quyền nhân viên rồi lấy 100 biến động kho gần nhất kèm người thực hiện. */
   async movements(user: Identity) {
     this.staff(user);
     return this.prisma.stockMovement.findMany({ orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 100, include: { actor: { select: { email: true } }, ingredient: { select: { name: true, unit: true } } } });
   }
 
+  /** Kiểm tra dữ liệu nhập kho hoặc kiểm đếm, cập nhật tồn và lưu lịch sử trong cùng giao dịch. */
   async move(user: Identity, id: string, body: unknown) {
     this.staff(user);
     const input = record(body, ['kind', 'quantity', 'unit', 'reason']);
@@ -50,11 +56,13 @@ export class InventoryService {
     }, transactionOptions);
   }
 
+  /** Kiểm tra quyền nhân viên rồi lấy các công thức cùng định lượng nguyên liệu. */
   async recipes(user: Identity) {
     this.staff(user);
     return this.prisma.recipe.findMany({ orderBy: { id: 'asc' }, include: recipeInclude });
   }
 
+  /** Kiểm tra sản phẩm, kích cỡ, topping và định lượng rồi lưu công thức nguyên liệu. */
   async saveRecipe(user: Identity, body: unknown) {
     this.staff(user);
     const input = record(body, ['productId', 'size', 'topping', 'lines']);
@@ -89,6 +97,7 @@ export class InventoryService {
     }, transactionOptions);
   }
 
+  /** Đọc công thức và tồn nguyên liệu để tính khả năng đáp ứng giỏ hàng; có thể khóa dữ liệu khi cần. */
   async evaluate(tx: Prisma.TransactionClient, items: ItemInput[], lock = false) {
     const where: Prisma.RecipeWhereInput = { OR: [
       ...items.map(({ productId, size }) => ({ productId, size })),
@@ -105,6 +114,7 @@ export class InventoryService {
     return calculateAvailability(items, recipes, ingredients);
   }
 
+  /** Kiểm tra giỏ hàng và trả về số ly có thể bán cùng các nguyên liệu còn thiếu. */
   async availability(body: unknown) {
     const items = parseItems(body);
     return this.prisma.$transaction(async (tx) => {
@@ -114,6 +124,7 @@ export class InventoryService {
     }, { ...transactionOptions, isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   }
 
+  /** Kiểm tra đủ nguyên liệu, tăng lượng đang giữ và trả định lượng cần lưu cho đơn hàng. */
   async reserve(tx: Prisma.TransactionClient, items: ItemInput[]) {
     const { demand, response } = await this.evaluate(tx, items, true);
     if (response.lines.some((line) => line.reason)) throw new ConflictException({ code: 'RECIPE_UNAVAILABLE', message: 'Chưa có công thức hợp lệ cho lựa chọn này', details: response.lines.filter((line) => line.reason) });
@@ -123,6 +134,7 @@ export class InventoryService {
     return snapshot;
   }
 
+  /** Giải phóng phần nguyên liệu giữ cho đơn; trừ tồn thực tế nếu đơn đã tiêu thụ nguyên liệu. */
   async settle(tx: Prisma.TransactionClient, orderId: string, consume: boolean) {
     const lines = await tx.orderIngredient.findMany({ where: { orderId }, orderBy: { ingredientId: 'asc' } });
     if (!lines.length) throw new ConflictException({ code: 'INVENTORY_SNAPSHOT_MISSING', message: 'Đơn thiếu snapshot nguyên liệu; cần nhân viên kiểm tra' });

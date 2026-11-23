@@ -6,7 +6,9 @@ import { ApiError } from '@/lib/api';
 import { shopApi, cartTotal, checkoutKey, isExpired, paidStatuses, paymentError, pendingPayment, statusLabels, verifyingText, type CartLine, type Order, type Payment, type PaymentResult, type PaymentSync } from '@/lib/shop';
 import { formatVnd } from '@/lib/format';
 import { useShop } from './ShopProvider';
+/** Tạo dòng mô tả số lượng, tên món, kích cỡ và topping cho phần tóm tắt đơn. */
 function lineSummary(line: CartLine) { return `${line.quantity} × ${line.name} · Size ${line.size} · ${line.toppings.join(', ') || 'Không topping'}`; }
+/** Quản lý tạo đơn, khôi phục phiên thanh toán và chuyển khách sang VNPay. */
 export function CheckoutScreen() {
   const shop = useShop(); const { ready, session, clear, logout } = shop; const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
@@ -55,6 +57,7 @@ export function CheckoutScreen() {
     });
     return () => { active = false; };
   }, [ready, session, storageKey, attempt, router, clear, logout]);
+  /** Tạo hoặc dùng lại đơn và khóa chống thanh toán trùng, gọi API thanh toán rồi chuyển tới VNPay. */
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!session || inFlight.current || blocked || inventoryConflict) return;
@@ -91,10 +94,12 @@ export function CheckoutScreen() {
     } finally { inFlight.current = false; setBusy(false); }
   }
   // Valid until expiresAt only; afterwards the API has to ask VNPay first, so the page offers "Kiểm tra trạng thái" instead (plan 1.6).
+  /** Mở lại URL thanh toán còn hạn; nếu đã hết hạn thì cập nhật giao diện để yêu cầu kiểm tra trạng thái. */
   function resume(payment: Payment) {
     if (payment.paymentUrl && !isExpired(payment, Date.now())) window.location.assign(payment.paymentUrl);
     else setClock(Date.now());
   }
+  /** Yêu cầu API đồng bộ giao dịch với VNPay rồi tải lại đơn; hiển thị lỗi hoặc yêu cầu đăng nhập lại khi cần. */
   async function checkStatus(payment: Payment) {
     if (!session || inFlight.current) return;
     inFlight.current = true; setBusy(true); setError('');
@@ -107,6 +112,7 @@ export function CheckoutScreen() {
       else setError(paymentError(err));
     } finally { inFlight.current = false; setBusy(false); }
   }
+  /** Xóa phiên thanh toán cũ, tạo khóa mới và đưa giao diện về trạng thái bắt đầu đơn mới. */
   function startAgain() {
     sessionStorage.removeItem(storageKey); setOrder(null); setUnknownCreate(false); setBlocked(false); setError(''); paymentKey.current = crypto.randomUUID(); router.replace('/checkout');
   }

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { checkAvailability, type Availability, type InventoryItem } from '@/lib/inventory';
 import { cartKey } from '@/lib/shop';
 
+/** Kiểm tra nguyên liệu cho các món khi giỏ thay đổi và bỏ qua phản hồi cũ để tránh hiển thị sai tồn. */
 export function useAvailability(items: InventoryItem[], revision = 0) {
   const key = JSON.stringify(items.map(({ productId, size, toppings, quantity }) => ({ productId, size, toppings, quantity })));
   const [attempt, setAttempt] = useState(0);
@@ -25,12 +26,14 @@ export function useAvailability(items: InventoryItem[], revision = 0) {
 }
 
 // Find the additional quantity that fits alongside every existing cart line.
+/** Tính số lượng tối đa còn có thể thêm cho lựa chọn hiện tại sau khi tính các món sẵn có trong giỏ. */
 export function useRemainingQuantity(cart: InventoryItem[], selection: InventoryItem, limit: number, enabled: boolean) {
   const key = JSON.stringify({ cart, selection, limit, enabled });
   const [state, setState] = useState<{ key: string; remaining: number; error?: string } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     const { cart, selection, limit, enabled } = JSON.parse(key) as { cart: InventoryItem[]; selection: InventoryItem; limit: number; enabled: boolean };
+    /** Dùng tìm kiếm nhị phân và kiểm tra tồn kho để xác định số lượng có thể thêm mà không thiếu nguyên liệu. */
     async function calculate() {
       let low = 0;
       const selectedKey = cartKey(selection.productId, selection.size, selection.toppings);

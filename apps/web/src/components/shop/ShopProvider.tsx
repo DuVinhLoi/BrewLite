@@ -5,6 +5,7 @@ import { addLine, type CartLine } from '@/lib/shop';
 type Session = { token: string; email: string; role: string };
 type Store = { cart: CartLine[]; ready: boolean; session: Session | null; add: (line: CartLine) => void; quantity: (key: string, value: number) => void; clear: () => void; login: (value: Session) => void; logout: () => void };
 const Context = createContext<Store | null>(null);
+/** Chia sẻ giỏ hàng, phiên đăng nhập và các thao tác mua hàng; khôi phục dữ liệu từ bộ nhớ trình duyệt. */
 export function ShopProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [session, setSession] = useState<Session | null>(null);
@@ -24,16 +25,22 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     });
   }, []);
   useEffect(() => { if (ready) { try { localStorage.setItem('brewlite-cart', JSON.stringify(cart)); } catch { /* In-memory cart remains usable. */ } } }, [cart, ready]);
+  /** Xóa toàn bộ món trong giỏ hàng hiện tại. */
   const clear = useCallback(() => setCart([]), []);
+  /** Xóa phiên đăng nhập khỏi trạng thái ứng dụng và sessionStorage. */
   const logout = useCallback(() => { setSession(null); try { sessionStorage.removeItem('brewlite-session'); } catch { /* Session already cleared in memory. */ } }, []);
   const store: Store = {
     cart, ready, session,
+    /** Thêm hoặc gộp món vào giỏ bằng addLine rồi cập nhật trạng thái dùng chung. */
     add(line) { const next = addLine(cart, line); setCart(next); },
+    /** Cập nhật số lượng từ 0 đến 99; xóa dòng khỏi giỏ khi số lượng bằng không. */
     quantity(key, value) { if (Number.isInteger(value) && value >= 0 && value <= 99) setCart(cart.map((line) => line.key === key ? { ...line, quantity: value } : line).filter((line) => line.quantity > 0)); },
     clear,
+    /** Lưu phiên đăng nhập vào trạng thái ứng dụng và sessionStorage. */
     login(value) { setSession(value); try { sessionStorage.setItem('brewlite-session', JSON.stringify(value)); } catch { /* Session remains in memory. */ } },
     logout,
   };
   return <Context.Provider value={store}><nav className="shop-nav" aria-label="Điều hướng"><Link href="/">BrewLite</Link><Link href="/cart">Giỏ hàng ({cart.reduce((sum, line) => sum + line.quantity, 0)})</Link><Link href="/orders">Đơn hàng</Link>{session?.role === 'BARISTA' && <Link href="/inventory">Kho nguyên liệu</Link>}{session ? <><span>{session.email}</span><button onClick={store.logout}>Đăng xuất</button></> : <Link href="/login">Đăng nhập</Link>}</nav>{children}</Context.Provider>;
 }
+/** Lấy trạng thái và thao tác cửa hàng từ context; báo lỗi nếu thiếu ShopProvider. */
 export function useShop() { const value = useContext(Context); if (!value) throw new Error('ShopProvider missing'); return value; }

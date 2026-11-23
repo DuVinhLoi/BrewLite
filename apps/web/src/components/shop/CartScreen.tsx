@@ -5,6 +5,7 @@ import { formatVnd } from '@/lib/format';
 import { useShop } from './ShopProvider';
 import { shortageMessage } from '@/lib/inventory';
 import { useAvailability } from './useAvailability';
+/** Hiển thị giỏ hàng, tổng tiền và khả năng đáp ứng nguyên liệu trước khi cho thanh toán. */
 export function CartScreen() {
   const { cart, ready, session } = useShop();
   const availability = useAvailability(ready ? cart : []);
@@ -15,6 +16,7 @@ export function CartScreen() {
   {cart.length && availability.result?.canOrder ? <Link className="shop-button" href={session ? '/checkout' : '/login?next=/checkout'}>Thanh toán</Link> : <button disabled>Thanh toán</button>}<Link href="/">Tiếp tục chọn món</Link></main>;
 }
 
+/** Hiển thị một dòng giỏ hàng cùng nút đổi số lượng, giới hạn theo nguyên liệu và thao tác xóa. */
 function CartItem({ line }: { line: CartLine }) {
   const { cart, quantity } = useShop();
   const availability = useAvailability(line.quantity < 99 ? cart.map((item) => item.key === line.key ? { ...item, quantity: item.quantity + 1 } : item) : []);

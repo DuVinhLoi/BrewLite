@@ -8,6 +8,7 @@ import { formatVnd } from '@/lib/format';
 import { useShop } from './ShopProvider';
 import { useAvailability, useRemainingQuantity } from './useAvailability';
 
+/** Tải chi tiết món, cho chọn kích cỡ, topping và số lượng trước khi thêm vào giỏ. */
 export function ProductDetail({ id }: { id: string }) {
   const shop = useShop();
   const [data, setData] = useState<{ product: Product; options: Options } | null>(null);
@@ -40,6 +41,7 @@ export function ProductDetail({ id }: { id: string }) {
   const validQuantity = quantityInput.trim() !== '' && Number.isInteger(quantity) && quantity >= 1 && quantity <= remaining;
   const quantityError = shop.ready && remaining > 0 && !validQuantity ? `Số lượng phải là số nguyên từ 1 đến ${remaining}` : '';
   const canAdd = shop.ready && choice?.sellable && remaining > 0 && validQuantity && !busy && !availability.loading && !availability.error && !capacity.loading && !capacity.error;
+  /** Kiểm tra đủ nguyên liệu cho toàn bộ giỏ dự kiến rồi thêm món đã chọn vào giỏ hàng. */
   async function add() {
     if (!canAdd || adding.current) return;
     const controller = new AbortController();
@@ -55,6 +57,7 @@ export function ProductDetail({ id }: { id: string }) {
     } catch (err) { if (!controller.signal.aborted) setAddError((err as Error).message); }
     finally { pendingAdd.current = null; adding.current = false; setBusy(false); }
   }
+  /** Đặt số lượng về một và xóa thông báo cũ khi người dùng đổi lựa chọn món. */
   function changed() { setQuantityInput('1'); setNotice(''); setAddError(''); }
   return <main className="shop-page">
     <Link href="/">← Thực đơn</Link><h1>{product.name}</h1><p>{product.description}</p>

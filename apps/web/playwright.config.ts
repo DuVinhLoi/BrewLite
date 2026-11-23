@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 import assert from 'node:assert/strict';
 
 // Config loads before Playwright's external-module rules; enforce the shared fixture's guard here before starting either server.
+/** Kiểm tra URL kiểm thử dùng giao thức cho phép và địa chỉ loopback để tránh gọi nhầm dịch vụ bên ngoài. */
 const loopback = (value: string | undefined, protocols: string[], label: string) => {
   assert.ok(value, `${label} must be explicit`);
   const url = new URL(value);

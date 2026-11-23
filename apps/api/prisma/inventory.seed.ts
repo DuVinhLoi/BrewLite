@@ -29,6 +29,7 @@ const bases: Record<string, [string, string][]> = {
   'tra-sua-tran-chau': [['black-tea', '5'], ['unsweetened-milk', '80'], ['condensed-milk', '25'], ['cooked-pearls', '50']],
 };
 
+/** Bổ sung dữ liệu nguyên liệu và công thức còn thiếu để khởi tạo kho. */
 export async function seedInventory(prisma: PrismaClient): Promise<void> {
   // Seed only missing records. Physical counts must be recorded via stock movements.
   for (const [id, name, unit] of ingredients) await prisma.ingredient.upsert({ where: { id }, update: {}, create: { id, name, unit } });

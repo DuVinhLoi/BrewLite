@@ -5,6 +5,7 @@ pg_pid=''
 api_pid=''
 web_pid=''
 startup_pid=''
+# Dừng tiến trình khởi động, API, web và PostgreSQL; kết thúc tiến trình còn treo.
 cleanup() {
   trap - EXIT TERM INT
   set +e
@@ -33,6 +34,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 0' TERM INT
 
+# Chạy bước khởi động và giữ PID để xử lý tín hiệu dừng container.
 run_startup() {
   "$@" &
   startup_pid=$!

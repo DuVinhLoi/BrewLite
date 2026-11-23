@@ -5,6 +5,7 @@ import { BadRequestException } from '@nestjs/common';
 import { parseItems, unitPrice, type Size, type Topping } from '../src/checkout/pricing';
 
 const item = { productId: 'cappuccino', size: 'L', toppings: ['Trân châu'], quantity: 2 };
+/** Xác nhận lỗi đầu vào có HTTP 400, mã VALIDATION_ERROR và danh sách chi tiết lỗi. */
 const validationError = (error: unknown) => {
   assert.ok(error instanceof BadRequestException);
   assert.equal(error.getStatus(), 400);

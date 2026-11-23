@@ -11,6 +11,7 @@ import { assertPaymentProvider, missingVnpayVars, readVnpayConfig } from '../pay
 @Module({ imports: [InventoryModule], controllers: [AuthController, CheckoutController, VnpayController, HealthController, OptionsController], providers: [AuthService, AuthGuard, CheckoutService, VnpayGateway] })
 export class CheckoutModule {
   // Startup check (plan 1.8): an unsupported provider stops the API; missing VNPay variables only print their names.
+  /** Kiểm tra nhà cung cấp thanh toán và cảnh báo tên các biến cấu hình VNPay còn thiếu khi khởi tạo module. */
   constructor() {
     assertPaymentProvider();
     const missing = missingVnpayVars(readVnpayConfig());

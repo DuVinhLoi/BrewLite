@@ -5,6 +5,7 @@ export type StockBadge = {
   tone: 'ok' | 'low' | 'out';
 };
 
+/** Chọn nhãn và màu biểu thị còn hàng, sắp hết hoặc hết hàng theo số ly khả dụng. */
 export function stockBadge(stock: number): StockBadge {
   if (stock <= 0) {
     return { label: 'Hết hàng', tone: 'out' };

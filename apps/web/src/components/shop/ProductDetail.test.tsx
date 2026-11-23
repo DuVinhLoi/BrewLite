@@ -4,6 +4,7 @@ import type { InventoryItem } from '@/lib/inventory';
 import { available, deferred, json, line, mockApi, options, product, renderShop } from '@/test/helpers';
 import { ProductDetail } from './ProductDetail';
 
+/** Giả lập phản hồi sản phẩm và tùy chọn kích cỡ, topping theo đường dẫn API. */
 function catalog(path: string) {
   if (path === '/products/cappuccino') return json(product);
   if (path === '/catalog/options') return json(options);
